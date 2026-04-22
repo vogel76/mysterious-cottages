@@ -1,33 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid meet"
      role="img" aria-labelledby="mapTitle mapDesc">
-  <title id="mapTitle">Baśniowa mapa-skarbów Chatynkowa</title>
-  <desc id="mapDesc">Pergaminowa mapa w stylu piracko-baśniowym. Na karcie naszkicowano góry, lasy,
-  cztery zamki (Ogrodzieniec, Olsztyn, Bobolice, Mirów), różę wiatrów oraz osiemnaście chatynek Elfów
-  rozmieszczonych po całym pergaminie.</desc>
+  <title id="mapTitle">Terrae Regio Iurae – baśniowa mapa Chatynkowa</title>
+  <desc id="mapDesc">Pergaminowy zwój z krętą ścieżką przez las, wzdłuż której rozmieszczone są chatynki Elfów.</desc>
 
   <defs>
-    <!-- Aged parchment fill (warm centre → burnt tan at edges) -->
-    <radialGradient id="parchmentFill" cx="50%" cy="50%" r="70%">
-      <stop offset="0%"   stop-color="#f5dfa8"/>
-      <stop offset="55%"  stop-color="#e3bf80"/>
-      <stop offset="88%"  stop-color="#b3823a"/>
+    <!-- Parchment fill (warm cream centre → burnt edges) -->
+    <radialGradient id="parchmentFill" cx="50%" cy="50%" r="65%">
+      <stop offset="0%"  stop-color="#f1d9a1"/>
+      <stop offset="55%" stop-color="#deba77"/>
+      <stop offset="88%" stop-color="#b28548"/>
       <stop offset="100%" stop-color="#8a5a2b"/>
     </radialGradient>
 
-    <!-- Inner edge burnt vignette -->
-    <radialGradient id="innerBurn" cx="50%" cy="50%" r="65%">
-      <stop offset="60%"  stop-color="#000" stop-opacity="0"/>
-      <stop offset="90%"  stop-color="#2a1806" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#2a1806" stop-opacity="0.75"/>
+    <!-- Roll gradients -->
+    <linearGradient id="rollBodyGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#3a2308"/>
+      <stop offset="20%"  stop-color="#7a4f1f"/>
+      <stop offset="45%"  stop-color="#d4a55b"/>
+      <stop offset="55%"  stop-color="#e6c98b"/>
+      <stop offset="78%"  stop-color="#9c6a28"/>
+      <stop offset="100%" stop-color="#2b1a0a"/>
+    </linearGradient>
+    <linearGradient id="rollEdgeShadeL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#1f1206" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#1f1206" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rollEdgeShadeR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#1f1206" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#1f1206" stop-opacity="0.85"/>
+    </linearGradient>
+    <radialGradient id="rollCapGrad" cx="45%" cy="45%" r="60%">
+      <stop offset="0%"   stop-color="#e8c789"/>
+      <stop offset="60%"  stop-color="#a07136"/>
+      <stop offset="100%" stop-color="#3a2308"/>
     </radialGradient>
 
+    <!-- Fibrous paper grain -->
     <filter id="paperGrain" x="0%" y="0%" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11"/>
       <feColorMatrix values="0 0 0 0 0.44
                              0 0 0 0 0.30
                              0 0 0 0 0.12
-                             0 0 0 0.22 0"/>
+                             0 0 0 0.18 0"/>
       <feComposite in2="SourceGraphic" operator="in"/>
     </filter>
 
@@ -39,229 +54,59 @@
     </filter>
 
     <filter id="mapDrop" x="-5%" y="-5%" width="110%" height="115%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
-      <feOffset dx="0" dy="14"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dx="0" dy="18"/>
       <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
 
-    <clipPath id="paperClip"><path d="M28.0,28.0 L58.7,15.4 L76.1,29.3 L107.3,28.3 L170.1,12.5 L208.8,39.8 L251.5,32.6 L312.5,24.3 L304.6,40.9 L349.6,14.2 L435.2,16.5 L462.1,23.4 L458.3,12.1 L537.2,25.4 L569.7,26.3 L620.1,35.2 L657.7,28.9 L708.0,20.4 L704.4,25.1 L730.7,27.6 L811.8,37.5 L865.7,21.3 L882.2,30.9 L936.3,44.0 L968.6,12.2 L1008.5,45.8 L1021.7,23.9 L1034.1,26.6 L1090.5,12.1 L1122.3,18.9 L1207.9,12.9 L1234.0,41.8 L1284.0,20.0 L1302.2,41.8 L1313.5,16.3 L1364.3,27.5 L1401.3,10.1 L1457.2,30.4 L1508.9,28.6 L1552.3,11.9 L1572.0,28.0 L1558.5,84.9 L1575.6,91.4 L1587.8,139.9 L1584.2,164.0 L1590.0,191.2 L1576.9,229.1 L1567.9,305.0 L1577.5,319.0 L1559.4,363.8 L1572.6,399.5 L1577.7,424.6 L1584.2,491.1 L1571.0,537.3 L1589.0,564.4 L1558.9,625.8 L1576.8,620.5 L1570.8,694.3 L1582.0,712.8 L1559.3,780.8 L1563.4,799.8 L1577.2,820.2 L1579.9,840.5 L1555.6,912.8 L1554.4,972.3 L1582.1,969.7 L1582.6,1008.1 L1559.7,1075.5 L1561.2,1094.4 L1557.2,1146.9 L1572.0,1172.0 L1524.4,1172.8 L1470.9,1178.0 L1429.0,1175.7 L1396.6,1163.9 L1393.9,1184.6 L1314.9,1184.7 L1275.1,1166.3 L1269.9,1185.3 L1195.0,1166.6 L1151.8,1174.4 L1132.2,1182.4 L1119.9,1181.3 L1092.4,1174.9 L1007.1,1177.3 L989.4,1157.4 L928.0,1171.9 L915.5,1189.3 L890.8,1189.9 L854.3,1173.0 L796.1,1178.3 L765.9,1161.8 L723.5,1181.1 L666.2,1171.7 L630.7,1157.2 L599.8,1171.8 L555.8,1173.7 L527.2,1156.1 L472.8,1156.1 L442.1,1156.0 L437.6,1185.6 L410.3,1181.3 L318.4,1161.8 L316.3,1164.2 L272.3,1158.2 L240.4,1155.7 L176.5,1154.4 L164.4,1174.5 L118.8,1183.0 L51.8,1189.3 L28.0,1172.0 L10.7,1140.0 L28.4,1098.8 L38.4,1026.0 L19.6,1046.8 L19.7,976.0 L42.8,940.4 L15.4,907.7 L35.2,871.9 L34.8,850.5 L43.8,807.5 L13.0,731.6 L41.1,735.2 L29.9,675.1 L14.7,648.2 L13.9,618.7 L17.3,586.2 L37.3,536.9 L16.4,488.7 L19.0,479.2 L29.8,404.9 L43.6,380.2 L25.6,318.6 L24.2,279.5 L45.4,251.4 L35.4,200.7 L22.5,193.8 L12.5,154.5 L15.9,123.8 L41.3,47.1 L28.0,28.0 Z"/></clipPath>
+    <clipPath id="paperClip"><path d="M100,95 Q123.6,82.9 147.5,84.6 Q172.6,76.1 197.1,88.1 Q218.3,80.5 241.8,82.1 Q266.6,78.5 291.6,89.0 Q315.0,82.0 335.2,84.8 Q359.8,78.9 380.0,81.3 Q403.8,76.3 427.0,86.4 Q451.7,74.4 478.7,84.6 Q499.3,80.9 517.6,87.8 Q542.1,80.1 566.6,90.3 Q587.8,82.2 614.6,83.6 Q637.5,73.2 659.1,82.5 Q685.2,76.6 711.8,85.4 Q733.7,81.4 755.5,89.7 Q777.3,73.7 794.7,81.2 Q819.3,80.8 844.1,88.7 Q870.5,75.7 898.1,83.5 Q915.7,80.7 935.5,87.6 Q957.6,78.2 983.6,88.1 Q1006.2,80.6 1027.4,85.7 Q1053.3,76.2 1077.7,86.9 Q1103.1,77.7 1122.9,89.7 Q1144.9,75.5 1167.7,82.2 Q1197.9,72.8 1223.0,85.3 Q1244.1,78.6 1262.2,89.3 Q1285.5,77.7 1308.8,87.7 Q1332.5,78.1 1354.7,88.1 Q1377.3,83.8 1403.1,88.9 Q1427.8,78.9 1455.2,86.3 Q1478.0,85.1 1500.0,95.0 L1500,1105 Q1474.1,1118.0 1449.6,1118.5 Q1426.9,1124.2 1401.5,1118.3 Q1379.6,1121.8 1363.3,1114.8 Q1344.1,1122.1 1319.3,1115.9 Q1287.7,1128.9 1260.7,1118.4 Q1240.7,1129.9 1219.0,1118.2 Q1197.0,1124.8 1177.1,1110.6 Q1146.4,1115.9 1121.1,1109.4 Q1104.0,1121.3 1083.4,1117.0 Q1058.5,1120.7 1030.1,1110.3 Q1009.8,1118.3 985.1,1117.0 Q964.7,1122.9 942.9,1117.7 Q919.1,1128.2 898.9,1116.6 Q874.4,1123.5 850.7,1109.4 Q821.1,1123.3 794.1,1117.7 Q776.9,1124.0 754.8,1112.4 Q726.9,1121.8 702.2,1112.5 Q682.8,1123.7 658.1,1114.1 Q635.1,1119.8 612.7,1111.2 Q584.8,1121.3 561.7,1111.2 Q536.5,1116.4 515.5,1110.2 Q491.1,1115.6 472.3,1110.5 Q450.6,1120.3 430.3,1114.5 Q402.9,1122.4 379.5,1115.5 Q356.4,1117.2 330.2,1109.4 Q303.7,1119.1 281.6,1112.5 Q262.4,1123.4 238.3,1111.7 Q215.1,1119.3 191.0,1117.4 Q168.1,1127.4 140.8,1113.6 Q122.8,1117.5 100.0,1105.0 L100,95 Z"/></clipPath>
 
     
-  <!-- Rolling-hills / low mountain range in vintage-map ink style:
-       soft rounded bumps with parallel shading hatch-marks on the right flank
-       and small foothill tick-marks at the base. Not sharp, not numerous. -->
-  <symbol id="mountain" viewBox="0 0 220 80">
-    <!-- Main undulating silhouette (4–5 rounded humps) -->
-    <path d="M 6,70
-             C 16,56 26,34 42,36
-             C 54,20 70,18 86,34
-             C 98,22 116,22 132,36
-             C 146,26 162,30 178,44
-             C 190,54 200,64 214,70 Z"
-          fill="#e3bf80" fill-opacity="0.35"
-          stroke="#4a2d10" stroke-width="2.2" stroke-linejoin="round"/>
-    <!-- Behind-contour suggestion of a further range -->
-    <path d="M 30,52 C 46,42 58,36 70,42 C 82,36 94,32 108,40
-             M 120,44 C 134,36 150,36 164,46 C 176,44 188,50 204,58"
-          fill="none" stroke="#4a2d10" stroke-width="1" opacity="0.65"/>
-    <!-- Right-flank slope hatching, applied to each bump -->
-    <g stroke="#4a2d10" stroke-width="0.9" fill="none" opacity="0.75">
-      <line x1="46" y1="40"  x2="38" y2="54"/>
-      <line x1="50" y1="44"  x2="42" y2="58"/>
-      <line x1="54" y1="50"  x2="46" y2="62"/>
-      <line x1="92" y1="36"  x2="82" y2="52"/>
-      <line x1="96" y1="42"  x2="86" y2="56"/>
-      <line x1="100" y1="48" x2="90" y2="62"/>
-      <line x1="138" y1="40" x2="128" y2="54"/>
-      <line x1="142" y1="46" x2="132" y2="60"/>
-      <line x1="184" y1="50" x2="174" y2="62"/>
-      <line x1="188" y1="56" x2="178" y2="66"/>
-    </g>
-    <!-- Small foothill / rock tick-marks along the base -->
-    <g stroke="#4a2d10" stroke-width="1" fill="none" stroke-linecap="round">
-      <path d="M 22,67 l 3,-4 l 3,4"/>
-      <path d="M 60,65 l 2.5,-3 l 2.5,3"/>
-      <path d="M 104,63 l 2.5,-3 l 2.5,3"/>
-      <path d="M 150,65 l 2.5,-3 l 2.5,3"/>
-      <path d="M 190,68 l 2.5,-3 l 2.5,3"/>
-    </g>
+  <!-- Pine / fir tree (ink silhouette) -->
+  <symbol id="pine" viewBox="0 0 30 42">
+    <polygon points="15,3 4,18 11,18 3,30 12,30 2,40 28,40 18,30 27,30 19,18 26,18"
+             fill="#3a5a2c" stroke="#2a1806" stroke-width="1"/>
+    <rect x="14" y="40" width="2" height="2" fill="#2a1806"/>
   </symbol>
 
-  <!-- Single pine / fir tree (small ink silhouette) -->
-  <symbol id="pine" viewBox="0 0 30 44">
-    <polygon points="15,3 4,18 11,18 3,30 12,30 2,42 28,42 18,30 27,30 19,18 26,18"
-             fill="#6b4218" stroke="#2a1806" stroke-width="1"/>
-    <rect x="13.5" y="42" width="3" height="2" fill="#2a1806"/>
-  </symbol>
-
-  <!-- Fatter pine (variety) -->
+  <!-- Stocky fir (variety) -->
   <symbol id="pine2" viewBox="0 0 30 40">
     <polygon points="15,2 3,26 12,26 5,38 25,38 18,26 27,26"
-             fill="#8a5a2b" stroke="#2a1806" stroke-width="1"/>
-    <rect x="13.5" y="38" width="3" height="2" fill="#2a1806"/>
+             fill="#294a1f" stroke="#2a1806" stroke-width="1"/>
+    <rect x="14" y="38" width="2" height="2" fill="#2a1806"/>
   </symbol>
 
-  <!-- Medieval stone castle, drawn as an ink contour:
-         * tall cylindrical (round) keep with battlements,
-         * attached lower stone wall,
-         * conical roof on a smaller flanking turret,
-         * Polish flag on a pole flying from the keep's top (white top, red bottom),
-         * the stonework is suggested by a brick-pattern hatch. -->
-  <symbol id="castle" viewBox="0 0 160 170">
-    <!-- Rocky outcrop base (soft contour) -->
-    <path d="M 4,160 Q 40,148 80,154 T 156,156 L 156,168 L 4,168 Z"
-          fill="none" stroke="#4a2d10" stroke-width="1.6"/>
-    <g stroke="#4a2d10" stroke-width="0.7" fill="none" opacity="0.7">
-      <path d="M 12,162 l 3,-4 l 3,4"/>
-      <path d="M 60,158 l 3,-4 l 3,4"/>
-      <path d="M 100,158 l 3,-4 l 3,4"/>
-      <path d="M 140,160 l 3,-4 l 3,4"/>
-    </g>
-
-    <!-- Attached curtain wall (right side, lower) -->
-    <rect x="88" y="104" width="62" height="52" fill="#f5dfa8"
-          stroke="#4a2d10" stroke-width="2"/>
-    <!-- Wall crenellations -->
-    <path d="M 88,104 V 96 H 94 V 104 M 100,104 V 96 H 106 V 104
-             M 112,104 V 96 H 118 V 104 M 124,104 V 96 H 130 V 104
-             M 136,104 V 96 H 142 V 104 M 148,104 V 96 H 150 V 104"
-          fill="none" stroke="#4a2d10" stroke-width="1.8"/>
-    <!-- Small corner turret on the far right -->
-    <rect x="140" y="78" width="14" height="26" fill="#f5dfa8"
-          stroke="#4a2d10" stroke-width="1.8"/>
-    <polygon points="138,78 147,64 156,78" fill="#e3bf80"
-             stroke="#4a2d10" stroke-width="1.6"/>
-    <!-- Wall gate -->
-    <path d="M 110,156 V 132 Q 110,120 118,120 Q 126,120 126,132 V 156 Z"
-          fill="#4a2d10"/>
-    <!-- Wall slit windows -->
-    <rect x="96" y="120" width="3" height="10" fill="#4a2d10"/>
-    <rect x="136" y="120" width="3" height="10" fill="#4a2d10"/>
-
-    <!-- Main round keep: cylindrical body shown side-on -->
-    <!-- body (tall rectangle; "roundness" hinted by vertical shading arcs) -->
-    <rect x="30" y="52" width="52" height="104" fill="#f5dfa8"
-          stroke="#4a2d10" stroke-width="2.2"/>
-    <!-- Left & right curvature shading arcs (to read as cylinder) -->
-    <path d="M 30,56 Q 36,100 30,154" fill="none"
-          stroke="#4a2d10" stroke-width="1" opacity="0.55"/>
-    <path d="M 82,56 Q 76,100 82,154" fill="none"
-          stroke="#4a2d10" stroke-width="1" opacity="0.55"/>
-    <!-- Keep crenellations -->
-    <path d="M 30,52 V 42 H 36 V 52 M 42,52 V 42 H 48 V 52
-             M 54,52 V 42 H 60 V 52 M 66,52 V 42 H 72 V 52
-             M 78,52 V 42 H 82 V 52"
-          fill="none" stroke="#4a2d10" stroke-width="2"/>
-    <!-- Arched keep door -->
-    <path d="M 48,156 V 130 Q 48,118 56,118 Q 64,118 64,130 V 156 Z"
-          fill="#4a2d10"/>
-    <!-- Arched window on the keep -->
-    <path d="M 52,92 V 76 Q 52,70 56,70 Q 60,70 60,76 V 92 Z"
-          fill="#4a2d10"/>
-    <!-- Slit windows -->
-    <rect x="38" y="100" width="3" height="10" fill="#4a2d10"/>
-    <rect x="71" y="100" width="3" height="10" fill="#4a2d10"/>
-
-    <!-- Flag pole + Polish flag (white top, red bottom) -->
-    <line x1="56" y1="42" x2="56" y2="14" stroke="#2a1806" stroke-width="2"/>
-    <rect x="56" y="14" width="26" height="7"
-          fill="#ffffff" stroke="#4a2d10" stroke-width="0.9"/>
-    <rect x="56" y="21" width="26" height="7"
-          fill="#d4202a" stroke="#4a2d10" stroke-width="0.9"/>
-
-    <!-- Stone-masonry pattern on keep (brick courses, offset per row) -->
-    <g stroke="#4a2d10" stroke-width="0.6" opacity="0.55" fill="none">
-      <!-- horizontal courses -->
-      <line x1="30" y1="64"  x2="82" y2="64"/>
-      <line x1="30" y1="76"  x2="82" y2="76"/>
-      <line x1="30" y1="88"  x2="82" y2="88"/>
-      <line x1="30" y1="100" x2="82" y2="100"/>
-      <line x1="30" y1="112" x2="82" y2="112"/>
-      <line x1="30" y1="124" x2="82" y2="124"/>
-      <line x1="30" y1="136" x2="82" y2="136"/>
-      <line x1="30" y1="148" x2="82" y2="148"/>
-      <!-- row 1 verticals -->
-      <line x1="43" y1="52" x2="43" y2="64"/>
-      <line x1="56" y1="52" x2="56" y2="64"/>
-      <line x1="69" y1="52" x2="69" y2="64"/>
-      <!-- row 2 (offset) -->
-      <line x1="36" y1="64" x2="36" y2="76"/>
-      <line x1="49" y1="64" x2="49" y2="76"/>
-      <line x1="62" y1="64" x2="62" y2="76"/>
-      <line x1="75" y1="64" x2="75" y2="76"/>
-      <!-- row 3 -->
-      <line x1="43" y1="76" x2="43" y2="88"/>
-      <line x1="56" y1="76" x2="56" y2="88"/>
-      <line x1="69" y1="76" x2="69" y2="88"/>
-      <!-- row 4 -->
-      <line x1="36" y1="88" x2="36" y2="100"/>
-      <line x1="49" y1="88" x2="49" y2="100"/>
-      <line x1="62" y1="88" x2="62" y2="100"/>
-      <line x1="75" y1="88" x2="75" y2="100"/>
-      <!-- row 5 -->
-      <line x1="43" y1="100" x2="43" y2="112"/>
-      <line x1="69" y1="100" x2="69" y2="112"/>
-      <!-- row 6 -->
-      <line x1="36" y1="112" x2="36" y2="124"/>
-      <line x1="49" y1="112" x2="49" y2="124"/>
-      <line x1="62" y1="112" x2="62" y2="124"/>
-      <line x1="75" y1="112" x2="75" y2="124"/>
-      <!-- row 7 (around door) -->
-      <line x1="43" y1="124" x2="43" y2="136"/>
-      <line x1="69" y1="124" x2="69" y2="136"/>
-      <!-- row 8 -->
-      <line x1="36" y1="136" x2="36" y2="148"/>
-      <line x1="75" y1="136" x2="75" y2="148"/>
-    </g>
-
-    <!-- Stone-masonry pattern on curtain wall -->
-    <g stroke="#4a2d10" stroke-width="0.5" opacity="0.5" fill="none">
-      <line x1="88" y1="116" x2="150" y2="116"/>
-      <line x1="88" y1="128" x2="150" y2="128"/>
-      <line x1="88" y1="140" x2="150" y2="140"/>
-      <line x1="88" y1="152" x2="150" y2="152"/>
-      <line x1="98" y1="104" x2="98" y2="116"/>
-      <line x1="114" y1="104" x2="114" y2="116"/>
-      <line x1="134" y1="104" x2="134" y2="116"/>
-      <line x1="94" y1="116" x2="94" y2="128"/>
-      <line x1="106" y1="116" x2="106" y2="128"/>
-      <line x1="140" y1="116" x2="140" y2="128"/>
-      <line x1="100" y1="128" x2="100" y2="140"/>
-      <line x1="132" y1="128" x2="132" y2="140"/>
-      <line x1="144" y1="128" x2="144" y2="140"/>
-      <line x1="94" y1="140" x2="94" y2="152"/>
-      <line x1="106" y1="140" x2="106" y2="152"/>
-      <line x1="140" y1="140" x2="140" y2="152"/>
-    </g>
-  </symbol>
-
-  <!-- Cozy cottage (house + red roof + chimney with curling smoke) -->
+  <!-- Cottage icon (used everywhere the cottages sit on the path) -->
   <symbol id="cottageHouse" viewBox="0 0 48 52">
     <!-- Smoke curl -->
     <path d="M 34,10 q -4,-6 2,-10 q 6,-3 0,-10"
-          fill="none" stroke="#4a2d10" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
+          fill="none" stroke="#4a2d10" stroke-width="1.3" stroke-linecap="round" opacity="0.7"/>
     <!-- Chimney -->
     <rect x="32" y="10" width="6" height="12" fill="#4a2d10"/>
     <!-- Roof -->
-    <polygon points="6,24 24,6 42,24" fill="#a83a2a" stroke="#2a1806" stroke-width="1.5"/>
+    <polygon points="4,24 24,5 44,24" fill="#c72a28" stroke="#2a1806" stroke-width="1.6"/>
+    <!-- Roof tiles hint -->
+    <path d="M8,22 L20,11 M15,22 L27,10 M22,22 L33,10 M29,22 L40,11"
+          stroke="#2a1806" stroke-width="0.6" opacity="0.55"/>
     <!-- Walls -->
-    <rect x="10" y="24" width="28" height="22" fill="#f5dfa8" stroke="#2a1806" stroke-width="1.5"/>
+    <rect x="9" y="24" width="30" height="23" fill="#f1d9a1" stroke="#2a1806" stroke-width="1.6"/>
+    <!-- Timber cross beams -->
+    <path d="M9,24 L39,47 M39,24 L9,47" stroke="#2a1806" stroke-width="0.7" opacity="0.45"/>
     <!-- Window -->
-    <rect x="14" y="28" width="8" height="8" fill="#4a2d10" stroke="#4a2d10" stroke-width="0.6"/>
-    <line x1="18" y1="28" x2="18" y2="36" stroke="#f5dfa8" stroke-width="0.8"/>
-    <line x1="14" y1="32" x2="22" y2="32" stroke="#f5dfa8" stroke-width="0.8"/>
+    <rect x="13" y="28" width="9" height="9" fill="#2a1806"/>
+    <line x1="17.5" y1="28" x2="17.5" y2="37" stroke="#f1d9a1" stroke-width="0.8"/>
+    <line x1="13" y1="32.5" x2="22" y2="32.5" stroke="#f1d9a1" stroke-width="0.8"/>
     <!-- Door -->
-    <path d="M 28,46 V 32 Q 28,28 32,28 Q 36,28 36,32 V 46 Z" fill="#4a2d10"/>
+    <path d="M 28,47 V 32 Q 28,28 32,28 Q 36,28 36,32 V 47 Z" fill="#2a1806"/>
   </symbol>
 
-  <!-- Ornate compass rose -->
+  <!-- Ornate compass rose with Latin cardinal letters -->
   <symbol id="compass" viewBox="0 0 200 200">
     <circle cx="100" cy="100" r="92" fill="none" stroke="#4a2d10" stroke-width="2"/>
     <circle cx="100" cy="100" r="80" fill="none" stroke="#4a2d10" stroke-width="0.8" stroke-dasharray="3 3"/>
     <circle cx="100" cy="100" r="60" fill="none" stroke="#4a2d10" stroke-width="0.8"/>
     <circle cx="100" cy="100" r="8" fill="#4a2d10"/>
-    <!-- Tick marks around the outer ring, every 10 degrees -->
     <line x1="100.0" y1="14.0" x2="100.0" y2="8.0" stroke="#4a2d10" stroke-width="1.4"/>
       <line x1="114.9" y1="15.3" x2="116.0" y2="9.4" stroke="#4a2d10" stroke-width="0.8"/>
       <line x1="129.4" y1="19.2" x2="131.5" y2="13.5" stroke="#4a2d10" stroke-width="0.8"/>
@@ -298,361 +143,1000 @@
       <line x1="57.0" y1="25.5" x2="54.0" y2="20.3" stroke="#4a2d10" stroke-width="0.8"/>
       <line x1="70.6" y1="19.2" x2="68.5" y2="13.5" stroke="#4a2d10" stroke-width="0.8"/>
       <line x1="85.1" y1="15.3" x2="84.0" y2="9.4" stroke="#4a2d10" stroke-width="0.8"/>
-    <!-- 8-point star -->
-    <polygon points="100,8 108,92 100,88 92,92" fill="#f5dfa8" stroke="#4a2d10" stroke-width="1.4"/>
-    <polygon points="100,192 92,108 100,112 108,108" fill="#b3823a" stroke="#4a2d10" stroke-width="1.4"/>
-    <polygon points="8,100 92,92 88,100 92,108" fill="#f5dfa8" stroke="#4a2d10" stroke-width="1.4"/>
-    <polygon points="192,100 108,108 112,100 108,92" fill="#b3823a" stroke="#4a2d10" stroke-width="1.4"/>
-    <!-- Diagonal points -->
-    <polygon points="34,34 96,96 88,92 92,88" fill="#b3823a" stroke="#4a2d10" stroke-width="1"/>
-    <polygon points="166,34 104,96 108,88 112,92" fill="#f5dfa8" stroke="#4a2d10" stroke-width="1"/>
-    <polygon points="34,166 96,104 92,108 88,112" fill="#f5dfa8" stroke="#4a2d10" stroke-width="1"/>
-    <polygon points="166,166 104,104 112,108 108,112" fill="#b3823a" stroke="#4a2d10" stroke-width="1"/>
-    <!-- Cardinal text -->
-    <text x="100" y="30"  text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
-          font-size="18" fill="#2a1806">N</text>
-    <text x="100" y="178" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
-          font-size="18" fill="#2a1806">S</text>
-    <text x="24"  y="106" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
-          font-size="18" fill="#2a1806">W</text>
-    <text x="176" y="106" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
-          font-size="18" fill="#2a1806">E</text>
-    <!-- Decorative ring with a fleur-de-lis on N -->
-    <path d="M 100,10 Q 96,0 100,-6 Q 104,0 100,10 Z"
-          transform="translate(0,12)" fill="#2a1806"/>
+    <polygon points="100,8 108,92 100,88 92,92" fill="#f1d9a1" stroke="#4a2d10" stroke-width="1.4"/>
+    <polygon points="100,192 92,108 100,112 108,108" fill="#b28548" stroke="#4a2d10" stroke-width="1.4"/>
+    <polygon points="8,100 92,92 88,100 92,108" fill="#f1d9a1" stroke="#4a2d10" stroke-width="1.4"/>
+    <polygon points="192,100 108,108 112,100 108,92" fill="#b28548" stroke="#4a2d10" stroke-width="1.4"/>
+    <polygon points="34,34 96,96 88,92 92,88" fill="#b28548" stroke="#4a2d10" stroke-width="1"/>
+    <polygon points="166,34 104,96 108,88 112,92" fill="#f1d9a1" stroke="#4a2d10" stroke-width="1"/>
+    <polygon points="34,166 96,104 92,108 88,112" fill="#f1d9a1" stroke="#4a2d10" stroke-width="1"/>
+    <polygon points="166,166 104,104 112,108 108,112" fill="#b28548" stroke="#4a2d10" stroke-width="1"/>
+    <!-- Latin cardinals -->
+    <text x="100" y="26"  text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="15" fill="#2a1806">SEPTENTRIO</text>
+    <text x="100" y="183" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="15" fill="#2a1806">MERIDIES</text>
+    <text x="24"  y="104" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="12" fill="#2a1806">OCCIDENS</text>
+    <text x="176" y="104" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="14" fill="#2a1806">ORIENS</text>
   </symbol>
 
-  <!-- Sea-monster / fish flourish (decorative, for empty corners) -->
-  <symbol id="seaMonster" viewBox="0 0 140 60">
-    <path d="M 10,38 Q 30,10 65,22 Q 95,32 120,18 L 130,28 Q 110,40 85,36
-             Q 55,32 30,48 Q 20,50 10,38 Z"
-          fill="#b3823a" stroke="#4a2d10" stroke-width="1.5"/>
-    <circle cx="112" cy="24" r="2.5" fill="#2a1806"/>
-    <path d="M 22,38 L 10,48 L 18,40 L 10,30 Z" fill="#b3823a" stroke="#4a2d10" stroke-width="1.2"/>
-    <path d="M 70,30 q 2,-6 6,-4 M 82,26 q 3,-5 7,-2 M 58,32 q 2,-4 6,-2"
-          stroke="#4a2d10" stroke-width="0.8" fill="none"/>
+  <!-- Limestone rock outcrop (Skała Wapienna) -->
+  <symbol id="rockOutcrop" viewBox="0 0 80 60">
+    <path d="M 4,56 L 12,30 L 22,40 L 30,18 L 40,34 L 50,20 L 60,36 L 70,24 L 76,56 Z"
+          fill="#f1d9a1" stroke="#4a2d10" stroke-width="1.5"/>
+    <g stroke="#4a2d10" stroke-width="0.6" opacity="0.7" fill="none">
+      <line x1="14" y1="38" x2="10" y2="48"/>
+      <line x1="18" y1="42" x2="14" y2="52"/>
+      <line x1="32" y1="28" x2="28" y2="40"/>
+      <line x1="42" y1="38" x2="38" y2="50"/>
+      <line x1="52" y1="28" x2="48" y2="42"/>
+      <line x1="62" y1="40" x2="58" y2="52"/>
+      <line x1="71" y1="32" x2="68" y2="44"/>
+    </g>
+  </symbol>
+
+  <!-- River ink line (for tracing a river by <path> directly — this symbol
+       is unused; rivers are drawn inline.) -->
+
+  <!-- Stone medieval castle: cylindrical keep + curtain wall + Polish flag -->
+  <symbol id="castle" viewBox="0 0 170 200">
+    <!-- Rocky outcrop -->
+    <path d="M 0,200 L 8,168 L 22,180 L 30,155 L 46,170 L 60,150 L 78,168
+             L 96,140 L 112,162 L 130,150 L 148,172 L 160,155 L 170,180 L 170,200 Z"
+          fill="#f1d9a1" stroke="#4a2d10" stroke-width="1.6"/>
+    <g stroke="#4a2d10" stroke-width="0.7" opacity="0.7" fill="none">
+      <line x1="10" y1="178" x2="6" y2="190"/>
+      <line x1="34" y1="168" x2="28" y2="182"/>
+      <line x1="60" y1="158" x2="54" y2="176"/>
+      <line x1="88" y1="156" x2="82" y2="174"/>
+      <line x1="114" y1="170" x2="108" y2="186"/>
+      <line x1="142" y1="168" x2="136" y2="186"/>
+    </g>
+
+    <!-- Curtain wall -->
+    <rect x="92" y="116" width="68" height="44" fill="#f1d9a1"
+          stroke="#4a2d10" stroke-width="2"/>
+    <path d="M 92,116 V 108 H 99 V 116 M 106,116 V 108 H 113 V 116
+             M 120,116 V 108 H 127 V 116 M 134,116 V 108 H 141 V 116
+             M 148,116 V 108 H 155 V 116 M 158,116 V 108 H 160 V 116"
+          fill="none" stroke="#4a2d10" stroke-width="1.8"/>
+    <rect x="148" y="88" width="16" height="28" fill="#f1d9a1"
+          stroke="#4a2d10" stroke-width="1.8"/>
+    <polygon points="146,88 156,72 166,88" fill="#6b4218"
+             stroke="#4a2d10" stroke-width="1.4"/>
+    <path d="M 116,160 V 138 Q 116,128 124,128 Q 132,128 132,138 V 160 Z"
+          fill="#4a2d10"/>
+    <rect x="100" y="128" width="4" height="10" fill="#4a2d10"/>
+    <rect x="142" y="130" width="4" height="10" fill="#4a2d10"/>
+
+    <!-- Round keep -->
+    <rect x="30" y="48" width="56" height="112" fill="#f1d9a1"
+          stroke="#4a2d10" stroke-width="2.2"/>
+    <path d="M 30,52 Q 36,104 30,156" fill="none" stroke="#4a2d10" stroke-width="1" opacity="0.55"/>
+    <path d="M 86,52 Q 80,104 86,156" fill="none" stroke="#4a2d10" stroke-width="1" opacity="0.55"/>
+    <path d="M 30,48 V 38 H 37 V 48 M 44,48 V 38 H 51 V 48
+             M 58,48 V 38 H 65 V 48 M 72,48 V 38 H 79 V 48
+             M 84,48 V 38 H 86 V 48"
+          fill="none" stroke="#4a2d10" stroke-width="2"/>
+    <path d="M 50,160 V 132 Q 50,120 58,120 Q 66,120 66,132 V 160 Z"
+          fill="#4a2d10"/>
+    <path d="M 54,94 V 76 Q 54,68 58,68 Q 62,68 62,76 V 94 Z"
+          fill="#4a2d10"/>
+    <rect x="38" y="104" width="4" height="10" fill="#4a2d10"/>
+    <rect x="74" y="104" width="4" height="10" fill="#4a2d10"/>
+
+    <!-- Flag pole + Polish flag (white top, red bottom) -->
+    <line x1="58" y1="38" x2="58" y2="6" stroke="#2a1806" stroke-width="2"/>
+    <rect x="58" y="6" width="30" height="9"
+          fill="#ffffff" stroke="#4a2d10" stroke-width="1"/>
+    <rect x="58" y="15" width="30" height="9"
+          fill="#d4202a" stroke="#4a2d10" stroke-width="1"/>
+
+    <!-- Brick masonry on keep -->
+    <g stroke="#4a2d10" stroke-width="0.6" opacity="0.5" fill="none">
+      <line x1="30" y1="60" x2="86" y2="60"/>
+      <line x1="30" y1="72" x2="86" y2="72"/>
+      <line x1="30" y1="84" x2="86" y2="84"/>
+      <line x1="30" y1="96" x2="86" y2="96"/>
+      <line x1="30" y1="108" x2="86" y2="108"/>
+      <line x1="30" y1="120" x2="86" y2="120"/>
+      <line x1="30" y1="132" x2="86" y2="132"/>
+      <line x1="30" y1="144" x2="86" y2="144"/>
+      <line x1="44" y1="48" x2="44" y2="60"/>
+      <line x1="58" y1="48" x2="58" y2="60"/>
+      <line x1="72" y1="48" x2="72" y2="60"/>
+      <line x1="38" y1="60" x2="38" y2="72"/>
+      <line x1="52" y1="60" x2="52" y2="72"/>
+      <line x1="65" y1="60" x2="65" y2="72"/>
+      <line x1="78" y1="60" x2="78" y2="72"/>
+      <line x1="44" y1="72" x2="44" y2="84"/>
+      <line x1="58" y1="72" x2="58" y2="84"/>
+      <line x1="72" y1="72" x2="72" y2="84"/>
+      <line x1="38" y1="84" x2="38" y2="96"/>
+      <line x1="52" y1="84" x2="52" y2="96"/>
+      <line x1="65" y1="84" x2="65" y2="96"/>
+      <line x1="78" y1="84" x2="78" y2="96"/>
+      <line x1="44" y1="96" x2="44" y2="108"/>
+      <line x1="72" y1="96" x2="72" y2="108"/>
+      <line x1="38" y1="108" x2="38" y2="120"/>
+      <line x1="52" y1="108" x2="52" y2="120"/>
+      <line x1="65" y1="108" x2="65" y2="120"/>
+      <line x1="78" y1="108" x2="78" y2="120"/>
+      <line x1="44" y1="120" x2="44" y2="132"/>
+      <line x1="72" y1="120" x2="72" y2="132"/>
+      <line x1="38" y1="132" x2="38" y2="144"/>
+      <line x1="78" y1="132" x2="78" y2="144"/>
+    </g>
+    <g stroke="#4a2d10" stroke-width="0.5" opacity="0.45" fill="none">
+      <line x1="92" y1="128" x2="160" y2="128"/>
+      <line x1="92" y1="140" x2="160" y2="140"/>
+      <line x1="92" y1="152" x2="160" y2="152"/>
+      <line x1="106" y1="116" x2="106" y2="128"/>
+      <line x1="122" y1="116" x2="122" y2="128"/>
+      <line x1="140" y1="116" x2="140" y2="128"/>
+      <line x1="112" y1="128" x2="112" y2="140"/>
+      <line x1="134" y1="128" x2="134" y2="140"/>
+      <line x1="150" y1="128" x2="150" y2="140"/>
+      <line x1="100" y1="140" x2="100" y2="152"/>
+      <line x1="120" y1="140" x2="120" y2="152"/>
+      <line x1="140" y1="140" x2="140" y2="152"/>
+    </g>
   </symbol>
 
   </defs>
 
-  <!-- ============== Parchment frame ============== -->
-  <path d="M28.0,28.0 L58.7,15.4 L76.1,29.3 L107.3,28.3 L170.1,12.5 L208.8,39.8 L251.5,32.6 L312.5,24.3 L304.6,40.9 L349.6,14.2 L435.2,16.5 L462.1,23.4 L458.3,12.1 L537.2,25.4 L569.7,26.3 L620.1,35.2 L657.7,28.9 L708.0,20.4 L704.4,25.1 L730.7,27.6 L811.8,37.5 L865.7,21.3 L882.2,30.9 L936.3,44.0 L968.6,12.2 L1008.5,45.8 L1021.7,23.9 L1034.1,26.6 L1090.5,12.1 L1122.3,18.9 L1207.9,12.9 L1234.0,41.8 L1284.0,20.0 L1302.2,41.8 L1313.5,16.3 L1364.3,27.5 L1401.3,10.1 L1457.2,30.4 L1508.9,28.6 L1552.3,11.9 L1572.0,28.0 L1558.5,84.9 L1575.6,91.4 L1587.8,139.9 L1584.2,164.0 L1590.0,191.2 L1576.9,229.1 L1567.9,305.0 L1577.5,319.0 L1559.4,363.8 L1572.6,399.5 L1577.7,424.6 L1584.2,491.1 L1571.0,537.3 L1589.0,564.4 L1558.9,625.8 L1576.8,620.5 L1570.8,694.3 L1582.0,712.8 L1559.3,780.8 L1563.4,799.8 L1577.2,820.2 L1579.9,840.5 L1555.6,912.8 L1554.4,972.3 L1582.1,969.7 L1582.6,1008.1 L1559.7,1075.5 L1561.2,1094.4 L1557.2,1146.9 L1572.0,1172.0 L1524.4,1172.8 L1470.9,1178.0 L1429.0,1175.7 L1396.6,1163.9 L1393.9,1184.6 L1314.9,1184.7 L1275.1,1166.3 L1269.9,1185.3 L1195.0,1166.6 L1151.8,1174.4 L1132.2,1182.4 L1119.9,1181.3 L1092.4,1174.9 L1007.1,1177.3 L989.4,1157.4 L928.0,1171.9 L915.5,1189.3 L890.8,1189.9 L854.3,1173.0 L796.1,1178.3 L765.9,1161.8 L723.5,1181.1 L666.2,1171.7 L630.7,1157.2 L599.8,1171.8 L555.8,1173.7 L527.2,1156.1 L472.8,1156.1 L442.1,1156.0 L437.6,1185.6 L410.3,1181.3 L318.4,1161.8 L316.3,1164.2 L272.3,1158.2 L240.4,1155.7 L176.5,1154.4 L164.4,1174.5 L118.8,1183.0 L51.8,1189.3 L28.0,1172.0 L10.7,1140.0 L28.4,1098.8 L38.4,1026.0 L19.6,1046.8 L19.7,976.0 L42.8,940.4 L15.4,907.7 L35.2,871.9 L34.8,850.5 L43.8,807.5 L13.0,731.6 L41.1,735.2 L29.9,675.1 L14.7,648.2 L13.9,618.7 L17.3,586.2 L37.3,536.9 L16.4,488.7 L19.0,479.2 L29.8,404.9 L43.6,380.2 L25.6,318.6 L24.2,279.5 L45.4,251.4 L35.4,200.7 L22.5,193.8 L12.5,154.5 L15.9,123.8 L41.3,47.1 L28.0,28.0 Z" fill="#2a1806" opacity="0.35"
-        transform="translate(6 10)" pointer-events="none"/>
-  <path d="M28.0,28.0 L58.7,15.4 L76.1,29.3 L107.3,28.3 L170.1,12.5 L208.8,39.8 L251.5,32.6 L312.5,24.3 L304.6,40.9 L349.6,14.2 L435.2,16.5 L462.1,23.4 L458.3,12.1 L537.2,25.4 L569.7,26.3 L620.1,35.2 L657.7,28.9 L708.0,20.4 L704.4,25.1 L730.7,27.6 L811.8,37.5 L865.7,21.3 L882.2,30.9 L936.3,44.0 L968.6,12.2 L1008.5,45.8 L1021.7,23.9 L1034.1,26.6 L1090.5,12.1 L1122.3,18.9 L1207.9,12.9 L1234.0,41.8 L1284.0,20.0 L1302.2,41.8 L1313.5,16.3 L1364.3,27.5 L1401.3,10.1 L1457.2,30.4 L1508.9,28.6 L1552.3,11.9 L1572.0,28.0 L1558.5,84.9 L1575.6,91.4 L1587.8,139.9 L1584.2,164.0 L1590.0,191.2 L1576.9,229.1 L1567.9,305.0 L1577.5,319.0 L1559.4,363.8 L1572.6,399.5 L1577.7,424.6 L1584.2,491.1 L1571.0,537.3 L1589.0,564.4 L1558.9,625.8 L1576.8,620.5 L1570.8,694.3 L1582.0,712.8 L1559.3,780.8 L1563.4,799.8 L1577.2,820.2 L1579.9,840.5 L1555.6,912.8 L1554.4,972.3 L1582.1,969.7 L1582.6,1008.1 L1559.7,1075.5 L1561.2,1094.4 L1557.2,1146.9 L1572.0,1172.0 L1524.4,1172.8 L1470.9,1178.0 L1429.0,1175.7 L1396.6,1163.9 L1393.9,1184.6 L1314.9,1184.7 L1275.1,1166.3 L1269.9,1185.3 L1195.0,1166.6 L1151.8,1174.4 L1132.2,1182.4 L1119.9,1181.3 L1092.4,1174.9 L1007.1,1177.3 L989.4,1157.4 L928.0,1171.9 L915.5,1189.3 L890.8,1189.9 L854.3,1173.0 L796.1,1178.3 L765.9,1161.8 L723.5,1181.1 L666.2,1171.7 L630.7,1157.2 L599.8,1171.8 L555.8,1173.7 L527.2,1156.1 L472.8,1156.1 L442.1,1156.0 L437.6,1185.6 L410.3,1181.3 L318.4,1161.8 L316.3,1164.2 L272.3,1158.2 L240.4,1155.7 L176.5,1154.4 L164.4,1174.5 L118.8,1183.0 L51.8,1189.3 L28.0,1172.0 L10.7,1140.0 L28.4,1098.8 L38.4,1026.0 L19.6,1046.8 L19.7,976.0 L42.8,940.4 L15.4,907.7 L35.2,871.9 L34.8,850.5 L43.8,807.5 L13.0,731.6 L41.1,735.2 L29.9,675.1 L14.7,648.2 L13.9,618.7 L17.3,586.2 L37.3,536.9 L16.4,488.7 L19.0,479.2 L29.8,404.9 L43.6,380.2 L25.6,318.6 L24.2,279.5 L45.4,251.4 L35.4,200.7 L22.5,193.8 L12.5,154.5 L15.9,123.8 L41.3,47.1 L28.0,28.0 Z" fill="url(#parchmentFill)" filter="url(#mapDrop)"/>
-  <path d="M28.0,28.0 L58.7,15.4 L76.1,29.3 L107.3,28.3 L170.1,12.5 L208.8,39.8 L251.5,32.6 L312.5,24.3 L304.6,40.9 L349.6,14.2 L435.2,16.5 L462.1,23.4 L458.3,12.1 L537.2,25.4 L569.7,26.3 L620.1,35.2 L657.7,28.9 L708.0,20.4 L704.4,25.1 L730.7,27.6 L811.8,37.5 L865.7,21.3 L882.2,30.9 L936.3,44.0 L968.6,12.2 L1008.5,45.8 L1021.7,23.9 L1034.1,26.6 L1090.5,12.1 L1122.3,18.9 L1207.9,12.9 L1234.0,41.8 L1284.0,20.0 L1302.2,41.8 L1313.5,16.3 L1364.3,27.5 L1401.3,10.1 L1457.2,30.4 L1508.9,28.6 L1552.3,11.9 L1572.0,28.0 L1558.5,84.9 L1575.6,91.4 L1587.8,139.9 L1584.2,164.0 L1590.0,191.2 L1576.9,229.1 L1567.9,305.0 L1577.5,319.0 L1559.4,363.8 L1572.6,399.5 L1577.7,424.6 L1584.2,491.1 L1571.0,537.3 L1589.0,564.4 L1558.9,625.8 L1576.8,620.5 L1570.8,694.3 L1582.0,712.8 L1559.3,780.8 L1563.4,799.8 L1577.2,820.2 L1579.9,840.5 L1555.6,912.8 L1554.4,972.3 L1582.1,969.7 L1582.6,1008.1 L1559.7,1075.5 L1561.2,1094.4 L1557.2,1146.9 L1572.0,1172.0 L1524.4,1172.8 L1470.9,1178.0 L1429.0,1175.7 L1396.6,1163.9 L1393.9,1184.6 L1314.9,1184.7 L1275.1,1166.3 L1269.9,1185.3 L1195.0,1166.6 L1151.8,1174.4 L1132.2,1182.4 L1119.9,1181.3 L1092.4,1174.9 L1007.1,1177.3 L989.4,1157.4 L928.0,1171.9 L915.5,1189.3 L890.8,1189.9 L854.3,1173.0 L796.1,1178.3 L765.9,1161.8 L723.5,1181.1 L666.2,1171.7 L630.7,1157.2 L599.8,1171.8 L555.8,1173.7 L527.2,1156.1 L472.8,1156.1 L442.1,1156.0 L437.6,1185.6 L410.3,1181.3 L318.4,1161.8 L316.3,1164.2 L272.3,1158.2 L240.4,1155.7 L176.5,1154.4 L164.4,1174.5 L118.8,1183.0 L51.8,1189.3 L28.0,1172.0 L10.7,1140.0 L28.4,1098.8 L38.4,1026.0 L19.6,1046.8 L19.7,976.0 L42.8,940.4 L15.4,907.7 L35.2,871.9 L34.8,850.5 L43.8,807.5 L13.0,731.6 L41.1,735.2 L29.9,675.1 L14.7,648.2 L13.9,618.7 L17.3,586.2 L37.3,536.9 L16.4,488.7 L19.0,479.2 L29.8,404.9 L43.6,380.2 L25.6,318.6 L24.2,279.5 L45.4,251.4 L35.4,200.7 L22.5,193.8 L12.5,154.5 L15.9,123.8 L41.3,47.1 L28.0,28.0 Z" fill="#b3823a" opacity="0.28" filter="url(#paperGrain)" pointer-events="none"/>
+  <!-- ========= Parchment frame with rolls ========= -->
+  <path d="M100,95 Q123.6,82.9 147.5,84.6 Q172.6,76.1 197.1,88.1 Q218.3,80.5 241.8,82.1 Q266.6,78.5 291.6,89.0 Q315.0,82.0 335.2,84.8 Q359.8,78.9 380.0,81.3 Q403.8,76.3 427.0,86.4 Q451.7,74.4 478.7,84.6 Q499.3,80.9 517.6,87.8 Q542.1,80.1 566.6,90.3 Q587.8,82.2 614.6,83.6 Q637.5,73.2 659.1,82.5 Q685.2,76.6 711.8,85.4 Q733.7,81.4 755.5,89.7 Q777.3,73.7 794.7,81.2 Q819.3,80.8 844.1,88.7 Q870.5,75.7 898.1,83.5 Q915.7,80.7 935.5,87.6 Q957.6,78.2 983.6,88.1 Q1006.2,80.6 1027.4,85.7 Q1053.3,76.2 1077.7,86.9 Q1103.1,77.7 1122.9,89.7 Q1144.9,75.5 1167.7,82.2 Q1197.9,72.8 1223.0,85.3 Q1244.1,78.6 1262.2,89.3 Q1285.5,77.7 1308.8,87.7 Q1332.5,78.1 1354.7,88.1 Q1377.3,83.8 1403.1,88.9 Q1427.8,78.9 1455.2,86.3 Q1478.0,85.1 1500.0,95.0 L1500,1105 Q1474.1,1118.0 1449.6,1118.5 Q1426.9,1124.2 1401.5,1118.3 Q1379.6,1121.8 1363.3,1114.8 Q1344.1,1122.1 1319.3,1115.9 Q1287.7,1128.9 1260.7,1118.4 Q1240.7,1129.9 1219.0,1118.2 Q1197.0,1124.8 1177.1,1110.6 Q1146.4,1115.9 1121.1,1109.4 Q1104.0,1121.3 1083.4,1117.0 Q1058.5,1120.7 1030.1,1110.3 Q1009.8,1118.3 985.1,1117.0 Q964.7,1122.9 942.9,1117.7 Q919.1,1128.2 898.9,1116.6 Q874.4,1123.5 850.7,1109.4 Q821.1,1123.3 794.1,1117.7 Q776.9,1124.0 754.8,1112.4 Q726.9,1121.8 702.2,1112.5 Q682.8,1123.7 658.1,1114.1 Q635.1,1119.8 612.7,1111.2 Q584.8,1121.3 561.7,1111.2 Q536.5,1116.4 515.5,1110.2 Q491.1,1115.6 472.3,1110.5 Q450.6,1120.3 430.3,1114.5 Q402.9,1122.4 379.5,1115.5 Q356.4,1117.2 330.2,1109.4 Q303.7,1119.1 281.6,1112.5 Q262.4,1123.4 238.3,1111.7 Q215.1,1119.3 191.0,1117.4 Q168.1,1127.4 140.8,1113.6 Q122.8,1117.5 100.0,1105.0 L100,95 Z" fill="url(#parchmentFill)" filter="url(#mapDrop)"/>
+  <path d="M100,95 Q123.6,82.9 147.5,84.6 Q172.6,76.1 197.1,88.1 Q218.3,80.5 241.8,82.1 Q266.6,78.5 291.6,89.0 Q315.0,82.0 335.2,84.8 Q359.8,78.9 380.0,81.3 Q403.8,76.3 427.0,86.4 Q451.7,74.4 478.7,84.6 Q499.3,80.9 517.6,87.8 Q542.1,80.1 566.6,90.3 Q587.8,82.2 614.6,83.6 Q637.5,73.2 659.1,82.5 Q685.2,76.6 711.8,85.4 Q733.7,81.4 755.5,89.7 Q777.3,73.7 794.7,81.2 Q819.3,80.8 844.1,88.7 Q870.5,75.7 898.1,83.5 Q915.7,80.7 935.5,87.6 Q957.6,78.2 983.6,88.1 Q1006.2,80.6 1027.4,85.7 Q1053.3,76.2 1077.7,86.9 Q1103.1,77.7 1122.9,89.7 Q1144.9,75.5 1167.7,82.2 Q1197.9,72.8 1223.0,85.3 Q1244.1,78.6 1262.2,89.3 Q1285.5,77.7 1308.8,87.7 Q1332.5,78.1 1354.7,88.1 Q1377.3,83.8 1403.1,88.9 Q1427.8,78.9 1455.2,86.3 Q1478.0,85.1 1500.0,95.0 L1500,1105 Q1474.1,1118.0 1449.6,1118.5 Q1426.9,1124.2 1401.5,1118.3 Q1379.6,1121.8 1363.3,1114.8 Q1344.1,1122.1 1319.3,1115.9 Q1287.7,1128.9 1260.7,1118.4 Q1240.7,1129.9 1219.0,1118.2 Q1197.0,1124.8 1177.1,1110.6 Q1146.4,1115.9 1121.1,1109.4 Q1104.0,1121.3 1083.4,1117.0 Q1058.5,1120.7 1030.1,1110.3 Q1009.8,1118.3 985.1,1117.0 Q964.7,1122.9 942.9,1117.7 Q919.1,1128.2 898.9,1116.6 Q874.4,1123.5 850.7,1109.4 Q821.1,1123.3 794.1,1117.7 Q776.9,1124.0 754.8,1112.4 Q726.9,1121.8 702.2,1112.5 Q682.8,1123.7 658.1,1114.1 Q635.1,1119.8 612.7,1111.2 Q584.8,1121.3 561.7,1111.2 Q536.5,1116.4 515.5,1110.2 Q491.1,1115.6 472.3,1110.5 Q450.6,1120.3 430.3,1114.5 Q402.9,1122.4 379.5,1115.5 Q356.4,1117.2 330.2,1109.4 Q303.7,1119.1 281.6,1112.5 Q262.4,1123.4 238.3,1111.7 Q215.1,1119.3 191.0,1117.4 Q168.1,1127.4 140.8,1113.6 Q122.8,1117.5 100.0,1105.0 L100,95 Z" fill="#b28548" opacity="0.25" filter="url(#paperGrain)" pointer-events="none"/>
 
-  <!-- Stains on the paper -->
+  <!-- Stains -->
   <g clip-path="url(#paperClip)" pointer-events="none">
-    <ellipse cx="517" cy="358" rx="32" ry="21" transform="rotate(28 517 358)" fill="#4a2d10" opacity="0.15"/>
-    <ellipse cx="492" cy="1034" rx="64" ry="23" transform="rotate(44 492 1034)" fill="#4a2d10" opacity="0.22"/>
-    <ellipse cx="552" cy="465" rx="18" ry="19" transform="rotate(85 552 465)" fill="#4a2d10" opacity="0.16"/>
-    <ellipse cx="411" cy="604" rx="18" ry="16" transform="rotate(16 411 604)" fill="#4a2d10" opacity="0.15"/>
-    <ellipse cx="204" cy="151" rx="32" ry="16" transform="rotate(105 204 151)" fill="#4a2d10" opacity="0.16"/>
-    <ellipse cx="1126" cy="748" rx="52" ry="31" transform="rotate(70 1126 748)" fill="#4a2d10" opacity="0.14"/>
-    <ellipse cx="1430" cy="270" rx="52" ry="25" transform="rotate(8 1430 270)" fill="#4a2d10" opacity="0.20"/>
-    <ellipse cx="1310" cy="720" rx="52" ry="29" transform="rotate(25 1310 720)" fill="#4a2d10" opacity="0.16"/>
-    <ellipse cx="806" cy="915" rx="56" ry="30" transform="rotate(105 806 915)" fill="#4a2d10" opacity="0.21"/>
-    <ellipse cx="1038" cy="782" rx="29" ry="11" transform="rotate(24 1038 782)" fill="#4a2d10" opacity="0.14"/>
-    <ellipse cx="286" cy="916" rx="44" ry="25" transform="rotate(113 286 916)" fill="#4a2d10" opacity="0.18"/>
-    <ellipse cx="786" cy="133" rx="55" ry="28" transform="rotate(91 786 133)" fill="#4a2d10" opacity="0.16"/>
-    <ellipse cx="1007" cy="192" rx="53" ry="16" transform="rotate(13 1007 192)" fill="#4a2d10" opacity="0.13"/>
-    <ellipse cx="1098" cy="323" rx="53" ry="33" transform="rotate(89 1098 323)" fill="#4a2d10" opacity="0.15"/>
-    <ellipse cx="773" cy="773" rx="54" ry="25" transform="rotate(116 773 773)" fill="#4a2d10" opacity="0.11"/>
-    <ellipse cx="342" cy="369" rx="53" ry="17" transform="rotate(102 342 369)" fill="#4a2d10" opacity="0.10"/>
-    <ellipse cx="229" cy="383" rx="50" ry="27" transform="rotate(122 229 383)" fill="#4a2d10" opacity="0.13"/>
-    <ellipse cx="821" cy="567" rx="40" ry="13" transform="rotate(161 821 567)" fill="#4a2d10" opacity="0.12"/>
-    <ellipse cx="1422" cy="1010" rx="19" ry="21" transform="rotate(148 1422 1010)" fill="#4a2d10" opacity="0.22"/>
-    <ellipse cx="734" cy="383" rx="28" ry="33" transform="rotate(38 734 383)" fill="#4a2d10" opacity="0.17"/>
+    <ellipse cx="910" cy="929" rx="27" ry="23" transform="rotate(134 910 929)" fill="#4a2d10" opacity="0.07"/>
+    <ellipse cx="1191" cy="998" rx="39" ry="19" transform="rotate(151 1191 998)" fill="#4a2d10" opacity="0.11"/>
+    <ellipse cx="675" cy="1002" rx="59" ry="17" transform="rotate(43 675 1002)" fill="#4a2d10" opacity="0.09"/>
+    <ellipse cx="723" cy="1038" rx="60" ry="30" transform="rotate(147 723 1038)" fill="#4a2d10" opacity="0.14"/>
+    <ellipse cx="264" cy="616" rx="68" ry="31" transform="rotate(45 264 616)" fill="#4a2d10" opacity="0.10"/>
+    <ellipse cx="959" cy="477" rx="47" ry="12" transform="rotate(78 959 477)" fill="#4a2d10" opacity="0.11"/>
+    <ellipse cx="225" cy="272" rx="68" ry="27" transform="rotate(169 225 272)" fill="#4a2d10" opacity="0.12"/>
+    <ellipse cx="1171" cy="950" rx="64" ry="11" transform="rotate(115 1171 950)" fill="#4a2d10" opacity="0.08"/>
+    <ellipse cx="1014" cy="394" rx="47" ry="30" transform="rotate(112 1014 394)" fill="#4a2d10" opacity="0.08"/>
+    <ellipse cx="824" cy="540" rx="68" ry="16" transform="rotate(55 824 540)" fill="#4a2d10" opacity="0.12"/>
+    <ellipse cx="344" cy="686" rx="68" ry="21" transform="rotate(48 344 686)" fill="#4a2d10" opacity="0.10"/>
+    <ellipse cx="841" cy="280" rx="26" ry="13" transform="rotate(53 841 280)" fill="#4a2d10" opacity="0.10"/>
+    <ellipse cx="546" cy="366" rx="24" ry="22" transform="rotate(151 546 366)" fill="#4a2d10" opacity="0.11"/>
+    <ellipse cx="884" cy="737" rx="30" ry="26" transform="rotate(83 884 737)" fill="#4a2d10" opacity="0.11"/>
+    <ellipse cx="935" cy="572" rx="36" ry="15" transform="rotate(40 935 572)" fill="#4a2d10" opacity="0.11"/>
+    <ellipse cx="660" cy="678" rx="21" ry="18" transform="rotate(155 660 678)" fill="#4a2d10" opacity="0.08"/>
+    <ellipse cx="868" cy="592" rx="34" ry="32" transform="rotate(53 868 592)" fill="#4a2d10" opacity="0.13"/>
+    <ellipse cx="390" cy="206" rx="64" ry="20" transform="rotate(11 390 206)" fill="#4a2d10" opacity="0.09"/>
+    <ellipse cx="728" cy="814" rx="25" ry="15" transform="rotate(173 728 814)" fill="#4a2d10" opacity="0.13"/>
+    <ellipse cx="385" cy="452" rx="38" ry="25" transform="rotate(111 385 452)" fill="#4a2d10" opacity="0.14"/>
+    <ellipse cx="1185" cy="616" rx="57" ry="26" transform="rotate(137 1185 616)" fill="#4a2d10" opacity="0.10"/>
+    <ellipse cx="1142" cy="790" rx="66" ry="13" transform="rotate(157 1142 790)" fill="#4a2d10" opacity="0.06"/>
   </g>
 
-  <!-- Double-ruled inner border -->
-  <rect x="92" y="92" width="1416" height="1016"
+  <!-- Ornate double-ruled inner border -->
+  <rect x="180" y="115" width="1240" height="970"
         fill="none" stroke="#4a2d10" stroke-width="3"/>
-  <rect x="106" y="106" width="1388" height="988"
-        fill="none" stroke="#4a2d10" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <rect x="192" y="127" width="1216" height="946"
+        fill="none" stroke="#4a2d10" stroke-width="0.8" stroke-dasharray="5 3"/>
 
-  <!-- Corner flourishes -->
-  
-    <g stroke="#4a2d10" stroke-width="1.3" fill="none" opacity="0.85">
-      <path d="M 108,108 q 20,6 36,22 q 6,10 6,22"/>
-      <path d="M 108,108 q 6,20 22,36 q 10,6 22,6"/>
-      <circle cx="136" cy="136" r="2.5" fill="#4a2d10"/>
-    </g>
-  
-    <g stroke="#4a2d10" stroke-width="1.3" fill="none" opacity="0.85">
-      <path d="M 1492,108 q -20,6 -36,22 q -6,10 -6,22"/>
-      <path d="M 1492,108 q -6,20 -22,36 q -10,6 -22,6"/>
-      <circle cx="1464" cy="136" r="2.5" fill="#4a2d10"/>
-    </g>
-  
-    <g stroke="#4a2d10" stroke-width="1.3" fill="none" opacity="0.85">
-      <path d="M 108,1092 q 20,-6 36,-22 q 6,-10 6,-22"/>
-      <path d="M 108,1092 q 6,-20 22,-36 q 10,-6 22,-6"/>
-      <circle cx="136" cy="1064" r="2.5" fill="#4a2d10"/>
-    </g>
-  
-    <g stroke="#4a2d10" stroke-width="1.3" fill="none" opacity="0.85">
-      <path d="M 1492,1092 q -20,-6 -36,-22 q -6,-10 -6,-22"/>
-      <path d="M 1492,1092 q -6,-20 -22,-36 q -10,-6 -22,-6"/>
-      <circle cx="1464" cy="1064" r="2.5" fill="#4a2d10"/>
-    </g>
-
-  <!-- ============== Map content ============== -->
-  <!-- Mountains (rear) -->
-  <g id="mountains">
-    <use href="#mountain" x="510" y="394" width="420" height="153"/>
-    <use href="#mountain" x="930" y="548" width="340" height="124"/>
-    <use href="#mountain" x="250" y="645" width="300" height="109"/>
-    <use href="#mountain" x="680" y="755" width="360" height="131"/>
+  <!-- Latin title banner at the top of the paper -->
+  <g transform="translate(800,143)">
+    <rect x="-520" y="-22" width="1040" height="42" fill="#f1d9a1"
+          stroke="#4a2d10" stroke-width="2" rx="4"/>
+    <rect x="-512" y="-14" width="1024" height="26" fill="none"
+          stroke="#4a2d10" stroke-width="0.8" stroke-dasharray="3 3"/>
+    <text x="0" y="6" text-anchor="middle"
+          font-family="Georgia, serif" font-weight="bold" font-style="italic"
+          font-size="22" fill="#2a1806">TERRAE REGIO IURAE KRAKOWIENSI-CZESTOCHOWIENSI · MMXXVI</text>
   </g>
 
-  <!-- Pine/fir forest clusters (in front of mountains) -->
-  <g id="forest" opacity="0.92">
-    <use href="#pine" x="362" y="315" width="34" height="49"/>
-    <use href="#pine2" x="406" y="337" width="34" height="49"/>
-    <use href="#pine" x="415" y="365" width="26" height="37"/>
-    <use href="#pine" x="434" y="330" width="30" height="43"/>
-    <use href="#pine" x="485" y="318" width="26" height="37"/>
-    <use href="#pine2" x="682" y="354" width="34" height="49"/>
-    <use href="#pine2" x="624" y="362" width="30" height="43"/>
-    <use href="#pine2" x="673" y="362" width="34" height="49"/>
-    <use href="#pine2" x="594" y="316" width="34" height="49"/>
-    <use href="#pine2" x="673" y="345" width="26" height="37"/>
-    <use href="#pine2" x="680" y="342" width="26" height="37"/>
-    <use href="#pine2" x="1170" y="473" width="26" height="37"/>
-    <use href="#pine2" x="1168" y="487" width="30" height="43"/>
-    <use href="#pine2" x="1218" y="478" width="34" height="49"/>
-    <use href="#pine" x="1205" y="458" width="34" height="49"/>
-    <use href="#pine" x="1203" y="466" width="30" height="43"/>
-    <use href="#pine2" x="1197" y="446" width="34" height="49"/>
-    <use href="#pine" x="281" y="546" width="34" height="49"/>
-    <use href="#pine2" x="334" y="533" width="26" height="37"/>
-    <use href="#pine2" x="377" y="514" width="34" height="49"/>
-    <use href="#pine" x="251" y="550" width="30" height="43"/>
-    <use href="#pine" x="302" y="510" width="34" height="49"/>
-    <use href="#pine" x="434" y="781" width="34" height="49"/>
-    <use href="#pine2" x="456" y="764" width="34" height="49"/>
-    <use href="#pine" x="438" y="808" width="26" height="37"/>
-    <use href="#pine2" x="421" y="789" width="34" height="49"/>
-    <use href="#pine2" x="515" y="804" width="30" height="43"/>
-    <use href="#pine2" x="444" y="777" width="30" height="43"/>
-    <use href="#pine2" x="986" y="674" width="26" height="37"/>
-    <use href="#pine" x="934" y="656" width="34" height="49"/>
-    <use href="#pine" x="947" y="692" width="30" height="43"/>
-    <use href="#pine2" x="947" y="709" width="26" height="37"/>
-    <use href="#pine" x="976" y="705" width="30" height="43"/>
-    <use href="#pine" x="1207" y="745" width="26" height="37"/>
-    <use href="#pine2" x="1184" y="756" width="26" height="37"/>
-    <use href="#pine" x="1172" y="782" width="34" height="49"/>
-    <use href="#pine2" x="1245" y="761" width="26" height="37"/>
-    <use href="#pine" x="1209" y="768" width="30" height="43"/>
-    <use href="#pine" x="666" y="925" width="26" height="37"/>
-    <use href="#pine" x="635" y="987" width="34" height="49"/>
-    <use href="#pine" x="734" y="975" width="26" height="37"/>
-    <use href="#pine" x="656" y="989" width="34" height="49"/>
-    <use href="#pine2" x="686" y="975" width="34" height="49"/>
+  <!-- ========= Map content ========= -->
+
+  <!-- Rivers -->
+  <g id="rivers" pointer-events="none">
+    <path d="M 180,140 C 210,220 190,320 220,400 S 240,560 200,660 S 240,860 210,1080" fill="none" stroke="#6b4218" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 180,140 C 210,220 190,320 220,400 S 240,560 200,660 S 240,860 210,1080" fill="none" stroke="#5d8fb0"  stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+    <path d="M 1260,90 C 1240,180 1300,280 1280,370 S 1240,520 1280,640 S 1260,780 1300,900" fill="none" stroke="#6b4218" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 1260,90 C 1240,180 1300,280 1280,370 S 1240,520 1280,640 S 1260,780 1300,900" fill="none" stroke="#5d8fb0"  stroke-width="4" stroke-linecap="round" opacity="0.85"/>
   </g>
 
-  <!-- Sea-monster flourish tucked under the title cartouche on the right -->
-  <use href="#seaMonster" x="1250" y="470" width="140" height="56"/>
+  <!-- Rocky outcrops (limestone) -->
+  <g id="rocks">
+    <use href="#rockOutcrop" x="381.0" y="172.0" width="78" height="56"/>
+    <use href="#rockOutcrop" x="680.5" y="212.0" width="79" height="56"/>
+    <use href="#rockOutcrop" x="1054.5" y="147.5" width="91" height="65"/>
+    <use href="#rockOutcrop" x="140.5" y="704.5" width="99" height="71"/>
+    <use href="#rockOutcrop" x="714.5" y="957.5" width="91" height="65"/>
+    <use href="#rockOutcrop" x="1202.5" y="946.0" width="95" height="68"/>
+  </g>
 
   <!-- Castles -->
   <g id="castles">
     
-    <g transform="translate(145,160)">
-      <use href="#castle" width="150" height="160"/>
-      <text x="75" y="180" text-anchor="middle"
+    <g class="castle" transform="translate(140,325)">
+      <use href="#castle" width="160" height="190"/>
+      <text x="80" y="212" text-anchor="middle"
             font-family="Georgia, serif" font-style="italic" font-weight="bold"
             font-size="22" fill="#2a1806"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Ogrodzieniec</text>
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Rabsztyn</text>
+      <text x="80" y="232" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic"
+            font-size="14" fill="#6b4218"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="3" stroke-linejoin="round">castrum Rabsztyn</text>
     </g>
 
-    <g transform="translate(1245,280)">
-      <use href="#castle" width="150" height="160"/>
-      <text x="75" y="180" text-anchor="middle"
+    <g class="castle" transform="translate(1120,125)">
+      <use href="#castle" width="160" height="190"/>
+      <text x="80" y="212" text-anchor="middle"
             font-family="Georgia, serif" font-style="italic" font-weight="bold"
             font-size="22" fill="#2a1806"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Olsztyn</text>
-    </g>
-
-    <g transform="translate(145,750)">
-      <use href="#castle" width="150" height="160"/>
-      <text x="75" y="180" text-anchor="middle"
-            font-family="Georgia, serif" font-style="italic" font-weight="bold"
-            font-size="22" fill="#2a1806"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Mirów</text>
-    </g>
-
-    <g transform="translate(1245,750)">
-      <use href="#castle" width="150" height="160"/>
-      <text x="75" y="180" text-anchor="middle"
-            font-family="Georgia, serif" font-style="italic" font-weight="bold"
-            font-size="22" fill="#2a1806"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Bobolice</text>
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Olsztyn</text>
+      <text x="80" y="232" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic"
+            font-size="14" fill="#6b4218"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="3" stroke-linejoin="round">castrum Olsztyn</text>
     </g>
   </g>
 
-  <!-- Main winding trail (dashed red — treasure-map style) -->
-  <g id="paths" fill="none" stroke="#a83a2a" stroke-width="4.5"
-     stroke-linecap="round" stroke-dasharray="10 6" opacity="0.85">
-    <path d="M 280,360 C 360,360 440,520 540,560 S 720,580 820,560 S 1000,580 1120,620 S 1240,720 1180,820 S 960,900 780,870 S 560,880 460,820"/>
+  <!-- The winding trail — drawn as a broad dirt road in three strokes -->
+  <g id="road" fill="none" stroke-linecap="round">
+    <path d="M250.0,260.0 C340.0,220.0 430.0,220.0 520.0,300.0 C610.0,380.0 640.0,460.0 560.0,520.0 C470.0,580.0 350.0,540.0 280.0,480.0 C220.0,420.0 220.0,560.0 280.0,640.0 C340.0,720.0 440.0,760.0 560.0,740.0 C680.0,720.0 760.0,620.0 860.0,620.0 C960.0,620.0 1040.0,700.0 1100.0,800.0 C1180.0,900.0 1320.0,880.0 1360.0,760.0 C1400.0,640.0 1280.0,540.0 1160.0,520.0 C1040.0,500.0 940.0,440.0 820.0,440.0" stroke="#7d4e1c" stroke-width="30" opacity="0.85"/>
+    <path d="M250.0,260.0 C340.0,220.0 430.0,220.0 520.0,300.0 C610.0,380.0 640.0,460.0 560.0,520.0 C470.0,580.0 350.0,540.0 280.0,480.0 C220.0,420.0 220.0,560.0 280.0,640.0 C340.0,720.0 440.0,760.0 560.0,740.0 C680.0,720.0 760.0,620.0 860.0,620.0 C960.0,620.0 1040.0,700.0 1100.0,800.0 C1180.0,900.0 1320.0,880.0 1360.0,760.0 C1400.0,640.0 1280.0,540.0 1160.0,520.0 C1040.0,500.0 940.0,440.0 820.0,440.0" stroke="#d8ad66" stroke-width="22"/>
+    <path d="M250.0,260.0 C340.0,220.0 430.0,220.0 520.0,300.0 C610.0,380.0 640.0,460.0 560.0,520.0 C470.0,580.0 350.0,540.0 280.0,480.0 C220.0,420.0 220.0,560.0 280.0,640.0 C340.0,720.0 440.0,760.0 560.0,740.0 C680.0,720.0 760.0,620.0 860.0,620.0 C960.0,620.0 1040.0,700.0 1100.0,800.0 C1180.0,900.0 1320.0,880.0 1360.0,760.0 C1400.0,640.0 1280.0,540.0 1160.0,520.0 C1040.0,500.0 940.0,440.0 820.0,440.0" stroke="#4a2d10"       stroke-width="1.5" stroke-dasharray="7 7" opacity="0.55"/>
   </g>
-  <!-- Sub-branch paths from JS -->
-  <g id="branches" fill="none" stroke="#a83a2a" stroke-width="3"
-     stroke-linecap="round" stroke-dasharray="7 5" opacity="0.8"></g>
 
-  <!-- Static cottage icons + labels drawn right into the SVG so the layout is
-       identical across all viewers, including the cairosvg preview. -->
+  <!-- "VIA TORTA JURAE" label along the bottom-right curve -->
+  <g transform="translate(1020,860) rotate(8)">
+    <text text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-style="italic"
+          font-size="22" fill="#2a1806"
+          paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">VIA TORTA JURAE</text>
+  </g>
+
+  <!-- Dense forest scattered around the road -->
+  <g id="forest">
+    <use href="#pine2" x="969" y="215" width="30" height="43"/>
+    <use href="#pine" x="697" y="862" width="22" height="31"/>
+    <use href="#pine2" x="941" y="961" width="28" height="40"/>
+    <use href="#pine" x="882" y="495" width="24" height="34"/>
+    <use href="#pine2" x="1368" y="196" width="26" height="37"/>
+    <use href="#pine" x="1222" y="400" width="30" height="43"/>
+    <use href="#pine" x="552" y="849" width="28" height="40"/>
+    <use href="#pine" x="396" y="649" width="28" height="40"/>
+    <use href="#pine" x="845" y="210" width="26" height="37"/>
+    <use href="#pine" x="1007" y="520" width="26" height="37"/>
+    <use href="#pine2" x="558" y="651" width="30" height="43"/>
+    <use href="#pine" x="728" y="408" width="30" height="43"/>
+    <use href="#pine" x="1146" y="751" width="26" height="37"/>
+    <use href="#pine" x="474" y="643" width="28" height="40"/>
+    <use href="#pine" x="817" y="899" width="28" height="40"/>
+    <use href="#pine2" x="1068" y="403" width="24" height="34"/>
+    <use href="#pine" x="1373" y="257" width="26" height="37"/>
+    <use href="#pine2" x="686" y="799" width="28" height="40"/>
+    <use href="#pine2" x="361" y="571" width="28" height="40"/>
+    <use href="#pine" x="226" y="726" width="24" height="34"/>
+    <use href="#pine" x="1110" y="644" width="26" height="37"/>
+    <use href="#pine" x="1243" y="420" width="30" height="43"/>
+    <use href="#pine" x="884" y="544" width="26" height="37"/>
+    <use href="#pine" x="1201" y="958" width="28" height="40"/>
+    <use href="#pine" x="757" y="724" width="22" height="31"/>
+    <use href="#pine2" x="251" y="753" width="26" height="37"/>
+    <use href="#pine" x="965" y="999" width="28" height="40"/>
+    <use href="#pine" x="1178" y="395" width="30" height="43"/>
+    <use href="#pine2" x="247" y="806" width="30" height="43"/>
+    <use href="#pine2" x="653" y="896" width="28" height="40"/>
+    <use href="#pine2" x="845" y="904" width="30" height="43"/>
+    <use href="#pine" x="614" y="907" width="28" height="40"/>
+    <use href="#pine" x="1344" y="283" width="28" height="40"/>
+    <use href="#pine2" x="394" y="357" width="22" height="31"/>
+    <use href="#pine" x="806" y="681" width="26" height="37"/>
+    <use href="#pine2" x="1004" y="205" width="22" height="31"/>
+    <use href="#pine2" x="658" y="499" width="22" height="31"/>
+    <use href="#pine" x="433" y="296" width="24" height="34"/>
+    <use href="#pine" x="591" y="200" width="28" height="40"/>
+    <use href="#pine" x="924" y="280" width="30" height="43"/>
+    <use href="#pine2" x="483" y="449" width="30" height="43"/>
+    <use href="#pine" x="622" y="262" width="24" height="34"/>
+    <use href="#pine" x="1212" y="999" width="28" height="40"/>
+    <use href="#pine" x="745" y="566" width="28" height="40"/>
+    <use href="#pine2" x="819" y="278" width="30" height="43"/>
+    <use href="#pine2" x="840" y="179" width="26" height="37"/>
+    <use href="#pine2" x="819" y="985" width="30" height="43"/>
+    <use href="#pine" x="1232" y="751" width="22" height="31"/>
+    <use href="#pine" x="381" y="813" width="26" height="37"/>
+    <use href="#pine" x="827" y="819" width="26" height="37"/>
+    <use href="#pine2" x="1167" y="994" width="26" height="37"/>
+    <use href="#pine" x="455" y="598" width="24" height="34"/>
+    <use href="#pine2" x="611" y="181" width="26" height="37"/>
+    <use href="#pine2" x="1344" y="537" width="26" height="37"/>
+    <use href="#pine2" x="1341" y="465" width="28" height="40"/>
+    <use href="#pine2" x="447" y="351" width="24" height="34"/>
+    <use href="#pine2" x="417" y="330" width="26" height="37"/>
+    <use href="#pine2" x="939" y="923" width="24" height="34"/>
+    <use href="#pine" x="281" y="719" width="24" height="34"/>
+    <use href="#pine" x="1093" y="564" width="24" height="34"/>
+    <use href="#pine2" x="581" y="834" width="30" height="43"/>
+    <use href="#pine" x="1364" y="496" width="22" height="31"/>
+    <use href="#pine2" x="665" y="958" width="30" height="43"/>
+    <use href="#pine2" x="1063" y="304" width="22" height="31"/>
+    <use href="#pine" x="331" y="283" width="28" height="40"/>
+    <use href="#pine" x="357" y="862" width="22" height="31"/>
+    <use href="#pine" x="602" y="620" width="30" height="43"/>
+    <use href="#pine" x="819" y="950" width="26" height="37"/>
+    <use href="#pine2" x="708" y="900" width="22" height="31"/>
+    <use href="#pine2" x="486" y="409" width="22" height="31"/>
+    <use href="#pine" x="611" y="549" width="22" height="31"/>
+    <use href="#pine" x="890" y="927" width="24" height="34"/>
+    <use href="#pine2" x="688" y="934" width="30" height="43"/>
+    <use href="#pine2" x="816" y="172" width="26" height="37"/>
+    <use href="#pine2" x="180" y="833" width="30" height="43"/>
+    <use href="#pine2" x="1063" y="631" width="24" height="34"/>
+    <use href="#pine" x="576" y="599" width="24" height="34"/>
+    <use href="#pine" x="853" y="820" width="30" height="43"/>
+    <use href="#pine" x="1120" y="590" width="24" height="34"/>
+    <use href="#pine2" x="860" y="799" width="30" height="43"/>
+    <use href="#pine" x="804" y="748" width="22" height="31"/>
+    <use href="#pine" x="762" y="960" width="22" height="31"/>
+    <use href="#pine2" x="1031" y="903" width="24" height="34"/>
+    <use href="#pine" x="1325" y="376" width="28" height="40"/>
+    <use href="#pine" x="858" y="955" width="30" height="43"/>
+    <use href="#pine2" x="1135" y="922" width="22" height="31"/>
+    <use href="#pine2" x="367" y="768" width="22" height="31"/>
+    <use href="#pine" x="981" y="275" width="30" height="43"/>
+    <use href="#pine2" x="664" y="572" width="24" height="34"/>
+    <use href="#pine" x="1386" y="866" width="24" height="34"/>
+    <use href="#pine" x="416" y="427" width="26" height="37"/>
+    <use href="#pine" x="855" y="534" width="22" height="31"/>
+    <use href="#pine2" x="1141" y="985" width="22" height="31"/>
+    <use href="#pine" x="227" y="822" width="22" height="31"/>
+    <use href="#pine" x="1177" y="378" width="24" height="34"/>
+    <use href="#pine" x="871" y="749" width="30" height="43"/>
+    <use href="#pine" x="281" y="887" width="22" height="31"/>
+    <use href="#pine" x="732" y="446" width="24" height="34"/>
+    <use href="#pine" x="818" y="356" width="30" height="43"/>
+    <use href="#pine" x="310" y="292" width="28" height="40"/>
+    <use href="#pine" x="1102" y="400" width="30" height="43"/>
+    <use href="#pine" x="484" y="171" width="24" height="34"/>
+    <use href="#pine" x="783" y="869" width="22" height="31"/>
+    <use href="#pine" x="1014" y="989" width="30" height="43"/>
+    <use href="#pine" x="595" y="864" width="26" height="37"/>
+    <use href="#pine" x="670" y="450" width="28" height="40"/>
+    <use href="#pine2" x="262" y="785" width="28" height="40"/>
+    <use href="#pine" x="1239" y="726" width="26" height="37"/>
+    <use href="#pine" x="500" y="977" width="22" height="31"/>
+    <use href="#pine2" x="474" y="976" width="28" height="40"/>
+    <use href="#pine" x="420" y="583" width="30" height="43"/>
+    <use href="#pine" x="227" y="174" width="28" height="40"/>
+    <use href="#pine2" x="651" y="432" width="28" height="40"/>
+    <use href="#pine" x="1377" y="282" width="28" height="40"/>
+    <use href="#pine" x="231" y="868" width="24" height="34"/>
+    <use href="#pine" x="1266" y="691" width="24" height="34"/>
+    <use href="#pine" x="347" y="602" width="26" height="37"/>
+    <use href="#pine" x="459" y="184" width="24" height="34"/>
+    <use href="#pine" x="305" y="867" width="26" height="37"/>
+    <use href="#pine" x="856" y="687" width="30" height="43"/>
+    <use href="#pine" x="943" y="738" width="22" height="31"/>
+    <use href="#pine" x="772" y="156" width="30" height="43"/>
+    <use href="#pine" x="1076" y="371" width="26" height="37"/>
+    <use href="#pine" x="1069" y="334" width="22" height="31"/>
+    <use href="#pine" x="1079" y="984" width="28" height="40"/>
+    <use href="#pine" x="778" y="479" width="30" height="43"/>
+    <use href="#pine" x="1112" y="679" width="28" height="40"/>
+    <use href="#pine" x="356" y="371" width="28" height="40"/>
+    <use href="#pine" x="870" y="167" width="26" height="37"/>
+    <use href="#pine" x="1000" y="402" width="28" height="40"/>
+    <use href="#pine2" x="807" y="551" width="26" height="37"/>
+    <use href="#pine" x="748" y="260" width="22" height="31"/>
+    <use href="#pine" x="1268" y="327" width="24" height="34"/>
+    <use href="#pine" x="726" y="386" width="24" height="34"/>
+    <use href="#pine" x="435" y="652" width="24" height="34"/>
+    <use href="#pine" x="1176" y="586" width="30" height="43"/>
+    <use href="#pine" x="1257" y="751" width="30" height="43"/>
+    <use href="#pine" x="458" y="918" width="28" height="40"/>
+    <use href="#pine" x="182" y="576" width="24" height="34"/>
+    <use href="#pine" x="563" y="871" width="26" height="37"/>
+    <use href="#pine" x="178" y="793" width="28" height="40"/>
+    <use href="#pine" x="1275" y="400" width="30" height="43"/>
+    <use href="#pine" x="631" y="490" width="26" height="37"/>
+    <use href="#pine" x="615" y="517" width="30" height="43"/>
+    <use href="#pine" x="514" y="199" width="24" height="34"/>
+    <use href="#pine2" x="526" y="953" width="24" height="34"/>
+    <use href="#pine2" x="481" y="382" width="26" height="37"/>
+    <use href="#pine2" x="631" y="968" width="28" height="40"/>
+    <use href="#pine2" x="753" y="449" width="26" height="37"/>
+    <use href="#pine" x="541" y="786" width="24" height="34"/>
+    <use href="#pine2" x="1366" y="375" width="30" height="43"/>
+    <use href="#pine" x="858" y="493" width="24" height="34"/>
+    <use href="#pine2" x="383" y="297" width="22" height="31"/>
+    <use href="#pine" x="724" y="272" width="30" height="43"/>
+    <use href="#pine" x="592" y="231" width="30" height="43"/>
+    <use href="#pine" x="871" y="909" width="28" height="40"/>
+    <use href="#pine" x="680" y="599" width="30" height="43"/>
+    <use href="#pine" x="1230" y="340" width="26" height="37"/>
+    <use href="#pine2" x="507" y="366" width="28" height="40"/>
+    <use href="#pine2" x="667" y="538" width="22" height="31"/>
+    <use href="#pine" x="217" y="761" width="24" height="34"/>
+    <use href="#pine" x="893" y="157" width="26" height="37"/>
+    <use href="#pine" x="969" y="810" width="22" height="31"/>
+    <use href="#pine" x="648" y="344" width="30" height="43"/>
+    <use href="#pine" x="461" y="363" width="30" height="43"/>
+    <use href="#pine" x="553" y="177" width="24" height="34"/>
+    <use href="#pine" x="785" y="730" width="26" height="37"/>
+    <use href="#pine" x="690" y="377" width="24" height="34"/>
+    <use href="#pine2" x="992" y="944" width="24" height="34"/>
+    <use href="#pine" x="1009" y="323" width="28" height="40"/>
+    <use href="#pine" x="1360" y="421" width="26" height="37"/>
+    <use href="#pine2" x="1176" y="351" width="28" height="40"/>
+    <use href="#pine" x="448" y="804" width="24" height="34"/>
+    <use href="#pine" x="1315" y="438" width="24" height="34"/>
+    <use href="#pine2" x="383" y="159" width="26" height="37"/>
+    <use href="#pine" x="518" y="455" width="26" height="37"/>
+    <use href="#pine2" x="1345" y="265" width="22" height="31"/>
+    <use href="#pine" x="1352" y="331" width="28" height="40"/>
+    <use href="#pine" x="631" y="937" width="28" height="40"/>
+    <use href="#pine" x="414" y="469" width="22" height="31"/>
+    <use href="#pine" x="1299" y="375" width="26" height="37"/>
+    <use href="#pine2" x="1089" y="920" width="26" height="37"/>
+    <use href="#pine2" x="1296" y="697" width="24" height="34"/>
+    <use href="#pine" x="1330" y="180" width="22" height="31"/>
+    <use href="#pine2" x="651" y="373" width="22" height="31"/>
+    <use href="#pine" x="703" y="577" width="24" height="34"/>
+    <use href="#pine" x="1310" y="313" width="24" height="34"/>
+    <use href="#pine" x="419" y="798" width="24" height="34"/>
+    <use href="#pine2" x="576" y="993" width="22" height="31"/>
+    <use href="#pine2" x="1043" y="536" width="26" height="37"/>
+    <use href="#pine2" x="1091" y="878" width="24" height="34"/>
+    <use href="#pine2" x="661" y="1002" width="24" height="34"/>
+    <use href="#pine2" x="795" y="352" width="28" height="40"/>
+    <use href="#pine" x="1161" y="709" width="30" height="43"/>
+    <use href="#pine2" x="755" y="851" width="28" height="40"/>
+    <use href="#pine" x="1200" y="931" width="30" height="43"/>
+    <use href="#pine" x="324" y="321" width="22" height="31"/>
+    <use href="#pine" x="1312" y="473" width="26" height="37"/>
+    <use href="#pine2" x="492" y="815" width="30" height="43"/>
+    <use href="#pine" x="906" y="686" width="22" height="31"/>
+    <use href="#pine" x="445" y="473" width="22" height="31"/>
+    <use href="#pine" x="349" y="330" width="26" height="37"/>
+    <use href="#pine2" x="488" y="666" width="26" height="37"/>
+    <use href="#pine" x="974" y="332" width="22" height="31"/>
+    <use href="#pine2" x="1146" y="621" width="28" height="40"/>
+    <use href="#pine" x="675" y="394" width="30" height="43"/>
+    <use href="#pine2" x="552" y="967" width="26" height="37"/>
+    <use href="#pine" x="623" y="327" width="22" height="31"/>
+    <use href="#pine" x="183" y="921" width="28" height="40"/>
+    <use href="#pine2" x="739" y="295" width="26" height="37"/>
+    <use href="#pine2" x="193" y="622" width="30" height="43"/>
+    <use href="#pine2" x="628" y="584" width="28" height="40"/>
+    <use href="#pine2" x="357" y="400" width="22" height="31"/>
+    <use href="#pine" x="311" y="575" width="24" height="34"/>
+    <use href="#pine" x="764" y="199" width="30" height="43"/>
+    <use href="#pine" x="1135" y="344" width="28" height="40"/>
+    <use href="#pine2" x="672" y="879" width="22" height="31"/>
+    <use href="#pine" x="807" y="480" width="30" height="43"/>
+    <use href="#pine2" x="1062" y="921" width="24" height="34"/>
+    <use href="#pine2" x="723" y="531" width="24" height="34"/>
+    <use href="#pine2" x="207" y="684" width="24" height="34"/>
+    <use href="#pine" x="799" y="191" width="26" height="37"/>
+    <use href="#pine" x="1141" y="950" width="22" height="31"/>
+    <use href="#pine" x="790" y="938" width="26" height="37"/>
+    <use href="#pine" x="430" y="378" width="28" height="40"/>
+    <use href="#pine2" x="1007" y="919" width="24" height="34"/>
+    <use href="#pine" x="1242" y="628" width="26" height="37"/>
+    <use href="#pine2" x="1151" y="383" width="24" height="34"/>
+    <use href="#pine2" x="616" y="805" width="28" height="40"/>
+    <use href="#pine" x="891" y="719" width="28" height="40"/>
+    <use href="#pine" x="930" y="525" width="24" height="34"/>
+    <use href="#pine2" x="800" y="915" width="30" height="43"/>
+    <use href="#pine" x="337" y="348" width="28" height="40"/>
+    <use href="#pine2" x="974" y="175" width="26" height="37"/>
+    <use href="#pine" x="896" y="330" width="26" height="37"/>
+    <use href="#pine2" x="939" y="562" width="24" height="34"/>
+    <use href="#pine" x="189" y="702" width="30" height="43"/>
+    <use href="#pine2" x="965" y="534" width="26" height="37"/>
+    <use href="#pine2" x="674" y="362" width="22" height="31"/>
+    <use href="#pine" x="794" y="700" width="28" height="40"/>
+    <use href="#pine2" x="186" y="876" width="24" height="34"/>
+    <use href="#pine" x="585" y="792" width="28" height="40"/>
+    <use href="#pine" x="1026" y="877" width="24" height="34"/>
+    <use href="#pine" x="1045" y="383" width="26" height="37"/>
+    <use href="#pine" x="1139" y="601" width="26" height="37"/>
+    <use href="#pine" x="1086" y="961" width="24" height="34"/>
+    <use href="#pine" x="991" y="992" width="22" height="31"/>
+    <use href="#pine" x="710" y="772" width="26" height="37"/>
+    <use href="#pine2" x="600" y="280" width="22" height="31"/>
+    <use href="#pine" x="212" y="192" width="26" height="37"/>
+    <use href="#pine" x="622" y="854" width="22" height="31"/>
+    <use href="#pine" x="1177" y="914" width="26" height="37"/>
+    <use href="#pine2" x="1100" y="329" width="28" height="40"/>
+    <use href="#pine" x="1216" y="682" width="26" height="37"/>
+    <use href="#pine2" x="710" y="815" width="24" height="34"/>
+    <use href="#pine" x="1109" y="991" width="22" height="31"/>
+    <use href="#pine" x="779" y="837" width="22" height="31"/>
+    <use href="#pine" x="1029" y="579" width="28" height="40"/>
+    <use href="#pine2" x="276" y="826" width="26" height="37"/>
+    <use href="#pine" x="983" y="784" width="30" height="43"/>
+    <use href="#pine2" x="1259" y="362" width="22" height="31"/>
+    <use href="#pine" x="1376" y="831" width="28" height="40"/>
+    <use href="#pine" x="650" y="184" width="28" height="40"/>
+    <use href="#pine" x="662" y="826" width="30" height="43"/>
+    <use href="#pine" x="947" y="372" width="22" height="31"/>
+    <use href="#pine2" x="696" y="546" width="22" height="31"/>
+    <use href="#pine2" x="775" y="985" width="26" height="37"/>
+    <use href="#pine2" x="835" y="763" width="30" height="43"/>
+    <use href="#pine2" x="656" y="805" width="26" height="37"/>
+    <use href="#pine" x="691" y="752" width="24" height="34"/>
+    <use href="#pine2" x="445" y="839" width="24" height="34"/>
+    <use href="#pine" x="337" y="820" width="22" height="31"/>
+    <use href="#pine" x="845" y="261" width="28" height="40"/>
+    <use href="#pine" x="1194" y="458" width="26" height="37"/>
+    <use href="#pine2" x="181" y="772" width="24" height="34"/>
+    <use href="#pine2" x="543" y="561" width="30" height="43"/>
+    <use href="#pine" x="950" y="171" width="24" height="34"/>
+    <use href="#pine2" x="977" y="369" width="26" height="37"/>
+    <use href="#pine" x="823" y="784" width="30" height="43"/>
+    <use href="#pine" x="1348" y="219" width="28" height="40"/>
+    <use href="#pine" x="590" y="889" width="26" height="37"/>
+    <use href="#pine" x="930" y="691" width="24" height="34"/>
+    <use href="#pine2" x="992" y="547" width="24" height="34"/>
+    <use href="#pine" x="1166" y="646" width="26" height="37"/>
+    <use href="#pine" x="900" y="955" width="24" height="34"/>
+    <use href="#pine" x="1376" y="564" width="22" height="31"/>
+    <use href="#pine2" x="678" y="240" width="30" height="43"/>
+    <use href="#pine" x="182" y="736" width="28" height="40"/>
+    <use href="#pine" x="1056" y="364" width="24" height="34"/>
+    <use href="#pine" x="1047" y="882" width="28" height="40"/>
+    <use href="#pine" x="945" y="761" width="24" height="34"/>
+    <use href="#pine2" x="737" y="946" width="30" height="43"/>
+    <use href="#pine" x="714" y="735" width="22" height="31"/>
+    <use href="#pine" x="355" y="836" width="24" height="34"/>
+    <use href="#pine" x="912" y="920" width="24" height="34"/>
+    <use href="#pine" x="1166" y="892" width="28" height="40"/>
+    <use href="#pine" x="1316" y="358" width="22" height="31"/>
+    <use href="#pine" x="916" y="731" width="28" height="40"/>
+    <use href="#pine2" x="489" y="796" width="24" height="34"/>
+    <use href="#pine" x="1394" y="474" width="26" height="37"/>
+    <use href="#pine2" x="909" y="497" width="22" height="31"/>
+    <use href="#pine" x="897" y="798" width="30" height="43"/>
+    <use href="#pine" x="765" y="301" width="24" height="34"/>
+    <use href="#pine2" x="1006" y="170" width="22" height="31"/>
+    <use href="#pine2" x="567" y="927" width="22" height="31"/>
+    <use href="#pine" x="758" y="398" width="28" height="40"/>
+    <use href="#pine" x="623" y="1002" width="22" height="31"/>
+    <use href="#pine2" x="1373" y="173" width="22" height="31"/>
+    <use href="#pine2" x="1163" y="448" width="24" height="34"/>
+    <use href="#pine" x="1291" y="344" width="24" height="34"/>
+    <use href="#pine" x="874" y="274" width="26" height="37"/>
+    <use href="#pine2" x="1044" y="322" width="28" height="40"/>
+    <use href="#pine2" x="1241" y="383" width="26" height="37"/>
+    <use href="#pine" x="405" y="865" width="24" height="34"/>
+    <use href="#pine2" x="627" y="298" width="22" height="31"/>
+    <use href="#pine2" x="183" y="598" width="26" height="37"/>
+    <use href="#pine" x="323" y="762" width="28" height="40"/>
+    <use href="#pine2" x="481" y="848" width="30" height="43"/>
+    <use href="#pine" x="1035" y="245" width="24" height="34"/>
+    <use href="#pine2" x="670" y="270" width="30" height="43"/>
+  </g>
+
+  <!-- "SILVA IURAE" label tucked in the top forest -->
+  <g transform="translate(780,340)">
+    <text text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-style="italic"
+          font-size="24" fill="#2a1806"
+          paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">SILVA IURAE</text>
+  </g>
+
+  <!-- Static cottage pins drawn straight into the SVG (visible icon + label). -->
   <g id="cottages-static">
     
-    <g data-slug="fredek" class="cottage-pin" transform="translate(1204,670)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Fredek</text>
+    <g data-slug="fredek" class="cottage-pin" transform="translate(477,515)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Fredek</text>
     </g>
 
-    <g data-slug="iwo" class="cottage-pin" transform="translate(354,950)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Iwo</text>
+    <g data-slug="iwo" class="cottage-pin" transform="translate(280,638)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Iwo</text>
     </g>
 
-    <g data-slug="zamczysko" class="cottage-pin" transform="translate(784,570)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Góra Zamczysko</text>
+    <g data-slug="zamczysko" class="cottage-pin" transform="translate(1234,525)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Góra Zamczysko</text>
     </g>
 
-    <g data-slug="teodor" class="cottage-pin" transform="translate(804,420)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Teodor</text>
+    <g data-slug="teodor" class="cottage-pin" transform="translate(1292,798)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Teodor</text>
     </g>
 
-    <g data-slug="tupak" class="cottage-pin" transform="translate(1084,880)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Tupak</text>
+    <g data-slug="tupak" class="cottage-pin" transform="translate(1339,647)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Tupak</text>
     </g>
 
-    <g data-slug="elfka-z-duza-d" class="cottage-pin" transform="translate(574,650)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Elfka</text>
+    <g data-slug="elfka-z-duza-d" class="cottage-pin" transform="translate(582,404)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Elfka</text>
     </g>
 
-    <g data-slug="pazurek" class="cottage-pin" transform="translate(1034,560)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Pazurek</text>
+    <g data-slug="pazurek" class="cottage-pin" transform="translate(426,711)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Pazurek</text>
     </g>
 
-    <g data-slug="halinka" class="cottage-pin" transform="translate(1074,430)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Halinka</text>
+    <g data-slug="halinka" class="cottage-pin" transform="translate(212,490)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Halinka</text>
     </g>
 
-    <g data-slug="gwerda-filinek" class="cottage-pin" transform="translate(394,590)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Gwerda i Filinek</text>
+    <g data-slug="gwerda-filinek" class="cottage-pin" transform="translate(316,490)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Gwerda i Filinek</text>
     </g>
 
-    <g data-slug="straznik-zamku" class="cottage-pin" transform="translate(1014,260)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Strażnik Zamku</text>
+    <g data-slug="straznik-zamku" class="cottage-pin" transform="translate(1138,820)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Strażnik Zamku</text>
     </g>
 
-    <g data-slug="dwaj-bracia" class="cottage-pin" transform="translate(514,850)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Dwaj Bracia</text>
+    <g data-slug="dwaj-bracia" class="cottage-pin" transform="translate(494,268)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Dwaj Bracia</text>
     </g>
 
-    <g data-slug="czubata-myszka" class="cottage-pin" transform="translate(544,410)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Czubata i Myszka</text>
+    <g data-slug="czubata-myszka" class="cottage-pin" transform="translate(345,204)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Czubata i Myszka</text>
     </g>
 
-    <g data-slug="zielonowlosy" class="cottage-pin" transform="translate(384,430)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zielonowłosy</text>
+    <g data-slug="zielonowlosy" class="cottage-pin" transform="translate(917,428)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Zielonowłosy</text>
     </g>
 
-    <g data-slug="zaprasza" class="cottage-pin" transform="translate(744,690)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zaprasza</text>
+    <g data-slug="zaprasza" class="cottage-pin" transform="translate(1076,477)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Zaprasza</text>
     </g>
 
-    <g data-slug="samotny" class="cottage-pin" transform="translate(964,690)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Samotny Elf</text>
+    <g data-slug="samotny" class="cottage-pin" transform="translate(590,695)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Samotny Elf</text>
     </g>
 
-    <g data-slug="skalne-iglice" class="cottage-pin" transform="translate(1134,780)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Skalne Iglice</text>
+    <g data-slug="skalne-iglice" class="cottage-pin" transform="translate(736,619)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Skalne Iglice</text>
     </g>
 
-    <g data-slug="stary-elf" class="cottage-pin" transform="translate(704,870)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Stary Elf</text>
+    <g data-slug="stary-elf" class="cottage-pin" transform="translate(896,600)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="68" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Stary Elf</text>
     </g>
 
-    <g data-slug="straznik-lodu" class="cottage-pin" transform="translate(694,270)">
-      <use href="#cottageHouse" width="52" height="56"/>
-      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
-            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Strażnik Lodu</text>
+    <g data-slug="straznik-lodu" class="cottage-pin" transform="translate(1027,699)">
+      <use href="#cottageHouse" width="48" height="52"/>
+      <text x="24" y="-14" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="17" fill="#2a1806" class="cottage-label"
+            paint-order="stroke" stroke="#f1d9a1" stroke-width="4" stroke-linejoin="round">Strażnik Lodu</text>
     </g>
   </g>
 
-  <!-- Interactive hit layer populated by main.js (transparent overlay that
-       receives hover/click; the visible cottage icon is in cottages-static). -->
+  <!-- Interactive hit-circles: filled by main.js to receive click/hover. -->
   <g id="cottages"></g>
 
-  <!-- Compass rose (bottom-left, like classic treasure maps) -->
-  <g transform="translate(200,930)" filter="url(#softShadow)">
-    <use href="#compass" width="170" height="170"/>
+  <!-- Compass rose (bottom-right corner inside the inner border) -->
+  <g transform="translate(1250,905)" filter="url(#softShadow)">
+    <use href="#compass" width="160" height="160"/>
   </g>
 
-  <!-- Title cartouche (top-right) -->
-  <g transform="translate(960,140)" filter="url(#softShadow)">
-    <path d="M 0,0 H 440 Q 480,0 488,30 L 500,70 Q 508,100 476,108 H 12 Q -20,100 -12,70 L 0,30 Q 8,0 40,0"
-          fill="#f5dfa8" stroke="#4a2d10" stroke-width="2.2"/>
-    <path d="M 14,16 H 474 Q 486,30 490,60 L 480,90 H 20 L 10,60 Q 14,30 14,16 Z"
-          fill="none" stroke="#4a2d10" stroke-width="0.8" stroke-dasharray="3 3"/>
-    <text x="250" y="58" text-anchor="middle" font-family="Georgia, serif"
-          font-size="42" font-weight="bold" font-style="italic" fill="#2a1806">Chatynkowo</text>
-    <text x="250" y="90" text-anchor="middle" font-family="Georgia, serif"
-          font-size="17" font-style="italic" fill="#6b4218">~ mapa ukrytych chatynek Elfów ~</text>
+  <!-- In-map legend in the bottom-left corner -->
+  <g transform="translate(206,915)">
+    <rect x="0" y="0" width="250" height="140" fill="#f1d9a1" stroke="#4a2d10" stroke-width="1.8" opacity="0.9"/>
+    <rect x="6" y="6" width="238" height="128" fill="none" stroke="#4a2d10" stroke-width="0.6" stroke-dasharray="3 2"/>
+    <text x="125" y="24" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-style="italic" font-size="16" fill="#2a1806">Legenda</text>
+    <!-- cottage -->
+    <use href="#cottageHouse" x="16" y="34" width="28" height="30"/>
+    <text x="54" y="56" font-family="Georgia, serif" font-size="13" fill="#2a1806">Chatynka Elfa</text>
+    <!-- tree -->
+    <use href="#pine" x="20" y="70" width="18" height="26"/>
+    <text x="54" y="90" font-family="Georgia, serif" font-size="13" fill="#2a1806">Silva — bory i lasy</text>
+    <!-- road -->
+    <path d="M 20,110 L 46,110" stroke="#7d4e1c" stroke-width="8" stroke-linecap="round"/>
+    <path d="M 20,110 L 46,110" stroke="#d8ad66" stroke-width="5" stroke-linecap="round"/>
+    <text x="54" y="114" font-family="Georgia, serif" font-size="13" fill="#2a1806">Via Torta — kręta ścieżka</text>
+    <!-- river -->
+    <path d="M 18,130 Q 30,124 46,130" stroke="#5d8fb0" stroke-width="3" fill="none"/>
+    <text x="54" y="134" font-family="Georgia, serif" font-size="13" fill="#2a1806">Flumen — rzeka</text>
   </g>
 
-  <!-- Inner burnt vignette on top of everything (subtle), clipped to paper -->
-  <path d="M28.0,28.0 L58.7,15.4 L76.1,29.3 L107.3,28.3 L170.1,12.5 L208.8,39.8 L251.5,32.6 L312.5,24.3 L304.6,40.9 L349.6,14.2 L435.2,16.5 L462.1,23.4 L458.3,12.1 L537.2,25.4 L569.7,26.3 L620.1,35.2 L657.7,28.9 L708.0,20.4 L704.4,25.1 L730.7,27.6 L811.8,37.5 L865.7,21.3 L882.2,30.9 L936.3,44.0 L968.6,12.2 L1008.5,45.8 L1021.7,23.9 L1034.1,26.6 L1090.5,12.1 L1122.3,18.9 L1207.9,12.9 L1234.0,41.8 L1284.0,20.0 L1302.2,41.8 L1313.5,16.3 L1364.3,27.5 L1401.3,10.1 L1457.2,30.4 L1508.9,28.6 L1552.3,11.9 L1572.0,28.0 L1558.5,84.9 L1575.6,91.4 L1587.8,139.9 L1584.2,164.0 L1590.0,191.2 L1576.9,229.1 L1567.9,305.0 L1577.5,319.0 L1559.4,363.8 L1572.6,399.5 L1577.7,424.6 L1584.2,491.1 L1571.0,537.3 L1589.0,564.4 L1558.9,625.8 L1576.8,620.5 L1570.8,694.3 L1582.0,712.8 L1559.3,780.8 L1563.4,799.8 L1577.2,820.2 L1579.9,840.5 L1555.6,912.8 L1554.4,972.3 L1582.1,969.7 L1582.6,1008.1 L1559.7,1075.5 L1561.2,1094.4 L1557.2,1146.9 L1572.0,1172.0 L1524.4,1172.8 L1470.9,1178.0 L1429.0,1175.7 L1396.6,1163.9 L1393.9,1184.6 L1314.9,1184.7 L1275.1,1166.3 L1269.9,1185.3 L1195.0,1166.6 L1151.8,1174.4 L1132.2,1182.4 L1119.9,1181.3 L1092.4,1174.9 L1007.1,1177.3 L989.4,1157.4 L928.0,1171.9 L915.5,1189.3 L890.8,1189.9 L854.3,1173.0 L796.1,1178.3 L765.9,1161.8 L723.5,1181.1 L666.2,1171.7 L630.7,1157.2 L599.8,1171.8 L555.8,1173.7 L527.2,1156.1 L472.8,1156.1 L442.1,1156.0 L437.6,1185.6 L410.3,1181.3 L318.4,1161.8 L316.3,1164.2 L272.3,1158.2 L240.4,1155.7 L176.5,1154.4 L164.4,1174.5 L118.8,1183.0 L51.8,1189.3 L28.0,1172.0 L10.7,1140.0 L28.4,1098.8 L38.4,1026.0 L19.6,1046.8 L19.7,976.0 L42.8,940.4 L15.4,907.7 L35.2,871.9 L34.8,850.5 L43.8,807.5 L13.0,731.6 L41.1,735.2 L29.9,675.1 L14.7,648.2 L13.9,618.7 L17.3,586.2 L37.3,536.9 L16.4,488.7 L19.0,479.2 L29.8,404.9 L43.6,380.2 L25.6,318.6 L24.2,279.5 L45.4,251.4 L35.4,200.7 L22.5,193.8 L12.5,154.5 L15.9,123.8 L41.3,47.1 L28.0,28.0 Z" fill="url(#innerBurn)" pointer-events="none" opacity="0.85"/>
+  <!-- Scroll rolls (drawn last so they overlay the paper's left/right ends) -->
+
+  <g class="scroll-roll" aria-hidden="true">
+    <ellipse cx="110" cy="1161" rx="66" ry="10"
+             fill="#000" opacity="0.4"/>
+    <rect x="60" y="69" width="100" height="1062"
+          fill="url(#rollBodyGrad)" stroke="#2a1806" stroke-width="1"/>
+    <line x1="64" y1="79.0" x2="156" y2="79.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="93.0" x2="156" y2="93.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="107.0" x2="156" y2="107.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="121.0" x2="156" y2="121.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="135.0" x2="156" y2="135.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="149.0" x2="156" y2="149.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="163.0" x2="156" y2="163.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="177.0" x2="156" y2="177.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="191.0" x2="156" y2="191.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="205.0" x2="156" y2="205.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="219.0" x2="156" y2="219.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="233.0" x2="156" y2="233.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="247.0" x2="156" y2="247.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="261.0" x2="156" y2="261.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="275.0" x2="156" y2="275.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="289.0" x2="156" y2="289.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="303.0" x2="156" y2="303.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="317.0" x2="156" y2="317.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="331.0" x2="156" y2="331.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="345.0" x2="156" y2="345.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="359.0" x2="156" y2="359.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="373.0" x2="156" y2="373.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="387.0" x2="156" y2="387.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="401.0" x2="156" y2="401.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="415.0" x2="156" y2="415.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="429.0" x2="156" y2="429.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="443.0" x2="156" y2="443.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="457.0" x2="156" y2="457.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="471.0" x2="156" y2="471.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="485.0" x2="156" y2="485.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="499.0" x2="156" y2="499.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="513.0" x2="156" y2="513.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="527.0" x2="156" y2="527.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="541.0" x2="156" y2="541.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="555.0" x2="156" y2="555.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="569.0" x2="156" y2="569.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="583.0" x2="156" y2="583.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="597.0" x2="156" y2="597.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="611.0" x2="156" y2="611.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="625.0" x2="156" y2="625.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="639.0" x2="156" y2="639.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="653.0" x2="156" y2="653.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="667.0" x2="156" y2="667.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="681.0" x2="156" y2="681.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="695.0" x2="156" y2="695.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="709.0" x2="156" y2="709.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="723.0" x2="156" y2="723.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="737.0" x2="156" y2="737.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="751.0" x2="156" y2="751.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="765.0" x2="156" y2="765.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="779.0" x2="156" y2="779.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="793.0" x2="156" y2="793.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="807.0" x2="156" y2="807.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="821.0" x2="156" y2="821.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="835.0" x2="156" y2="835.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="849.0" x2="156" y2="849.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="863.0" x2="156" y2="863.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="877.0" x2="156" y2="877.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="891.0" x2="156" y2="891.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="905.0" x2="156" y2="905.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="919.0" x2="156" y2="919.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="933.0" x2="156" y2="933.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="947.0" x2="156" y2="947.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="961.0" x2="156" y2="961.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="975.0" x2="156" y2="975.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="989.0" x2="156" y2="989.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1003.0" x2="156" y2="1003.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1017.0" x2="156" y2="1017.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1031.0" x2="156" y2="1031.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1045.0" x2="156" y2="1045.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1059.0" x2="156" y2="1059.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1073.0" x2="156" y2="1073.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1087.0" x2="156" y2="1087.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1101.0" x2="156" y2="1101.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="64" y1="1115.0" x2="156" y2="1115.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <rect x="60" y="69" width="14" height="1062"
+          fill="url(#rollEdgeShadeL)" opacity="0.95"/>
+    <rect x="146" y="69" width="14" height="1062"
+          fill="url(#rollEdgeShadeR)" opacity="0.95"/>
+    
+    <ellipse cx="110" cy="69" rx="60" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <path d="M54,67
+             Q110,52 166,67"
+          fill="none" stroke="#f2d699" stroke-width="1.2" opacity="0.55"/>
+    <ellipse cx="110" cy="69" rx="54" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.4"/>
+    <ellipse cx="111" cy="69.5" rx="46" ry="12"
+             fill="#d4a36c" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="111.5" cy="69.5" rx="40" ry="9"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="112" cy="70" rx="34" ry="7"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="113" cy="70.5" rx="20" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
+    <ellipse cx="110" cy="1131" rx="60" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <path d="M54,1129
+             Q110,1114 166,1129"
+          fill="none" stroke="#f2d699" stroke-width="1.2" opacity="0.55"/>
+    <ellipse cx="110" cy="1131" rx="54" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.4"/>
+    <ellipse cx="111" cy="1131.5" rx="46" ry="12"
+             fill="#d4a36c" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="111.5" cy="1131.5" rx="40" ry="9"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="112" cy="1132" rx="34" ry="7"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="113" cy="1132.5" rx="20" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
+  </g>
+
+  <g class="scroll-roll" aria-hidden="true">
+    <ellipse cx="1490" cy="1161" rx="66" ry="10"
+             fill="#000" opacity="0.4"/>
+    <rect x="1440" y="69" width="100" height="1062"
+          fill="url(#rollBodyGrad)" stroke="#2a1806" stroke-width="1"/>
+    <line x1="1444" y1="79.0" x2="1536" y2="79.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="93.0" x2="1536" y2="93.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="107.0" x2="1536" y2="107.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="121.0" x2="1536" y2="121.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="135.0" x2="1536" y2="135.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="149.0" x2="1536" y2="149.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="163.0" x2="1536" y2="163.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="177.0" x2="1536" y2="177.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="191.0" x2="1536" y2="191.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="205.0" x2="1536" y2="205.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="219.0" x2="1536" y2="219.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="233.0" x2="1536" y2="233.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="247.0" x2="1536" y2="247.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="261.0" x2="1536" y2="261.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="275.0" x2="1536" y2="275.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="289.0" x2="1536" y2="289.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="303.0" x2="1536" y2="303.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="317.0" x2="1536" y2="317.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="331.0" x2="1536" y2="331.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="345.0" x2="1536" y2="345.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="359.0" x2="1536" y2="359.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="373.0" x2="1536" y2="373.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="387.0" x2="1536" y2="387.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="401.0" x2="1536" y2="401.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="415.0" x2="1536" y2="415.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="429.0" x2="1536" y2="429.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="443.0" x2="1536" y2="443.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="457.0" x2="1536" y2="457.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="471.0" x2="1536" y2="471.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="485.0" x2="1536" y2="485.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="499.0" x2="1536" y2="499.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="513.0" x2="1536" y2="513.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="527.0" x2="1536" y2="527.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="541.0" x2="1536" y2="541.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="555.0" x2="1536" y2="555.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="569.0" x2="1536" y2="569.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="583.0" x2="1536" y2="583.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="597.0" x2="1536" y2="597.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="611.0" x2="1536" y2="611.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="625.0" x2="1536" y2="625.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="639.0" x2="1536" y2="639.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="653.0" x2="1536" y2="653.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="667.0" x2="1536" y2="667.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="681.0" x2="1536" y2="681.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="695.0" x2="1536" y2="695.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="709.0" x2="1536" y2="709.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="723.0" x2="1536" y2="723.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="737.0" x2="1536" y2="737.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="751.0" x2="1536" y2="751.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="765.0" x2="1536" y2="765.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="779.0" x2="1536" y2="779.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="793.0" x2="1536" y2="793.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="807.0" x2="1536" y2="807.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="821.0" x2="1536" y2="821.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="835.0" x2="1536" y2="835.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="849.0" x2="1536" y2="849.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="863.0" x2="1536" y2="863.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="877.0" x2="1536" y2="877.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="891.0" x2="1536" y2="891.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="905.0" x2="1536" y2="905.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="919.0" x2="1536" y2="919.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="933.0" x2="1536" y2="933.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="947.0" x2="1536" y2="947.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="961.0" x2="1536" y2="961.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="975.0" x2="1536" y2="975.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="989.0" x2="1536" y2="989.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1003.0" x2="1536" y2="1003.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1017.0" x2="1536" y2="1017.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1031.0" x2="1536" y2="1031.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1045.0" x2="1536" y2="1045.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1059.0" x2="1536" y2="1059.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1073.0" x2="1536" y2="1073.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1087.0" x2="1536" y2="1087.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1101.0" x2="1536" y2="1101.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <line x1="1444" y1="1115.0" x2="1536" y2="1115.0" stroke="#2a1806" stroke-opacity="0.28" stroke-width="0.8"/>
+    <rect x="1440" y="69" width="14" height="1062"
+          fill="url(#rollEdgeShadeL)" opacity="0.95"/>
+    <rect x="1526" y="69" width="14" height="1062"
+          fill="url(#rollEdgeShadeR)" opacity="0.95"/>
+    
+    <ellipse cx="1490" cy="69" rx="60" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <path d="M1434,67
+             Q1490,52 1546,67"
+          fill="none" stroke="#f2d699" stroke-width="1.2" opacity="0.55"/>
+    <ellipse cx="1490" cy="69" rx="54" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.4"/>
+    <ellipse cx="1491" cy="69.5" rx="46" ry="12"
+             fill="#d4a36c" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="1491.5" cy="69.5" rx="40" ry="9"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="1492" cy="70" rx="34" ry="7"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="1493" cy="70.5" rx="20" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
+    <ellipse cx="1490" cy="1131" rx="60" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <path d="M1434,1129
+             Q1490,1114 1546,1129"
+          fill="none" stroke="#f2d699" stroke-width="1.2" opacity="0.55"/>
+    <ellipse cx="1490" cy="1131" rx="54" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.4"/>
+    <ellipse cx="1491" cy="1131.5" rx="46" ry="12"
+             fill="#d4a36c" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="1491.5" cy="1131.5" rx="40" ry="9"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="1492" cy="1132" rx="34" ry="7"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="1493" cy="1132.5" rx="20" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
+  </g>
 </svg>

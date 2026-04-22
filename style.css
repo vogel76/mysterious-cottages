@@ -209,10 +209,17 @@ a:hover { color: var(--ember); }
 /* ---------- Map ---------- */
 .section--map { padding-bottom: 2rem; }
 .map-wrapper {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 2rem;
-  align-items: start;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.map-hint {
+  max-width: 720px;
+  margin: 1.25rem auto 0;
+  text-align: center;
+  color: #e8d7a8;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  opacity: 0.85;
 }
 
 /* The scroll frame is baked into forest-map.svg itself (parchment body,
@@ -231,17 +238,32 @@ a:hover { color: var(--ember); }
   overflow: visible;
 }
 
-/* Hover/focus on the clickable cottage hit circle => highlight the static pin */
+/* Hover / focus / click on the clickable cottage hit-circle triggers a
+   visual reaction on the matching static pin group. */
 .map-stage .cottage-hit { cursor: pointer; }
 .map-stage .cottage-hit:focus { outline: none; }
+
 .map-stage .cottage-pin {
-  transition: transform .15s ease-out;
   transform-box: fill-box;
   transform-origin: center center;
+  transition: transform .22s cubic-bezier(.34, 1.56, .64, 1),
+              filter    .22s ease-out;
 }
 .map-stage .cottage-pin.is-hover {
-  transform: translateY(-4px) scale(1.08);
-  filter: drop-shadow(0 3px 6px rgba(42,24,6,.5));
+  transform: translateY(-4px) scale(1.1);
+  filter: drop-shadow(0 3px 6px rgba(42,24,6,.55));
+}
+.map-stage .cottage-pin.is-clicked {
+  transform: scale(3);
+  filter: drop-shadow(0 8px 14px rgba(42,24,6,.7));
+  transition: transform .42s cubic-bezier(.2, .8, .3, 1.25),
+              filter    .3s ease-out;
+}
+/* Give focus a visible ring for a11y (via the hit circle) */
+.map-stage .cottage-hit:focus-visible + .cottage-pin,
+.map-stage .cottage-pin:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 0 3px rgba(224,138,61,.85));
 }
 .map-stage .cottage-marker {
   cursor: pointer;
@@ -267,83 +289,7 @@ a:hover { color: var(--ember); }
   opacity: .95;
 }
 
-/* ---------- Scroll-styled legend (scroll bars top & bottom) ---------- */
-.scroll {
-  --bar-h: 28px;
-  --scroll-grad:
-    linear-gradient(180deg,
-      #2b1a0a 0%,
-      #6d4a14 12%,
-      #c79a4b 28%,
-      #f5ead1 48%,
-      #d4a55b 66%,
-      #8e6324 84%,
-      #2b1a0a 100%);
-  --scroll-stripes:
-    repeating-linear-gradient(90deg,
-      rgba(0,0,0,.16) 0 1px,
-      rgba(255,255,255,.05) 1px 2px,
-      transparent 2px 7px);
-  color: var(--ink);
-  filter: drop-shadow(0 12px 22px rgba(0,0,0,.45));
-  position: relative;
-}
-
-.scroll__bar {
-  position: relative;
-  height: var(--bar-h);
-  background: var(--scroll-stripes), var(--scroll-grad);
-  background-blend-mode: multiply, normal;
-  border-radius: 14px / calc(var(--bar-h) / 2);
-  box-shadow:
-    inset 0 2px 4px rgba(0,0,0,.35),
-    inset 0 -2px 4px rgba(0,0,0,.35);
-  z-index: 2;
-}
-.scroll__bar--top    { margin-bottom: -10px; }
-.scroll__bar--bottom { margin-top:    -10px; }
-
-.scroll__cap {
-  position: absolute; top: -6px; bottom: -6px;
-  width: 28px;
-  background:
-    radial-gradient(ellipse at 40% 50%,
-      #e6c98b 0%, #a87524 40%, #5a3a10 85%, #2b1a0a 100%);
-  border-radius: 50%;
-  box-shadow: 0 3px 6px rgba(0,0,0,.45), inset 2px 0 3px rgba(255,255,255,.25);
-}
-.scroll__cap--left  { left:  -12px; }
-.scroll__cap--right { right: -12px; }
-
-.scroll__body {
-  position: relative;
-  z-index: 1;
-  padding: 1.6rem 1.4rem;
-  background:
-    radial-gradient(ellipse at 50% 50%, #f6e8c2 0%, #e5cd94 68%, #b68c44 100%);
-  box-shadow:
-    inset 0 0 40px rgba(146,98,40,.35),
-    inset 0 0 120px rgba(70,42,10,.25);
-}
-
-.map-legend h3 {
-  font-family: 'Cinzel Decorative', serif;
-  color: var(--ink-soft); margin: 0 0 .75rem;
-  font-size: 1.15rem; text-align: center;
-}
-.map-legend ul { list-style: none; padding: 0; margin: 0 0 1rem; }
-.map-legend li { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
-.legend-dot {
-  width: 16px; height: 16px; border-radius: 4px; display: inline-block;
-  border: 1px solid var(--ink-soft);
-}
-.legend-dot--cottage { background: #b83a3a; border-radius: 50%; }
-.legend-dot--castle  { background: #3a3226; border-radius: 2px; }
-.legend-dot--path    {
-  background: repeating-linear-gradient(90deg, #8d6b3d 0 6px, transparent 6px 12px);
-  border: none; width: 30px;
-}
-.map-legend__hint { font-size: .95rem; color: var(--ink-soft); margin: 0; }
+/* Legend lives INSIDE the map SVG now; no HTML legend styles needed. */
 
 /* ---------- FAQ ---------- */
 .faq {

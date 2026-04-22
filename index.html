@@ -57,32 +57,13 @@
 
       <div class="map-wrapper" aria-label="Interaktywna baśniowa mapa Chatynkowa">
         <div class="map-stage" id="mapStage">
-          <!-- SVG (treasure-scroll frame) is loaded inline at runtime so we can
-               manipulate markers and paths. -->
+          <!-- Treasure-scroll SVG (with its own in-map legend + compass)
+               is loaded inline at runtime. -->
         </div>
-
-        <aside class="scroll map-legend">
-          <div class="scroll__bar scroll__bar--top" aria-hidden="true">
-            <span class="scroll__cap scroll__cap--left"></span>
-            <span class="scroll__cap scroll__cap--right"></span>
-          </div>
-          <div class="scroll__body">
-            <h3>Legenda</h3>
-            <ul>
-              <li><span class="legend-dot legend-dot--cottage"></span> Chatynka Elfa</li>
-              <li><span class="legend-dot legend-dot--castle"></span> Zamek: Ogrodzieniec, Olsztyn, Bobolice, Mirów</li>
-              <li><span class="legend-dot legend-dot--path"></span> Kamienna ścieżka z lasu</li>
-            </ul>
-            <p class="map-legend__hint">
-              Najedź na chatynkę, by zobaczyć nazwę. Kliknij, by otworzyć okno z opisem,
-              nawigacją i opowieścią Elfa.
-            </p>
-          </div>
-          <div class="scroll__bar scroll__bar--bottom" aria-hidden="true">
-            <span class="scroll__cap scroll__cap--left"></span>
-            <span class="scroll__cap scroll__cap--right"></span>
-          </div>
-        </aside>
+        <p class="map-hint">
+          Najedź na chatynkę, aby zobaczyć jej nazwę. Kliknij — chatynka powiększy się,
+          a&nbsp;po chwili otworzy się okno z&nbsp;opisem i&nbsp;nawigacją.
+        </p>
       </div>
     </section>
 

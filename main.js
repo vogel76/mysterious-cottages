@@ -27,11 +27,21 @@
   }
 
   /* ---------- Interactive cottage overlay ----------
-     The visible cottage icons + labels are drawn statically into forest-map.svg
-     (at mapX/mapY). This function layers a transparent clickable / focusable
-     circle on top of each one, so users can hover, click or keyboard-activate
-     the cottage to open its modal. It also wires a hover highlight class on
-     the static <g data-slug> groups for a visual response. */
+     Visible cottage icons + labels are rendered statically into forest-map.svg
+     at each cottage's mapX/mapY. This function layers a transparent clickable
+     hit-circle on top of each one, so users can hover, click or
+     keyboard-activate the cottage.
+
+     When a cottage is activated we:
+       1. Move its static group to the end of #cottages-static so it paints
+          on top of everything else (SVG has no z-index).
+       2. Add .is-clicked — CSS scales the group up (transform: scale(3))
+          with a soft spring transition.
+       3. After the zoom animation finishes, open the modal with the
+          cottage's description and driving directions.
+       4. When the modal closes, remove .is-clicked so the pin shrinks back. */
+  const ZOOM_DELAY_MS = 320;  // roughly matches the CSS transition
+
   function drawCottages() {
     if (!state.svgRoot) return;
     const svgNS = 'http://www.w3.org/2000/svg';
@@ -39,23 +49,21 @@
     if (!cottagesLayer) return;
     cottagesLayer.innerHTML = '';
 
+    const modal = document.getElementById('cottageModal');
+
     state.cottages.forEach((c) => {
       const x = Number(c.mapX);
       const y = Number(c.mapY);
       if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
-      // Find the matching static cottage group (if present) so we can toggle
-      // a hover class on it.
       const staticGroup = state.svgRoot.querySelector(
         `#cottages-static [data-slug="${c.slug}"]`
       );
 
-      // Transparent clickable hit area: a generous circle covering the icon
-      // and its label.
       const hit = document.createElementNS(svgNS, 'circle');
       hit.setAttribute('cx', String(x));
-      hit.setAttribute('cy', String(y + 18));  // cover icon + label
-      hit.setAttribute('r',  '54');
+      hit.setAttribute('cy', String(y + 10));
+      hit.setAttribute('r',  '46');
       hit.setAttribute('fill', 'transparent');
       hit.setAttribute('class', 'cottage-hit');
       hit.setAttribute('tabindex', '0');
@@ -63,7 +71,24 @@
       hit.setAttribute('aria-label', `${c.title}. Kliknij, aby otworzyć opis i nawigację.`);
       hit.dataset.slug = c.slug;
 
-      const activate = () => openCottageModal(c);
+      const activate = () => {
+        if (staticGroup) {
+          // Raise to top of layer
+          staticGroup.parentNode.appendChild(staticGroup);
+          staticGroup.classList.add('is-clicked');
+          staticGroup.classList.remove('is-hover');
+          setTimeout(() => openCottageModal(c), ZOOM_DELAY_MS);
+          // Clean up the zoom when the modal is closed for any reason.
+          const reset = () => {
+            staticGroup.classList.remove('is-clicked');
+            modal.removeEventListener('close', reset);
+          };
+          modal.addEventListener('close', reset);
+        } else {
+          openCottageModal(c);
+        }
+      };
+
       hit.addEventListener('click', activate);
       hit.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
