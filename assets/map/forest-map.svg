@@ -1,40 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="mapTitle mapDesc">
-  <title id="mapTitle">Baśniowa mapa Chatynkowa</title>
-  <desc id="mapDesc">Stylizowana mapa lasu ze ścieżkami prowadzącymi do chatynek Elfów oraz zarysami czterech pobliskich zamków: Ogrodzieniec, Olsztyn, Bobolice i Mirów.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid meet"
+     role="img" aria-labelledby="mapTitle mapDesc">
+  <title id="mapTitle">Baśniowa mapa-zwój Chatynkowa</title>
+  <desc id="mapDesc">Pergaminowy zwój w stylu piracko-baśniowym. Na rozwiniętej karcie zaznaczono leśne ścieżki, chatynki Elfów oraz zamki Ogrodzieniec, Olsztyn, Bobolice i Mirów.</desc>
 
   <defs>
-    <!-- Parchment-forest background -->
-    <radialGradient id="mapBg" cx="50%" cy="48%" r="70%">
-      <stop offset="0%"  stop-color="#f6edd1"/>
-      <stop offset="55%" stop-color="#e6d7a8"/>
-      <stop offset="100%" stop-color="#8e9b6b"/>
+    <!-- Aged parchment fill: warm cream at centre, burnt tan near the edges -->
+    <radialGradient id="parchmentFill" cx="50%" cy="50%" r="65%">
+      <stop offset="0%"   stop-color="#f7e1ab"/>
+      <stop offset="40%"  stop-color="#ebc787"/>
+      <stop offset="75%"  stop-color="#b3823a"/>
+      <stop offset="92%"  stop-color="#7a4f1f"/>
+      <stop offset="100%" stop-color="#3a2308"/>
     </radialGradient>
 
-    <linearGradient id="mistGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    <!-- Inner-edge burnt vignette: dark charred rim inside the paper -->
+    <radialGradient id="parchmentInnerBurn" cx="50%" cy="50%" r="58%">
+      <stop offset="55%"  stop-color="#000" stop-opacity="0"/>
+      <stop offset="85%"  stop-color="#3a2308" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#1a0e04" stop-opacity="0.85"/>
+    </radialGradient>
+
+    <!-- Cylinder body gradient (darker brown, suggests curvature) -->
+    <linearGradient id="rollBodyGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#3a2308"/>
+      <stop offset="20%"  stop-color="#7a4f1f"/>
+      <stop offset="45%"  stop-color="#d4a55b"/>
+      <stop offset="55%"  stop-color="#e6c98b"/>
+      <stop offset="78%"  stop-color="#9c6a28"/>
+      <stop offset="100%" stop-color="#2b1a0a"/>
     </linearGradient>
 
+    <linearGradient id="rollEdgeShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#1f1206" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#1f1206" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rollEdgeShadeR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#1f1206" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#1f1206" stop-opacity="0.85"/>
+    </linearGradient>
+
+    <radialGradient id="rollCapGrad" cx="45%" cy="45%" r="60%">
+      <stop offset="0%"   stop-color="#e8c789"/>
+      <stop offset="60%"  stop-color="#a07136"/>
+      <stop offset="100%" stop-color="#3a2308"/>
+    </radialGradient>
+
+    <!-- Existing map gradients/symbols/filters -->
+    <linearGradient id="mistGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
     <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"  stop-color="#fff6c8" stop-opacity="0.9"/>
-      <stop offset="60%" stop-color="#fff6c8" stop-opacity="0.25"/>
+      <stop offset="0%"   stop-color="#fff6c8" stop-opacity="0.9"/>
+      <stop offset="60%"  stop-color="#fff6c8" stop-opacity="0.25"/>
       <stop offset="100%" stop-color="#fff6c8" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- A stylised pine-tree symbol -->
     <symbol id="pine" viewBox="0 0 40 80">
       <polygon points="20,2 30,28 24,28 34,54 24,54 38,78 2,78 16,54 6,54 16,28 10,28" fill="#2f5138" stroke="#1d3321" stroke-width="1.2"/>
       <rect x="17" y="76" width="6" height="4" fill="#3a2a1a"/>
     </symbol>
-
-    <!-- Round-canopy oak -->
     <symbol id="oak" viewBox="0 0 50 60">
       <ellipse cx="25" cy="22" rx="24" ry="20" fill="#3a6b3e" stroke="#1f3f24" stroke-width="1.2"/>
       <rect x="22" y="40" width="6" height="18" fill="#3a2a1a"/>
     </symbol>
-
-    <!-- Mushroom decoration -->
     <symbol id="mushroom" viewBox="0 0 24 24">
       <ellipse cx="12" cy="10" rx="10" ry="7" fill="#b83a3a" stroke="#5a1a1a" stroke-width="1"/>
       <circle cx="7"  cy="9"  r="1.4" fill="#fff"/>
@@ -42,31 +72,22 @@
       <circle cx="16" cy="11" r="1.2" fill="#fff"/>
       <path d="M9 14 Q12 22 15 14 Z" fill="#f3e6c3" stroke="#5a1a1a" stroke-width="1"/>
     </symbol>
-
-    <!-- Castle silhouette (re-usable) -->
     <symbol id="castle" viewBox="0 0 160 120">
-      <!-- Rocky base -->
       <path d="M0,110 Q30,88 60,102 T120,96 Q148,106 160,112 L160,120 L0,120 Z" fill="#6d6256" stroke="#2c251b" stroke-width="1.6"/>
-      <!-- Main keep -->
       <rect x="60" y="40" width="40" height="70" fill="#3a3226" stroke="#140e06" stroke-width="2"/>
       <path d="M60,40 h40 l-4,-10 h-6 v8 h-6 v-8 h-8 v8 h-6 v-8 h-6 z" fill="#3a3226" stroke="#140e06" stroke-width="2"/>
-      <!-- Flanking towers -->
       <rect x="30" y="58" width="26" height="52" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
       <path d="M30,58 h26 l-4,-8 h-4 v6 h-4 v-6 h-6 v6 h-4 v-6 h-4 z" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
       <rect x="104" y="52" width="28" height="58" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
       <path d="M104,52 h28 l-4,-8 h-4 v6 h-4 v-6 h-8 v6 h-4 v-6 h-4 z" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
-      <!-- Lit windows -->
       <rect x="74" y="62" width="6" height="10" fill="#ffd36b"/>
       <rect x="84" y="62" width="6" height="10" fill="#ffd36b"/>
       <rect x="76" y="82" width="12" height="14" fill="#241a0a"/>
       <rect x="38" y="74" width="6" height="10" fill="#ffd36b"/>
       <rect x="114" y="70" width="6" height="10" fill="#ffd36b"/>
-      <!-- Flag -->
       <line x1="80" y1="24" x2="80" y2="8" stroke="#120a03" stroke-width="2"/>
       <path d="M80,8 L98,14 L80,18 Z" fill="#b83a3a" stroke="#2c0a0a" stroke-width="1"/>
     </symbol>
-
-    <!-- Compass rose -->
     <symbol id="compass" viewBox="0 0 120 120">
       <circle cx="60" cy="60" r="54" fill="#f1e2b5" stroke="#5a4523" stroke-width="2"/>
       <circle cx="60" cy="60" r="42" fill="none" stroke="#5a4523" stroke-width="1" stroke-dasharray="2 4"/>
@@ -80,12 +101,13 @@
       <text x="106" y="65" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#3a2a1a" font-style="italic">E</text>
     </symbol>
 
-    <filter id="parchmentTexture" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/>
-      <feColorMatrix values="0 0 0 0 0.42
-                             0 0 0 0 0.33
-                             0 0 0 0 0.19
-                             0 0 0 0.07 0"/>
+    <!-- Fibrous parchment texture via fractal noise -->
+    <filter id="paperGrain" x="0" y="0" width="100%" height="100%" filterUnits="objectBoundingBox">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7"/>
+      <feColorMatrix values="0 0 0 0 0.45
+                             0 0 0 0 0.32
+                             0 0 0 0 0.15
+                             0 0 0 0.18 0"/>
       <feComposite in2="SourceGraphic" operator="in"/>
     </filter>
 
@@ -95,34 +117,68 @@
       <feComponentTransfer><feFuncA type="linear" slope="0.45"/></feComponentTransfer>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
+
+    <filter id="dropShadowBig" x="-10%" y="-10%" width="120%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dx="0" dy="18" result="b"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <clipPath id="parchmentClip">
+      <path d="M162,135 Q180.5,124.4 203.4,126.6 Q215.6,113.6 230.8,120.1 Q253.7,99.4 281.2,117.0 Q305.2,109.5 323.1,122.8 Q336.5,113.2 347.5,126.6 Q366.7,108.2 379.3,114.6 Q393.5,109.9 411.4,124.1 Q439.4,109.3 466.4,113.9 Q479.9,97.5 491.9,118.3 Q518.1,112.3 546.0,124.4 Q568.7,107.4 583.4,116.7 Q592.4,112.4 607.9,121.5 Q632.2,107.0 662.7,122.0 Q671.7,110.4 676.0,122.6 Q701.8,109.0 734.7,118.1 Q756.8,100.8 771.1,110.3 Q789.8,93.4 801.0,112.6 Q813.7,97.1 834.1,113.7 Q860.7,102.3 884.3,117.9 Q901.6,100.6 922.7,113.2 Q936.2,107.7 955.8,126.3 Q967.6,103.2 980.0,118.9 Q999.7,111.5 1013.4,123.6 Q1032.5,112.8 1051.5,119.1 Q1081.1,102.2 1104.0,121.6 Q1117.5,106.1 1134.1,120.4 Q1152.3,108.6 1168.8,113.1 Q1195.0,99.3 1217.0,112.6 Q1231.3,101.0 1241.1,116.2 Q1255.8,106.1 1278.5,117.1 Q1304.9,98.3 1339.1,117.5 Q1354.9,96.7 1364.5,111.2 Q1385.8,106.5 1410.1,115.5 Q1427.1,106.0 1438.0,135.0 L1438,1065 Q1417.2,1091.6 1388.9,1080.2 Q1372.7,1093.6 1350.9,1090.3 Q1341.8,1091.6 1332.9,1074.9 Q1309.2,1087.4 1287.2,1086.2 Q1264.5,1105.9 1243.8,1085.9 Q1225.3,1099.7 1210.7,1079.6 Q1193.2,1093.6 1176.4,1083.8 Q1156.6,1102.6 1129.4,1081.6 Q1122.2,1098.2 1114.1,1082.6 Q1084.8,1094.3 1061.0,1085.6 Q1041.5,1095.1 1014.6,1076.3 Q999.2,1098.1 983.1,1087.0 Q959.3,1095.8 942.6,1076.2 Q921.6,1100.0 900.6,1087.8 Q881.3,1106.6 867.5,1086.4 Q854.2,1090.2 847.6,1076.9 Q820.9,1095.3 792.7,1082.9 Q771.4,1088.2 754.5,1078.1 Q748.9,1089.2 737.1,1081.4 Q712.6,1100.8 686.6,1090.8 Q671.9,1097.5 658.5,1075.8 Q630.0,1098.9 601.1,1083.9 Q584.5,1097.9 572.7,1079.9 Q556.1,1095.8 543.7,1088.6 Q529.9,1091.7 513.3,1074.4 Q484.9,1094.8 459.5,1082.1 Q443.8,1091.8 434.8,1076.7 Q410.7,1100.4 378.5,1084.2 Q359.6,1089.7 347.5,1077.1 Q324.4,1104.4 305.1,1093.5 Q292.1,1107.9 273.0,1085.7 Q254.7,1089.3 238.5,1076.5 Q228.7,1096.8 213.5,1085.4 Q188.6,1095.0 162.0,1065.0 L162,135 Z"/>
+    </clipPath>
   </defs>
 
-  <!-- Parchment background -->
-  <rect width="1600" height="1200" fill="url(#mapBg)"/>
-  <rect width="1600" height="1200" fill="#a69264" filter="url(#parchmentTexture)" opacity="0.35"/>
+  <!-- Ground shadow beneath the scroll -->
+  <ellipse cx="800" cy="1170" rx="718" ry="18" fill="#000" opacity="0.35"/>
 
-  <!-- Moon glow in the upper-right -->
-  <circle cx="1360" cy="180" r="260" fill="url(#moonGlow)"/>
-  <circle cx="1360" cy="180" r="40" fill="#fff6c8" opacity="0.9"/>
+  <!-- Parchment body -->
+  <path d="M162,135 Q180.5,124.4 203.4,126.6 Q215.6,113.6 230.8,120.1 Q253.7,99.4 281.2,117.0 Q305.2,109.5 323.1,122.8 Q336.5,113.2 347.5,126.6 Q366.7,108.2 379.3,114.6 Q393.5,109.9 411.4,124.1 Q439.4,109.3 466.4,113.9 Q479.9,97.5 491.9,118.3 Q518.1,112.3 546.0,124.4 Q568.7,107.4 583.4,116.7 Q592.4,112.4 607.9,121.5 Q632.2,107.0 662.7,122.0 Q671.7,110.4 676.0,122.6 Q701.8,109.0 734.7,118.1 Q756.8,100.8 771.1,110.3 Q789.8,93.4 801.0,112.6 Q813.7,97.1 834.1,113.7 Q860.7,102.3 884.3,117.9 Q901.6,100.6 922.7,113.2 Q936.2,107.7 955.8,126.3 Q967.6,103.2 980.0,118.9 Q999.7,111.5 1013.4,123.6 Q1032.5,112.8 1051.5,119.1 Q1081.1,102.2 1104.0,121.6 Q1117.5,106.1 1134.1,120.4 Q1152.3,108.6 1168.8,113.1 Q1195.0,99.3 1217.0,112.6 Q1231.3,101.0 1241.1,116.2 Q1255.8,106.1 1278.5,117.1 Q1304.9,98.3 1339.1,117.5 Q1354.9,96.7 1364.5,111.2 Q1385.8,106.5 1410.1,115.5 Q1427.1,106.0 1438.0,135.0 L1438,1065 Q1417.2,1091.6 1388.9,1080.2 Q1372.7,1093.6 1350.9,1090.3 Q1341.8,1091.6 1332.9,1074.9 Q1309.2,1087.4 1287.2,1086.2 Q1264.5,1105.9 1243.8,1085.9 Q1225.3,1099.7 1210.7,1079.6 Q1193.2,1093.6 1176.4,1083.8 Q1156.6,1102.6 1129.4,1081.6 Q1122.2,1098.2 1114.1,1082.6 Q1084.8,1094.3 1061.0,1085.6 Q1041.5,1095.1 1014.6,1076.3 Q999.2,1098.1 983.1,1087.0 Q959.3,1095.8 942.6,1076.2 Q921.6,1100.0 900.6,1087.8 Q881.3,1106.6 867.5,1086.4 Q854.2,1090.2 847.6,1076.9 Q820.9,1095.3 792.7,1082.9 Q771.4,1088.2 754.5,1078.1 Q748.9,1089.2 737.1,1081.4 Q712.6,1100.8 686.6,1090.8 Q671.9,1097.5 658.5,1075.8 Q630.0,1098.9 601.1,1083.9 Q584.5,1097.9 572.7,1079.9 Q556.1,1095.8 543.7,1088.6 Q529.9,1091.7 513.3,1074.4 Q484.9,1094.8 459.5,1082.1 Q443.8,1091.8 434.8,1076.7 Q410.7,1100.4 378.5,1084.2 Q359.6,1089.7 347.5,1077.1 Q324.4,1104.4 305.1,1093.5 Q292.1,1107.9 273.0,1085.7 Q254.7,1089.3 238.5,1076.5 Q228.7,1096.8 213.5,1085.4 Q188.6,1095.0 162.0,1065.0 L162,135 Z" fill="url(#parchmentFill)" filter="url(#dropShadowBig)"/>
+  <!-- Fibrous paper grain overlay -->
+  <path d="M162,135 Q180.5,124.4 203.4,126.6 Q215.6,113.6 230.8,120.1 Q253.7,99.4 281.2,117.0 Q305.2,109.5 323.1,122.8 Q336.5,113.2 347.5,126.6 Q366.7,108.2 379.3,114.6 Q393.5,109.9 411.4,124.1 Q439.4,109.3 466.4,113.9 Q479.9,97.5 491.9,118.3 Q518.1,112.3 546.0,124.4 Q568.7,107.4 583.4,116.7 Q592.4,112.4 607.9,121.5 Q632.2,107.0 662.7,122.0 Q671.7,110.4 676.0,122.6 Q701.8,109.0 734.7,118.1 Q756.8,100.8 771.1,110.3 Q789.8,93.4 801.0,112.6 Q813.7,97.1 834.1,113.7 Q860.7,102.3 884.3,117.9 Q901.6,100.6 922.7,113.2 Q936.2,107.7 955.8,126.3 Q967.6,103.2 980.0,118.9 Q999.7,111.5 1013.4,123.6 Q1032.5,112.8 1051.5,119.1 Q1081.1,102.2 1104.0,121.6 Q1117.5,106.1 1134.1,120.4 Q1152.3,108.6 1168.8,113.1 Q1195.0,99.3 1217.0,112.6 Q1231.3,101.0 1241.1,116.2 Q1255.8,106.1 1278.5,117.1 Q1304.9,98.3 1339.1,117.5 Q1354.9,96.7 1364.5,111.2 Q1385.8,106.5 1410.1,115.5 Q1427.1,106.0 1438.0,135.0 L1438,1065 Q1417.2,1091.6 1388.9,1080.2 Q1372.7,1093.6 1350.9,1090.3 Q1341.8,1091.6 1332.9,1074.9 Q1309.2,1087.4 1287.2,1086.2 Q1264.5,1105.9 1243.8,1085.9 Q1225.3,1099.7 1210.7,1079.6 Q1193.2,1093.6 1176.4,1083.8 Q1156.6,1102.6 1129.4,1081.6 Q1122.2,1098.2 1114.1,1082.6 Q1084.8,1094.3 1061.0,1085.6 Q1041.5,1095.1 1014.6,1076.3 Q999.2,1098.1 983.1,1087.0 Q959.3,1095.8 942.6,1076.2 Q921.6,1100.0 900.6,1087.8 Q881.3,1106.6 867.5,1086.4 Q854.2,1090.2 847.6,1076.9 Q820.9,1095.3 792.7,1082.9 Q771.4,1088.2 754.5,1078.1 Q748.9,1089.2 737.1,1081.4 Q712.6,1100.8 686.6,1090.8 Q671.9,1097.5 658.5,1075.8 Q630.0,1098.9 601.1,1083.9 Q584.5,1097.9 572.7,1079.9 Q556.1,1095.8 543.7,1088.6 Q529.9,1091.7 513.3,1074.4 Q484.9,1094.8 459.5,1082.1 Q443.8,1091.8 434.8,1076.7 Q410.7,1100.4 378.5,1084.2 Q359.6,1089.7 347.5,1077.1 Q324.4,1104.4 305.1,1093.5 Q292.1,1107.9 273.0,1085.7 Q254.7,1089.3 238.5,1076.5 Q228.7,1096.8 213.5,1085.4 Q188.6,1095.0 162.0,1065.0 L162,135 Z" fill="#a57329" opacity="0.28" filter="url(#paperGrain)" pointer-events="none"/>
 
-  <!-- Rolling hills (low-contrast silhouettes) -->
+  <!-- Aged stains -->
+  <g clip-path="url(#parchmentClip)" pointer-events="none">
+    <ellipse cx="966" cy="177" rx="70" ry="24" transform="rotate(119 966 177)" fill="#5a3a0f" opacity="0.27"/>
+    <ellipse cx="405" cy="269" rx="34" ry="31" transform="rotate(49 405 269)" fill="#5a3a0f" opacity="0.22"/>
+    <ellipse cx="1035" cy="345" rx="61" ry="23" transform="rotate(88 1035 345)" fill="#5a3a0f" opacity="0.27"/>
+    <ellipse cx="1174" cy="249" rx="50" ry="24" transform="rotate(1 1174 249)" fill="#5a3a0f" opacity="0.25"/>
+    <ellipse cx="948" cy="395" rx="67" ry="31" transform="rotate(77 948 395)" fill="#5a3a0f" opacity="0.14"/>
+    <ellipse cx="341" cy="929" rx="75" ry="31" transform="rotate(150 341 929)" fill="#5a3a0f" opacity="0.22"/>
+    <ellipse cx="420" cy="280" rx="44" ry="41" transform="rotate(143 420 280)" fill="#5a3a0f" opacity="0.26"/>
+    <ellipse cx="1231" cy="351" rx="41" ry="19" transform="rotate(140 1231 351)" fill="#5a3a0f" opacity="0.26"/>
+    <ellipse cx="699" cy="704" rx="36" ry="42" transform="rotate(156 699 704)" fill="#5a3a0f" opacity="0.28"/>
+    <ellipse cx="1136" cy="928" rx="29" ry="37" transform="rotate(60 1136 928)" fill="#5a3a0f" opacity="0.27"/>
+    <ellipse cx="1126" cy="913" rx="70" ry="23" transform="rotate(142 1126 913)" fill="#5a3a0f" opacity="0.16"/>
+    <ellipse cx="1202" cy="908" rx="40" ry="39" transform="rotate(83 1202 908)" fill="#5a3a0f" opacity="0.18"/>
+    <ellipse cx="1119" cy="366" rx="29" ry="21" transform="rotate(59 1119 366)" fill="#5a3a0f" opacity="0.26"/>
+    <ellipse cx="1304" cy="410" rx="61" ry="27" transform="rotate(177 1304 410)" fill="#5a3a0f" opacity="0.22"/>
+  </g>
+
+  <!-- Inner map content (scaled to fit the parchment body with a margin) -->
+  <svg x="220" y="165" width="1160" height="870"
+       viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid meet"
+       clip-path="url(#parchmentClip)" overflow="visible">
+
+  <!-- Faint moon glow (top-right of the paper) -->
+  <circle cx="1360" cy="200" r="200" fill="url(#moonGlow)" opacity="0.45"/>
+
+  <!-- Distant hills: dark brown ink silhouettes, not greens -->
   <path d="M0,820 Q200,760 420,790 T820,770 T1200,790 T1600,760 L1600,1200 L0,1200 Z"
-        fill="#6e7d54" opacity="0.55"/>
+        fill="#6b4d20" opacity="0.22"/>
   <path d="M0,900 Q220,840 460,880 T900,860 T1260,880 T1600,850 L1600,1200 L0,1200 Z"
-        fill="#546544" opacity="0.55"/>
+        fill="#4a3514" opacity="0.22"/>
 
-  <!-- Mist -->
-  <rect x="0" y="620" width="1600" height="200" fill="url(#mistGrad)"/>
-
-  <!-- River winding -->
+  <!-- River winding: dark brown ink, not blue -->
   <path d="M-20,640 C180,610 300,700 520,680 S820,600 1000,680 1260,740 1620,700"
-        fill="none" stroke="#7da9c6" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+        fill="none" stroke="#5a3a15" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
   <path d="M-20,640 C180,610 300,700 520,680 S820,600 1000,680 1260,740 1620,700"
-        fill="none" stroke="#b8dbef" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+        fill="none" stroke="#c79a4b" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
 
-  <!-- Forest: scattered pines & oaks -->
-  <g id="forest">
-    <!-- Thick forest in upper-left -->
+  <!-- Forest: scattered pines & oaks (symbols darkened via CSS-less approach — the
+       pine/oak symbols already use dark strokes; group opacity adapts them to paper). -->
+  <g id="forest" opacity="0.82">
     <use href="#pine" x="40"  y="120" width="60" height="120"/>
     <use href="#pine" x="110" y="90"  width="80" height="160"/>
     <use href="#pine" x="200" y="140" width="55" height="110"/>
@@ -133,12 +189,10 @@
     <use href="#pine" x="230" y="260" width="60" height="120"/>
     <use href="#oak"  x="310" y="270" width="80" height="96"/>
 
-    <!-- Mid-left -->
     <use href="#pine" x="80"  y="420" width="60" height="120"/>
     <use href="#oak"  x="170" y="440" width="70" height="84"/>
     <use href="#pine" x="260" y="420" width="55" height="110"/>
 
-    <!-- Right border forest -->
     <use href="#pine" x="1340" y="380" width="60" height="120"/>
     <use href="#pine" x="1420" y="350" width="80" height="160"/>
     <use href="#oak"  x="1510" y="400" width="70" height="84"/>
@@ -146,7 +200,6 @@
     <use href="#pine" x="1460" y="540" width="55" height="110"/>
     <use href="#oak"  x="1520" y="540" width="60" height="72"/>
 
-    <!-- Bottom -->
     <use href="#pine" x="120"  y="1020" width="60" height="120"/>
     <use href="#oak"  x="220"  y="1040" width="70" height="84"/>
     <use href="#pine" x="320"  y="1020" width="55" height="110"/>
@@ -161,7 +214,6 @@
     <use href="#pine" x="1340" y="1020" width="60" height="120"/>
     <use href="#pine" x="1460" y="1040" width="55" height="110"/>
 
-    <!-- Sprinkle mushrooms -->
     <use href="#mushroom" x="380"  y="780" width="26" height="26"/>
     <use href="#mushroom" x="520"  y="860" width="22" height="22"/>
     <use href="#mushroom" x="780"  y="930" width="28" height="28"/>
@@ -170,60 +222,309 @@
   </g>
 
   <!-- CASTLES -->
-  <!-- Ogrodzieniec (north, centre-left) -->
   <g transform="translate(430,120)" filter="url(#softShadow)">
     <use href="#castle" width="220" height="165"/>
     <text x="110" y="190" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
           font-size="26" fill="#3a2a1a">Zamek Ogrodzieniec</text>
   </g>
-
-  <!-- Olsztyn (north-east) -->
   <g transform="translate(1020,90)" filter="url(#softShadow)">
     <use href="#castle" width="200" height="150"/>
     <text x="100" y="175" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
           font-size="24" fill="#3a2a1a">Zamek Olsztyn</text>
   </g>
-
-  <!-- Mirów (centre-left lower ridge) -->
   <g transform="translate(260,520)" filter="url(#softShadow)">
     <use href="#castle" width="180" height="135"/>
     <text x="90" y="158" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
           font-size="22" fill="#3a2a1a">Zamek Mirów</text>
   </g>
-
-  <!-- Bobolice (just east of Mirów, ridge) -->
   <g transform="translate(520,540)" filter="url(#softShadow)">
     <use href="#castle" width="180" height="135"/>
     <text x="90" y="158" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
           font-size="22" fill="#3a2a1a">Zamek Bobolice</text>
   </g>
 
-  <!-- Stone path group from forest edge to each cottage. These are drawn as parchment trails. -->
+  <!-- Stone-path spine & branches -->
   <g id="paths" fill="none" stroke="#8d6b3d" stroke-width="10" stroke-linecap="round" stroke-dasharray="14 10" opacity="0.9">
-    <!-- Main trail spine -->
     <path d="M80,760 C260,760 340,810 560,830 S900,870 1120,860 1400,840 1540,820"/>
-    <!-- Branches: each leads to a cottage marker (coords injected by script) -->
-    <!-- Placeholder — JS redraws these per cottage. -->
   </g>
   <g id="branches" fill="none" stroke="#8d6b3d" stroke-width="6" stroke-linecap="round" stroke-dasharray="8 8" opacity="0.95"></g>
-
-  <!-- Cottages target layer (populated by JS) -->
   <g id="cottages"></g>
 
-  <!-- Compass rose, bottom-right -->
-  <g transform="translate(1420,980)" filter="url(#softShadow)">
-    <use href="#compass" width="140" height="140"/>
+  <!-- Compass rose -->
+  <g transform="translate(1350,960)" filter="url(#softShadow)">
+    <use href="#compass" width="130" height="130"/>
   </g>
 
-  <!-- (Outer border removed: the map now sits inside an HTML parchment scroll frame.) -->
-
   <!-- Title cartouche -->
-  <g transform="translate(560,40)" filter="url(#softShadow)">
+  <g transform="translate(560,200)" filter="url(#softShadow)">
     <path d="M0,0 H480 Q520,0 520,40 V80 Q520,120 480,120 H0 Q-40,120 -40,80 V40 Q-40,0 0,0 Z"
           fill="#f1e2b5" stroke="#5a4523" stroke-width="3"/>
     <text x="240" y="62" text-anchor="middle" font-family="Georgia, serif" font-size="36"
           fill="#3a2a1a" font-style="italic" font-weight="bold">Chatynkowo</text>
     <text x="240" y="96" text-anchor="middle" font-family="Georgia, serif" font-size="18"
           fill="#5a4523" font-style="italic">~ baśniowa mapa ukrytych chatynek ~</text>
+  </g>
+
+  </svg>
+
+  <!-- Burnt inner-edge vignette on top of content -->
+  <path d="M162,135 Q180.5,124.4 203.4,126.6 Q215.6,113.6 230.8,120.1 Q253.7,99.4 281.2,117.0 Q305.2,109.5 323.1,122.8 Q336.5,113.2 347.5,126.6 Q366.7,108.2 379.3,114.6 Q393.5,109.9 411.4,124.1 Q439.4,109.3 466.4,113.9 Q479.9,97.5 491.9,118.3 Q518.1,112.3 546.0,124.4 Q568.7,107.4 583.4,116.7 Q592.4,112.4 607.9,121.5 Q632.2,107.0 662.7,122.0 Q671.7,110.4 676.0,122.6 Q701.8,109.0 734.7,118.1 Q756.8,100.8 771.1,110.3 Q789.8,93.4 801.0,112.6 Q813.7,97.1 834.1,113.7 Q860.7,102.3 884.3,117.9 Q901.6,100.6 922.7,113.2 Q936.2,107.7 955.8,126.3 Q967.6,103.2 980.0,118.9 Q999.7,111.5 1013.4,123.6 Q1032.5,112.8 1051.5,119.1 Q1081.1,102.2 1104.0,121.6 Q1117.5,106.1 1134.1,120.4 Q1152.3,108.6 1168.8,113.1 Q1195.0,99.3 1217.0,112.6 Q1231.3,101.0 1241.1,116.2 Q1255.8,106.1 1278.5,117.1 Q1304.9,98.3 1339.1,117.5 Q1354.9,96.7 1364.5,111.2 Q1385.8,106.5 1410.1,115.5 Q1427.1,106.0 1438.0,135.0 L1438,1065 Q1417.2,1091.6 1388.9,1080.2 Q1372.7,1093.6 1350.9,1090.3 Q1341.8,1091.6 1332.9,1074.9 Q1309.2,1087.4 1287.2,1086.2 Q1264.5,1105.9 1243.8,1085.9 Q1225.3,1099.7 1210.7,1079.6 Q1193.2,1093.6 1176.4,1083.8 Q1156.6,1102.6 1129.4,1081.6 Q1122.2,1098.2 1114.1,1082.6 Q1084.8,1094.3 1061.0,1085.6 Q1041.5,1095.1 1014.6,1076.3 Q999.2,1098.1 983.1,1087.0 Q959.3,1095.8 942.6,1076.2 Q921.6,1100.0 900.6,1087.8 Q881.3,1106.6 867.5,1086.4 Q854.2,1090.2 847.6,1076.9 Q820.9,1095.3 792.7,1082.9 Q771.4,1088.2 754.5,1078.1 Q748.9,1089.2 737.1,1081.4 Q712.6,1100.8 686.6,1090.8 Q671.9,1097.5 658.5,1075.8 Q630.0,1098.9 601.1,1083.9 Q584.5,1097.9 572.7,1079.9 Q556.1,1095.8 543.7,1088.6 Q529.9,1091.7 513.3,1074.4 Q484.9,1094.8 459.5,1082.1 Q443.8,1091.8 434.8,1076.7 Q410.7,1100.4 378.5,1084.2 Q359.6,1089.7 347.5,1077.1 Q324.4,1104.4 305.1,1093.5 Q292.1,1107.9 273.0,1085.7 Q254.7,1089.3 238.5,1076.5 Q228.7,1096.8 213.5,1085.4 Q188.6,1095.0 162.0,1065.0 L162,135 Z" fill="url(#parchmentInnerBurn)" pointer-events="none" opacity="0.9"/>
+
+  <!-- Scroll rolls (rendered on top to cover straight body ends) -->
+
+  <!-- Left roll -->
+  <g>
+    <!-- soft ground shadow below the roll -->
+    <ellipse cx="170" cy="1121" rx="62" ry="10"
+             fill="#000" opacity="0.35"/>
+    <!-- cylinder body with curvature gradient -->
+    <rect x="124" y="105" width="92" height="990"
+          fill="url(#rollBodyGrad)" stroke="#2a1806" stroke-width="1"/>
+    <line x1="128" y1="115.0" x2="212" y2="115.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="129.0" x2="212" y2="129.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="143.0" x2="212" y2="143.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="157.0" x2="212" y2="157.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="171.0" x2="212" y2="171.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="185.0" x2="212" y2="185.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="199.0" x2="212" y2="199.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="213.0" x2="212" y2="213.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="227.0" x2="212" y2="227.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="241.0" x2="212" y2="241.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="255.0" x2="212" y2="255.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="269.0" x2="212" y2="269.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="283.0" x2="212" y2="283.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="297.0" x2="212" y2="297.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="311.0" x2="212" y2="311.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="325.0" x2="212" y2="325.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="339.0" x2="212" y2="339.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="353.0" x2="212" y2="353.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="367.0" x2="212" y2="367.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="381.0" x2="212" y2="381.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="395.0" x2="212" y2="395.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="409.0" x2="212" y2="409.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="423.0" x2="212" y2="423.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="437.0" x2="212" y2="437.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="451.0" x2="212" y2="451.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="465.0" x2="212" y2="465.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="479.0" x2="212" y2="479.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="493.0" x2="212" y2="493.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="507.0" x2="212" y2="507.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="521.0" x2="212" y2="521.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="535.0" x2="212" y2="535.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="549.0" x2="212" y2="549.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="563.0" x2="212" y2="563.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="577.0" x2="212" y2="577.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="591.0" x2="212" y2="591.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="605.0" x2="212" y2="605.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="619.0" x2="212" y2="619.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="633.0" x2="212" y2="633.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="647.0" x2="212" y2="647.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="661.0" x2="212" y2="661.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="675.0" x2="212" y2="675.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="689.0" x2="212" y2="689.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="703.0" x2="212" y2="703.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="717.0" x2="212" y2="717.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="731.0" x2="212" y2="731.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="745.0" x2="212" y2="745.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="759.0" x2="212" y2="759.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="773.0" x2="212" y2="773.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="787.0" x2="212" y2="787.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="801.0" x2="212" y2="801.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="815.0" x2="212" y2="815.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="829.0" x2="212" y2="829.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="843.0" x2="212" y2="843.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="857.0" x2="212" y2="857.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="871.0" x2="212" y2="871.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="885.0" x2="212" y2="885.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="899.0" x2="212" y2="899.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="913.0" x2="212" y2="913.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="927.0" x2="212" y2="927.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="941.0" x2="212" y2="941.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="955.0" x2="212" y2="955.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="969.0" x2="212" y2="969.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="983.0" x2="212" y2="983.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="997.0" x2="212" y2="997.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="1011.0" x2="212" y2="1011.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="1025.0" x2="212" y2="1025.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="1039.0" x2="212" y2="1039.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="1053.0" x2="212" y2="1053.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="1067.0" x2="212" y2="1067.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="128" y1="1081.0" x2="212" y2="1081.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <!-- darker shading on the outer curved edges of the cylinder -->
+    <rect x="124" y="105" width="14" height="990"
+          fill="url(#rollEdgeShade)" opacity="0.95"/>
+    <rect x="202" y="105" width="14" height="990"
+          fill="url(#rollEdgeShadeR)" opacity="0.95"/>
+    <!-- top + bottom caps with coiled paper -->
+    <!-- outer cap: rolled paper edge, bulges wider than the cylinder body -->
+    <ellipse cx="170" cy="105" rx="56" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <!-- outer rim highlight -->
+    <path d="M118,103
+             Q170,88 222,103"
+          fill="none" stroke="#f3d99a" stroke-width="1.2" opacity="0.55"/>
+    <!-- Coil layers (from outer to inner) -->
+    <ellipse cx="170" cy="105" rx="50" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.5"/>
+    <ellipse cx="171" cy="105.5" rx="43" ry="12"
+             fill="#d9a45a" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="171.5" cy="105.5" rx="38" ry="10"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="172" cy="106" rx="32" ry="8"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="172.5" cy="106" rx="26" ry="6"
+             fill="none" stroke="#6b4218" stroke-width="0.9"/>
+    <!-- dark hollow eye in the centre of the spiral -->
+    <ellipse cx="173" cy="106.5" rx="16" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
+    <!-- outer cap: rolled paper edge, bulges wider than the cylinder body -->
+    <ellipse cx="170" cy="1095" rx="56" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <!-- outer rim highlight -->
+    <path d="M118,1093
+             Q170,1078 222,1093"
+          fill="none" stroke="#f3d99a" stroke-width="1.2" opacity="0.55"/>
+    <!-- Coil layers (from outer to inner) -->
+    <ellipse cx="170" cy="1095" rx="50" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.5"/>
+    <ellipse cx="171" cy="1095.5" rx="43" ry="12"
+             fill="#d9a45a" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="171.5" cy="1095.5" rx="38" ry="10"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="172" cy="1096" rx="32" ry="8"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="172.5" cy="1096" rx="26" ry="6"
+             fill="none" stroke="#6b4218" stroke-width="0.9"/>
+    <!-- dark hollow eye in the centre of the spiral -->
+    <ellipse cx="173" cy="1096.5" rx="16" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
+  </g>
+
+  <!-- Right roll -->
+  <g>
+    <!-- soft ground shadow below the roll -->
+    <ellipse cx="1430" cy="1121" rx="62" ry="10"
+             fill="#000" opacity="0.35"/>
+    <!-- cylinder body with curvature gradient -->
+    <rect x="1384" y="105" width="92" height="990"
+          fill="url(#rollBodyGrad)" stroke="#2a1806" stroke-width="1"/>
+    <line x1="1388" y1="115.0" x2="1472" y2="115.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="129.0" x2="1472" y2="129.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="143.0" x2="1472" y2="143.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="157.0" x2="1472" y2="157.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="171.0" x2="1472" y2="171.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="185.0" x2="1472" y2="185.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="199.0" x2="1472" y2="199.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="213.0" x2="1472" y2="213.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="227.0" x2="1472" y2="227.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="241.0" x2="1472" y2="241.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="255.0" x2="1472" y2="255.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="269.0" x2="1472" y2="269.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="283.0" x2="1472" y2="283.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="297.0" x2="1472" y2="297.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="311.0" x2="1472" y2="311.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="325.0" x2="1472" y2="325.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="339.0" x2="1472" y2="339.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="353.0" x2="1472" y2="353.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="367.0" x2="1472" y2="367.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="381.0" x2="1472" y2="381.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="395.0" x2="1472" y2="395.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="409.0" x2="1472" y2="409.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="423.0" x2="1472" y2="423.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="437.0" x2="1472" y2="437.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="451.0" x2="1472" y2="451.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="465.0" x2="1472" y2="465.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="479.0" x2="1472" y2="479.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="493.0" x2="1472" y2="493.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="507.0" x2="1472" y2="507.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="521.0" x2="1472" y2="521.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="535.0" x2="1472" y2="535.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="549.0" x2="1472" y2="549.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="563.0" x2="1472" y2="563.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="577.0" x2="1472" y2="577.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="591.0" x2="1472" y2="591.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="605.0" x2="1472" y2="605.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="619.0" x2="1472" y2="619.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="633.0" x2="1472" y2="633.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="647.0" x2="1472" y2="647.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="661.0" x2="1472" y2="661.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="675.0" x2="1472" y2="675.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="689.0" x2="1472" y2="689.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="703.0" x2="1472" y2="703.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="717.0" x2="1472" y2="717.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="731.0" x2="1472" y2="731.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="745.0" x2="1472" y2="745.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="759.0" x2="1472" y2="759.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="773.0" x2="1472" y2="773.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="787.0" x2="1472" y2="787.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="801.0" x2="1472" y2="801.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="815.0" x2="1472" y2="815.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="829.0" x2="1472" y2="829.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="843.0" x2="1472" y2="843.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="857.0" x2="1472" y2="857.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="871.0" x2="1472" y2="871.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="885.0" x2="1472" y2="885.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="899.0" x2="1472" y2="899.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="913.0" x2="1472" y2="913.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="927.0" x2="1472" y2="927.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="941.0" x2="1472" y2="941.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="955.0" x2="1472" y2="955.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="969.0" x2="1472" y2="969.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="983.0" x2="1472" y2="983.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="997.0" x2="1472" y2="997.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="1011.0" x2="1472" y2="1011.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="1025.0" x2="1472" y2="1025.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="1039.0" x2="1472" y2="1039.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="1053.0" x2="1472" y2="1053.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="1067.0" x2="1472" y2="1067.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <line x1="1388" y1="1081.0" x2="1472" y2="1081.0" stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>
+    <!-- darker shading on the outer curved edges of the cylinder -->
+    <rect x="1384" y="105" width="14" height="990"
+          fill="url(#rollEdgeShade)" opacity="0.95"/>
+    <rect x="1462" y="105" width="14" height="990"
+          fill="url(#rollEdgeShadeR)" opacity="0.95"/>
+    <!-- top + bottom caps with coiled paper -->
+    <!-- outer cap: rolled paper edge, bulges wider than the cylinder body -->
+    <ellipse cx="1430" cy="105" rx="56" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <!-- outer rim highlight -->
+    <path d="M1378,103
+             Q1430,88 1482,103"
+          fill="none" stroke="#f3d99a" stroke-width="1.2" opacity="0.55"/>
+    <!-- Coil layers (from outer to inner) -->
+    <ellipse cx="1430" cy="105" rx="50" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.5"/>
+    <ellipse cx="1431" cy="105.5" rx="43" ry="12"
+             fill="#d9a45a" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="1431.5" cy="105.5" rx="38" ry="10"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="1432" cy="106" rx="32" ry="8"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="1432.5" cy="106" rx="26" ry="6"
+             fill="none" stroke="#6b4218" stroke-width="0.9"/>
+    <!-- dark hollow eye in the centre of the spiral -->
+    <ellipse cx="1433" cy="106.5" rx="16" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
+    <!-- outer cap: rolled paper edge, bulges wider than the cylinder body -->
+    <ellipse cx="1430" cy="1095" rx="56" ry="18"
+             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
+    <!-- outer rim highlight -->
+    <path d="M1378,1093
+             Q1430,1078 1482,1093"
+          fill="none" stroke="#f3d99a" stroke-width="1.2" opacity="0.55"/>
+    <!-- Coil layers (from outer to inner) -->
+    <ellipse cx="1430" cy="1095" rx="50" ry="15"
+             fill="none" stroke="#6b4218" stroke-width="1.5"/>
+    <ellipse cx="1431" cy="1095.5" rx="43" ry="12"
+             fill="#d9a45a" stroke="#3a2308" stroke-width="1"/>
+    <ellipse cx="1431.5" cy="1095.5" rx="38" ry="10"
+             fill="none" stroke="#6b4218" stroke-width="1"/>
+    <ellipse cx="1432" cy="1096" rx="32" ry="8"
+             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
+    <ellipse cx="1432.5" cy="1096" rx="26" ry="6"
+             fill="none" stroke="#6b4218" stroke-width="0.9"/>
+    <!-- dark hollow eye in the centre of the spiral -->
+    <ellipse cx="1433" cy="1096.5" rx="16" ry="4"
+             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>
   </g>
 </svg>

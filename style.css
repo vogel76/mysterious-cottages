@@ -215,92 +215,21 @@ a:hover { color: var(--ember); }
   align-items: start;
 }
 
-/* Parchment scroll frame for the map — rolled edges on the left & right.
-   Uses a grid so the centre stage flexes while rolls stay fixed-width. */
-.parchment {
-  --roll-w: 46px;
-  --roll-grad:
-    linear-gradient(90deg,
-      #2b1a0a 0%,
-      #6d4a14 10%,
-      #c79a4b 24%,
-      #f5ead1 46%,
-      #d4a55b 64%,
-      #8e6324 82%,
-      #2b1a0a 100%);
-  --wrap-stripes:
-    repeating-linear-gradient(0deg,
-      rgba(0,0,0,.16) 0 1px,
-      rgba(255,255,255,.05) 1px 2px,
-      transparent 2px 7px);
-  position: relative;
-  display: grid;
-  grid-template-columns: var(--roll-w) 1fr var(--roll-w);
-  filter: drop-shadow(0 18px 32px rgba(0,0,0,.55));
-}
-
-.parchment__roll {
-  position: relative;
-  background: var(--wrap-stripes), var(--roll-grad);
-  background-blend-mode: multiply, normal;
-  border-radius: calc(var(--roll-w) / 2) / 14px;
-  box-shadow:
-    inset 2px 0 4px rgba(0,0,0,.35),
-    inset -2px 0 4px rgba(0,0,0,.35);
-  z-index: 2;
-}
-.parchment__roll--left  { margin-right: -10px; }
-.parchment__roll--right { margin-left:  -10px; }
-
-.parchment__cap {
-  position: absolute; left: -6px; right: -6px;
-  height: 28px;
-  background:
-    radial-gradient(ellipse at 50% 40%,
-      #e6c98b 0%, #a87524 40%, #5a3a10 85%, #2b1a0a 100%);
-  border-radius: 50%;
-  box-shadow: 0 3px 6px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,255,255,.25);
-}
-.parchment__cap--top    { top:    -12px; }
-.parchment__cap--bottom { bottom: -12px; }
-
-.parchment__stage {
-  position: relative;
-  z-index: 1;
-  padding: 2rem 1rem;
-  background:
-    radial-gradient(ellipse at 50% 50%, #f6e8c2 0%, #e5cd94 68%, #b68c44 100%);
-  box-shadow:
-    inset 0 0 60px rgba(146,98,40,.35),
-    inset 0 0 180px rgba(70,42,10,.35);
-}
-.parchment__stage::before,
-.parchment__stage::after {
-  content: '';
-  position: absolute; left: 0; right: 0; height: 28px;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(90,57,16,.55), transparent);
-}
-.parchment__stage::before { top: 0; }
-.parchment__stage::after  {
-  top: auto; bottom: 0;
-  background: linear-gradient(0deg, rgba(90,57,16,.55), transparent);
-}
-
+/* The scroll frame is baked into forest-map.svg itself (parchment body,
+   wavy torn edges, and the two coiled side rolls). The stage is just a
+   transparent box that holds the SVG. */
 .map-stage {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 6px;
   background: transparent;
-  overflow: hidden;
 }
 .map-stage svg {
   display: block;
   width: 100%;
   height: 100%;
   cursor: default;
+  overflow: visible;
 }
 .map-stage .cottage-marker {
   cursor: pointer;
