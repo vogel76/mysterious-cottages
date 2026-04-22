@@ -48,22 +48,43 @@
     <clipPath id="paperClip"><path d="M28.0,28.0 L58.7,15.4 L76.1,29.3 L107.3,28.3 L170.1,12.5 L208.8,39.8 L251.5,32.6 L312.5,24.3 L304.6,40.9 L349.6,14.2 L435.2,16.5 L462.1,23.4 L458.3,12.1 L537.2,25.4 L569.7,26.3 L620.1,35.2 L657.7,28.9 L708.0,20.4 L704.4,25.1 L730.7,27.6 L811.8,37.5 L865.7,21.3 L882.2,30.9 L936.3,44.0 L968.6,12.2 L1008.5,45.8 L1021.7,23.9 L1034.1,26.6 L1090.5,12.1 L1122.3,18.9 L1207.9,12.9 L1234.0,41.8 L1284.0,20.0 L1302.2,41.8 L1313.5,16.3 L1364.3,27.5 L1401.3,10.1 L1457.2,30.4 L1508.9,28.6 L1552.3,11.9 L1572.0,28.0 L1558.5,84.9 L1575.6,91.4 L1587.8,139.9 L1584.2,164.0 L1590.0,191.2 L1576.9,229.1 L1567.9,305.0 L1577.5,319.0 L1559.4,363.8 L1572.6,399.5 L1577.7,424.6 L1584.2,491.1 L1571.0,537.3 L1589.0,564.4 L1558.9,625.8 L1576.8,620.5 L1570.8,694.3 L1582.0,712.8 L1559.3,780.8 L1563.4,799.8 L1577.2,820.2 L1579.9,840.5 L1555.6,912.8 L1554.4,972.3 L1582.1,969.7 L1582.6,1008.1 L1559.7,1075.5 L1561.2,1094.4 L1557.2,1146.9 L1572.0,1172.0 L1524.4,1172.8 L1470.9,1178.0 L1429.0,1175.7 L1396.6,1163.9 L1393.9,1184.6 L1314.9,1184.7 L1275.1,1166.3 L1269.9,1185.3 L1195.0,1166.6 L1151.8,1174.4 L1132.2,1182.4 L1119.9,1181.3 L1092.4,1174.9 L1007.1,1177.3 L989.4,1157.4 L928.0,1171.9 L915.5,1189.3 L890.8,1189.9 L854.3,1173.0 L796.1,1178.3 L765.9,1161.8 L723.5,1181.1 L666.2,1171.7 L630.7,1157.2 L599.8,1171.8 L555.8,1173.7 L527.2,1156.1 L472.8,1156.1 L442.1,1156.0 L437.6,1185.6 L410.3,1181.3 L318.4,1161.8 L316.3,1164.2 L272.3,1158.2 L240.4,1155.7 L176.5,1154.4 L164.4,1174.5 L118.8,1183.0 L51.8,1189.3 L28.0,1172.0 L10.7,1140.0 L28.4,1098.8 L38.4,1026.0 L19.6,1046.8 L19.7,976.0 L42.8,940.4 L15.4,907.7 L35.2,871.9 L34.8,850.5 L43.8,807.5 L13.0,731.6 L41.1,735.2 L29.9,675.1 L14.7,648.2 L13.9,618.7 L17.3,586.2 L37.3,536.9 L16.4,488.7 L19.0,479.2 L29.8,404.9 L43.6,380.2 L25.6,318.6 L24.2,279.5 L45.4,251.4 L35.4,200.7 L22.5,193.8 L12.5,154.5 L15.9,123.8 L41.3,47.1 L28.0,28.0 Z"/></clipPath>
 
     
-  <!-- Mountain range: a trio of triangular peaks with slope hatching -->
-  <symbol id="mountain" viewBox="0 0 160 100">
-    <path d="M 10,92 L 50,22 L 90,92 Z"
-          fill="#b3823a" stroke="#4a2d10" stroke-width="2"/>
-    <path d="M 60,92 L 100,8 L 140,92 Z"
-          fill="#e3bf80" stroke="#4a2d10" stroke-width="2"/>
-    <path d="M 110,92 L 140,38 L 158,92 Z"
-          fill="#b3823a" stroke="#4a2d10" stroke-width="2"/>
-    <!-- Snow caps on the tallest peak -->
-    <path d="M 92,20 L 100,8 L 108,20 L 104,24 L 100,18 L 96,24 Z"
-          fill="#f5dfa8" stroke="#4a2d10" stroke-width="1"/>
-    <!-- Slope hatching (suggests rocky terrain) -->
-    <g stroke="#4a2d10" stroke-width="0.8" fill="none" opacity="0.8">
-      <path d="M 50,22 L 44,34 M 48,30 L 42,42 M 46,38 L 40,50 M 44,46 L 38,58"/>
-      <path d="M 100,8 L 93,22 M 98,16 L 90,30 M 96,24 L 88,38 M 94,32 L 86,46 M 92,40 L 84,54 M 90,48 L 82,62 M 88,56 L 80,70"/>
-      <path d="M 140,38 L 134,50 M 138,46 L 132,58 M 136,54 L 130,66"/>
+  <!-- Rolling-hills / low mountain range in vintage-map ink style:
+       soft rounded bumps with parallel shading hatch-marks on the right flank
+       and small foothill tick-marks at the base. Not sharp, not numerous. -->
+  <symbol id="mountain" viewBox="0 0 220 80">
+    <!-- Main undulating silhouette (4–5 rounded humps) -->
+    <path d="M 6,70
+             C 16,56 26,34 42,36
+             C 54,20 70,18 86,34
+             C 98,22 116,22 132,36
+             C 146,26 162,30 178,44
+             C 190,54 200,64 214,70 Z"
+          fill="#e3bf80" fill-opacity="0.35"
+          stroke="#4a2d10" stroke-width="2.2" stroke-linejoin="round"/>
+    <!-- Behind-contour suggestion of a further range -->
+    <path d="M 30,52 C 46,42 58,36 70,42 C 82,36 94,32 108,40
+             M 120,44 C 134,36 150,36 164,46 C 176,44 188,50 204,58"
+          fill="none" stroke="#4a2d10" stroke-width="1" opacity="0.65"/>
+    <!-- Right-flank slope hatching, applied to each bump -->
+    <g stroke="#4a2d10" stroke-width="0.9" fill="none" opacity="0.75">
+      <line x1="46" y1="40"  x2="38" y2="54"/>
+      <line x1="50" y1="44"  x2="42" y2="58"/>
+      <line x1="54" y1="50"  x2="46" y2="62"/>
+      <line x1="92" y1="36"  x2="82" y2="52"/>
+      <line x1="96" y1="42"  x2="86" y2="56"/>
+      <line x1="100" y1="48" x2="90" y2="62"/>
+      <line x1="138" y1="40" x2="128" y2="54"/>
+      <line x1="142" y1="46" x2="132" y2="60"/>
+      <line x1="184" y1="50" x2="174" y2="62"/>
+      <line x1="188" y1="56" x2="178" y2="66"/>
+    </g>
+    <!-- Small foothill / rock tick-marks along the base -->
+    <g stroke="#4a2d10" stroke-width="1" fill="none" stroke-linecap="round">
+      <path d="M 22,67 l 3,-4 l 3,4"/>
+      <path d="M 60,65 l 2.5,-3 l 2.5,3"/>
+      <path d="M 104,63 l 2.5,-3 l 2.5,3"/>
+      <path d="M 150,65 l 2.5,-3 l 2.5,3"/>
+      <path d="M 190,68 l 2.5,-3 l 2.5,3"/>
     </g>
   </symbol>
 
@@ -81,48 +102,137 @@
     <rect x="13.5" y="38" width="3" height="2" fill="#2a1806"/>
   </symbol>
 
-  <!-- Castle: main keep, two flanking towers, crenellations, flag -->
-  <symbol id="castle" viewBox="0 0 160 140">
-    <!-- Rocky base -->
-    <path d="M 0,128 Q 30,112 60,122 T 120,118 Q 150,126 160,132 L 160,140 L 0,140 Z"
-          fill="#b3823a" stroke="#4a2d10" stroke-width="1.5"/>
-    <!-- Left tower -->
-    <rect x="22" y="68" width="30" height="60" fill="#e3bf80" stroke="#4a2d10" stroke-width="1.6"/>
-    <path d="M 22,68 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
+  <!-- Medieval stone castle, drawn as an ink contour:
+         * tall cylindrical (round) keep with battlements,
+         * attached lower stone wall,
+         * conical roof on a smaller flanking turret,
+         * Polish flag on a pole flying from the keep's top (white top, red bottom),
+         * the stonework is suggested by a brick-pattern hatch. -->
+  <symbol id="castle" viewBox="0 0 160 170">
+    <!-- Rocky outcrop base (soft contour) -->
+    <path d="M 4,160 Q 40,148 80,154 T 156,156 L 156,168 L 4,168 Z"
           fill="none" stroke="#4a2d10" stroke-width="1.6"/>
-    <!-- Right tower -->
-    <rect x="108" y="62" width="32" height="66" fill="#e3bf80" stroke="#4a2d10" stroke-width="1.6"/>
-    <path d="M 108,62 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
-          fill="none" stroke="#4a2d10" stroke-width="1.6"/>
-    <!-- Main keep (central, tallest) -->
-    <rect x="58" y="42" width="46" height="86" fill="#f5dfa8" stroke="#4a2d10" stroke-width="1.8"/>
-    <path d="M 58,42 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
+    <g stroke="#4a2d10" stroke-width="0.7" fill="none" opacity="0.7">
+      <path d="M 12,162 l 3,-4 l 3,4"/>
+      <path d="M 60,158 l 3,-4 l 3,4"/>
+      <path d="M 100,158 l 3,-4 l 3,4"/>
+      <path d="M 140,160 l 3,-4 l 3,4"/>
+    </g>
+
+    <!-- Attached curtain wall (right side, lower) -->
+    <rect x="88" y="104" width="62" height="52" fill="#f5dfa8"
+          stroke="#4a2d10" stroke-width="2"/>
+    <!-- Wall crenellations -->
+    <path d="M 88,104 V 96 H 94 V 104 M 100,104 V 96 H 106 V 104
+             M 112,104 V 96 H 118 V 104 M 124,104 V 96 H 130 V 104
+             M 136,104 V 96 H 142 V 104 M 148,104 V 96 H 150 V 104"
           fill="none" stroke="#4a2d10" stroke-width="1.8"/>
-    <!-- Windows -->
-    <rect x="76" y="58" width="5" height="10" fill="#4a2d10"/>
-    <rect x="83" y="58" width="5" height="10" fill="#4a2d10"/>
-    <rect x="30" y="86" width="4" height="8" fill="#4a2d10"/>
-    <rect x="42" y="86" width="4" height="8" fill="#4a2d10"/>
-    <rect x="118" y="80" width="4" height="8" fill="#4a2d10"/>
-    <rect x="130" y="80" width="4" height="8" fill="#4a2d10"/>
-    <!-- Door -->
-    <path d="M 76,128 V 104 Q 76,96 82,96 H 82 Q 88,96 88,104 V 128 Z"
+    <!-- Small corner turret on the far right -->
+    <rect x="140" y="78" width="14" height="26" fill="#f5dfa8"
+          stroke="#4a2d10" stroke-width="1.8"/>
+    <polygon points="138,78 147,64 156,78" fill="#e3bf80"
+             stroke="#4a2d10" stroke-width="1.6"/>
+    <!-- Wall gate -->
+    <path d="M 110,156 V 132 Q 110,120 118,120 Q 126,120 126,132 V 156 Z"
           fill="#4a2d10"/>
-    <!-- Flag on keep -->
-    <line x1="81" y1="36" x2="81" y2="18" stroke="#2a1806" stroke-width="2"/>
-    <path d="M 81,18 L 100,24 L 81,30 Z" fill="#a83a2a" stroke="#2a1806" stroke-width="1"/>
-    <!-- Bricks hatching (subtle) -->
-    <g stroke="#4a2d10" stroke-width="0.5" opacity="0.35" fill="none">
-      <line x1="58" y1="56"  x2="104" y2="56"/>
-      <line x1="58" y1="74"  x2="104" y2="74"/>
-      <line x1="58" y1="92"  x2="104" y2="92"/>
-      <line x1="58" y1="110" x2="104" y2="110"/>
-      <line x1="22" y1="82"  x2="52"  y2="82"/>
-      <line x1="22" y1="98"  x2="52"  y2="98"/>
-      <line x1="22" y1="114" x2="52"  y2="114"/>
-      <line x1="108" y1="76" x2="140" y2="76"/>
-      <line x1="108" y1="94" x2="140" y2="94"/>
-      <line x1="108" y1="112" x2="140" y2="112"/>
+    <!-- Wall slit windows -->
+    <rect x="96" y="120" width="3" height="10" fill="#4a2d10"/>
+    <rect x="136" y="120" width="3" height="10" fill="#4a2d10"/>
+
+    <!-- Main round keep: cylindrical body shown side-on -->
+    <!-- body (tall rectangle; "roundness" hinted by vertical shading arcs) -->
+    <rect x="30" y="52" width="52" height="104" fill="#f5dfa8"
+          stroke="#4a2d10" stroke-width="2.2"/>
+    <!-- Left & right curvature shading arcs (to read as cylinder) -->
+    <path d="M 30,56 Q 36,100 30,154" fill="none"
+          stroke="#4a2d10" stroke-width="1" opacity="0.55"/>
+    <path d="M 82,56 Q 76,100 82,154" fill="none"
+          stroke="#4a2d10" stroke-width="1" opacity="0.55"/>
+    <!-- Keep crenellations -->
+    <path d="M 30,52 V 42 H 36 V 52 M 42,52 V 42 H 48 V 52
+             M 54,52 V 42 H 60 V 52 M 66,52 V 42 H 72 V 52
+             M 78,52 V 42 H 82 V 52"
+          fill="none" stroke="#4a2d10" stroke-width="2"/>
+    <!-- Arched keep door -->
+    <path d="M 48,156 V 130 Q 48,118 56,118 Q 64,118 64,130 V 156 Z"
+          fill="#4a2d10"/>
+    <!-- Arched window on the keep -->
+    <path d="M 52,92 V 76 Q 52,70 56,70 Q 60,70 60,76 V 92 Z"
+          fill="#4a2d10"/>
+    <!-- Slit windows -->
+    <rect x="38" y="100" width="3" height="10" fill="#4a2d10"/>
+    <rect x="71" y="100" width="3" height="10" fill="#4a2d10"/>
+
+    <!-- Flag pole + Polish flag (white top, red bottom) -->
+    <line x1="56" y1="42" x2="56" y2="14" stroke="#2a1806" stroke-width="2"/>
+    <rect x="56" y="14" width="26" height="7"
+          fill="#ffffff" stroke="#4a2d10" stroke-width="0.9"/>
+    <rect x="56" y="21" width="26" height="7"
+          fill="#d4202a" stroke="#4a2d10" stroke-width="0.9"/>
+
+    <!-- Stone-masonry pattern on keep (brick courses, offset per row) -->
+    <g stroke="#4a2d10" stroke-width="0.6" opacity="0.55" fill="none">
+      <!-- horizontal courses -->
+      <line x1="30" y1="64"  x2="82" y2="64"/>
+      <line x1="30" y1="76"  x2="82" y2="76"/>
+      <line x1="30" y1="88"  x2="82" y2="88"/>
+      <line x1="30" y1="100" x2="82" y2="100"/>
+      <line x1="30" y1="112" x2="82" y2="112"/>
+      <line x1="30" y1="124" x2="82" y2="124"/>
+      <line x1="30" y1="136" x2="82" y2="136"/>
+      <line x1="30" y1="148" x2="82" y2="148"/>
+      <!-- row 1 verticals -->
+      <line x1="43" y1="52" x2="43" y2="64"/>
+      <line x1="56" y1="52" x2="56" y2="64"/>
+      <line x1="69" y1="52" x2="69" y2="64"/>
+      <!-- row 2 (offset) -->
+      <line x1="36" y1="64" x2="36" y2="76"/>
+      <line x1="49" y1="64" x2="49" y2="76"/>
+      <line x1="62" y1="64" x2="62" y2="76"/>
+      <line x1="75" y1="64" x2="75" y2="76"/>
+      <!-- row 3 -->
+      <line x1="43" y1="76" x2="43" y2="88"/>
+      <line x1="56" y1="76" x2="56" y2="88"/>
+      <line x1="69" y1="76" x2="69" y2="88"/>
+      <!-- row 4 -->
+      <line x1="36" y1="88" x2="36" y2="100"/>
+      <line x1="49" y1="88" x2="49" y2="100"/>
+      <line x1="62" y1="88" x2="62" y2="100"/>
+      <line x1="75" y1="88" x2="75" y2="100"/>
+      <!-- row 5 -->
+      <line x1="43" y1="100" x2="43" y2="112"/>
+      <line x1="69" y1="100" x2="69" y2="112"/>
+      <!-- row 6 -->
+      <line x1="36" y1="112" x2="36" y2="124"/>
+      <line x1="49" y1="112" x2="49" y2="124"/>
+      <line x1="62" y1="112" x2="62" y2="124"/>
+      <line x1="75" y1="112" x2="75" y2="124"/>
+      <!-- row 7 (around door) -->
+      <line x1="43" y1="124" x2="43" y2="136"/>
+      <line x1="69" y1="124" x2="69" y2="136"/>
+      <!-- row 8 -->
+      <line x1="36" y1="136" x2="36" y2="148"/>
+      <line x1="75" y1="136" x2="75" y2="148"/>
+    </g>
+
+    <!-- Stone-masonry pattern on curtain wall -->
+    <g stroke="#4a2d10" stroke-width="0.5" opacity="0.5" fill="none">
+      <line x1="88" y1="116" x2="150" y2="116"/>
+      <line x1="88" y1="128" x2="150" y2="128"/>
+      <line x1="88" y1="140" x2="150" y2="140"/>
+      <line x1="88" y1="152" x2="150" y2="152"/>
+      <line x1="98" y1="104" x2="98" y2="116"/>
+      <line x1="114" y1="104" x2="114" y2="116"/>
+      <line x1="134" y1="104" x2="134" y2="116"/>
+      <line x1="94" y1="116" x2="94" y2="128"/>
+      <line x1="106" y1="116" x2="106" y2="128"/>
+      <line x1="140" y1="116" x2="140" y2="128"/>
+      <line x1="100" y1="128" x2="100" y2="140"/>
+      <line x1="132" y1="128" x2="132" y2="140"/>
+      <line x1="144" y1="128" x2="144" y2="140"/>
+      <line x1="94" y1="140" x2="94" y2="152"/>
+      <line x1="106" y1="140" x2="106" y2="152"/>
+      <line x1="140" y1="140" x2="140" y2="152"/>
     </g>
   </symbol>
 
@@ -290,176 +400,95 @@
   <!-- ============== Map content ============== -->
   <!-- Mountains (rear) -->
   <g id="mountains">
-    <use href="#mountain" x="430" y="259" width="260" height="161"/>
-    <use href="#mountain" x="620" y="331" width="320" height="198"/>
-    <use href="#mountain" x="970" y="382" width="220" height="136"/>
-    <use href="#mountain" x="130" y="532" width="220" height="136"/>
-    <use href="#mountain" x="420" y="696" width="240" height="149"/>
-    <use href="#mountain" x="790" y="679" width="260" height="161"/>
-    <use href="#mountain" x="1080" y="648" width="200" height="124"/>
-    <use href="#mountain" x="250" y="832" width="220" height="136"/>
+    <use href="#mountain" x="510" y="394" width="420" height="153"/>
+    <use href="#mountain" x="930" y="548" width="340" height="124"/>
+    <use href="#mountain" x="250" y="645" width="300" height="109"/>
+    <use href="#mountain" x="680" y="755" width="360" height="131"/>
   </g>
 
   <!-- Pine/fir forest clusters (in front of mountains) -->
   <g id="forest" opacity="0.92">
-    <use href="#pine" x="105" y="344" width="32" height="46"/>
-    <use href="#pine2" x="162" y="375" width="32" height="46"/>
-    <use href="#pine" x="174" y="416" width="24" height="34"/>
-    <use href="#pine" x="199" y="366" width="28" height="40"/>
-    <use href="#pine" x="264" y="349" width="24" height="34"/>
-    <use href="#pine2" x="234" y="400" width="32" height="46"/>
-    <use href="#pine2" x="160" y="411" width="28" height="40"/>
-    <use href="#pine2" x="222" y="411" width="32" height="46"/>
-    <use href="#pine2" x="121" y="345" width="32" height="46"/>
-    <use href="#pine2" x="223" y="387" width="24" height="34"/>
-    <use href="#pine2" x="471" y="522" width="24" height="34"/>
-    <use href="#pine2" x="407" y="524" width="24" height="34"/>
-    <use href="#pine2" x="405" y="544" width="28" height="40"/>
-    <use href="#pine2" x="469" y="532" width="32" height="46"/>
-    <use href="#pine" x="452" y="503" width="32" height="46"/>
-    <use href="#pine" x="450" y="514" width="28" height="40"/>
-    <use href="#pine2" x="442" y="485" width="32" height="46"/>
-    <use href="#pine" x="369" y="529" width="32" height="46"/>
-    <use href="#pine2" x="438" y="510" width="24" height="34"/>
-    <use href="#pine2" x="493" y="483" width="32" height="46"/>
-    <use href="#pine" x="331" y="535" width="28" height="40"/>
-    <use href="#pine" x="397" y="477" width="32" height="46"/>
-    <use href="#pine" x="374" y="521" width="32" height="46"/>
-    <use href="#pine2" x="402" y="496" width="32" height="46"/>
-    <use href="#pine" x="618" y="600" width="24" height="34"/>
-    <use href="#pine2" x="597" y="573" width="32" height="46"/>
-    <use href="#pine2" x="718" y="594" width="28" height="40"/>
-    <use href="#pine2" x="627" y="556" width="28" height="40"/>
-    <use href="#pine2" x="745" y="552" width="24" height="34"/>
-    <use href="#pine" x="678" y="525" width="32" height="46"/>
-    <use href="#pine" x="695" y="578" width="28" height="40"/>
-    <use href="#pine2" x="695" y="602" width="24" height="34"/>
-    <use href="#pine" x="732" y="597" width="28" height="40"/>
-    <use href="#pine" x="617" y="539" width="24" height="34"/>
-    <use href="#pine2" x="589" y="554" width="24" height="34"/>
-    <use href="#pine" x="573" y="592" width="32" height="46"/>
-    <use href="#pine2" x="667" y="561" width="24" height="34"/>
-    <use href="#pine" x="620" y="572" width="28" height="40"/>
-    <use href="#pine" x="617" y="509" width="24" height="34"/>
-    <use href="#pine" x="576" y="599" width="32" height="46"/>
-    <use href="#pine" x="993" y="582" width="24" height="34"/>
-    <use href="#pine" x="894" y="601" width="32" height="46"/>
-    <use href="#pine2" x="932" y="582" width="32" height="46"/>
-    <use href="#pine2" x="875" y="554" width="28" height="40"/>
-    <use href="#pine" x="936" y="516" width="32" height="46"/>
-    <use href="#pine" x="910" y="521" width="24" height="34"/>
-    <use href="#pine" x="955" y="579" width="28" height="40"/>
-    <use href="#pine2" x="873" y="596" width="32" height="46"/>
-    <use href="#pine2" x="997" y="555" width="32" height="46"/>
-    <use href="#pine2" x="975" y="507" width="24" height="34"/>
-    <use href="#pine" x="1021" y="540" width="24" height="34"/>
-    <use href="#pine2" x="1013" y="521" width="24" height="34"/>
-    <use href="#pine" x="885" y="596" width="28" height="40"/>
-    <use href="#pine2" x="873" y="534" width="28" height="40"/>
-    <use href="#pine" x="1255" y="417" width="24" height="34"/>
-    <use href="#pine" x="1299" y="421" width="28" height="40"/>
-    <use href="#pine2" x="1320" y="429" width="24" height="34"/>
-    <use href="#pine2" x="1274" y="430" width="32" height="46"/>
-    <use href="#pine" x="1263" y="437" width="28" height="40"/>
-    <use href="#pine2" x="1309" y="460" width="24" height="34"/>
-    <use href="#pine" x="1343" y="395" width="32" height="46"/>
-    <use href="#pine" x="1330" y="428" width="28" height="40"/>
-    <use href="#pine2" x="1283" y="415" width="28" height="40"/>
-    <use href="#pine" x="1234" y="439" width="28" height="40"/>
-    <use href="#pine2" x="365" y="805" width="32" height="46"/>
-    <use href="#pine" x="340" y="832" width="24" height="34"/>
-    <use href="#pine2" x="307" y="737" width="24" height="34"/>
-    <use href="#pine2" x="217" y="730" width="28" height="40"/>
-    <use href="#pine" x="276" y="824" width="28" height="40"/>
-    <use href="#pine2" x="385" y="793" width="32" height="46"/>
-    <use href="#pine2" x="347" y="814" width="28" height="40"/>
-    <use href="#pine" x="288" y="786" width="28" height="40"/>
-    <use href="#pine" x="279" y="821" width="32" height="46"/>
-    <use href="#pine2" x="243" y="802" width="28" height="40"/>
-    <use href="#pine2" x="359" y="808" width="24" height="34"/>
-    <use href="#pine" x="315" y="823" width="28" height="40"/>
-    <use href="#pine2" x="528" y="930" width="28" height="40"/>
-    <use href="#pine" x="633" y="889" width="24" height="34"/>
-    <use href="#pine2" x="604" y="895" width="24" height="34"/>
-    <use href="#pine" x="630" y="842" width="24" height="34"/>
-    <use href="#pine" x="586" y="924" width="24" height="34"/>
-    <use href="#pine2" x="651" y="898" width="24" height="34"/>
-    <use href="#pine" x="638" y="911" width="24" height="34"/>
-    <use href="#pine2" x="607" y="915" width="24" height="34"/>
-    <use href="#pine2" x="553" y="848" width="28" height="40"/>
-    <use href="#pine" x="622" y="891" width="24" height="34"/>
-    <use href="#pine2" x="634" y="832" width="32" height="46"/>
-    <use href="#pine2" x="644" y="871" width="24" height="34"/>
-    <use href="#pine2" x="672" y="929" width="28" height="40"/>
-    <use href="#pine" x="616" y="836" width="32" height="46"/>
-    <use href="#pine" x="833" y="953" width="24" height="34"/>
-    <use href="#pine" x="762" y="923" width="28" height="40"/>
-    <use href="#pine2" x="923" y="878" width="32" height="46"/>
-    <use href="#pine" x="890" y="962" width="28" height="40"/>
-    <use href="#pine" x="863" y="877" width="32" height="46"/>
-    <use href="#pine2" x="821" y="870" width="24" height="34"/>
-    <use href="#pine2" x="872" y="912" width="28" height="40"/>
-    <use href="#pine" x="920" y="974" width="24" height="34"/>
-    <use href="#pine2" x="757" y="914" width="24" height="34"/>
-    <use href="#pine2" x="819" y="880" width="32" height="46"/>
-    <use href="#pine" x="907" y="950" width="28" height="40"/>
-    <use href="#pine" x="871" y="963" width="32" height="46"/>
-    <use href="#pine2" x="1163" y="857" width="28" height="40"/>
-    <use href="#pine2" x="1118" y="829" width="24" height="34"/>
-    <use href="#pine" x="1007" y="856" width="32" height="46"/>
-    <use href="#pine2" x="1058" y="930" width="28" height="40"/>
-    <use href="#pine2" x="1058" y="898" width="28" height="40"/>
-    <use href="#pine2" x="1108" y="860" width="28" height="40"/>
-    <use href="#pine2" x="1110" y="873" width="24" height="34"/>
-    <use href="#pine" x="1041" y="896" width="28" height="40"/>
-    <use href="#pine" x="1037" y="887" width="32" height="46"/>
-    <use href="#pine2" x="1081" y="829" width="32" height="46"/>
-    <use href="#pine2" x="1056" y="895" width="32" height="46"/>
-    <use href="#pine" x="1037" y="929" width="28" height="40"/>
-    <use href="#pine2" x="1136" y="850" width="32" height="46"/>
-    <use href="#pine" x="1152" y="923" width="32" height="46"/>
-    <use href="#pine2" x="1412" y="820" width="28" height="40"/>
-    <use href="#pine" x="1364" y="807" width="28" height="40"/>
-    <use href="#pine2" x="1382" y="784" width="28" height="40"/>
-    <use href="#pine2" x="1350" y="821" width="28" height="40"/>
-    <use href="#pine2" x="1307" y="770" width="24" height="34"/>
-    <use href="#pine" x="1360" y="797" width="28" height="40"/>
-    <use href="#pine" x="1270" y="856" width="32" height="46"/>
-    <use href="#pine" x="1411" y="858" width="28" height="40"/>
-    <use href="#pine2" x="1255" y="858" width="32" height="46"/>
-    <use href="#pine" x="1377" y="863" width="24" height="34"/>
+    <use href="#pine" x="362" y="315" width="34" height="49"/>
+    <use href="#pine2" x="406" y="337" width="34" height="49"/>
+    <use href="#pine" x="415" y="365" width="26" height="37"/>
+    <use href="#pine" x="434" y="330" width="30" height="43"/>
+    <use href="#pine" x="485" y="318" width="26" height="37"/>
+    <use href="#pine2" x="682" y="354" width="34" height="49"/>
+    <use href="#pine2" x="624" y="362" width="30" height="43"/>
+    <use href="#pine2" x="673" y="362" width="34" height="49"/>
+    <use href="#pine2" x="594" y="316" width="34" height="49"/>
+    <use href="#pine2" x="673" y="345" width="26" height="37"/>
+    <use href="#pine2" x="680" y="342" width="26" height="37"/>
+    <use href="#pine2" x="1170" y="473" width="26" height="37"/>
+    <use href="#pine2" x="1168" y="487" width="30" height="43"/>
+    <use href="#pine2" x="1218" y="478" width="34" height="49"/>
+    <use href="#pine" x="1205" y="458" width="34" height="49"/>
+    <use href="#pine" x="1203" y="466" width="30" height="43"/>
+    <use href="#pine2" x="1197" y="446" width="34" height="49"/>
+    <use href="#pine" x="281" y="546" width="34" height="49"/>
+    <use href="#pine2" x="334" y="533" width="26" height="37"/>
+    <use href="#pine2" x="377" y="514" width="34" height="49"/>
+    <use href="#pine" x="251" y="550" width="30" height="43"/>
+    <use href="#pine" x="302" y="510" width="34" height="49"/>
+    <use href="#pine" x="434" y="781" width="34" height="49"/>
+    <use href="#pine2" x="456" y="764" width="34" height="49"/>
+    <use href="#pine" x="438" y="808" width="26" height="37"/>
+    <use href="#pine2" x="421" y="789" width="34" height="49"/>
+    <use href="#pine2" x="515" y="804" width="30" height="43"/>
+    <use href="#pine2" x="444" y="777" width="30" height="43"/>
+    <use href="#pine2" x="986" y="674" width="26" height="37"/>
+    <use href="#pine" x="934" y="656" width="34" height="49"/>
+    <use href="#pine" x="947" y="692" width="30" height="43"/>
+    <use href="#pine2" x="947" y="709" width="26" height="37"/>
+    <use href="#pine" x="976" y="705" width="30" height="43"/>
+    <use href="#pine" x="1207" y="745" width="26" height="37"/>
+    <use href="#pine2" x="1184" y="756" width="26" height="37"/>
+    <use href="#pine" x="1172" y="782" width="34" height="49"/>
+    <use href="#pine2" x="1245" y="761" width="26" height="37"/>
+    <use href="#pine" x="1209" y="768" width="30" height="43"/>
+    <use href="#pine" x="666" y="925" width="26" height="37"/>
+    <use href="#pine" x="635" y="987" width="34" height="49"/>
+    <use href="#pine" x="734" y="975" width="26" height="37"/>
+    <use href="#pine" x="656" y="989" width="34" height="49"/>
+    <use href="#pine2" x="686" y="975" width="34" height="49"/>
   </g>
 
-  <!-- Sea-monster flourish, for empty space (upper-left) -->
-  <use href="#seaMonster" x="210" y="430" width="150" height="60"/>
-  <!-- and a smaller fish decoration bottom-right -->
-  <use href="#seaMonster" x="1100" y="1000" width="120" height="50" transform="scale(-1 1) translate(-1220 0)"/>
+  <!-- Sea-monster flourish tucked under the title cartouche on the right -->
+  <use href="#seaMonster" x="1250" y="470" width="140" height="56"/>
 
   <!-- Castles -->
   <g id="castles">
     
-    <g transform="translate(130,150)">
-      <use href="#castle" width="140" height="140"/>
-      <text x="70" y="160" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-size="22" fill="#2a1806" font-weight="bold">Zamek Ogrodzieniec</text>
+    <g transform="translate(145,160)">
+      <use href="#castle" width="150" height="160"/>
+      <text x="75" y="180" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="22" fill="#2a1806"
+            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Ogrodzieniec</text>
     </g>
 
-    <g transform="translate(1250,270)">
-      <use href="#castle" width="140" height="140"/>
-      <text x="70" y="160" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-size="22" fill="#2a1806" font-weight="bold">Zamek Olsztyn</text>
+    <g transform="translate(1245,280)">
+      <use href="#castle" width="150" height="160"/>
+      <text x="75" y="180" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="22" fill="#2a1806"
+            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Olsztyn</text>
     </g>
 
-    <g transform="translate(110,760)">
-      <use href="#castle" width="140" height="140"/>
-      <text x="70" y="160" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-size="22" fill="#2a1806" font-weight="bold">Zamek Mirów</text>
+    <g transform="translate(145,750)">
+      <use href="#castle" width="150" height="160"/>
+      <text x="75" y="180" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="22" fill="#2a1806"
+            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Mirów</text>
     </g>
 
-    <g transform="translate(1250,770)">
-      <use href="#castle" width="140" height="140"/>
-      <text x="70" y="160" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-size="22" fill="#2a1806" font-weight="bold">Zamek Bobolice</text>
+    <g transform="translate(1245,750)">
+      <use href="#castle" width="150" height="160"/>
+      <text x="75" y="180" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="22" fill="#2a1806"
+            paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zamek Bobolice</text>
     </g>
   </g>
 
@@ -476,126 +505,126 @@
        identical across all viewers, including the cairosvg preview. -->
   <g id="cottages-static">
     
-    <g data-slug="fredek" class="cottage-pin" transform="translate(1174,610)">
+    <g data-slug="fredek" class="cottage-pin" transform="translate(1204,670)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Fredek</text>
     </g>
 
-    <g data-slug="iwo" class="cottage-pin" transform="translate(294,950)">
+    <g data-slug="iwo" class="cottage-pin" transform="translate(354,950)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Iwo</text>
     </g>
 
-    <g data-slug="zamczysko" class="cottage-pin" transform="translate(794,530)">
+    <g data-slug="zamczysko" class="cottage-pin" transform="translate(784,570)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Góra Zamczysko</text>
     </g>
 
-    <g data-slug="teodor" class="cottage-pin" transform="translate(794,370)">
+    <g data-slug="teodor" class="cottage-pin" transform="translate(804,420)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Teodor</text>
     </g>
 
-    <g data-slug="tupak" class="cottage-pin" transform="translate(1214,870)">
+    <g data-slug="tupak" class="cottage-pin" transform="translate(1084,880)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Tupak</text>
     </g>
 
-    <g data-slug="elfka-z-duza-d" class="cottage-pin" transform="translate(394,610)">
+    <g data-slug="elfka-z-duza-d" class="cottage-pin" transform="translate(574,650)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Elfka</text>
     </g>
 
-    <g data-slug="pazurek" class="cottage-pin" transform="translate(1054,510)">
+    <g data-slug="pazurek" class="cottage-pin" transform="translate(1034,560)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Pazurek</text>
     </g>
 
-    <g data-slug="halinka" class="cottage-pin" transform="translate(1174,350)">
+    <g data-slug="halinka" class="cottage-pin" transform="translate(1074,430)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Halinka</text>
     </g>
 
-    <g data-slug="gwerda-filinek" class="cottage-pin" transform="translate(514,520)">
+    <g data-slug="gwerda-filinek" class="cottage-pin" transform="translate(394,590)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Gwerda i Filinek</text>
     </g>
 
-    <g data-slug="straznik-zamku" class="cottage-pin" transform="translate(1054,250)">
+    <g data-slug="straznik-zamku" class="cottage-pin" transform="translate(1014,260)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Strażnik Zamku</text>
     </g>
 
-    <g data-slug="dwaj-bracia" class="cottage-pin" transform="translate(534,820)">
+    <g data-slug="dwaj-bracia" class="cottage-pin" transform="translate(514,850)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Dwaj Bracia</text>
     </g>
 
-    <g data-slug="czubata-myszka" class="cottage-pin" transform="translate(454,390)">
+    <g data-slug="czubata-myszka" class="cottage-pin" transform="translate(544,410)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Czubata i Myszka</text>
     </g>
 
-    <g data-slug="zielonowlosy" class="cottage-pin" transform="translate(304,350)">
+    <g data-slug="zielonowlosy" class="cottage-pin" transform="translate(384,430)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zielonowłosy</text>
     </g>
 
-    <g data-slug="zaprasza" class="cottage-pin" transform="translate(694,670)">
+    <g data-slug="zaprasza" class="cottage-pin" transform="translate(744,690)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Zaprasza</text>
     </g>
 
-    <g data-slug="samotny" class="cottage-pin" transform="translate(954,670)">
+    <g data-slug="samotny" class="cottage-pin" transform="translate(964,690)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Samotny Elf</text>
     </g>
 
-    <g data-slug="skalne-iglice" class="cottage-pin" transform="translate(1094,770)">
+    <g data-slug="skalne-iglice" class="cottage-pin" transform="translate(1134,780)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Skalne Iglice</text>
     </g>
 
-    <g data-slug="stary-elf" class="cottage-pin" transform="translate(754,840)">
+    <g data-slug="stary-elf" class="cottage-pin" transform="translate(704,870)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"
             paint-order="stroke" stroke="#f5dfa8" stroke-width="4" stroke-linejoin="round">Stary Elf</text>
     </g>
 
-    <g data-slug="straznik-lodu" class="cottage-pin" transform="translate(794,250)">
+    <g data-slug="straznik-lodu" class="cottage-pin" transform="translate(694,270)">
       <use href="#cottageHouse" width="52" height="56"/>
       <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
             font-weight="bold" font-size="20" fill="#2a1806" class="cottage-label"

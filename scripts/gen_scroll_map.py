@@ -132,22 +132,43 @@ def tick_marks():
 
 # ---------- symbols (hand-drawn ink style) ----------
 SYMBOLS = f"""
-  <!-- Mountain range: a trio of triangular peaks with slope hatching -->
-  <symbol id="mountain" viewBox="0 0 160 100">
-    <path d="M 10,92 L 50,22 L 90,92 Z"
-          fill="{PAPER_LOW}" stroke="{INK}" stroke-width="2"/>
-    <path d="M 60,92 L 100,8 L 140,92 Z"
-          fill="{PAPER_MID}" stroke="{INK}" stroke-width="2"/>
-    <path d="M 110,92 L 140,38 L 158,92 Z"
-          fill="{PAPER_LOW}" stroke="{INK}" stroke-width="2"/>
-    <!-- Snow caps on the tallest peak -->
-    <path d="M 92,20 L 100,8 L 108,20 L 104,24 L 100,18 L 96,24 Z"
-          fill="{PAPER_HI}" stroke="{INK}" stroke-width="1"/>
-    <!-- Slope hatching (suggests rocky terrain) -->
-    <g stroke="{INK}" stroke-width="0.8" fill="none" opacity="0.8">
-      <path d="M 50,22 L 44,34 M 48,30 L 42,42 M 46,38 L 40,50 M 44,46 L 38,58"/>
-      <path d="M 100,8 L 93,22 M 98,16 L 90,30 M 96,24 L 88,38 M 94,32 L 86,46 M 92,40 L 84,54 M 90,48 L 82,62 M 88,56 L 80,70"/>
-      <path d="M 140,38 L 134,50 M 138,46 L 132,58 M 136,54 L 130,66"/>
+  <!-- Rolling-hills / low mountain range in vintage-map ink style:
+       soft rounded bumps with parallel shading hatch-marks on the right flank
+       and small foothill tick-marks at the base. Not sharp, not numerous. -->
+  <symbol id="mountain" viewBox="0 0 220 80">
+    <!-- Main undulating silhouette (4–5 rounded humps) -->
+    <path d="M 6,70
+             C 16,56 26,34 42,36
+             C 54,20 70,18 86,34
+             C 98,22 116,22 132,36
+             C 146,26 162,30 178,44
+             C 190,54 200,64 214,70 Z"
+          fill="{PAPER_MID}" fill-opacity="0.35"
+          stroke="{INK}" stroke-width="2.2" stroke-linejoin="round"/>
+    <!-- Behind-contour suggestion of a further range -->
+    <path d="M 30,52 C 46,42 58,36 70,42 C 82,36 94,32 108,40
+             M 120,44 C 134,36 150,36 164,46 C 176,44 188,50 204,58"
+          fill="none" stroke="{INK}" stroke-width="1" opacity="0.65"/>
+    <!-- Right-flank slope hatching, applied to each bump -->
+    <g stroke="{INK}" stroke-width="0.9" fill="none" opacity="0.75">
+      <line x1="46" y1="40"  x2="38" y2="54"/>
+      <line x1="50" y1="44"  x2="42" y2="58"/>
+      <line x1="54" y1="50"  x2="46" y2="62"/>
+      <line x1="92" y1="36"  x2="82" y2="52"/>
+      <line x1="96" y1="42"  x2="86" y2="56"/>
+      <line x1="100" y1="48" x2="90" y2="62"/>
+      <line x1="138" y1="40" x2="128" y2="54"/>
+      <line x1="142" y1="46" x2="132" y2="60"/>
+      <line x1="184" y1="50" x2="174" y2="62"/>
+      <line x1="188" y1="56" x2="178" y2="66"/>
+    </g>
+    <!-- Small foothill / rock tick-marks along the base -->
+    <g stroke="{INK}" stroke-width="1" fill="none" stroke-linecap="round">
+      <path d="M 22,67 l 3,-4 l 3,4"/>
+      <path d="M 60,65 l 2.5,-3 l 2.5,3"/>
+      <path d="M 104,63 l 2.5,-3 l 2.5,3"/>
+      <path d="M 150,65 l 2.5,-3 l 2.5,3"/>
+      <path d="M 190,68 l 2.5,-3 l 2.5,3"/>
     </g>
   </symbol>
 
@@ -165,48 +186,137 @@ SYMBOLS = f"""
     <rect x="13.5" y="38" width="3" height="2" fill="{INK_DARK}"/>
   </symbol>
 
-  <!-- Castle: main keep, two flanking towers, crenellations, flag -->
-  <symbol id="castle" viewBox="0 0 160 140">
-    <!-- Rocky base -->
-    <path d="M 0,128 Q 30,112 60,122 T 120,118 Q 150,126 160,132 L 160,140 L 0,140 Z"
-          fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.5"/>
-    <!-- Left tower -->
-    <rect x="22" y="68" width="30" height="60" fill="{PAPER_MID}" stroke="{INK}" stroke-width="1.6"/>
-    <path d="M 22,68 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
+  <!-- Medieval stone castle, drawn as an ink contour:
+         * tall cylindrical (round) keep with battlements,
+         * attached lower stone wall,
+         * conical roof on a smaller flanking turret,
+         * Polish flag on a pole flying from the keep's top (white top, red bottom),
+         * the stonework is suggested by a brick-pattern hatch. -->
+  <symbol id="castle" viewBox="0 0 160 170">
+    <!-- Rocky outcrop base (soft contour) -->
+    <path d="M 4,160 Q 40,148 80,154 T 156,156 L 156,168 L 4,168 Z"
           fill="none" stroke="{INK}" stroke-width="1.6"/>
-    <!-- Right tower -->
-    <rect x="108" y="62" width="32" height="66" fill="{PAPER_MID}" stroke="{INK}" stroke-width="1.6"/>
-    <path d="M 108,62 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
-          fill="none" stroke="{INK}" stroke-width="1.6"/>
-    <!-- Main keep (central, tallest) -->
-    <rect x="58" y="42" width="46" height="86" fill="{PAPER_HI}" stroke="{INK}" stroke-width="1.8"/>
-    <path d="M 58,42 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
+    <g stroke="{INK}" stroke-width="0.7" fill="none" opacity="0.7">
+      <path d="M 12,162 l 3,-4 l 3,4"/>
+      <path d="M 60,158 l 3,-4 l 3,4"/>
+      <path d="M 100,158 l 3,-4 l 3,4"/>
+      <path d="M 140,160 l 3,-4 l 3,4"/>
+    </g>
+
+    <!-- Attached curtain wall (right side, lower) -->
+    <rect x="88" y="104" width="62" height="52" fill="{PAPER_HI}"
+          stroke="{INK}" stroke-width="2"/>
+    <!-- Wall crenellations -->
+    <path d="M 88,104 V 96 H 94 V 104 M 100,104 V 96 H 106 V 104
+             M 112,104 V 96 H 118 V 104 M 124,104 V 96 H 130 V 104
+             M 136,104 V 96 H 142 V 104 M 148,104 V 96 H 150 V 104"
           fill="none" stroke="{INK}" stroke-width="1.8"/>
-    <!-- Windows -->
-    <rect x="76" y="58" width="5" height="10" fill="{INK}"/>
-    <rect x="83" y="58" width="5" height="10" fill="{INK}"/>
-    <rect x="30" y="86" width="4" height="8" fill="{INK}"/>
-    <rect x="42" y="86" width="4" height="8" fill="{INK}"/>
-    <rect x="118" y="80" width="4" height="8" fill="{INK}"/>
-    <rect x="130" y="80" width="4" height="8" fill="{INK}"/>
-    <!-- Door -->
-    <path d="M 76,128 V 104 Q 76,96 82,96 H 82 Q 88,96 88,104 V 128 Z"
+    <!-- Small corner turret on the far right -->
+    <rect x="140" y="78" width="14" height="26" fill="{PAPER_HI}"
+          stroke="{INK}" stroke-width="1.8"/>
+    <polygon points="138,78 147,64 156,78" fill="{PAPER_MID}"
+             stroke="{INK}" stroke-width="1.6"/>
+    <!-- Wall gate -->
+    <path d="M 110,156 V 132 Q 110,120 118,120 Q 126,120 126,132 V 156 Z"
           fill="{INK}"/>
-    <!-- Flag on keep -->
-    <line x1="81" y1="36" x2="81" y2="18" stroke="{INK_DARK}" stroke-width="2"/>
-    <path d="M 81,18 L 100,24 L 81,30 Z" fill="{ACCENT_RED}" stroke="{INK_DARK}" stroke-width="1"/>
-    <!-- Bricks hatching (subtle) -->
-    <g stroke="{INK}" stroke-width="0.5" opacity="0.35" fill="none">
-      <line x1="58" y1="56"  x2="104" y2="56"/>
-      <line x1="58" y1="74"  x2="104" y2="74"/>
-      <line x1="58" y1="92"  x2="104" y2="92"/>
-      <line x1="58" y1="110" x2="104" y2="110"/>
-      <line x1="22" y1="82"  x2="52"  y2="82"/>
-      <line x1="22" y1="98"  x2="52"  y2="98"/>
-      <line x1="22" y1="114" x2="52"  y2="114"/>
-      <line x1="108" y1="76" x2="140" y2="76"/>
-      <line x1="108" y1="94" x2="140" y2="94"/>
-      <line x1="108" y1="112" x2="140" y2="112"/>
+    <!-- Wall slit windows -->
+    <rect x="96" y="120" width="3" height="10" fill="{INK}"/>
+    <rect x="136" y="120" width="3" height="10" fill="{INK}"/>
+
+    <!-- Main round keep: cylindrical body shown side-on -->
+    <!-- body (tall rectangle; "roundness" hinted by vertical shading arcs) -->
+    <rect x="30" y="52" width="52" height="104" fill="{PAPER_HI}"
+          stroke="{INK}" stroke-width="2.2"/>
+    <!-- Left & right curvature shading arcs (to read as cylinder) -->
+    <path d="M 30,56 Q 36,100 30,154" fill="none"
+          stroke="{INK}" stroke-width="1" opacity="0.55"/>
+    <path d="M 82,56 Q 76,100 82,154" fill="none"
+          stroke="{INK}" stroke-width="1" opacity="0.55"/>
+    <!-- Keep crenellations -->
+    <path d="M 30,52 V 42 H 36 V 52 M 42,52 V 42 H 48 V 52
+             M 54,52 V 42 H 60 V 52 M 66,52 V 42 H 72 V 52
+             M 78,52 V 42 H 82 V 52"
+          fill="none" stroke="{INK}" stroke-width="2"/>
+    <!-- Arched keep door -->
+    <path d="M 48,156 V 130 Q 48,118 56,118 Q 64,118 64,130 V 156 Z"
+          fill="{INK}"/>
+    <!-- Arched window on the keep -->
+    <path d="M 52,92 V 76 Q 52,70 56,70 Q 60,70 60,76 V 92 Z"
+          fill="{INK}"/>
+    <!-- Slit windows -->
+    <rect x="38" y="100" width="3" height="10" fill="{INK}"/>
+    <rect x="71" y="100" width="3" height="10" fill="{INK}"/>
+
+    <!-- Flag pole + Polish flag (white top, red bottom) -->
+    <line x1="56" y1="42" x2="56" y2="14" stroke="{INK_DARK}" stroke-width="2"/>
+    <rect x="56" y="14" width="26" height="7"
+          fill="#ffffff" stroke="{INK}" stroke-width="0.9"/>
+    <rect x="56" y="21" width="26" height="7"
+          fill="#d4202a" stroke="{INK}" stroke-width="0.9"/>
+
+    <!-- Stone-masonry pattern on keep (brick courses, offset per row) -->
+    <g stroke="{INK}" stroke-width="0.6" opacity="0.55" fill="none">
+      <!-- horizontal courses -->
+      <line x1="30" y1="64"  x2="82" y2="64"/>
+      <line x1="30" y1="76"  x2="82" y2="76"/>
+      <line x1="30" y1="88"  x2="82" y2="88"/>
+      <line x1="30" y1="100" x2="82" y2="100"/>
+      <line x1="30" y1="112" x2="82" y2="112"/>
+      <line x1="30" y1="124" x2="82" y2="124"/>
+      <line x1="30" y1="136" x2="82" y2="136"/>
+      <line x1="30" y1="148" x2="82" y2="148"/>
+      <!-- row 1 verticals -->
+      <line x1="43" y1="52" x2="43" y2="64"/>
+      <line x1="56" y1="52" x2="56" y2="64"/>
+      <line x1="69" y1="52" x2="69" y2="64"/>
+      <!-- row 2 (offset) -->
+      <line x1="36" y1="64" x2="36" y2="76"/>
+      <line x1="49" y1="64" x2="49" y2="76"/>
+      <line x1="62" y1="64" x2="62" y2="76"/>
+      <line x1="75" y1="64" x2="75" y2="76"/>
+      <!-- row 3 -->
+      <line x1="43" y1="76" x2="43" y2="88"/>
+      <line x1="56" y1="76" x2="56" y2="88"/>
+      <line x1="69" y1="76" x2="69" y2="88"/>
+      <!-- row 4 -->
+      <line x1="36" y1="88" x2="36" y2="100"/>
+      <line x1="49" y1="88" x2="49" y2="100"/>
+      <line x1="62" y1="88" x2="62" y2="100"/>
+      <line x1="75" y1="88" x2="75" y2="100"/>
+      <!-- row 5 -->
+      <line x1="43" y1="100" x2="43" y2="112"/>
+      <line x1="69" y1="100" x2="69" y2="112"/>
+      <!-- row 6 -->
+      <line x1="36" y1="112" x2="36" y2="124"/>
+      <line x1="49" y1="112" x2="49" y2="124"/>
+      <line x1="62" y1="112" x2="62" y2="124"/>
+      <line x1="75" y1="112" x2="75" y2="124"/>
+      <!-- row 7 (around door) -->
+      <line x1="43" y1="124" x2="43" y2="136"/>
+      <line x1="69" y1="124" x2="69" y2="136"/>
+      <!-- row 8 -->
+      <line x1="36" y1="136" x2="36" y2="148"/>
+      <line x1="75" y1="136" x2="75" y2="148"/>
+    </g>
+
+    <!-- Stone-masonry pattern on curtain wall -->
+    <g stroke="{INK}" stroke-width="0.5" opacity="0.5" fill="none">
+      <line x1="88" y1="116" x2="150" y2="116"/>
+      <line x1="88" y1="128" x2="150" y2="128"/>
+      <line x1="88" y1="140" x2="150" y2="140"/>
+      <line x1="88" y1="152" x2="150" y2="152"/>
+      <line x1="98" y1="104" x2="98" y2="116"/>
+      <line x1="114" y1="104" x2="114" y2="116"/>
+      <line x1="134" y1="104" x2="134" y2="116"/>
+      <line x1="94" y1="116" x2="94" y2="128"/>
+      <line x1="106" y1="116" x2="106" y2="128"/>
+      <line x1="140" y1="116" x2="140" y2="128"/>
+      <line x1="100" y1="128" x2="100" y2="140"/>
+      <line x1="132" y1="128" x2="132" y2="140"/>
+      <line x1="144" y1="128" x2="144" y2="140"/>
+      <line x1="94" y1="140" x2="94" y2="152"/>
+      <line x1="106" y1="140" x2="106" y2="152"/>
+      <line x1="140" y1="140" x2="140" y2="152"/>
     </g>
   </symbol>
 
@@ -276,21 +386,18 @@ SYMBOLS = f"""
 
 # ---------- scene elements (static map content) ----------
 def mountains_layout():
-    """Scattered mountain ranges across the map."""
-    # (cx, cy, width) — height is derived from width*0.62
+    """A handful of rolling ridges spread across the paper.
+    Intentionally sparse and wide — treasure-map style, not a tall mountain range."""
+    # (cx, cy, width) — mountain symbol is 220×80, so height = width * 80/220
     clusters = [
-        (560, 340, 260),    # upper-centre-left
-        (780, 430, 320),    # upper-centre range
-        (1080, 450, 220),   # upper-right
-        (240, 600, 220),    # left lower ridge
-        (540, 770, 240),    # centre-south
-        (920, 760, 260),    # south-east range
-        (1180, 710, 200),   # east
-        (360, 900, 220),    # south-west (near Iwo)
+        (720,  470, 420),   # main central ridge (horizontal band)
+        (1100, 610, 340),   # mid-right ridge
+        (400,  700, 300),   # mid-left lower range
+        (860,  820, 360),   # southern ridge
     ]
     parts = []
     for cx, cy, w in clusters:
-        h = w * 0.62
+        h = w * 80 / 220
         parts.append(
             f'<use href="#mountain" x="{cx - w/2:.0f}" y="{cy - h/2:.0f}" '
             f'width="{w}" height="{h:.0f}"/>'
@@ -299,27 +406,26 @@ def mountains_layout():
 
 
 def forest_layout():
-    """Dense pine/fir clusters scattered across the map."""
+    """A handful of small pine/fir clusters between the mountains and cottages.
+    Kept sparse so the cottage houses and castles remain readable."""
     rnd = random.Random(91)
-    # Several forest "patches" centred around (cx, cy) with ~count trees
+    # (cx, cy, count) — gentle clusters
     patches = [
-        (180, 380, 10),
-        (420, 520, 14),
-        (660, 560, 16),
-        (950, 560, 14),
-        (1260, 420, 10),
-        (300, 780, 12),
-        (600, 880, 14),
-        (840, 920, 12),
-        (1080, 880, 14),
-        (1340, 820, 10),
+        (420, 340, 5),   # NW
+        (640, 340, 6),   # N (between Ogrodzieniec and Olsztyn)
+        (1180, 470, 6),  # mid-right
+        (320, 540, 5),   # mid-left
+        (470, 780, 6),   # S-centre-left
+        (920, 680, 5),   # mid-SE
+        (1240, 760, 5),  # SE
+        (700, 960, 5),   # bottom
     ]
     out = []
     for cx, cy, n in patches:
         for _ in range(n):
-            px = cx + rnd.uniform(-90, 90)
-            py = cy + rnd.uniform(-55, 55)
-            w = rnd.choice([24, 28, 32])
+            px = cx + rnd.uniform(-70, 70)
+            py = cy + rnd.uniform(-38, 38)
+            w = rnd.choice([26, 30, 34])
             h = int(w * 1.45)
             sym = rnd.choice(["pine", "pine2"])
             out.append(
@@ -332,19 +438,22 @@ def castles_layout():
     """The four Polish castles, spread across the map corners.
     Olsztyn sits in the upper-right below the title cartouche so they
     don't collide."""
+    W, H = 150, 160   # display width/height of each castle (aspect ≈160:170)
     castles = [
-        (200,  220, "Zamek Ogrodzieniec"),
-        (1320, 340, "Zamek Olsztyn"),
-        (180,  830, "Zamek Mirów"),
-        (1320, 840, "Zamek Bobolice"),
+        (220,  240, "Zamek Ogrodzieniec"),
+        (1320, 360, "Zamek Olsztyn"),
+        (220,  830, "Zamek Mirów"),
+        (1320, 830, "Zamek Bobolice"),
     ]
     parts = []
     for cx, cy, label in castles:
         parts.append(f"""
-    <g transform="translate({cx - 70},{cy - 70})">
-      <use href="#castle" width="140" height="140"/>
-      <text x="70" y="160" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-            font-size="22" fill="{INK_DARK}" font-weight="bold">{label}</text>
+    <g transform="translate({cx - W/2:.0f},{cy - H/2:.0f})">
+      <use href="#castle" width="{W}" height="{H}"/>
+      <text x="{W/2:.0f}" y="{H + 20:.0f}" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic" font-weight="bold"
+            font-size="22" fill="{INK_DARK}"
+            paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">{label}</text>
     </g>""")
     return "\n".join(parts)
 
@@ -502,10 +611,8 @@ def generate(debug=False):
     {forest_layout()}
   </g>
 
-  <!-- Sea-monster flourish, for empty space (upper-left) -->
-  <use href="#seaMonster" x="210" y="430" width="150" height="60"/>
-  <!-- and a smaller fish decoration bottom-right -->
-  <use href="#seaMonster" x="1100" y="1000" width="120" height="50" transform="scale(-1 1) translate(-1220 0)"/>
+  <!-- Sea-monster flourish tucked under the title cartouche on the right -->
+  <use href="#seaMonster" x="1250" y="470" width="140" height="56"/>
 
   <!-- Castles -->
   <g id="castles">
