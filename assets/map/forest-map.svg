@@ -215,9 +215,7 @@
     <use href="#compass" width="140" height="140"/>
   </g>
 
-  <!-- Ornate border -->
-  <rect x="12" y="12" width="1576" height="1176" fill="none" stroke="#3a2a1a" stroke-width="6" rx="24" ry="24"/>
-  <rect x="28" y="28" width="1544" height="1144" fill="none" stroke="#8d6b3d" stroke-width="2" stroke-dasharray="4 6" rx="18" ry="18"/>
+  <!-- (Outer border removed: the map now sits inside an HTML parchment scroll frame.) -->
 
   <!-- Title cartouche -->
   <g transform="translate(560,40)" filter="url(#softShadow)">
