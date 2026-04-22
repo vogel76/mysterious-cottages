@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Chatynkowo — baśniowe chatynki Elfów</title>
+  <meta name="description" content="Baśniowa mapa ukrytych chatynek Elfów w Jurze Krakowsko-Częstochowskiej. Odkryj kamienne ścieżki, poznaj historie i znajdź wszystkie Chatynki."/>
+  <link rel="icon" href="assets/img/cropped-znacznik-192x192.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header class="hero" id="top">
+    <div class="stars" aria-hidden="true"></div>
+    <div class="fireflies" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="hero__inner">
+      <img src="assets/img/Projekt-bez-nazwy-3.png" alt="Chatynkowo — znacznik" class="hero__mark" loading="lazy"/>
+      <h1 class="hero__title">Witamy w&nbsp;Chatynkowie</h1>
+      <p class="hero__lede">
+        Miejsce, gdzie baśnie stają się rzeczywistością. W&nbsp;ukrytych zakamarkach natury czekają
+        na Ciebie malutkie chatynki — domy prawdziwych Elfów.
+      </p>
+      <nav class="hero__nav" aria-label="Menu">
+        <a href="#mapa">Baśniowa mapa</a>
+        <a href="#magia">Magia Chatynek</a>
+        <a href="#kod">Tajny kod</a>
+        <a href="#historie">Historie</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="mapa" class="section section--map">
+      <h2 class="section__title">Znajdź wszystkie Chatynki</h2>
+      <p class="section__subtitle">
+        Baśniowa mapa lasu. Kamienne ścieżki wiodące spomiędzy drzew prowadzą do Chatynek.
+        Kliknij chatynkę, by otworzyć nawigację dojazdową, lub przeczytaj jej historię.
+      </p>
+
+      <div class="map-wrapper" aria-label="Interaktywna baśniowa mapa Chatynkowa">
+        <div class="map-stage" id="mapStage">
+          <!-- SVG is loaded inline at runtime so we can manipulate markers and paths -->
+        </div>
+        <aside class="map-legend">
+          <h3>Legenda</h3>
+          <ul>
+            <li><span class="legend-dot legend-dot--cottage"></span> Chatynka Elfa</li>
+            <li><span class="legend-dot legend-dot--castle"></span> Zamek: Ogrodzieniec, Olsztyn, Bobolice, Mirów</li>
+            <li><span class="legend-dot legend-dot--path"></span> Kamienna ścieżka z lasu</li>
+          </ul>
+          <p class="map-legend__hint">
+            Najedź na chatynkę, by zobaczyć nazwę. Kliknij, by otworzyć okno z opisem,
+            nawigacją i opowieścią Elfa.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="magia" class="section">
+      <h2 class="section__title">Na czym polega magia Chatynek</h2>
+      <div class="faq">
+        <article class="faq__item">
+          <h3>Czym są Chatynki?</h3>
+          <p>To malutkie, tajemnicze leśne domki pełne magii i historii.</p>
+        </article>
+        <article class="faq__item">
+          <h3>Jak odnaleźć Chatynki?</h3>
+          <p>Na Elfa możesz trafić w każdej chwili. Jeśli chcesz ich poszukać, użyj baśniowej mapy powyżej.</p>
+        </article>
+        <article class="faq__item">
+          <h3>Kim są mieszkańcy Chatynek?</h3>
+          <p>To Elfy. Każdy z nich ma nam do powiedzenia swoją historię. Bardzo ważną.</p>
+        </article>
+        <article class="faq__item">
+          <h3>Co zrobić jak znajdę Chatynkę?</h3>
+          <p>Zeskanuj kod QR, który znajduje się na tabliczce w jej pobliżu, albo wpisz tajny 4-cyfrowy kod poniżej.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="kod" class="section section--code">
+      <h2 class="section__title">Poznaj historię</h2>
+      <p class="section__subtitle">
+        Poszukiwaczu, jeśli znalazłeś Chatynkę, wpisz tajny czterocyfrowy kod z&nbsp;tabliczki
+        i zobacz, jak dzieje się magia.
+      </p>
+      <form class="code" id="codeForm" novalidate>
+        <label class="sr-only" for="historiaKod">4-cyfrowy kod</label>
+        <input id="historiaKod" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+               placeholder="• • • •" autocomplete="off" required/>
+        <button type="submit" class="btn btn--primary">Odkryj historię</button>
+      </form>
+      <p id="codeResult" class="code__result" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="historie" class="section">
+      <h2 class="section__title">Historie Chatynek</h2>
+      <p class="section__subtitle">
+        Każda chatynka ma swój opis w&nbsp;osobnym pliku Markdown. Możesz je pobierać,
+        edytować i udostępniać.
+      </p>
+      <ul class="cottage-index" id="cottageIndex"></ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <p>&copy; Chatynkowo. Baśniowy projekt inspirowany <a href="https://chatynkowo.pl" rel="noopener">chatynkowo.pl</a>.</p>
+      <ul class="socials">
+        <li><a href="https://www.instagram.com/chatynkowo.pl/" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.facebook.com/chatynkowo/" rel="noopener">Facebook</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Cottage detail modal -->
+  <dialog class="modal" id="cottageModal" aria-labelledby="modalTitle">
+    <button class="modal__close" id="modalClose" aria-label="Zamknij">×</button>
+    <article class="modal__content" id="modalContent">
+      <p>Ładuję opowieść…</p>
+    </article>
+    <div class="modal__actions">
+      <a href="#" id="modalDirections" target="_blank" rel="noopener" class="btn btn--primary">🧭 Nawigacja dojazdowa</a>
+      <a href="#" id="modalOsm" target="_blank" rel="noopener" class="btn btn--ghost">Otwórz w OSM</a>
+      <a href="#" id="modalMd" class="btn btn--ghost" download>📄 Pobierz .md</a>
+    </div>
+  </dialog>
+
+  <!-- Markdown renderer: https://github.com/markedjs/marked -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js" defer></script>
+  <script src="main.js" defer></script>
+</body>
+</html>
