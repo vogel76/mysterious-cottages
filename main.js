@@ -6,27 +6,10 @@
   const MAP_URL      = 'assets/map/forest-map.svg';
   const MD_DIR       = 'cottages';
 
-  /* Map projection bounds (lat/lng → SVG x/y).
-     Chosen so all castles + cottages fit in the 1600×1200 SVG nicely. */
-  const BOUNDS = {
-    latMin: 50.15, latMax: 50.78,   // inverted: north=top
-    lngMin: 19.24, lngMax: 19.70,
-    svgW: 1600,    svgH: 1200,
-    padX: 140,     padY: 220
-  };
-
   const state = {
     cottages: [],
     svgRoot: null
   };
-
-  /* ---------- Coordinate projection ---------- */
-  function project(lat, lng) {
-    const { latMin, latMax, lngMin, lngMax, svgW, svgH, padX, padY } = BOUNDS;
-    const x = padX + (lng - lngMin) / (lngMax - lngMin) * (svgW - 2 * padX);
-    const y = padY + (latMax - lat) / (latMax - latMin) * (svgH - 2 * padY);
-    return { x, y };
-  }
 
   /* ---------- Fetch + inject the map SVG ---------- */
   async function loadMap() {
@@ -43,86 +26,55 @@
     state.cottages = await res.json();
   }
 
-  /* ---------- Draw paths & cottage markers ---------- */
-  function slugSafe(s) {
-    return s.toLowerCase()
-      .replaceAll('ą','a').replaceAll('ć','c').replaceAll('ę','e')
-      .replaceAll('ł','l').replaceAll('ń','n').replaceAll('ó','o')
-      .replaceAll('ś','s').replaceAll('ź','z').replaceAll('ż','z')
-      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  }
-
+  /* ---------- Interactive cottage overlay ----------
+     The visible cottage icons + labels are drawn statically into forest-map.svg
+     (at mapX/mapY). This function layers a transparent clickable / focusable
+     circle on top of each one, so users can hover, click or keyboard-activate
+     the cottage to open its modal. It also wires a hover highlight class on
+     the static <g data-slug> groups for a visual response. */
   function drawCottages() {
     if (!state.svgRoot) return;
     const svgNS = 'http://www.w3.org/2000/svg';
     const cottagesLayer = state.svgRoot.querySelector('#cottages');
-    const branchesLayer = state.svgRoot.querySelector('#branches');
+    if (!cottagesLayer) return;
     cottagesLayer.innerHTML = '';
-    branchesLayer.innerHTML = '';
 
-    // Entry points along the "forest edge spine" where branches emerge.
-    const entryPoints = [
-      { x: 140,  y: 770 },  { x: 380,  y: 800 },  { x: 620, y: 830 },
-      { x: 860,  y: 860 },  { x: 1100, y: 860 },  { x: 1340, y: 840 },
-      { x: 1520, y: 820 }
-    ];
+    state.cottages.forEach((c) => {
+      const x = Number(c.mapX);
+      const y = Number(c.mapY);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
-    state.cottages.forEach((c, i) => {
-      const p = project(c.lat, c.lng);
-      // Nearest entry point
-      let near = entryPoints[0], best = Infinity;
-      for (const ep of entryPoints) {
-        const d = Math.hypot(ep.x - p.x, ep.y - p.y);
-        if (d < best) { best = d; near = ep; }
-      }
+      // Find the matching static cottage group (if present) so we can toggle
+      // a hover class on it.
+      const staticGroup = state.svgRoot.querySelector(
+        `#cottages-static [data-slug="${c.slug}"]`
+      );
 
-      // Curved stone path from entry to cottage
-      const midX = (near.x + p.x) / 2 + (i % 2 === 0 ? 30 : -30);
-      const midY = (near.y + p.y) / 2 + (i % 3 === 0 ? -40 : 30);
-      const path = document.createElementNS(svgNS, 'path');
-      path.setAttribute('d', `M${near.x},${near.y} Q${midX},${midY} ${p.x},${p.y}`);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', '#8d6b3d');
-      path.setAttribute('stroke-width', '6');
-      path.setAttribute('stroke-linecap', 'round');
-      path.setAttribute('stroke-dasharray', '6 8');
-      path.setAttribute('opacity', '0.95');
-      branchesLayer.appendChild(path);
+      // Transparent clickable hit area: a generous circle covering the icon
+      // and its label.
+      const hit = document.createElementNS(svgNS, 'circle');
+      hit.setAttribute('cx', String(x));
+      hit.setAttribute('cy', String(y + 18));  // cover icon + label
+      hit.setAttribute('r',  '54');
+      hit.setAttribute('fill', 'transparent');
+      hit.setAttribute('class', 'cottage-hit');
+      hit.setAttribute('tabindex', '0');
+      hit.setAttribute('role', 'button');
+      hit.setAttribute('aria-label', `${c.title}. Kliknij, aby otworzyć opis i nawigację.`);
+      hit.dataset.slug = c.slug;
 
-      // Cottage marker: small house glyph
-      const g = document.createElementNS(svgNS, 'g');
-      g.setAttribute('class', 'cottage-marker');
-      g.setAttribute('transform', `translate(${p.x - 22},${p.y - 34})`);
-      g.setAttribute('tabindex', '0');
-      g.setAttribute('role', 'button');
-      g.setAttribute('aria-label', `${c.title}. Kliknij, aby otworzyć opis i nawigację.`);
-      g.dataset.slug = c.slug;
-
-      g.innerHTML = `
-        <rect x="6"  y="20" width="32" height="24" fill="#f3e0b2" stroke="#3a2a1a" stroke-width="1.6"/>
-        <polygon class="cottage-roof" points="2,22 22,2 42,22" fill="#b83a3a" stroke="#3a2a1a" stroke-width="1.6"/>
-        <rect x="18" y="30" width="8" height="14" fill="#6d4a14" stroke="#3a2a1a" stroke-width="1"/>
-        <rect x="8"  y="26" width="6" height="6" fill="#ffd36b" stroke="#3a2a1a" stroke-width="1"/>
-        <rect x="30" y="26" width="6" height="6" fill="#ffd36b" stroke="#3a2a1a" stroke-width="1"/>
-        <rect x="28" y="6" width="4" height="10" fill="#3a2a1a"/>
-        <circle cx="22" cy="52" r="2" fill="#3a2a1a"/>
-      `;
-
-      // Tooltip label (pop-up-like, shown always for legibility)
-      const label = document.createElementNS(svgNS, 'text');
-      label.setAttribute('class', 'cottage-label');
-      label.setAttribute('x', p.x);
-      label.setAttribute('y', p.y + 20);
-      label.setAttribute('text-anchor', 'middle');
-      label.textContent = c.title.replace(/^Chatynka\s+/, '');
-
-      g.addEventListener('click', () => openCottageModal(c));
-      g.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCottageModal(c); }
+      const activate = () => openCottageModal(c);
+      hit.addEventListener('click', activate);
+      hit.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
       });
-
-      cottagesLayer.appendChild(g);
-      cottagesLayer.appendChild(label);
+      if (staticGroup) {
+        hit.addEventListener('mouseenter', () => staticGroup.classList.add('is-hover'));
+        hit.addEventListener('mouseleave', () => staticGroup.classList.remove('is-hover'));
+        hit.addEventListener('focus',      () => staticGroup.classList.add('is-hover'));
+        hit.addEventListener('blur',       () => staticGroup.classList.remove('is-hover'));
+      }
+      cottagesLayer.appendChild(hit);
     });
   }
 

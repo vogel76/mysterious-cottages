@@ -1,434 +1,555 @@
 #!/usr/bin/env python3
-"""Generate assets/map/forest-map.svg as a treasure-map scroll.
+"""Generate assets/map/forest-map.svg in a vintage pirate-treasure-map style.
 
-Frame: aged parchment body with torn wavy top/bottom edges and two
-cylindrical coiled rolls on the left & right. The existing fairytale
-scene (moon, hills, river, forest, castles, paths, compass, title
-cartouche, and the JS-populated #cottages / #branches layers) is
-rendered inside a nested <svg> that fills the inner parchment area.
-Idempotent: re-run to regenerate the SVG.
+Full-frame aged parchment with torn edges on ALL four sides, a
+decorative double-ruled inner border, hand-drawn ink symbols
+(mountains, pines, castles, cottages, compass rose), a title
+cartouche and the fairytale scene content. Cottage positions come
+from data/cottages.json (mapX, mapY fields); the #cottages and
+#branches groups are left empty for main.js to populate at runtime.
+
+Re-runnable: call `python3 scripts/gen_scroll_map.py` to regenerate.
 """
 from __future__ import annotations
+
+import json
 import random
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parents[1] / "assets/map/forest-map.svg"
+ROOT = Path(__file__).resolve().parents[1]
+OUT  = ROOT / "assets/map/forest-map.svg"
+COTTAGES_JSON = ROOT / "data/cottages.json"
 
-# ---------- layout ----------
 VW, VH = 1600, 1200
 
-LEFT_ROLL_CX  = 170
-RIGHT_ROLL_CX = 1430
-ROLL_RX       = 46                       # half-width of each cylinder's body
-ROLL_CAP_RX   = 56                       # caps bulge wider than cylinder
-ROLL_CAP_RY   = 18                       # vertical radius of end ellipse
-BODY_TOP_Y    = 135
-BODY_BOTTOM_Y = 1065
-BODY_LEFT_X   = LEFT_ROLL_CX - 8         # extends INTO the left roll (hidden behind it) so the silhouette reads as continuous
-BODY_RIGHT_X  = RIGHT_ROLL_CX + 8        # same on the right
-ROLL_TOP_Y    = BODY_TOP_Y - 30          # 105
-ROLL_BOTTOM_Y = BODY_BOTTOM_Y + 30       # 1095
+# ---------- frame geometry ----------
+OUTER_MARGIN   = 28     # outer torn page edge margin
+FRAME_MARGIN   = 92     # inner double-ruled border margin
+CONTENT_MARGIN = 130    # content kept inside this margin from viewBox edge
 
-# Inner content viewport (nested <svg> placement — fits inside the VISIBLE
-# parchment: from just past the left roll's right edge to just before the right
-# roll's left edge).
-CONTENT_X = LEFT_ROLL_CX + ROLL_CAP_RX - 6   # just inside the left roll's cap
-CONTENT_Y = BODY_TOP_Y + 30
-CONTENT_W = (RIGHT_ROLL_CX - LEFT_ROLL_CX) - 2 * (ROLL_CAP_RX - 6)
-CONTENT_H = (BODY_BOTTOM_Y - BODY_TOP_Y) - 60
+# ---------- palette ----------
+INK_DARK     = "#2a1806"
+INK          = "#4a2d10"
+INK_MED      = "#6b4218"
+INK_SOFT     = "#8a5a2b"
+INK_FAINT    = "#a97632"
+PAPER_HI     = "#f5dfa8"
+PAPER_MID    = "#e3bf80"
+PAPER_LOW    = "#b3823a"
+ACCENT_RED   = "#a83a2a"
 
 
 # ---------- helpers ----------
-def wavy_edge(x1, x2, y, direction, *, segments=34, amp=30, rnd):
-    """Return a list of Q-curve commands tracing a torn edge from (x1,y) to (x2,y).
-    `direction` is -1 (bumps upward) for a top edge, +1 (bumps downward) for a bottom edge.
-    """
-    pts = [(x1, y)]
-    for i in range(1, segments):
-        t = i / segments
-        # Small x jitter, large y jitter – looks more torn than mere wavy
-        x = x1 + (x2 - x1) * t + rnd.uniform(-14, 14)
-        # Mix a steady wave with noise so it doesn't look random
-        base = 0.4 + 0.6 * (0.5 * (1 + (-1 if i % 2 else 1)))
-        dy = direction * (0.35 + 0.65 * rnd.random()) * amp * (0.6 + 0.4 * base)
-        pts.append((x, y + dy))
-    pts.append((x2, y))
-    cmds = []
-    for i in range(1, len(pts)):
-        xp, yp = pts[i - 1]
-        xc, yc = pts[i]
-        mx = (xp + xc) / 2 + rnd.uniform(-4, 4)
-        my = (yp + yc) / 2 + direction * rnd.uniform(6, 20)
-        cmds.append(f"Q{mx:.1f},{my:.1f} {xc:.1f},{yc:.1f}")
-    return cmds
+def torn_edge(pts_start, pts_end, *, rnd, amp, seg=42, jitter=10):
+    """Add torn-edge points between start and end along one side.
+    pts_start / pts_end are (x, y). Returns a list of intermediate (x,y) points
+    tracing a jagged line along the straight edge from start toward end."""
+    sx, sy = pts_start
+    ex, ey = pts_end
+    dx, dy = ex - sx, ey - sy
+    length = (dx * dx + dy * dy) ** 0.5
+    if length == 0:
+        return []
+    # unit tangent and normal
+    tx, ty = dx / length, dy / length
+    nx, ny = -ty, tx
+    n = max(3, int(length / seg))
+    pts = []
+    for i in range(1, n):
+        t = i / n + rnd.uniform(-0.02, 0.02)
+        base_x = sx + dx * t
+        base_y = sy + dy * t
+        off = rnd.uniform(-amp, amp)
+        tan_j = rnd.uniform(-jitter, jitter)
+        pts.append((base_x + nx * off + tx * tan_j,
+                    base_y + ny * off + ty * tan_j))
+    return pts
 
 
-def build_body_path(rnd):
-    top = wavy_edge(BODY_LEFT_X, BODY_RIGHT_X, BODY_TOP_Y, -1, rnd=rnd)
-    bot = wavy_edge(BODY_RIGHT_X, BODY_LEFT_X, BODY_BOTTOM_Y, +1, rnd=rnd)
-    return (
-        f"M{BODY_LEFT_X},{BODY_TOP_Y} "
-        + " ".join(top)
-        + f" L{BODY_RIGHT_X},{BODY_BOTTOM_Y} "
-        + " ".join(bot)
-        + f" L{BODY_LEFT_X},{BODY_TOP_Y} Z"
-    )
+def torn_rect_path(rnd, margin, *, amp, seg=42):
+    """Build a closed SVG path d= for a rectangle with torn edges on all four sides."""
+    x0, x1 = margin, VW - margin
+    y0, y1 = margin, VH - margin
+    corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    out = [corners[0]]
+    for i in range(4):
+        a = corners[i]
+        b = corners[(i + 1) % 4]
+        out.extend(torn_edge(a, b, rnd=rnd, amp=amp, seg=seg))
+        out.append(b)
+    d = f"M{out[0][0]:.1f},{out[0][1]:.1f} " \
+        + " ".join(f"L{x:.1f},{y:.1f}" for x, y in out[1:]) + " Z"
+    return d
 
 
-def make_stains(rnd, n=14):
-    spots = []
+def rand_stains(rnd, n=18):
+    out = []
     for _ in range(n):
-        cx = rnd.uniform(260, 1340)
-        cy = rnd.uniform(170, 1030)
-        rx = rnd.uniform(28, 80)
-        ry = rnd.uniform(16, 44)
+        cx = rnd.uniform(150, VW - 150)
+        cy = rnd.uniform(130, VH - 130)
+        rx = rnd.uniform(18, 65)
+        ry = rnd.uniform(10, 34)
         rot = rnd.uniform(0, 180)
-        opac = rnd.uniform(0.14, 0.28)
-        spots.append((cx, cy, rx, ry, rot, opac))
-    return spots
+        opac = rnd.uniform(0.10, 0.22)
+        out.append((cx, cy, rx, ry, rot, opac))
+    return out
 
 
-# ---------- inner map content (the existing fairytale scene) ----------
-# Note: greens and blues are dialled down (opacity-wise) so the scene blends
-# with the aged parchment instead of looking like a coloured poster.
-INNER_CONTENT = """
-  <!-- Faint moon glow (top-right of the paper) -->
-  <circle cx="1360" cy="200" r="200" fill="url(#moonGlow)" opacity="0.45"/>
+def corner_flourish(x, y, mx, my):
+    """Draw a small decorative ink flourish at a corner of the inner frame.
+    (x,y) = the corner anchor; (mx,my) = direction multipliers (±1, ±1)."""
+    return f"""
+    <g stroke="{INK}" stroke-width="1.3" fill="none" opacity="0.85">
+      <path d="M {x},{y} q {20*mx},{6*my} {36*mx},{22*my} q {6*mx},{10*my} {6*mx},{22*my}"/>
+      <path d="M {x},{y} q {6*mx},{20*my} {22*mx},{36*my} q {10*mx},{6*my} {22*mx},{6*my}"/>
+      <circle cx="{x + 28*mx}" cy="{y + 28*my}" r="2.5" fill="{INK}"/>
+    </g>"""
 
-  <!-- Distant hills: dark brown ink silhouettes, not greens -->
-  <path d="M0,820 Q200,760 420,790 T820,770 T1200,790 T1600,760 L1600,1200 L0,1200 Z"
-        fill="#6b4d20" opacity="0.22"/>
-  <path d="M0,900 Q220,840 460,880 T900,860 T1260,880 T1600,850 L1600,1200 L0,1200 Z"
-        fill="#4a3514" opacity="0.22"/>
 
-  <!-- River winding: dark brown ink, not blue -->
-  <path d="M-20,640 C180,610 300,700 520,680 S820,600 1000,680 1260,740 1620,700"
-        fill="none" stroke="#5a3a15" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
-  <path d="M-20,640 C180,610 300,700 520,680 S820,600 1000,680 1260,740 1620,700"
-        fill="none" stroke="#c79a4b" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+def load_cottages():
+    with COTTAGES_JSON.open() as f:
+        return json.load(f)
 
-  <!-- Forest: scattered pines & oaks (symbols darkened via CSS-less approach — the
-       pine/oak symbols already use dark strokes; group opacity adapts them to paper). -->
-  <g id="forest" opacity="0.82">
-    <use href="#pine" x="40"  y="120" width="60" height="120"/>
-    <use href="#pine" x="110" y="90"  width="80" height="160"/>
-    <use href="#pine" x="200" y="140" width="55" height="110"/>
-    <use href="#pine" x="260" y="110" width="70" height="140"/>
-    <use href="#pine" x="340" y="150" width="50" height="100"/>
-    <use href="#oak"  x="50"  y="260" width="90" height="108"/>
-    <use href="#pine" x="150" y="270" width="70" height="140"/>
-    <use href="#pine" x="230" y="260" width="60" height="120"/>
-    <use href="#oak"  x="310" y="270" width="80" height="96"/>
 
-    <use href="#pine" x="80"  y="420" width="60" height="120"/>
-    <use href="#oak"  x="170" y="440" width="70" height="84"/>
-    <use href="#pine" x="260" y="420" width="55" height="110"/>
+def tick_marks():
+    """Tick marks around the compass rose (every 10°, longer at cardinals)."""
+    import math as _math
+    cx = cy = 100
+    r_in, r_out = 86, 92
+    parts = []
+    for deg in range(0, 360, 10):
+        rad = _math.radians(deg - 90)
+        x1 = cx + r_in * _math.cos(rad)
+        y1 = cy + r_in * _math.sin(rad)
+        x2 = cx + r_out * _math.cos(rad)
+        y2 = cy + r_out * _math.sin(rad)
+        parts.append(
+            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
+            f'stroke="{INK}" stroke-width="{1.4 if deg % 90 == 0 else 0.8}"/>'
+        )
+    return "\n      ".join(parts)
 
-    <use href="#pine" x="1340" y="380" width="60" height="120"/>
-    <use href="#pine" x="1420" y="350" width="80" height="160"/>
-    <use href="#oak"  x="1510" y="400" width="70" height="84"/>
-    <use href="#pine" x="1380" y="520" width="60" height="120"/>
-    <use href="#pine" x="1460" y="540" width="55" height="110"/>
-    <use href="#oak"  x="1520" y="540" width="60" height="72"/>
 
-    <use href="#pine" x="120"  y="1020" width="60" height="120"/>
-    <use href="#oak"  x="220"  y="1040" width="70" height="84"/>
-    <use href="#pine" x="320"  y="1020" width="55" height="110"/>
-    <use href="#pine" x="420"  y="1040" width="50" height="100"/>
-    <use href="#oak"  x="520"  y="1050" width="65" height="78"/>
-    <use href="#pine" x="640"  y="1010" width="70" height="140"/>
-    <use href="#pine" x="760"  y="1040" width="50" height="100"/>
-    <use href="#oak"  x="860"  y="1050" width="70" height="84"/>
-    <use href="#pine" x="980"  y="1020" width="55" height="110"/>
-    <use href="#pine" x="1100" y="1040" width="65" height="130"/>
-    <use href="#oak"  x="1220" y="1050" width="70" height="84"/>
-    <use href="#pine" x="1340" y="1020" width="60" height="120"/>
-    <use href="#pine" x="1460" y="1040" width="55" height="110"/>
+# ---------- symbols (hand-drawn ink style) ----------
+SYMBOLS = f"""
+  <!-- Mountain range: a trio of triangular peaks with slope hatching -->
+  <symbol id="mountain" viewBox="0 0 160 100">
+    <path d="M 10,92 L 50,22 L 90,92 Z"
+          fill="{PAPER_LOW}" stroke="{INK}" stroke-width="2"/>
+    <path d="M 60,92 L 100,8 L 140,92 Z"
+          fill="{PAPER_MID}" stroke="{INK}" stroke-width="2"/>
+    <path d="M 110,92 L 140,38 L 158,92 Z"
+          fill="{PAPER_LOW}" stroke="{INK}" stroke-width="2"/>
+    <!-- Snow caps on the tallest peak -->
+    <path d="M 92,20 L 100,8 L 108,20 L 104,24 L 100,18 L 96,24 Z"
+          fill="{PAPER_HI}" stroke="{INK}" stroke-width="1"/>
+    <!-- Slope hatching (suggests rocky terrain) -->
+    <g stroke="{INK}" stroke-width="0.8" fill="none" opacity="0.8">
+      <path d="M 50,22 L 44,34 M 48,30 L 42,42 M 46,38 L 40,50 M 44,46 L 38,58"/>
+      <path d="M 100,8 L 93,22 M 98,16 L 90,30 M 96,24 L 88,38 M 94,32 L 86,46 M 92,40 L 84,54 M 90,48 L 82,62 M 88,56 L 80,70"/>
+      <path d="M 140,38 L 134,50 M 138,46 L 132,58 M 136,54 L 130,66"/>
+    </g>
+  </symbol>
 
-    <use href="#mushroom" x="380"  y="780" width="26" height="26"/>
-    <use href="#mushroom" x="520"  y="860" width="22" height="22"/>
-    <use href="#mushroom" x="780"  y="930" width="28" height="28"/>
-    <use href="#mushroom" x="1100" y="840" width="22" height="22"/>
-    <use href="#mushroom" x="1260" y="910" width="26" height="26"/>
-  </g>
+  <!-- Single pine / fir tree (small ink silhouette) -->
+  <symbol id="pine" viewBox="0 0 30 44">
+    <polygon points="15,3 4,18 11,18 3,30 12,30 2,42 28,42 18,30 27,30 19,18 26,18"
+             fill="{INK_MED}" stroke="{INK_DARK}" stroke-width="1"/>
+    <rect x="13.5" y="42" width="3" height="2" fill="{INK_DARK}"/>
+  </symbol>
 
-  <!-- CASTLES -->
-  <g transform="translate(430,120)" filter="url(#softShadow)">
-    <use href="#castle" width="220" height="165"/>
-    <text x="110" y="190" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-          font-size="26" fill="#3a2a1a">Zamek Ogrodzieniec</text>
-  </g>
-  <g transform="translate(1020,90)" filter="url(#softShadow)">
-    <use href="#castle" width="200" height="150"/>
-    <text x="100" y="175" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-          font-size="24" fill="#3a2a1a">Zamek Olsztyn</text>
-  </g>
-  <g transform="translate(260,520)" filter="url(#softShadow)">
-    <use href="#castle" width="180" height="135"/>
-    <text x="90" y="158" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-          font-size="22" fill="#3a2a1a">Zamek Mirów</text>
-  </g>
-  <g transform="translate(520,540)" filter="url(#softShadow)">
-    <use href="#castle" width="180" height="135"/>
-    <text x="90" y="158" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
-          font-size="22" fill="#3a2a1a">Zamek Bobolice</text>
-  </g>
+  <!-- Fatter pine (variety) -->
+  <symbol id="pine2" viewBox="0 0 30 40">
+    <polygon points="15,2 3,26 12,26 5,38 25,38 18,26 27,26"
+             fill="{INK_SOFT}" stroke="{INK_DARK}" stroke-width="1"/>
+    <rect x="13.5" y="38" width="3" height="2" fill="{INK_DARK}"/>
+  </symbol>
 
-  <!-- Stone-path spine & branches -->
-  <g id="paths" fill="none" stroke="#8d6b3d" stroke-width="10" stroke-linecap="round" stroke-dasharray="14 10" opacity="0.9">
-    <path d="M80,760 C260,760 340,810 560,830 S900,870 1120,860 1400,840 1540,820"/>
-  </g>
-  <g id="branches" fill="none" stroke="#8d6b3d" stroke-width="6" stroke-linecap="round" stroke-dasharray="8 8" opacity="0.95"></g>
-  <g id="cottages"></g>
+  <!-- Castle: main keep, two flanking towers, crenellations, flag -->
+  <symbol id="castle" viewBox="0 0 160 140">
+    <!-- Rocky base -->
+    <path d="M 0,128 Q 30,112 60,122 T 120,118 Q 150,126 160,132 L 160,140 L 0,140 Z"
+          fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.5"/>
+    <!-- Left tower -->
+    <rect x="22" y="68" width="30" height="60" fill="{PAPER_MID}" stroke="{INK}" stroke-width="1.6"/>
+    <path d="M 22,68 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
+          fill="none" stroke="{INK}" stroke-width="1.6"/>
+    <!-- Right tower -->
+    <rect x="108" y="62" width="32" height="66" fill="{PAPER_MID}" stroke="{INK}" stroke-width="1.6"/>
+    <path d="M 108,62 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
+          fill="none" stroke="{INK}" stroke-width="1.6"/>
+    <!-- Main keep (central, tallest) -->
+    <rect x="58" y="42" width="46" height="86" fill="{PAPER_HI}" stroke="{INK}" stroke-width="1.8"/>
+    <path d="M 58,42 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h4 v6 h4 v-6 h2 v6"
+          fill="none" stroke="{INK}" stroke-width="1.8"/>
+    <!-- Windows -->
+    <rect x="76" y="58" width="5" height="10" fill="{INK}"/>
+    <rect x="83" y="58" width="5" height="10" fill="{INK}"/>
+    <rect x="30" y="86" width="4" height="8" fill="{INK}"/>
+    <rect x="42" y="86" width="4" height="8" fill="{INK}"/>
+    <rect x="118" y="80" width="4" height="8" fill="{INK}"/>
+    <rect x="130" y="80" width="4" height="8" fill="{INK}"/>
+    <!-- Door -->
+    <path d="M 76,128 V 104 Q 76,96 82,96 H 82 Q 88,96 88,104 V 128 Z"
+          fill="{INK}"/>
+    <!-- Flag on keep -->
+    <line x1="81" y1="36" x2="81" y2="18" stroke="{INK_DARK}" stroke-width="2"/>
+    <path d="M 81,18 L 100,24 L 81,30 Z" fill="{ACCENT_RED}" stroke="{INK_DARK}" stroke-width="1"/>
+    <!-- Bricks hatching (subtle) -->
+    <g stroke="{INK}" stroke-width="0.5" opacity="0.35" fill="none">
+      <line x1="58" y1="56"  x2="104" y2="56"/>
+      <line x1="58" y1="74"  x2="104" y2="74"/>
+      <line x1="58" y1="92"  x2="104" y2="92"/>
+      <line x1="58" y1="110" x2="104" y2="110"/>
+      <line x1="22" y1="82"  x2="52"  y2="82"/>
+      <line x1="22" y1="98"  x2="52"  y2="98"/>
+      <line x1="22" y1="114" x2="52"  y2="114"/>
+      <line x1="108" y1="76" x2="140" y2="76"/>
+      <line x1="108" y1="94" x2="140" y2="94"/>
+      <line x1="108" y1="112" x2="140" y2="112"/>
+    </g>
+  </symbol>
 
-  <!-- Compass rose -->
-  <g transform="translate(1350,960)" filter="url(#softShadow)">
-    <use href="#compass" width="130" height="130"/>
-  </g>
+  <!-- Cozy cottage (house + red roof + chimney with curling smoke) -->
+  <symbol id="cottageHouse" viewBox="0 0 48 52">
+    <!-- Smoke curl -->
+    <path d="M 34,10 q -4,-6 2,-10 q 6,-3 0,-10"
+          fill="none" stroke="{INK}" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
+    <!-- Chimney -->
+    <rect x="32" y="10" width="6" height="12" fill="{INK}"/>
+    <!-- Roof -->
+    <polygon points="6,24 24,6 42,24" fill="{ACCENT_RED}" stroke="{INK_DARK}" stroke-width="1.5"/>
+    <!-- Walls -->
+    <rect x="10" y="24" width="28" height="22" fill="{PAPER_HI}" stroke="{INK_DARK}" stroke-width="1.5"/>
+    <!-- Window -->
+    <rect x="14" y="28" width="8" height="8" fill="{INK}" stroke="{INK}" stroke-width="0.6"/>
+    <line x1="18" y1="28" x2="18" y2="36" stroke="{PAPER_HI}" stroke-width="0.8"/>
+    <line x1="14" y1="32" x2="22" y2="32" stroke="{PAPER_HI}" stroke-width="0.8"/>
+    <!-- Door -->
+    <path d="M 28,46 V 32 Q 28,28 32,28 Q 36,28 36,32 V 46 Z" fill="{INK}"/>
+  </symbol>
 
-  <!-- Title cartouche -->
-  <g transform="translate(560,200)" filter="url(#softShadow)">
-    <path d="M0,0 H480 Q520,0 520,40 V80 Q520,120 480,120 H0 Q-40,120 -40,80 V40 Q-40,0 0,0 Z"
-          fill="#f1e2b5" stroke="#5a4523" stroke-width="3"/>
-    <text x="240" y="62" text-anchor="middle" font-family="Georgia, serif" font-size="36"
-          fill="#3a2a1a" font-style="italic" font-weight="bold">Chatynkowo</text>
-    <text x="240" y="96" text-anchor="middle" font-family="Georgia, serif" font-size="18"
-          fill="#5a4523" font-style="italic">~ baśniowa mapa ukrytych chatynek ~</text>
-  </g>
+  <!-- Ornate compass rose -->
+  <symbol id="compass" viewBox="0 0 200 200">
+    <circle cx="100" cy="100" r="92" fill="none" stroke="{INK}" stroke-width="2"/>
+    <circle cx="100" cy="100" r="80" fill="none" stroke="{INK}" stroke-width="0.8" stroke-dasharray="3 3"/>
+    <circle cx="100" cy="100" r="60" fill="none" stroke="{INK}" stroke-width="0.8"/>
+    <circle cx="100" cy="100" r="8" fill="{INK}"/>
+    <!-- Tick marks around the outer ring, every 10 degrees -->
+    {tick_marks()}
+    <!-- 8-point star -->
+    <polygon points="100,8 108,92 100,88 92,92" fill="{PAPER_HI}" stroke="{INK}" stroke-width="1.4"/>
+    <polygon points="100,192 92,108 100,112 108,108" fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.4"/>
+    <polygon points="8,100 92,92 88,100 92,108" fill="{PAPER_HI}" stroke="{INK}" stroke-width="1.4"/>
+    <polygon points="192,100 108,108 112,100 108,92" fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.4"/>
+    <!-- Diagonal points -->
+    <polygon points="34,34 96,96 88,92 92,88" fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1"/>
+    <polygon points="166,34 104,96 108,88 112,92" fill="{PAPER_HI}" stroke="{INK}" stroke-width="1"/>
+    <polygon points="34,166 96,104 92,108 88,112" fill="{PAPER_HI}" stroke="{INK}" stroke-width="1"/>
+    <polygon points="166,166 104,104 112,108 108,112" fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1"/>
+    <!-- Cardinal text -->
+    <text x="100" y="30"  text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="18" fill="{INK_DARK}">N</text>
+    <text x="100" y="178" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="18" fill="{INK_DARK}">S</text>
+    <text x="24"  y="106" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="18" fill="{INK_DARK}">W</text>
+    <text x="176" y="106" text-anchor="middle" font-family="Georgia, serif" font-weight="bold"
+          font-size="18" fill="{INK_DARK}">E</text>
+    <!-- Decorative ring with a fleur-de-lis on N -->
+    <path d="M 100,10 Q 96,0 100,-6 Q 104,0 100,10 Z"
+          transform="translate(0,12)" fill="{INK_DARK}"/>
+  </symbol>
+
+  <!-- Sea-monster / fish flourish (decorative, for empty corners) -->
+  <symbol id="seaMonster" viewBox="0 0 140 60">
+    <path d="M 10,38 Q 30,10 65,22 Q 95,32 120,18 L 130,28 Q 110,40 85,36
+             Q 55,32 30,48 Q 20,50 10,38 Z"
+          fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.5"/>
+    <circle cx="112" cy="24" r="2.5" fill="{INK_DARK}"/>
+    <path d="M 22,38 L 10,48 L 18,40 L 10,30 Z" fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.2"/>
+    <path d="M 70,30 q 2,-6 6,-4 M 82,26 q 3,-5 7,-2 M 58,32 q 2,-4 6,-2"
+          stroke="{INK}" stroke-width="0.8" fill="none"/>
+  </symbol>
 """
 
 
-def render_roll(cx, label):
-    """Render a vertical scroll roll centred at x=cx: bulging coiled caps at
-    top & bottom with a cylindrical body between them."""
-
-    def coil(cy):
-        # Strong outer cap, concentric coil rings with a slight drift to hint spiral,
-        # dark hollow "eye" at the very centre.
-        return f"""
-    <!-- outer cap: rolled paper edge, bulges wider than the cylinder body -->
-    <ellipse cx="{cx}" cy="{cy}" rx="{ROLL_CAP_RX}" ry="{ROLL_CAP_RY}"
-             fill="url(#rollCapGrad)" stroke="#2a1806" stroke-width="1.4"/>
-    <!-- outer rim highlight -->
-    <path d="M{cx - ROLL_CAP_RX + 4},{cy - 2}
-             Q{cx},{cy - ROLL_CAP_RY + 1} {cx + ROLL_CAP_RX - 4},{cy - 2}"
-          fill="none" stroke="#f3d99a" stroke-width="1.2" opacity="0.55"/>
-    <!-- Coil layers (from outer to inner) -->
-    <ellipse cx="{cx}" cy="{cy}" rx="{ROLL_CAP_RX - 6}" ry="{ROLL_CAP_RY - 3}"
-             fill="none" stroke="#6b4218" stroke-width="1.5"/>
-    <ellipse cx="{cx + 1}" cy="{cy + 0.5}" rx="{ROLL_CAP_RX - 13}" ry="{ROLL_CAP_RY - 6}"
-             fill="#d9a45a" stroke="#3a2308" stroke-width="1"/>
-    <ellipse cx="{cx + 1.5}" cy="{cy + 0.5}" rx="{ROLL_CAP_RX - 18}" ry="{ROLL_CAP_RY - 8}"
-             fill="none" stroke="#6b4218" stroke-width="1"/>
-    <ellipse cx="{cx + 2}" cy="{cy + 1}" rx="{ROLL_CAP_RX - 24}" ry="{ROLL_CAP_RY - 10}"
-             fill="#c48a3e" stroke="#3a2308" stroke-width="0.9"/>
-    <ellipse cx="{cx + 2.5}" cy="{cy + 1}" rx="{ROLL_CAP_RX - 30}" ry="{ROLL_CAP_RY - 12}"
-             fill="none" stroke="#6b4218" stroke-width="0.9"/>
-    <!-- dark hollow eye in the centre of the spiral -->
-    <ellipse cx="{cx + 3}" cy="{cy + 1.5}" rx="{max(3, ROLL_CAP_RX - 40)}" ry="{max(2, ROLL_CAP_RY - 14)}"
-             fill="#1a0e04" stroke="#3a2308" stroke-width="0.6"/>"""
-
-    x0 = cx - ROLL_RX
-    body_h = ROLL_BOTTOM_Y - ROLL_TOP_Y
-    # Horizontal wrap hints on the cylinder body: many faint lines
-    wrap_lines = []
-    y = ROLL_TOP_Y + 10
-    while y < ROLL_BOTTOM_Y - 10:
-        wrap_lines.append(
-            f'<line x1="{x0 + 4}" y1="{y:.1f}" x2="{x0 + ROLL_RX * 2 - 4}" y2="{y:.1f}" '
-            f'stroke="#2a1806" stroke-opacity="0.25" stroke-width="0.7"/>'
+# ---------- scene elements (static map content) ----------
+def mountains_layout():
+    """Scattered mountain ranges across the map."""
+    # (cx, cy, width) — height is derived from width*0.62
+    clusters = [
+        (560, 340, 260),    # upper-centre-left
+        (780, 430, 320),    # upper-centre range
+        (1080, 450, 220),   # upper-right
+        (240, 600, 220),    # left lower ridge
+        (540, 770, 240),    # centre-south
+        (920, 760, 260),    # south-east range
+        (1180, 710, 200),   # east
+        (360, 900, 220),    # south-west (near Iwo)
+    ]
+    parts = []
+    for cx, cy, w in clusters:
+        h = w * 0.62
+        parts.append(
+            f'<use href="#mountain" x="{cx - w/2:.0f}" y="{cy - h/2:.0f}" '
+            f'width="{w}" height="{h:.0f}"/>'
         )
-        y += 14
-    wrap_lines_str = "\n    ".join(wrap_lines)
-
-    return f"""
-  <!-- {label} roll -->
-  <g>
-    <!-- soft ground shadow below the roll -->
-    <ellipse cx="{cx}" cy="{ROLL_BOTTOM_Y + 26}" rx="{ROLL_CAP_RX + 6}" ry="10"
-             fill="#000" opacity="0.35"/>
-    <!-- cylinder body with curvature gradient -->
-    <rect x="{x0}" y="{ROLL_TOP_Y}" width="{ROLL_RX * 2}" height="{body_h}"
-          fill="url(#rollBodyGrad)" stroke="#2a1806" stroke-width="1"/>
-    {wrap_lines_str}
-    <!-- darker shading on the outer curved edges of the cylinder -->
-    <rect x="{x0}" y="{ROLL_TOP_Y}" width="14" height="{body_h}"
-          fill="url(#rollEdgeShade)" opacity="0.95"/>
-    <rect x="{x0 + ROLL_RX * 2 - 14}" y="{ROLL_TOP_Y}" width="14" height="{body_h}"
-          fill="url(#rollEdgeShadeR)" opacity="0.95"/>
-    <!-- top + bottom caps with coiled paper -->{coil(ROLL_TOP_Y)}{coil(ROLL_BOTTOM_Y)}
-  </g>"""
+    return "\n    ".join(parts)
 
 
-def main():
-    rnd = random.Random(42)
-    body_d = build_body_path(rnd)
-    stains = make_stains(rnd)
+def forest_layout():
+    """Dense pine/fir clusters scattered across the map."""
+    rnd = random.Random(91)
+    # Several forest "patches" centred around (cx, cy) with ~count trees
+    patches = [
+        (180, 380, 10),
+        (420, 520, 14),
+        (660, 560, 16),
+        (950, 560, 14),
+        (1260, 420, 10),
+        (300, 780, 12),
+        (600, 880, 14),
+        (840, 920, 12),
+        (1080, 880, 14),
+        (1340, 820, 10),
+    ]
+    out = []
+    for cx, cy, n in patches:
+        for _ in range(n):
+            px = cx + rnd.uniform(-90, 90)
+            py = cy + rnd.uniform(-55, 55)
+            w = rnd.choice([24, 28, 32])
+            h = int(w * 1.45)
+            sym = rnd.choice(["pine", "pine2"])
+            out.append(
+                f'<use href="#{sym}" x="{px:.0f}" y="{py:.0f}" width="{w}" height="{h}"/>'
+            )
+    return "\n    ".join(out)
 
-    stain_rects = "\n    ".join(
+
+def castles_layout():
+    """The four Polish castles, spread across the map corners.
+    Olsztyn sits in the upper-right below the title cartouche so they
+    don't collide."""
+    castles = [
+        (200,  220, "Zamek Ogrodzieniec"),
+        (1320, 340, "Zamek Olsztyn"),
+        (180,  830, "Zamek Mirów"),
+        (1320, 840, "Zamek Bobolice"),
+    ]
+    parts = []
+    for cx, cy, label in castles:
+        parts.append(f"""
+    <g transform="translate({cx - 70},{cy - 70})">
+      <use href="#castle" width="140" height="140"/>
+      <text x="70" y="160" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
+            font-size="22" fill="{INK_DARK}" font-weight="bold">{label}</text>
+    </g>""")
+    return "\n".join(parts)
+
+
+# Short, map-friendly labels per cottage slug.
+COTTAGE_LABELS = {
+    "fredek":         "Fredek",
+    "iwo":            "Iwo",
+    "zamczysko":      "Góra Zamczysko",
+    "teodor":         "Teodor",
+    "tupak":          "Tupak",
+    "elfka-z-duza-d": "Elfka",
+    "pazurek":        "Pazurek",
+    "halinka":        "Halinka",
+    "gwerda-filinek": "Gwerda i Filinek",
+    "straznik-zamku": "Strażnik Zamku",
+    "dwaj-bracia":    "Dwaj Bracia",
+    "czubata-myszka": "Czubata i Myszka",
+    "zielonowlosy":   "Zielonowłosy",
+    "zaprasza":       "Zaprasza",
+    "samotny":        "Samotny Elf",
+    "skalne-iglice":  "Skalne Iglice",
+    "stary-elf":      "Stary Elf",
+    "straznik-lodu":  "Strażnik Lodu",
+}
+
+
+def cottages_static_layout(cottages):
+    """Render small house icons + slug labels at the authored mapX/mapY positions.
+    Populates the #cottages-static group in the SVG (JS decorates #cottages-interactive
+    on top with clickable markers)."""
+    out = []
+    for c in cottages:
+        x, y = c["mapX"], c["mapY"]
+        label = COTTAGE_LABELS.get(c["slug"], c["slug"])
+        out.append(f"""
+    <g data-slug="{c['slug']}" class="cottage-pin" transform="translate({x - 26},{y - 30})">
+      <use href="#cottageHouse" width="52" height="56"/>
+      <text x="26" y="78" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
+            font-weight="bold" font-size="20" fill="{INK_DARK}" class="cottage-label"
+            paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">{label}</text>
+    </g>""")
+    return "\n".join(out)
+
+
+def main_path_d():
+    """A winding dashed path (ink trail) that threads through the map."""
+    return ("M 280,360 "
+            "C 360,360 440,520 540,560 "
+            "S 720,580 820,560 "
+            "S 1000,580 1120,620 "
+            "S 1240,720 1180,820 "
+            "S 960,900 780,870 "
+            "S 560,880 460,820")
+
+
+def generate(debug=False):
+    rnd = random.Random(7)
+    outer_d = torn_rect_path(rnd, OUTER_MARGIN, amp=18, seg=38)
+    cottages = load_cottages()
+    stains = rand_stains(rnd, n=20)
+    stain_svg = "\n    ".join(
         f'<ellipse cx="{cx:.0f}" cy="{cy:.0f}" rx="{rx:.0f}" ry="{ry:.0f}" '
-        f'transform="rotate({rot:.0f} {cx:.0f} {cy:.0f})" fill="#5a3a0f" opacity="{opac:.2f}"/>'
+        f'transform="rotate({rot:.0f} {cx:.0f} {cy:.0f})" fill="{INK}" opacity="{opac:.2f}"/>'
         for (cx, cy, rx, ry, rot, opac) in stains
     )
+
+    # Inner frame rectangle sizes
+    fx0, fy0 = FRAME_MARGIN, FRAME_MARGIN
+    fx1, fy1 = VW - FRAME_MARGIN, VH - FRAME_MARGIN
 
     svg = f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VW} {VH}" preserveAspectRatio="xMidYMid meet"
      role="img" aria-labelledby="mapTitle mapDesc">
-  <title id="mapTitle">Baśniowa mapa-zwój Chatynkowa</title>
-  <desc id="mapDesc">Pergaminowy zwój w stylu piracko-baśniowym. Na rozwiniętej karcie zaznaczono leśne ścieżki, chatynki Elfów oraz zamki Ogrodzieniec, Olsztyn, Bobolice i Mirów.</desc>
+  <title id="mapTitle">Baśniowa mapa-skarbów Chatynkowa</title>
+  <desc id="mapDesc">Pergaminowa mapa w stylu piracko-baśniowym. Na karcie naszkicowano góry, lasy,
+  cztery zamki (Ogrodzieniec, Olsztyn, Bobolice, Mirów), różę wiatrów oraz osiemnaście chatynek Elfów
+  rozmieszczonych po całym pergaminie.</desc>
 
   <defs>
-    <!-- Aged parchment fill: warm cream at centre, burnt tan near the edges -->
-    <radialGradient id="parchmentFill" cx="50%" cy="50%" r="65%">
-      <stop offset="0%"   stop-color="#f7e1ab"/>
-      <stop offset="40%"  stop-color="#ebc787"/>
-      <stop offset="75%"  stop-color="#b3823a"/>
-      <stop offset="92%"  stop-color="#7a4f1f"/>
-      <stop offset="100%" stop-color="#3a2308"/>
+    <!-- Aged parchment fill (warm centre → burnt tan at edges) -->
+    <radialGradient id="parchmentFill" cx="50%" cy="50%" r="70%">
+      <stop offset="0%"   stop-color="{PAPER_HI}"/>
+      <stop offset="55%"  stop-color="{PAPER_MID}"/>
+      <stop offset="88%"  stop-color="{PAPER_LOW}"/>
+      <stop offset="100%" stop-color="{INK_SOFT}"/>
     </radialGradient>
 
-    <!-- Inner-edge burnt vignette: dark charred rim inside the paper -->
-    <radialGradient id="parchmentInnerBurn" cx="50%" cy="50%" r="58%">
-      <stop offset="55%"  stop-color="#000" stop-opacity="0"/>
-      <stop offset="85%"  stop-color="#3a2308" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#1a0e04" stop-opacity="0.85"/>
+    <!-- Inner edge burnt vignette -->
+    <radialGradient id="innerBurn" cx="50%" cy="50%" r="65%">
+      <stop offset="60%"  stop-color="#000" stop-opacity="0"/>
+      <stop offset="90%"  stop-color="{INK_DARK}" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="{INK_DARK}" stop-opacity="0.75"/>
     </radialGradient>
 
-    <!-- Cylinder body gradient (darker brown, suggests curvature) -->
-    <linearGradient id="rollBodyGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#3a2308"/>
-      <stop offset="20%"  stop-color="#7a4f1f"/>
-      <stop offset="45%"  stop-color="#d4a55b"/>
-      <stop offset="55%"  stop-color="#e6c98b"/>
-      <stop offset="78%"  stop-color="#9c6a28"/>
-      <stop offset="100%" stop-color="#2b1a0a"/>
-    </linearGradient>
-
-    <linearGradient id="rollEdgeShade" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#1f1206" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#1f1206" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="rollEdgeShadeR" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#1f1206" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#1f1206" stop-opacity="0.85"/>
-    </linearGradient>
-
-    <radialGradient id="rollCapGrad" cx="45%" cy="45%" r="60%">
-      <stop offset="0%"   stop-color="#e8c789"/>
-      <stop offset="60%"  stop-color="#a07136"/>
-      <stop offset="100%" stop-color="#3a2308"/>
-    </radialGradient>
-
-    <!-- Existing map gradients/symbols/filters -->
-    <linearGradient id="mistGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.45"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"   stop-color="#fff6c8" stop-opacity="0.9"/>
-      <stop offset="60%"  stop-color="#fff6c8" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#fff6c8" stop-opacity="0"/>
-    </radialGradient>
-
-    <symbol id="pine" viewBox="0 0 40 80">
-      <polygon points="20,2 30,28 24,28 34,54 24,54 38,78 2,78 16,54 6,54 16,28 10,28" fill="#2f5138" stroke="#1d3321" stroke-width="1.2"/>
-      <rect x="17" y="76" width="6" height="4" fill="#3a2a1a"/>
-    </symbol>
-    <symbol id="oak" viewBox="0 0 50 60">
-      <ellipse cx="25" cy="22" rx="24" ry="20" fill="#3a6b3e" stroke="#1f3f24" stroke-width="1.2"/>
-      <rect x="22" y="40" width="6" height="18" fill="#3a2a1a"/>
-    </symbol>
-    <symbol id="mushroom" viewBox="0 0 24 24">
-      <ellipse cx="12" cy="10" rx="10" ry="7" fill="#b83a3a" stroke="#5a1a1a" stroke-width="1"/>
-      <circle cx="7"  cy="9"  r="1.4" fill="#fff"/>
-      <circle cx="13" cy="7"  r="1.2" fill="#fff"/>
-      <circle cx="16" cy="11" r="1.2" fill="#fff"/>
-      <path d="M9 14 Q12 22 15 14 Z" fill="#f3e6c3" stroke="#5a1a1a" stroke-width="1"/>
-    </symbol>
-    <symbol id="castle" viewBox="0 0 160 120">
-      <path d="M0,110 Q30,88 60,102 T120,96 Q148,106 160,112 L160,120 L0,120 Z" fill="#6d6256" stroke="#2c251b" stroke-width="1.6"/>
-      <rect x="60" y="40" width="40" height="70" fill="#3a3226" stroke="#140e06" stroke-width="2"/>
-      <path d="M60,40 h40 l-4,-10 h-6 v8 h-6 v-8 h-8 v8 h-6 v-8 h-6 z" fill="#3a3226" stroke="#140e06" stroke-width="2"/>
-      <rect x="30" y="58" width="26" height="52" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
-      <path d="M30,58 h26 l-4,-8 h-4 v6 h-4 v-6 h-6 v6 h-4 v-6 h-4 z" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
-      <rect x="104" y="52" width="28" height="58" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
-      <path d="M104,52 h28 l-4,-8 h-4 v6 h-4 v-6 h-8 v6 h-4 v-6 h-4 z" fill="#453a2b" stroke="#140e06" stroke-width="2"/>
-      <rect x="74" y="62" width="6" height="10" fill="#ffd36b"/>
-      <rect x="84" y="62" width="6" height="10" fill="#ffd36b"/>
-      <rect x="76" y="82" width="12" height="14" fill="#241a0a"/>
-      <rect x="38" y="74" width="6" height="10" fill="#ffd36b"/>
-      <rect x="114" y="70" width="6" height="10" fill="#ffd36b"/>
-      <line x1="80" y1="24" x2="80" y2="8" stroke="#120a03" stroke-width="2"/>
-      <path d="M80,8 L98,14 L80,18 Z" fill="#b83a3a" stroke="#2c0a0a" stroke-width="1"/>
-    </symbol>
-    <symbol id="compass" viewBox="0 0 120 120">
-      <circle cx="60" cy="60" r="54" fill="#f1e2b5" stroke="#5a4523" stroke-width="2"/>
-      <circle cx="60" cy="60" r="42" fill="none" stroke="#5a4523" stroke-width="1" stroke-dasharray="2 4"/>
-      <polygon points="60,8 66,60 60,56 54,60" fill="#b83a3a" stroke="#2c0a0a" stroke-width="1"/>
-      <polygon points="60,112 54,60 60,64 66,60" fill="#3a3226" stroke="#120a03" stroke-width="1"/>
-      <polygon points="8,60 60,54 56,60 60,66" fill="#5a4523" stroke="#2c1a06" stroke-width="1"/>
-      <polygon points="112,60 60,66 64,60 60,54" fill="#5a4523" stroke="#2c1a06" stroke-width="1"/>
-      <text x="60" y="26" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#3a2a1a" font-style="italic">N</text>
-      <text x="60" y="104" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#3a2a1a" font-style="italic">S</text>
-      <text x="14" y="65" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#3a2a1a" font-style="italic">W</text>
-      <text x="106" y="65" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#3a2a1a" font-style="italic">E</text>
-    </symbol>
-
-    <!-- Fibrous parchment texture via fractal noise -->
-    <filter id="paperGrain" x="0" y="0" width="100%" height="100%" filterUnits="objectBoundingBox">
-      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7"/>
-      <feColorMatrix values="0 0 0 0 0.45
-                             0 0 0 0 0.32
-                             0 0 0 0 0.15
-                             0 0 0 0.18 0"/>
+    <filter id="paperGrain" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11"/>
+      <feColorMatrix values="0 0 0 0 0.44
+                             0 0 0 0 0.30
+                             0 0 0 0 0.12
+                             0 0 0 0.22 0"/>
       <feComposite in2="SourceGraphic" operator="in"/>
     </filter>
 
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-      <feOffset dx="2" dy="4" result="offsetblur"/>
-      <feComponentTransfer><feFuncA type="linear" slope="0.45"/></feComponentTransfer>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="1" dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.38"/></feComponentTransfer>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
 
-    <filter id="dropShadowBig" x="-10%" y="-10%" width="120%" height="130%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
-      <feOffset dx="0" dy="18" result="b"/>
+    <filter id="mapDrop" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="14"/>
       <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
 
-    <clipPath id="parchmentClip">
-      <path d="{body_d}"/>
-    </clipPath>
+    <clipPath id="paperClip"><path d="{outer_d}"/></clipPath>
+
+    {SYMBOLS}
   </defs>
 
-  <!-- Ground shadow beneath the scroll -->
-  <ellipse cx="{VW/2:.0f}" cy="{VH - 30:.0f}" rx="{(BODY_RIGHT_X - BODY_LEFT_X)/2 + 80:.0f}" ry="18" fill="#000" opacity="0.35"/>
+  <!-- ============== Parchment frame ============== -->
+  <path d="{outer_d}" fill="{INK_DARK}" opacity="0.35"
+        transform="translate(6 10)" pointer-events="none"/>
+  <path d="{outer_d}" fill="url(#parchmentFill)" filter="url(#mapDrop)"/>
+  <path d="{outer_d}" fill="{PAPER_LOW}" opacity="0.28" filter="url(#paperGrain)" pointer-events="none"/>
 
-  <!-- Parchment body -->
-  <path d="{body_d}" fill="url(#parchmentFill)" filter="url(#dropShadowBig)"/>
-  <!-- Fibrous paper grain overlay -->
-  <path d="{body_d}" fill="#a57329" opacity="0.28" filter="url(#paperGrain)" pointer-events="none"/>
-
-  <!-- Aged stains -->
-  <g clip-path="url(#parchmentClip)" pointer-events="none">
-    {stain_rects}
+  <!-- Stains on the paper -->
+  <g clip-path="url(#paperClip)" pointer-events="none">
+    {stain_svg}
   </g>
 
-  <!-- Inner map content (scaled to fit the parchment body with a margin) -->
-  <svg x="{CONTENT_X}" y="{CONTENT_Y}" width="{CONTENT_W}" height="{CONTENT_H}"
-       viewBox="0 0 {VW} {VH}" preserveAspectRatio="xMidYMid meet"
-       clip-path="url(#parchmentClip)" overflow="visible">
-{INNER_CONTENT}
-  </svg>
+  <!-- Double-ruled inner border -->
+  <rect x="{fx0}" y="{fy0}" width="{fx1 - fx0}" height="{fy1 - fy0}"
+        fill="none" stroke="{INK}" stroke-width="3"/>
+  <rect x="{fx0 + 14}" y="{fy0 + 14}" width="{fx1 - fx0 - 28}" height="{fy1 - fy0 - 28}"
+        fill="none" stroke="{INK}" stroke-width="0.8" stroke-dasharray="4 3"/>
 
-  <!-- Burnt inner-edge vignette on top of content -->
-  <path d="{body_d}" fill="url(#parchmentInnerBurn)" pointer-events="none" opacity="0.9"/>
+  <!-- Corner flourishes -->
+  {corner_flourish(fx0 + 16, fy0 + 16, +1, +1)}
+  {corner_flourish(fx1 - 16, fy0 + 16, -1, +1)}
+  {corner_flourish(fx0 + 16, fy1 - 16, +1, -1)}
+  {corner_flourish(fx1 - 16, fy1 - 16, -1, -1)}
 
-  <!-- Scroll rolls (rendered on top to cover straight body ends) -->
-{render_roll(LEFT_ROLL_CX,  "Left")}
-{render_roll(RIGHT_ROLL_CX, "Right")}
+  <!-- ============== Map content ============== -->
+  <!-- Mountains (rear) -->
+  <g id="mountains">
+    {mountains_layout()}
+  </g>
+
+  <!-- Pine/fir forest clusters (in front of mountains) -->
+  <g id="forest" opacity="0.92">
+    {forest_layout()}
+  </g>
+
+  <!-- Sea-monster flourish, for empty space (upper-left) -->
+  <use href="#seaMonster" x="210" y="430" width="150" height="60"/>
+  <!-- and a smaller fish decoration bottom-right -->
+  <use href="#seaMonster" x="1100" y="1000" width="120" height="50" transform="scale(-1 1) translate(-1220 0)"/>
+
+  <!-- Castles -->
+  <g id="castles">
+    {castles_layout()}
+  </g>
+
+  <!-- Main winding trail (dashed red — treasure-map style) -->
+  <g id="paths" fill="none" stroke="{ACCENT_RED}" stroke-width="4.5"
+     stroke-linecap="round" stroke-dasharray="10 6" opacity="0.85">
+    <path d="{main_path_d()}"/>
+  </g>
+  <!-- Sub-branch paths from JS -->
+  <g id="branches" fill="none" stroke="{ACCENT_RED}" stroke-width="3"
+     stroke-linecap="round" stroke-dasharray="7 5" opacity="0.8"></g>
+
+  <!-- Static cottage icons + labels drawn right into the SVG so the layout is
+       identical across all viewers, including the cairosvg preview. -->
+  <g id="cottages-static">
+    {cottages_static_layout(cottages)}
+  </g>
+
+  <!-- Interactive hit layer populated by main.js (transparent overlay that
+       receives hover/click; the visible cottage icon is in cottages-static). -->
+  <g id="cottages"></g>
+
+  <!-- Compass rose (bottom-left, like classic treasure maps) -->
+  <g transform="translate(200,930)" filter="url(#softShadow)">
+    <use href="#compass" width="170" height="170"/>
+  </g>
+
+  <!-- Title cartouche (top-right) -->
+  <g transform="translate(960,140)" filter="url(#softShadow)">
+    <path d="M 0,0 H 440 Q 480,0 488,30 L 500,70 Q 508,100 476,108 H 12 Q -20,100 -12,70 L 0,30 Q 8,0 40,0"
+          fill="{PAPER_HI}" stroke="{INK}" stroke-width="2.2"/>
+    <path d="M 14,16 H 474 Q 486,30 490,60 L 480,90 H 20 L 10,60 Q 14,30 14,16 Z"
+          fill="none" stroke="{INK}" stroke-width="0.8" stroke-dasharray="3 3"/>
+    <text x="250" y="58" text-anchor="middle" font-family="Georgia, serif"
+          font-size="42" font-weight="bold" font-style="italic" fill="{INK_DARK}">Chatynkowo</text>
+    <text x="250" y="90" text-anchor="middle" font-family="Georgia, serif"
+          font-size="17" font-style="italic" fill="{INK_MED}">~ mapa ukrytych chatynek Elfów ~</text>
+  </g>
+
+  <!-- Inner burnt vignette on top of everything (subtle), clipped to paper -->
+  <path d="{outer_d}" fill="url(#innerBurn)" pointer-events="none" opacity="0.85"/>
 </svg>
 """
     OUT.write_text(svg)
@@ -436,4 +557,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    generate()

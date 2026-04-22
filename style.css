@@ -228,8 +228,20 @@ a:hover { color: var(--ember); }
   display: block;
   width: 100%;
   height: 100%;
-  cursor: default;
   overflow: visible;
+}
+
+/* Hover/focus on the clickable cottage hit circle => highlight the static pin */
+.map-stage .cottage-hit { cursor: pointer; }
+.map-stage .cottage-hit:focus { outline: none; }
+.map-stage .cottage-pin {
+  transition: transform .15s ease-out;
+  transform-box: fill-box;
+  transform-origin: center center;
+}
+.map-stage .cottage-pin.is-hover {
+  transform: translateY(-4px) scale(1.08);
+  filter: drop-shadow(0 3px 6px rgba(42,24,6,.5));
 }
 .map-stage .cottage-marker {
   cursor: pointer;
