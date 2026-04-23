@@ -229,20 +229,83 @@ a:hover { color: var(--ember); }
   position: relative;
   display: block;
   width: 100%;
+  min-height: 480px;
   margin: 0;
-  background: transparent;
-  line-height: 0;           /* kill extra whitespace under the image */
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(245,234,209,.06) 0 14px,
+      rgba(245,234,209,.11) 14px 28px),
+    #1c2418;
+  line-height: 0;
   border-radius: 10px;
   overflow: visible;
   box-shadow: var(--shadow);
+  border: 1px solid rgba(199,154,75,.3);
 }
+
+/* The <img> itself is hidden until it successfully loads — avoids the
+   broken-image icon when the map file is missing. */
 .map-image {
-  display: block;
+  display: none;
   width: 100%;
   height: auto;
   border-radius: inherit;
   user-select: none;
   -webkit-user-drag: none;
+}
+.map-stage.has-image .map-image     { display: block; }
+.map-stage.has-image .map-placeholder { display: none; }
+
+/* Visible until the image loads — prominent instructions on where to put
+   the map file. */
+.map-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  line-height: 1.5;
+  color: #f5e6b8;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  text-align: center;
+  border-radius: inherit;
+}
+.map-placeholder__inner {
+  max-width: 540px;
+}
+.map-placeholder__icon {
+  font-size: 3.6rem;
+  line-height: 1;
+  margin-bottom: .8rem;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.5));
+}
+.map-placeholder h3 {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.55rem;
+  color: #f5e6b8;
+  margin: 0 0 .6rem;
+}
+.map-placeholder p {
+  font-size: 1.05rem;
+  margin: .35rem 0;
+  color: #e8d7a8;
+}
+.map-placeholder code {
+  display: inline-block;
+  margin: .2rem 0;
+  padding: .25rem .6rem;
+  background: rgba(245,234,209,.12);
+  border: 1px solid rgba(199,154,75,.45);
+  border-radius: 6px;
+  color: #f5e6b8;
+  font-family: 'Courier New', monospace;
+  font-size: .95rem;
+}
+.map-placeholder__note {
+  margin-top: 1rem !important;
+  font-size: .95rem !important;
+  color: #b9a97a !important;
 }
 .map-hotspots {
   position: absolute;

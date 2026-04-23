@@ -58,10 +58,26 @@
       <div class="map-wrapper" aria-label="Interaktywna baśniowa mapa Chatynkowa">
         <figure class="map-stage" id="mapStage">
           <img src="assets/img/map-base.jpg" alt="Baśniowa mapa Chatynkowa"
-               class="map-image" id="mapImage"/>
+               class="map-image" id="mapImage"
+               onload="this.closest('.map-stage').classList.add('has-image')"
+               onerror="this.closest('.map-stage').classList.add('no-image')"/>
+          <!-- Shown until the image loads successfully. -->
+          <div class="map-placeholder" aria-hidden="true">
+            <div class="map-placeholder__inner">
+              <div class="map-placeholder__icon">🗺️</div>
+              <h3>Brakuje pliku mapy</h3>
+              <p>Zapisz swój obrazek jako</p>
+              <code>assets/img/map-base.jpg</code>
+              <p class="map-placeholder__note">
+                (może być też <code>.png</code> / <code>.webp</code> — zmień rozszerzenie
+                w&nbsp;<code>index.html</code>). Po wgraniu odśwież stronę — chatynki
+                pojawią się automatycznie na swoich pozycjach procentowych
+                z&nbsp;<code>data/cottages.json</code>.
+              </p>
+            </div>
+          </div>
           <!-- Clickable hotspots are created by main.js and absolutely
-               positioned over the image at each cottage's mapX/mapY
-               percentage. -->
+               positioned over the image at each cottage's mapX/mapY. -->
           <div class="map-hotspots" id="mapHotspots" aria-label="Chatynki na mapie"></div>
         </figure>
         <p class="map-hint">
