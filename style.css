@@ -50,10 +50,14 @@ a:hover { color: var(--ember); }
   padding: 4rem 1.5rem 5rem;
   color: var(--parchment);
   overflow: hidden;
+  /* Kept the warm golden tints at the top and right for atmosphere,
+     but the base is now a SEMI-transparent darkening gradient rather
+     than an opaque block, so the body's moonlit-forest background
+     shows through the hero. */
   background:
-    radial-gradient(ellipse at center top, rgba(255, 220, 150, .14) 0%, transparent 55%),
-    radial-gradient(circle at 80% 30%, rgba(255,246,200,.12) 0%, transparent 40%),
-    linear-gradient(180deg, #122018 0%, #0b140f 100%);
+    radial-gradient(ellipse at center top, rgba(255, 220, 150, .18) 0%, transparent 55%),
+    radial-gradient(circle at 80% 30%, rgba(255,246,200,.14) 0%, transparent 40%),
+    linear-gradient(180deg, rgba(10,18,14,.45) 0%, rgba(10,18,14,.72) 100%);
   border-bottom: 2px solid rgba(199,154,75,.3);
 }
 .hero__inner {
