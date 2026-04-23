@@ -313,72 +313,88 @@ a:hover { color: var(--ember); }
   pointer-events: none;     /* only the dots themselves are clickable */
 }
 
-/* A single cottage hotspot: invisible by default, a glowing gold ring
-   on hover / focus, zooms to ~3× with a soft pulse on activation. */
+/* Cottage hotspot rendered as a classic red map pin (teardrop).
+   The pin's TIP points at the exact (mapX%, mapY%) coordinate, so we
+   translate by (-50%, -100%) instead of (-50%, -50%). */
 .cottage-hotspot {
   position: absolute;
-  transform: translate(-50%, -50%);
-  width: 44px;
+  transform: translate(-50%, -100%);
+  width: 32px;
   height: 44px;
-  border-radius: 50%;
   padding: 0;
+  border: none;
   background: transparent;
-  border: 2px solid transparent;
   cursor: pointer;
   pointer-events: auto;
-  line-height: 1;
+  line-height: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.55));
   transition: transform .25s cubic-bezier(.34, 1.56, .64, 1),
-              background .25s ease-out,
-              border-color .25s ease-out,
-              box-shadow .25s ease-out;
+              filter    .25s ease-out;
 }
 .cottage-hotspot:focus { outline: none; }
+
+/* The pin itself is an inline SVG in a data URL so there's no extra asset.
+   Red teardrop + inner white dot with a dark outline. */
+.cottage-hotspot::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 44'>\
+<path d='M16 2 C8 2 2 8 2 16 C2 24 10 32 16 42 C22 32 30 24 30 16 C30 8 24 2 16 2 Z' \
+fill='%23d4202a' stroke='%236b0010' stroke-width='1.6'/>\
+<circle cx='16' cy='15' r='5.5' fill='%23fff4d0' stroke='%236b0010' stroke-width='1.2'/>\
+</svg>");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 .cottage-hotspot:hover,
 .cottage-hotspot:focus-visible {
-  background: radial-gradient(circle, rgba(255,220,120,.55) 0%, rgba(255,220,120,.15) 60%, transparent 100%);
-  border-color: rgba(199,134,54,.9);
-  transform: translate(-50%, -50%) scale(1.15);
-  box-shadow: 0 0 22px rgba(255,200,100,.7);
-  animation: cottage-pulse 1.4s ease-in-out infinite;
+  transform: translate(-50%, -100%) translateY(-6px) scale(1.2);
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,.55))
+          drop-shadow(0 0 14px rgba(255,220,120,.85));
+  animation: pin-bob 1.6s ease-in-out infinite;
 }
 .cottage-hotspot.is-clicked {
   animation: none;
-  background: radial-gradient(circle, rgba(255,220,120,.85) 0%, rgba(255,200,80,.45) 60%, transparent 100%);
-  border-color: #c78636;
-  transform: translate(-50%, -50%) scale(3.2);
-  box-shadow: 0 10px 40px rgba(255,180,80,.75),
-              0 0 60px rgba(255,220,120,.65);
+  transform: translate(-50%, -100%) translateY(-14px) scale(3);
+  filter: drop-shadow(0 14px 22px rgba(0,0,0,.7))
+          drop-shadow(0 0 30px rgba(255,220,120,.9));
   z-index: 10;
   transition: transform .42s cubic-bezier(.2, .8, .3, 1.25),
-              box-shadow .3s ease-out;
+              filter    .3s ease-out;
 }
 
-@keyframes cottage-pulse {
-  0%   { box-shadow: 0 0 20px rgba(255,200,100,.55); }
-  50%  { box-shadow: 0 0 34px rgba(255,200,100,.95); }
-  100% { box-shadow: 0 0 20px rgba(255,200,100,.55); }
+@keyframes pin-bob {
+  0%,100% { transform: translate(-50%, -100%) translateY(-6px) scale(1.2); }
+  50%     { transform: translate(-50%, -100%) translateY(-12px) scale(1.22); }
 }
 
-/* Cottage name tooltip — appears below the hotspot on hover / focus. */
+/* Cottage name tooltip — appears ABOVE the pin so it doesn't cover the
+   map under it. */
 .cottage-hotspot::after {
   content: attr(data-label);
   position: absolute;
   left: 50%;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 4px);
   transform: translateX(-50%);
-  background: rgba(40,25,10,.92);
+  background: rgba(40,25,10,.95);
   color: #f5dfa8;
-  padding: 4px 10px;
+  padding: 5px 10px;
   border-radius: 6px;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: .02em;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   transition: opacity .18s ease-out;
-  border: 1px solid rgba(199,154,75,.55);
+  border: 1px solid rgba(199,154,75,.7);
+  box-shadow: 0 3px 8px rgba(0,0,0,.4);
 }
 .cottage-hotspot:hover::after,
 .cottage-hotspot:focus-visible::after,
@@ -386,7 +402,7 @@ a:hover { color: var(--ember); }
 
 /* Fallback hint if the map image fails to load. */
 .map-stage::before {
-  content: "Dodaj plik assets/img/map-base.jpg aby zobaczyć mapę";
+  content: "Dodaj plik assets/img/map-base.png aby zobaczyć mapę";
   position: absolute;
   inset: 0;
   display: flex;

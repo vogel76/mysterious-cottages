@@ -16,7 +16,7 @@
   }
 
   /* ---------- Cottage hotspots (image overlay) ----------
-     The map is a bitmap at assets/img/map-base.jpg. For each cottage, we
+     The map is a bitmap at assets/img/map-base.png. For each cottage, we
      place a transparent <button> at its mapX/mapY position (expressed as a
      PERCENTAGE of the image in data/cottages.json). CSS gives it a gold
      pulsing glow on hover/focus and an animated zoom on click. */
