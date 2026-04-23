@@ -434,13 +434,12 @@ a:hover { color: var(--ember); }
   .cottage-hotspot.is-clicked {
     transform: translate(-50%, -100%) translateY(-8px) scale(2.3);
   }
-  /* Always show a shrunken label above the pin on phones — hover is a
-     second-class citizen on touch devices. */
+  /* Tooltip stays hidden by default on phones too — it only appears on
+     tap (via .is-clicked). Also make it smaller and let it wrap so long
+     cottage names don't overflow the viewport. */
   .cottage-hotspot::after {
     font-size: 11px;
     padding: 2px 6px;
-    opacity: 0.8;
-    /* Clamp tooltip inside the map so it doesn't overflow the viewport */
     max-width: min(140px, 40vw);
     white-space: normal;
     text-align: center;
