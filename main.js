@@ -3,22 +3,11 @@
   'use strict';
 
   const COTTAGES_URL = 'data/cottages.json';
-  const MAP_URL      = 'assets/map/forest-map.svg';
   const MD_DIR       = 'cottages';
 
   const state = {
     cottages: [],
-    svgRoot: null
   };
-
-  /* ---------- Fetch + inject the map SVG ---------- */
-  async function loadMap() {
-    const res = await fetch(MAP_URL);
-    const text = await res.text();
-    const stage = document.getElementById('mapStage');
-    stage.innerHTML = text;
-    state.svgRoot = stage.querySelector('svg');
-  }
 
   /* ---------- Load cottages ---------- */
   async function loadCottages() {
@@ -26,28 +15,17 @@
     state.cottages = await res.json();
   }
 
-  /* ---------- Interactive cottage overlay ----------
-     Visible cottage icons + labels are rendered statically into forest-map.svg
-     at each cottage's mapX/mapY. This function layers a transparent clickable
-     hit-circle on top of each one, so users can hover, click or
-     keyboard-activate the cottage.
-
-     When a cottage is activated we:
-       1. Move its static group to the end of #cottages-static so it paints
-          on top of everything else (SVG has no z-index).
-       2. Add .is-clicked — CSS scales the group up (transform: scale(3))
-          with a soft spring transition.
-       3. After the zoom animation finishes, open the modal with the
-          cottage's description and driving directions.
-       4. When the modal closes, remove .is-clicked so the pin shrinks back. */
-  const ZOOM_DELAY_MS = 320;  // roughly matches the CSS transition
+  /* ---------- Cottage hotspots (image overlay) ----------
+     The map is a bitmap at assets/img/map-base.jpg. For each cottage, we
+     place a transparent <button> at its mapX/mapY position (expressed as a
+     PERCENTAGE of the image in data/cottages.json). CSS gives it a gold
+     pulsing glow on hover/focus and an animated zoom on click. */
+  const ZOOM_DELAY_MS = 360;  // matches the .is-clicked CSS transition
 
   function drawCottages() {
-    if (!state.svgRoot) return;
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const cottagesLayer = state.svgRoot.querySelector('#cottages');
-    if (!cottagesLayer) return;
-    cottagesLayer.innerHTML = '';
+    const host = document.getElementById('mapHotspots');
+    if (!host) return;
+    host.innerHTML = '';
 
     const modal = document.getElementById('cottageModal');
 
@@ -56,50 +34,32 @@
       const y = Number(c.mapY);
       if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
-      const staticGroup = state.svgRoot.querySelector(
-        `#cottages-static [data-slug="${c.slug}"]`
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cottage-hotspot';
+      btn.dataset.slug  = c.slug;
+      btn.dataset.label = c.title;
+      btn.setAttribute(
+        'aria-label',
+        `${c.title}. Kliknij, aby otworzyć opis i nawigację.`
       );
-
-      const hit = document.createElementNS(svgNS, 'circle');
-      hit.setAttribute('cx', String(x));
-      hit.setAttribute('cy', String(y + 10));
-      hit.setAttribute('r',  '46');
-      hit.setAttribute('fill', 'transparent');
-      hit.setAttribute('class', 'cottage-hit');
-      hit.setAttribute('tabindex', '0');
-      hit.setAttribute('role', 'button');
-      hit.setAttribute('aria-label', `${c.title}. Kliknij, aby otworzyć opis i nawigację.`);
-      hit.dataset.slug = c.slug;
+      btn.style.left = x + '%';
+      btn.style.top  = y + '%';
 
       const activate = () => {
-        if (staticGroup) {
-          // Raise to top of layer
-          staticGroup.parentNode.appendChild(staticGroup);
-          staticGroup.classList.add('is-clicked');
-          staticGroup.classList.remove('is-hover');
-          setTimeout(() => openCottageModal(c), ZOOM_DELAY_MS);
-          // Clean up the zoom when the modal is closed for any reason.
+        btn.classList.add('is-clicked');
+        setTimeout(() => {
+          openCottageModal(c);
           const reset = () => {
-            staticGroup.classList.remove('is-clicked');
+            btn.classList.remove('is-clicked');
             modal.removeEventListener('close', reset);
           };
           modal.addEventListener('close', reset);
-        } else {
-          openCottageModal(c);
-        }
+        }, ZOOM_DELAY_MS);
       };
 
-      hit.addEventListener('click', activate);
-      hit.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
-      });
-      if (staticGroup) {
-        hit.addEventListener('mouseenter', () => staticGroup.classList.add('is-hover'));
-        hit.addEventListener('mouseleave', () => staticGroup.classList.remove('is-hover'));
-        hit.addEventListener('focus',      () => staticGroup.classList.add('is-hover'));
-        hit.addEventListener('blur',       () => staticGroup.classList.remove('is-hover'));
-      }
-      cottagesLayer.appendChild(hit);
+      btn.addEventListener('click', activate);
+      host.appendChild(btn);
     });
   }
 
@@ -190,16 +150,19 @@
   /* ---------- Boot ---------- */
   async function init() {
     try {
-      await Promise.all([loadMap(), loadCottages()]);
+      await loadCottages();
       drawCottages();
       buildCottageIndex();
       wireModal();
       wireCodeForm();
     } catch (err) {
       console.error('[Chatynkowo] init failed', err);
-      const stage = document.getElementById('mapStage');
-      if (stage) stage.innerHTML =
-        `<p style="padding:2rem;color:#f5e6b8">Nie udało się wczytać mapy. Otwórz stronę przez serwer HTTP (np. <code>python3 -m http.server</code>) — przeglądarki blokują lokalny <code>fetch()</code> z <code>file://</code>.</p>`;
+      const host = document.getElementById('mapHotspots');
+      if (host) host.innerHTML =
+        `<p style="padding:2rem;color:#f5e6b8;background:rgba(0,0,0,.6);">
+           Nie udało się wczytać chatynek. Otwórz stronę przez serwer HTTP
+           (np. <code>python3 -m http.server</code>).
+         </p>`;
     }
   }
 

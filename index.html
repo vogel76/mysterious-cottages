@@ -56,10 +56,14 @@
       </p>
 
       <div class="map-wrapper" aria-label="Interaktywna baśniowa mapa Chatynkowa">
-        <div class="map-stage" id="mapStage">
-          <!-- Treasure-scroll SVG (with its own in-map legend + compass)
-               is loaded inline at runtime. -->
-        </div>
+        <figure class="map-stage" id="mapStage">
+          <img src="assets/img/map-base.jpg" alt="Baśniowa mapa Chatynkowa"
+               class="map-image" id="mapImage"/>
+          <!-- Clickable hotspots are created by main.js and absolutely
+               positioned over the image at each cottage's mapX/mapY
+               percentage. -->
+          <div class="map-hotspots" id="mapHotspots" aria-label="Chatynki na mapie"></div>
+        </figure>
         <p class="map-hint">
           Najedź na chatynkę, aby zobaczyć jej nazwę. Kliknij — chatynka powiększy się,
           a&nbsp;po chwili otworzy się okno z&nbsp;opisem i&nbsp;nawigacją.
