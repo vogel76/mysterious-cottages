@@ -209,7 +209,10 @@ a:hover { color: var(--ember); }
 /* ---------- Map ---------- */
 .section--map { padding-bottom: 2rem; }
 .map-wrapper {
-  max-width: 1400px;
+  /* Portrait base image (1024x1536, aspect 2:3) — cap width on desktop
+     so the vertical scroll doesn't tower over the page. On mobile it
+     scales down to the viewport width. */
+  max-width: 720px;
   margin: 0 auto;
 }
 .map-hint {
