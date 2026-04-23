@@ -295,10 +295,11 @@ def tick_marks():
 
 
 SYMBOLS = f"""
-  <!-- Pine / fir tree (ink silhouette) -->
+  <!-- Tall pine / fir — ink silhouette with faint inner hatching -->
   <symbol id="pine" viewBox="0 0 30 42">
     <polygon points="15,3 4,18 11,18 3,30 12,30 2,40 28,40 18,30 27,30 19,18 26,18"
              fill="{FOREST_G1}" stroke="{INK_DARK}" stroke-width="1"/>
+    <path d="M 15,6 L 15,40" stroke="{INK_DARK}" stroke-width="0.4" opacity="0.55"/>
     <rect x="14" y="40" width="2" height="2" fill="{INK_DARK}"/>
   </symbol>
 
@@ -306,7 +307,130 @@ SYMBOLS = f"""
   <symbol id="pine2" viewBox="0 0 30 40">
     <polygon points="15,2 3,26 12,26 5,38 25,38 18,26 27,26"
              fill="{FOREST_G2}" stroke="{INK_DARK}" stroke-width="1"/>
+    <path d="M 15,4 L 15,38" stroke="{INK_DARK}" stroke-width="0.4" opacity="0.55"/>
     <rect x="14" y="38" width="2" height="2" fill="{INK_DARK}"/>
+  </symbol>
+
+  <!-- Deciduous tree (oak / beech) — round canopy with hatched shading -->
+  <symbol id="oak" viewBox="0 0 34 40">
+    <ellipse cx="17" cy="16" rx="14" ry="13" fill="#3d5e24" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <path d="M 7,14 Q 17,6 27,14 Q 22,10 17,10 Q 12,10 7,14 Z"
+          fill="#2b4618" opacity="0.6"/>
+    <g stroke="{INK_DARK}" stroke-width="0.5" opacity="0.55" fill="none">
+      <path d="M 20,10 Q 23,14 22,20"/>
+      <path d="M 25,14 Q 26,20 24,24"/>
+      <path d="M 12,12 Q 10,18 12,22"/>
+    </g>
+    <rect x="15" y="28" width="4" height="10" fill="{INK_DARK}"/>
+  </symbol>
+
+  <!-- Dead / snag tree — bare branches, adds atmosphere -->
+  <symbol id="snag" viewBox="0 0 26 40">
+    <g stroke="{INK_DARK}" stroke-width="1.4" fill="none" stroke-linecap="round">
+      <path d="M 13,38 L 13,8"/>
+      <path d="M 13,20 L 5,12"/>
+      <path d="M 13,18 L 22,10"/>
+      <path d="M 13,24 L 7,20"/>
+      <path d="M 13,14 L 4,6"/>
+      <path d="M 13,12 L 20,5"/>
+      <path d="M 13,26 L 19,21"/>
+    </g>
+  </symbol>
+
+  <!-- Jurassic limestone rock pillar ("Skała Wapienna") — tall narrow white
+       outcrop with vertical striations, characteristic of the Jura region. -->
+  <symbol id="rockPillar" viewBox="0 0 30 70">
+    <path d="M 6,68 L 6,30 Q 6,10 12,8 Q 18,6 22,16 Q 26,22 24,38 L 24,68 Z"
+          fill="#ece2c0" stroke="{INK_DARK}" stroke-width="1.4"/>
+    <g stroke="{INK_DARK}" stroke-width="0.7" opacity="0.7" fill="none">
+      <path d="M 9,30 L 9,64"/>
+      <path d="M 13,16 L 13,64"/>
+      <path d="M 17,14 L 17,64"/>
+      <path d="M 21,22 L 21,64"/>
+      <path d="M 8,46 L 22,46"/>
+      <path d="M 8,56 L 22,56"/>
+    </g>
+    <!-- Shadow on right side -->
+    <path d="M 20,24 L 24,40 L 24,68 L 20,68 Z"
+          fill="{INK}" opacity="0.15"/>
+  </symbol>
+
+  <!-- Cluster of 3 limestone pillars (iconic Jura landmark) -->
+  <symbol id="rockCluster" viewBox="0 0 90 80">
+    <path d="M 14,76 L 14,40 Q 14,22 22,20 Q 30,18 34,30 Q 36,36 34,48 L 34,76 Z"
+          fill="#ece2c0" stroke="{INK_DARK}" stroke-width="1.4"/>
+    <path d="M 36,78 L 36,24 Q 36,6 46,4 Q 58,2 62,18 Q 66,30 64,44 L 64,78 Z"
+          fill="#ece2c0" stroke="{INK_DARK}" stroke-width="1.4"/>
+    <path d="M 62,78 L 62,46 Q 62,32 70,30 Q 80,28 82,42 L 82,78 Z"
+          fill="#ece2c0" stroke="{INK_DARK}" stroke-width="1.4"/>
+    <g stroke="{INK_DARK}" stroke-width="0.7" opacity="0.65" fill="none">
+      <path d="M 18,40 L 18,72"/>
+      <path d="M 24,26 L 24,72"/>
+      <path d="M 30,30 L 30,72"/>
+      <path d="M 42,20 L 42,72"/>
+      <path d="M 48,10 L 48,72"/>
+      <path d="M 54,12 L 54,72"/>
+      <path d="M 60,20 L 60,72"/>
+      <path d="M 68,36 L 68,72"/>
+      <path d="M 74,34 L 74,72"/>
+      <path d="M 78,40 L 78,72"/>
+      <path d="M 16,54 L 34,54"/>
+      <path d="M 38,56 L 64,56"/>
+      <path d="M 62,58 L 82,58"/>
+    </g>
+    <path d="M 30,24 L 34,36 L 34,76 L 30,76 Z
+             M 58,18 L 64,36 L 64,76 L 58,76 Z
+             M 76,34 L 82,48 L 82,76 L 76,76 Z"
+          fill="{INK}" opacity="0.14"/>
+  </symbol>
+
+  <!-- Medieval sea-dragon ("HIC SUNT DRACONES") for empty space -->
+  <symbol id="dragon" viewBox="0 0 200 120">
+    <!-- Body: sinuous serpent curve -->
+    <path d="M 10,90 Q 30,40 70,60 Q 105,78 140,50 Q 170,30 190,40
+             Q 180,60 160,62 Q 135,66 115,80 Q 85,98 55,90 Q 30,84 10,90 Z"
+          fill="{INK_MED}" stroke="{INK_DARK}" stroke-width="1.6"/>
+    <!-- Spines on back -->
+    <g stroke="{INK_DARK}" stroke-width="1.2" fill="{INK_SOFT}">
+      <path d="M 40,62 L 44,52 L 48,62 Z"/>
+      <path d="M 58,56 L 62,44 L 66,56 Z"/>
+      <path d="M 82,54 L 86,42 L 90,54 Z"/>
+      <path d="M 110,60 L 114,48 L 118,60 Z"/>
+      <path d="M 138,52 L 142,40 L 146,52 Z"/>
+    </g>
+    <!-- Head details -->
+    <path d="M 180,40 Q 196,34 200,42 L 196,48 L 188,46 Z"
+          fill="{INK_MED}" stroke="{INK_DARK}" stroke-width="1.4"/>
+    <circle cx="188" cy="44" r="1.5" fill="{PAPER_HI}"/>
+    <!-- Wing -->
+    <path d="M 90,58 Q 100,30 130,32 Q 120,42 110,48 Q 100,52 90,58 Z"
+          fill="{INK}" stroke="{INK_DARK}" stroke-width="1.2" opacity="0.8"/>
+    <path d="M 92,56 L 100,36 M 100,56 L 110,40 M 108,54 L 120,38"
+          stroke="{INK_DARK}" stroke-width="0.7" opacity="0.9" fill="none"/>
+    <!-- Tail spikes -->
+    <path d="M 10,90 L 2,94 L 10,96 Z" fill="{INK_MED}" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <!-- Belly scales hint -->
+    <g stroke="{INK_DARK}" stroke-width="0.5" opacity="0.55" fill="none">
+      <path d="M 30,86 q 4,-6 8,0 q 4,6 8,0 q 4,-6 8,0 q 4,6 8,0 q 4,-6 8,0"/>
+    </g>
+  </symbol>
+
+  <!-- Small village / hamlet (cluster of simple ink houses) -->
+  <symbol id="hamlet" viewBox="0 0 100 50">
+    <!-- House 1 -->
+    <polygon points="8,28 18,16 28,28" fill="{ACCENT_RED}" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <rect x="10" y="28" width="16" height="14" fill="{PAPER_HI}" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <rect x="16" y="34" width="4" height="8" fill="{INK_DARK}"/>
+    <!-- House 2 -->
+    <polygon points="34,24 48,10 62,24" fill="{ACCENT_RED}" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <rect x="36" y="24" width="24" height="18" fill="{PAPER_HI}" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <rect x="46" y="32" width="6" height="10" fill="{INK_DARK}"/>
+    <rect x="39" y="28" width="4" height="4" fill="{INK_DARK}"/>
+    <rect x="53" y="28" width="4" height="4" fill="{INK_DARK}"/>
+    <!-- House 3 -->
+    <polygon points="68,30 78,20 88,30" fill="{ACCENT_RED}" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <rect x="70" y="30" width="16" height="12" fill="{PAPER_HI}" stroke="{INK_DARK}" stroke-width="1.2"/>
+    <rect x="76" y="34" width="4" height="8" fill="{INK_DARK}"/>
   </symbol>
 
   <!-- Cottage icon (used everywhere the cottages sit on the path) -->
@@ -501,11 +625,11 @@ def castles_layout():
         parts.append(f"""
     <g class="castle" transform="translate({cx - W/2:.0f},{cy - H/2:.0f})">
       <use href="#castle" width="{W}" height="{H}"/>
-      <text x="{W/2:.0f}" y="{H + 22:.0f}" text-anchor="middle"
-            font-family="Georgia, serif" font-style="italic" font-weight="bold"
-            font-size="22" fill="{INK_DARK}"
-            paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">{label}</text>
-      <text x="{W/2:.0f}" y="{H + 42:.0f}" text-anchor="middle"
+      <text x="{W/2:.0f}" y="{H + 24:.0f}" text-anchor="middle"
+            font-family="Cinzel Decorative, Georgia, serif" font-weight="900"
+            font-size="22" fill="{INK_DARK}" letter-spacing="3"
+            paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">{label.upper()}</text>
+      <text x="{W/2:.0f}" y="{H + 44:.0f}" text-anchor="middle"
             font-family="Georgia, serif" font-style="italic"
             font-size="14" fill="{INK_MED}"
             paint-order="stroke" stroke="{PAPER_HI}" stroke-width="3" stroke-linejoin="round">{sub}</text>
@@ -514,11 +638,22 @@ def castles_layout():
 
 
 def forest_svg(trees, rnd):
+    """Mix of conifers, oaks and occasional dead snags for medieval variety."""
     out = []
     for x, y in trees:
-        w = rnd.choice([22, 24, 26, 28, 30])
+        w = rnd.choice([22, 24, 26, 28, 30, 32])
         h = int(w * 1.45)
-        sym = rnd.choice(["pine", "pine", "pine2"])
+        # 70% conifers, 25% deciduous oaks, 5% snags
+        r = rnd.random()
+        if r < 0.45:
+            sym, aspect = "pine", 1.45
+        elif r < 0.70:
+            sym, aspect = "pine2", 1.33
+        elif r < 0.95:
+            sym, aspect = "oak",  1.18
+        else:
+            sym, aspect = "snag", 1.54
+        h = int(w * aspect)
         out.append(
             f'<use href="#{sym}" x="{x - w/2:.0f}" y="{y - h/2:.0f}" width="{w}" height="{h}"/>'
         )
@@ -526,22 +661,34 @@ def forest_svg(trees, rnd):
 
 
 def rocks_layout(rnd):
-    # A handful of limestone outcrops at predetermined spots
+    """Iconic Jura limestone pillar clusters scattered across the paper —
+    tall narrow white outcrops with vertical striations, characteristic
+    of the Kraków-Częstochowa Upland."""
+    # (cx, cy, variant)  variant: 'cluster' = three pillars, 'pillar' = one
     rocks = [
-        (420, 200),   # upper path
-        (720, 240),   # top centre
-        (1100, 180),  # upper right
-        (190, 740),   # left-bottom
-        (760, 990),   # bottom centre (near path end)
-        (1250, 980),  # bottom right
+        (680,  250, "cluster"),   # north forest
+        (1080, 390, "cluster"),   # east of path
+        (320,  780, "cluster"),   # south-west
+        (830,  990, "cluster"),   # bottom centre
+        (1250, 960, "pillar"),    # bottom right accent
+        (490,  410, "pillar"),    # upper path edge
     ]
     out = []
-    for cx, cy in rocks:
-        w = rnd.randint(70, 100)
-        h = int(w * 0.72)
-        out.append(
-            f'<use href="#rockOutcrop" x="{cx - w/2}" y="{cy - h/2}" width="{w}" height="{h}"/>'
-        )
+    for cx, cy, variant in rocks:
+        if variant == "cluster":
+            w = rnd.randint(170, 210)
+            h = int(w * 0.88)
+            out.append(
+                f'<use href="#rockCluster" x="{cx - w/2}" y="{cy - h/2}" '
+                f'width="{w}" height="{h}"/>'
+            )
+        else:
+            w = rnd.randint(50, 70)
+            h = int(w * 2.3)
+            out.append(
+                f'<use href="#rockPillar" x="{cx - w/2}" y="{cy - h/2}" '
+                f'width="{w}" height="{h}"/>'
+            )
     return "\n    ".join(out)
 
 
@@ -603,6 +750,58 @@ def cottages_static_layout(cottages):
     return "\n".join(out)
 
 
+def vine_border(x0, y0, x1, y1):
+    """A repeating vine-and-rosette motif laid between the two border rules."""
+    parts = []
+    step = 46
+    # Horizontal vine along top & bottom
+    for x in range(x0 + 24, x1 - 24, step):
+        parts.append(
+            f'<path d="M {x},{y0 + 10} q 10,-6 20,0 q 10,6 20,0" '
+            f'fill="none" stroke="{INK}" stroke-width="1.2" opacity="0.85"/>'
+            f'<circle cx="{x + 20}" cy="{y0 + 10}" r="1.8" fill="{INK}"/>'
+        )
+        parts.append(
+            f'<path d="M {x},{y1 - 10} q 10,6 20,0 q 10,-6 20,0" '
+            f'fill="none" stroke="{INK}" stroke-width="1.2" opacity="0.85"/>'
+            f'<circle cx="{x + 20}" cy="{y1 - 10}" r="1.8" fill="{INK}"/>'
+        )
+    # Vertical vine along left & right
+    for y in range(y0 + 24, y1 - 24, step):
+        parts.append(
+            f'<path d="M {x0 + 10},{y} q -6,10 0,20 q 6,10 0,20" '
+            f'fill="none" stroke="{INK}" stroke-width="1.2" opacity="0.85"/>'
+            f'<circle cx="{x0 + 10}" cy="{y + 20}" r="1.8" fill="{INK}"/>'
+        )
+        parts.append(
+            f'<path d="M {x1 - 10},{y} q 6,10 0,20 q -6,10 0,20" '
+            f'fill="none" stroke="{INK}" stroke-width="1.2" opacity="0.85"/>'
+            f'<circle cx="{x1 - 10}" cy="{y + 20}" r="1.8" fill="{INK}"/>'
+        )
+    return "\n  ".join(parts)
+
+
+def fleur_corners(x0, y0, x1, y1):
+    """Fleur-de-lis ornaments in each inner-border corner."""
+    def fleur(cx, cy, flip_x=False, flip_y=False):
+        sx = -1 if flip_x else 1
+        sy = -1 if flip_y else 1
+        # A simple medieval fleur-de-lis (stylized)
+        return f"""
+    <g transform="translate({cx},{cy}) scale({sx} {sy})">
+      <path d="M 0,0 L 0,18 M -10,6 Q -14,18 0,22 Q 14,18 10,6 M -10,6 Q -6,-4 0,-2 Q 6,-4 10,6"
+            fill="none" stroke="{INK}" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M -4,-6 Q -2,-12 0,-12 Q 2,-12 4,-6 Z" fill="{INK}"/>
+      <rect x="-12" y="18" width="24" height="3" fill="{INK}"/>
+    </g>"""
+    return (
+        fleur(x0 + 34, y0 + 34)
+        + fleur(x1 - 34, y0 + 34, flip_x=True)
+        + fleur(x0 + 34, y1 - 34, flip_y=True)
+        + fleur(x1 - 34, y1 - 34, flip_x=True, flip_y=True)
+    )
+
+
 def rand_stains(rnd, n=22):
     out = []
     for _ in range(n):
@@ -643,20 +842,33 @@ def generate():
     castles_xy = [(c[0], c[1]) for c in CASTLES]
     cottage_pts = [(c["mapX"], c["mapY"]) for c in cottages_out]
 
-    # Rectangles where trees MUST NOT grow (title banner, legend box, compass,
-    # rivers – roughly).
+    # Rectangles where trees MUST NOT grow
     title_cx = (INNER_X0 + INNER_X1) / 2
     exclusion_rects = [
         # Title banner
-        (title_cx - 540, INNER_Y0 - 10, title_cx + 540, INNER_Y0 + 60),
+        (title_cx - 560, INNER_Y0 - 10, title_cx + 560, INNER_Y0 + 76),
         # In-map legend (bottom-left)
         (INNER_X0 + 20, INNER_Y1 - 180, INNER_X0 + 290, INNER_Y1 - 20),
         # Compass rose (bottom-right)
-        (INNER_X1 - 190, INNER_Y1 - 200, INNER_X1 - 10, INNER_Y1 - 20),
-        # "VIA TORTA JURAE" label region
-        (920, 830, 1140, 890),
-        # "SILVA IURAE" label region
-        (680, 320, 880, 370),
+        (INNER_X1 - 200, INNER_Y1 - 210, INNER_X1 - 10, INNER_Y1 - 10),
+        # VIA TORTA IURAE label
+        (900, 820, 1150, 890),
+        # SILVA IURAE label
+        (640, 310, 920, 370),
+        # Klucze village
+        (410, 170, 560, 290),
+        # Olkusz village
+        (550, 900, 720, 1040),
+        # Dragon & HIC SVNT DRACONES
+        (820, 920, 1030, 1080),
+        # River-1 label column (left)
+        (140, 130, 200, 780),
+        # River-2 label column (right)
+        (1290, 80, 1360, 920),
+        # Limestone rock cluster areas (keep trees away from bright outcrops)
+        (580, 190, 790, 330),
+        (990, 320, 1200, 470),
+        (220, 720, 430, 870),
     ]
 
     trees = place_forest(rnd, path_pts_dense, castles_xy, cottage_pts,
@@ -752,21 +964,40 @@ def generate():
     {stain_svg}
   </g>
 
-  <!-- Ornate double-ruled inner border -->
+  <!-- Ornate double-ruled inner border with vine motif between the two lines -->
   <rect x="{INNER_X0}" y="{INNER_Y0}" width="{INNER_X1 - INNER_X0}" height="{INNER_Y1 - INNER_Y0}"
         fill="none" stroke="{INK}" stroke-width="3"/>
-  <rect x="{INNER_X0 + 12}" y="{INNER_Y0 + 12}" width="{INNER_X1 - INNER_X0 - 24}" height="{INNER_Y1 - INNER_Y0 - 24}"
-        fill="none" stroke="{INK}" stroke-width="0.8" stroke-dasharray="5 3"/>
+  <rect x="{INNER_X0 + 20}" y="{INNER_Y0 + 20}" width="{INNER_X1 - INNER_X0 - 40}" height="{INNER_Y1 - INNER_Y0 - 40}"
+        fill="none" stroke="{INK}" stroke-width="1.2"/>
+  {vine_border(INNER_X0, INNER_Y0, INNER_X1, INNER_Y1)}
 
-  <!-- Latin title banner at the top of the paper -->
-  <g transform="translate({(INNER_X0 + INNER_X1) / 2:.0f},{INNER_Y0 + 28})">
-    <rect x="-520" y="-22" width="1040" height="42" fill="{PAPER_HI}"
-          stroke="{INK}" stroke-width="2" rx="4"/>
-    <rect x="-512" y="-14" width="1024" height="26" fill="none"
-          stroke="{INK}" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <!-- Fleur-de-lis corner flourishes on the inner border -->
+  {fleur_corners(INNER_X0, INNER_Y0, INNER_X1, INNER_Y1)}
+
+  <!-- Medieval title banner with ribbon scroll — Latin anno-domini -->
+  <g transform="translate({(INNER_X0 + INNER_X1) / 2:.0f},{INNER_Y0 + 36})">
+    <!-- Ribbon tails behind the banner -->
+    <path d="M -540,-6 L -500,-24 L -500,6 Z" fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.4"/>
+    <path d="M -520,18 L -500,6 L -520,-6 Z" fill="{INK_MED}" stroke="{INK}" stroke-width="1.2" opacity="0.7"/>
+    <path d="M  540,-6 L  500,-24 L  500,6 Z" fill="{PAPER_LOW}" stroke="{INK}" stroke-width="1.4"/>
+    <path d="M  520,18 L  500,6 L  520,-6 Z" fill="{INK_MED}" stroke="{INK}" stroke-width="1.2" opacity="0.7"/>
+    <!-- Banner body -->
+    <path d="M -500,-24 Q -510,0 -500,20 L 500,20 Q 510,0 500,-24 Z"
+          fill="{PAPER_HI}" stroke="{INK}" stroke-width="2.2"/>
+    <path d="M -488,-14 Q -494,0 -488,12 L 488,12 Q 494,0 488,-14 Z"
+          fill="none" stroke="{INK}" stroke-width="0.7" stroke-dasharray="3 3"/>
+    <!-- Decorative rosettes on each end -->
+    <g stroke="{INK}" stroke-width="1" fill="{PAPER_MID}">
+      <circle cx="-480" cy="-2" r="6"/>
+      <circle cx="-480" cy="-2" r="2" fill="{INK}"/>
+      <circle cx="480"  cy="-2" r="6"/>
+      <circle cx="480"  cy="-2" r="2" fill="{INK}"/>
+    </g>
     <text x="0" y="6" text-anchor="middle"
-          font-family="Georgia, serif" font-weight="bold" font-style="italic"
-          font-size="22" fill="{INK_DARK}">TERRAE REGIO IURAE KRAKOWIENSI-CZESTOCHOWIENSI · MMXXVI</text>
+          font-family="Cinzel Decorative, Georgia, serif" font-weight="900"
+          font-size="22" fill="{INK_DARK}" letter-spacing="2">
+      TERRAE·REGIO·IURAE·KRAKOWIENSI-CZESTOCHOWIENSI · ANNO·DOMINI·MMXXVI
+    </text>
   </g>
 
   <!-- ========= Map content ========= -->
@@ -793,11 +1024,12 @@ def generate():
     <path d="{path_d}" stroke="{INK}"       stroke-width="1.5" stroke-dasharray="7 7" opacity="0.55"/>
   </g>
 
-  <!-- "VIA TORTA JURAE" label along the bottom-right curve -->
+  <!-- "VIA TORTA IURAE" label along the bottom-right curve (Cinzel caps) -->
   <g transform="translate(1020,860) rotate(8)">
-    <text text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-style="italic"
-          font-size="22" fill="{INK_DARK}"
-          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">VIA TORTA JURAE</text>
+    <text text-anchor="middle"
+          font-family="Cinzel Decorative, Georgia, serif" font-weight="900"
+          font-size="24" fill="{INK_DARK}" letter-spacing="4"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">VIA·TORTA·IURAE</text>
   </g>
 
   <!-- Dense forest scattered around the road -->
@@ -805,11 +1037,60 @@ def generate():
     {forest_svg(trees, rnd)}
   </g>
 
-  <!-- "SILVA IURAE" label tucked in the top forest -->
+  <!-- "SILVA IURAE" label tucked in the top-centre forest, Cinzel caps -->
   <g transform="translate(780,340)">
-    <text text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-style="italic"
-          font-size="24" fill="{INK_DARK}"
-          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">SILVA IURAE</text>
+    <text text-anchor="middle"
+          font-family="Cinzel Decorative, Georgia, serif" font-weight="900"
+          font-size="26" fill="{INK_DARK}" letter-spacing="6"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">SILVA · IURAE</text>
+  </g>
+
+  <!-- River labels (running beside each stream) -->
+  <g>
+    <text transform="translate(160,360) rotate(88)"
+          font-family="Georgia, serif" font-style="italic" font-size="16" fill="{RIVER}"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="3" stroke-linejoin="round">
+      Biała Przemsza
+    </text>
+    <text transform="translate(1318,480) rotate(85)"
+          font-family="Georgia, serif" font-style="italic" font-size="14" fill="{RIVER}"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="3" stroke-linejoin="round">
+      Flumen Iurae
+    </text>
+  </g>
+
+  <!-- Small village of Klucze (with label) -->
+  <g transform="translate(430,180)">
+    <use href="#hamlet" width="120" height="60"/>
+    <text x="60" y="78" text-anchor="middle"
+          font-family="Cinzel Decorative, Georgia, serif" font-weight="900"
+          font-size="18" fill="{INK_DARK}" letter-spacing="2"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">KLUCZE</text>
+    <text x="60" y="96" text-anchor="middle"
+          font-family="Georgia, serif" font-style="italic" font-size="12" fill="{INK_MED}"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="3" stroke-linejoin="round">vicus Klucze</text>
+  </g>
+
+  <!-- Small village / mining town of Olkusz -->
+  <g transform="translate(570,920)">
+    <use href="#hamlet" width="130" height="65"/>
+    <text x="65" y="82" text-anchor="middle"
+          font-family="Cinzel Decorative, Georgia, serif" font-weight="900"
+          font-size="20" fill="{INK_DARK}" letter-spacing="2"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="4" stroke-linejoin="round">OLKUSZ</text>
+    <text x="65" y="100" text-anchor="middle"
+          font-family="Georgia, serif" font-style="italic" font-size="12" fill="{INK_MED}"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="3" stroke-linejoin="round">civitas Olkusz · minerae argenti</text>
+  </g>
+
+  <!-- "HIC SVNT DRACONES" — medieval sea-dragon flourish nestled in the
+       empty parchment between the path and the compass. -->
+  <g transform="translate(840,940)">
+    <use href="#dragon" width="170" height="100"/>
+    <text x="85" y="116" text-anchor="middle"
+          font-family="Cinzel Decorative, Georgia, serif" font-weight="900"
+          font-size="14" fill="{INK_DARK}" letter-spacing="3"
+          paint-order="stroke" stroke="{PAPER_HI}" stroke-width="3" stroke-linejoin="round">HIC · SVNT · DRACONES</text>
   </g>
 
   <!-- Static cottage pins drawn straight into the SVG (visible icon + label). -->
