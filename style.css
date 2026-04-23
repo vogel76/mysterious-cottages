@@ -346,19 +346,14 @@ a:hover { color: var(--ember); }
 }
 .cottage-hotspot:focus { outline: none; }
 
-/* The pin itself is an inline SVG in a data URL so there's no extra asset.
-   Red teardrop + inner white dot with a dark outline. */
+/* Pin graphic is a stand-alone asset at assets/img/map-pin.svg — edit
+   it there to change the pin's shape / colour. */
 .cottage-hotspot::before {
   content: '';
   display: block;
   width: 100%;
   height: 100%;
-  background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 44'>\
-<path d='M16 2 C8 2 2 8 2 16 C2 24 10 32 16 42 C22 32 30 24 30 16 C30 8 24 2 16 2 Z' \
-fill='%23d4202a' stroke='%236b0010' stroke-width='1.6'/>\
-<circle cx='16' cy='15' r='5.5' fill='%23fff4d0' stroke='%236b0010' stroke-width='1.2'/>\
-</svg>");
+  background-image: url("assets/img/map-pin.svg");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
