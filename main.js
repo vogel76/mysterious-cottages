@@ -63,18 +63,61 @@
     });
   }
 
-  /* ---------- Cottage index ---------- */
-  function buildCottageIndex() {
-    const ul = document.getElementById('cottageIndex');
-    ul.innerHTML = '';
-    for (const c of state.cottages) {
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.href = '#mapa';
-      a.textContent = c.title;
-      a.addEventListener('click', (e) => { e.preventDefault(); openCottageModal(c); });
-      li.appendChild(a);
-      ul.appendChild(li);
+  /* ---------- Discovered-cottage book ----------
+     The #historie section stays hidden until the user discovers their first
+     cottage (by clicking it on the map or entering its 4-digit code). Each
+     fresh discovery appends a new entry to the list, reveals the section,
+     and updates the "x z 18 odkrytych" counter. Discoveries persist
+     in localStorage so they survive a page reload. */
+  const DISCOVERY_KEY = 'chatynkowo:discovered';
+
+  function getDiscovered() {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(DISCOVERY_KEY) || '[]'));
+    } catch (_) { return new Set(); }
+  }
+  function saveDiscovered(set) {
+    try { localStorage.setItem(DISCOVERY_KEY, JSON.stringify([...set])); }
+    catch (_) { /* ignore storage failures (private mode, quota, etc.) */ }
+  }
+
+  function revealCottage(c) {
+    const section = document.getElementById('historie');
+    const ul      = document.getElementById('cottageIndex');
+    const counter = document.getElementById('foundCount');
+    const total   = document.getElementById('totalCount');
+    if (!section || !ul) return;
+
+    // Already in the book? skip.
+    if (ul.querySelector(`[data-slug="${c.slug}"]`)) return;
+
+    // Unhide the section on the very first discovery
+    if (section.hidden) section.hidden = false;
+
+    const li = document.createElement('li');
+    li.dataset.slug = c.slug;
+    const a = document.createElement('a');
+    a.href = '#mapa';
+    a.textContent = c.title;
+    a.addEventListener('click', (e) => { e.preventDefault(); openCottageModal(c); });
+    li.appendChild(a);
+    ul.appendChild(li);
+
+    if (counter) counter.textContent = ul.children.length;
+    if (total)   total.textContent   = state.cottages.length;
+
+    const discovered = getDiscovered();
+    discovered.add(c.slug);
+    saveDiscovered(discovered);
+  }
+
+  /** Re-populate the book from whatever is in localStorage (on page load). */
+  function restoreDiscoveries() {
+    const discovered = getDiscovered();
+    if (!discovered.size) return;
+    for (const slug of discovered) {
+      const c = state.cottages.find(x => x.slug === slug);
+      if (c) revealCottage(c);
     }
   }
 
@@ -96,6 +139,9 @@
 
     if (typeof modal.showModal === 'function') modal.showModal();
     else modal.setAttribute('open', '');
+
+    // Mark this cottage as discovered — reveals / adds to the Historie book.
+    revealCottage(c);
 
     try {
       const res = await fetch(mdUrl);
@@ -152,7 +198,7 @@
     try {
       await loadCottages();
       drawCottages();
-      buildCottageIndex();
+      restoreDiscoveries();
       wireModal();
       wireCodeForm();
     } catch (err) {
