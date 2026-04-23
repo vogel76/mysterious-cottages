@@ -24,11 +24,16 @@ body {
   font-size: 19px;
   line-height: 1.6;
   color: var(--ink);
-  background:
-    radial-gradient(ellipse at 20% 10%, #2e4a2c 0%, transparent 55%),
-    radial-gradient(ellipse at 80% 90%, #3d2a4a 0%, transparent 55%),
-    linear-gradient(180deg, #14241a 0%, #0f1a14 100%);
   min-height: 100vh;
+  /* Layered background:
+       1. darkening overlay (gradient) — keeps section text legible over the
+          bitmap,
+       2. the moonlit-forest photo covering the viewport,
+       3. a deep solid fallback while the image is loading. */
+  background:
+    linear-gradient(180deg, rgba(8,14,10,.72) 0%, rgba(10,18,14,.86) 100%),
+    url('assets/img/background.png') center / cover no-repeat fixed,
+    #0f1a14;
 }
 
 .sr-only {
@@ -678,6 +683,12 @@ a:hover { color: var(--ember); }
   .hero__nav a     { padding: .4rem .75rem; font-size: .9rem; }
   .section         { padding: 2rem .85rem; }
   .cottage-hotspot { width: 18px; height: 25px; }
+}
+
+/* Background image scrolls with content on touch devices — fixed
+   attachment is janky/unsupported on iOS Safari and friends. */
+@media (max-width: 820px), (hover: none) {
+  body { background-attachment: scroll, scroll; }
 }
 
 /* Respect reduced motion */
