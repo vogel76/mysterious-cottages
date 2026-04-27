@@ -142,6 +142,24 @@
     });
   }
 
+  /* ---------- Hero slideshow ----------
+     Crossfades through the cottage photos stacked inside .hero__slides. The
+     .is-active class controls opacity; only one slide is opaque at a time. */
+  function wireHeroSlideshow() {
+    const slides = document.querySelectorAll('.hero__slide');
+    if (slides.length < 2) return;
+    const SLIDE_MS = 5000;
+    let i = 0;
+    // Make sure exactly one slide starts active (defensive — markup already
+    // sets it on the first one).
+    slides.forEach((s, idx) => s.classList.toggle('is-active', idx === 0));
+    setInterval(() => {
+      slides[i].classList.remove('is-active');
+      i = (i + 1) % slides.length;
+      slides[i].classList.add('is-active');
+    }, SLIDE_MS);
+  }
+
   /* ---------- 4-digit code form ---------- */
   function wireCodeForm() {
     const form = document.getElementById('codeForm');
@@ -165,6 +183,7 @@
   /* ---------- Boot ---------- */
   async function init() {
     // Wire UI affordances first so toggles work even if data loading fails.
+    wireHeroSlideshow();
     wireHubButtons();
     wireModal();
     wireCodeForm();
