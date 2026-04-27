@@ -513,31 +513,6 @@ a:hover { color: var(--ember); }
 }
 .btn--ghost:hover { background: rgba(199,154,75,.15); color: #fff; }
 
-/* ---------- Cottage index ---------- */
-.cottage-index {
-  list-style: none; padding: 0; margin: 0;
-  display: grid; gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-.cottage-index li a {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 1rem 1.25rem;
-  background: rgba(245,234,209,.07);
-  border: 1px solid rgba(199,154,75,.3);
-  border-radius: 12px;
-  color: #f5e6b8;
-  font-size: 1.1rem;
-  transition: background .2s, border-color .2s, transform .15s;
-}
-.cottage-index li a:hover {
-  background: rgba(199,154,75,.18);
-  border-color: var(--ember);
-  transform: translateY(-2px);
-}
-.cottage-index li a::after {
-  content: "→"; margin-left: 1rem; color: var(--ember); font-family: sans-serif;
-}
-
 /* ---------- Footer ---------- */
 .footer {
   background: #0a120d;
@@ -645,10 +620,6 @@ a:hover { color: var(--ember); }
   .code            { padding: 1rem; gap: .75rem; width: 100%; box-sizing: border-box; }
   .code input      { width: 100%; max-width: 220px; font-size: 1.5rem; letter-spacing: .4rem; }
   .code .btn       { width: 100%; max-width: 260px; }
-
-  /* Cottage index: single column */
-  .cottage-index   { grid-template-columns: 1fr; }
-  .cottage-index li a { padding: .85rem 1rem; font-size: 1rem; }
 
   /* Modal: nearly full-width + its buttons stack */
   .modal           { max-width: calc(100% - 1rem); border-radius: 12px; }
