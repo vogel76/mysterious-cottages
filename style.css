@@ -348,6 +348,8 @@ a:hover { color: var(--ember); }
   box-shadow: var(--shadow);
   border: 1px solid rgba(199,154,75,.3);
 }
+/* Hint that the map is clickable — pins override with cursor:pointer. */
+.map-stage.has-image { cursor: zoom-in; }
 /* Before the image loads, keep the stage visible with a placeholder
    backdrop and a minimum height so users can see the instructions. */
 .map-stage:not(.has-image) {
@@ -647,6 +649,85 @@ a:hover { color: var(--ember); }
   list-style: none; padding: 0; margin: 0;
   display: flex; gap: 1rem;
   font-size: .85rem;
+}
+
+/* ---------- Map zoom dialog ----------
+   Fullscreen overlay with the native-resolution map in a scrollable
+   container; touch + wheel + scrollbars all pan as usual. */
+.map-zoom {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  background: #14201a;
+  color: #f5e6b8;
+  inset: 0;
+  overflow: hidden;
+}
+.map-zoom::backdrop {
+  background: rgba(0,0,0,.92);
+  backdrop-filter: blur(4px);
+}
+.map-zoom__close {
+  position: fixed;
+  top: 12px; right: 12px;
+  z-index: 2;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(20,32,26,.85);
+  color: #f5e6b8;
+  border: 1px solid rgba(199,154,75,.6);
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,.5);
+}
+.map-zoom__close:hover { background: rgba(40,60,46,.95); }
+.map-zoom__scroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  cursor: grab;
+}
+.map-zoom__scroll.is-dragging { cursor: grabbing; }
+.map-zoom__stage {
+  position: relative;
+  display: block;
+  line-height: 0;
+  /* Stage shrink-wraps the image so hotspots positioned with inset:0 align
+     to the image bounds, and percentage left/top still map to the painting. */
+}
+.map-zoom__img {
+  display: block;
+  /* Native resolution; the scroll container handles overflow. */
+  width: auto;
+  height: auto;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.map-zoom__hotspots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* In the zoom view the pins sit on a much bigger map, so make them a touch
+   bigger than the inline-map version for easier tapping. */
+.map-zoom__hotspots .cottage-hotspot {
+  width: 44px;
+  height: 60px;
+}
+.map-zoom__hotspots .cottage-hotspot:hover,
+.map-zoom__hotspots .cottage-hotspot:focus-visible {
+  transform: translate(-50%, -100%) translateY(-6px) scale(1.15);
 }
 
 /* ---------- Modal ---------- */

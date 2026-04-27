@@ -22,6 +22,29 @@
      pulsing glow on hover/focus and an animated zoom on click. */
   const ZOOM_DELAY_MS = 360;  // matches the .is-clicked CSS transition
 
+  function makeHotspot(c, onActivate) {
+    const x = Number(c.mapX);
+    const y = Number(c.mapY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cottage-hotspot';
+    btn.dataset.slug  = c.slug;
+    btn.dataset.label = c.title;
+    btn.setAttribute(
+      'aria-label',
+      `${c.title}. Kliknij, aby otworzyć opis i nawigację.`
+    );
+    btn.style.left = x + '%';
+    btn.style.top  = y + '%';
+    btn.addEventListener('click', (e) => {
+      // Don't let the click bubble up to the map-stage / map-zoom handlers.
+      e.stopPropagation();
+      onActivate(btn, c);
+    });
+    return btn;
+  }
+
   function drawCottages() {
     const host = document.getElementById('mapHotspots');
     if (!host) return;
@@ -30,36 +53,32 @@
     const modal = document.getElementById('cottageModal');
 
     state.cottages.forEach((c) => {
-      const x = Number(c.mapX);
-      const y = Number(c.mapY);
-      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cottage-hotspot';
-      btn.dataset.slug  = c.slug;
-      btn.dataset.label = c.title;
-      btn.setAttribute(
-        'aria-label',
-        `${c.title}. Kliknij, aby otworzyć opis i nawigację.`
-      );
-      btn.style.left = x + '%';
-      btn.style.top  = y + '%';
-
-      const activate = () => {
-        btn.classList.add('is-clicked');
+      const btn = makeHotspot(c, (el, cot) => {
+        el.classList.add('is-clicked');
         setTimeout(() => {
-          openCottageModal(c);
+          openCottageModal(cot);
           const reset = () => {
-            btn.classList.remove('is-clicked');
+            el.classList.remove('is-clicked');
             modal.removeEventListener('close', reset);
           };
           modal.addEventListener('close', reset);
         }, ZOOM_DELAY_MS);
-      };
+      });
+      if (btn) host.appendChild(btn);
+    });
 
-      btn.addEventListener('click', activate);
-      host.appendChild(btn);
+    drawZoomHotspots();
+  }
+
+  /* Zoom-mode hotspots: same positions, but click goes straight to the
+     cottage modal — the map is already large, no extra zoom animation. */
+  function drawZoomHotspots() {
+    const host = document.getElementById('mapZoomHotspots');
+    if (!host) return;
+    host.innerHTML = '';
+    state.cottages.forEach((c) => {
+      const btn = makeHotspot(c, (_el, cot) => openCottageModal(cot));
+      if (btn) host.appendChild(btn);
     });
   }
 
@@ -142,6 +161,79 @@
     });
   }
 
+  /* ---------- Map zoom dialog ----------
+     Click anywhere on the map (except a pin) to open the full-resolution
+     map in a fullscreen scrollable dialog. Pins keep their own behaviour. */
+  function wireMapZoom() {
+    const stage = document.getElementById('mapStage');
+    const dialog = document.getElementById('mapZoom');
+    const scroll = document.getElementById('mapZoomScroll');
+    const img = document.getElementById('mapZoomImg');
+    const close = document.getElementById('mapZoomClose');
+    const sourceImg = document.getElementById('mapImage');
+    if (!stage || !dialog || !img || !close || !scroll || !sourceImg) return;
+
+    function openZoom() {
+      // Lazy-set src on first open so the (cached) image loads on demand.
+      if (!img.getAttribute('src')) img.src = sourceImg.currentSrc || sourceImg.src;
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+      // Center the image once it's laid out.
+      requestAnimationFrame(() => {
+        scroll.scrollLeft = (scroll.scrollWidth  - scroll.clientWidth)  / 2;
+        scroll.scrollTop  = (scroll.scrollHeight - scroll.clientHeight) / 2;
+      });
+    }
+    function closeZoom() {
+      if (typeof dialog.close === 'function') dialog.close();
+      else dialog.removeAttribute('open');
+    }
+
+    stage.addEventListener('click', (e) => {
+      // Pins have their own click handler; don't open the zoom for them.
+      if (e.target.closest('.cottage-hotspot')) return;
+      // Wait until the map image is actually loaded.
+      if (!stage.classList.contains('has-image')) return;
+      openZoom();
+    });
+
+    close.addEventListener('click', closeZoom);
+    // Click on backdrop area (the dialog itself, outside the scroll container)
+    // closes the zoom.
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeZoom();
+    });
+
+    // Click-drag panning for desktop (touch already pans natively).
+    let dragging = false;
+    let startX = 0, startY = 0, startScrollX = 0, startScrollY = 0;
+    scroll.addEventListener('pointerdown', (e) => {
+      // Skip touch/pen — let the browser handle native scrolling/pinching.
+      if (e.pointerType !== 'mouse') return;
+      // Don't capture clicks that started on a pin — pointer capture would
+      // re-route the pointerup to the scroll element and swallow the click.
+      if (e.target.closest('.cottage-hotspot')) return;
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      startScrollX = scroll.scrollLeft; startScrollY = scroll.scrollTop;
+      scroll.classList.add('is-dragging');
+      scroll.setPointerCapture(e.pointerId);
+    });
+    scroll.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      scroll.scrollLeft = startScrollX - (e.clientX - startX);
+      scroll.scrollTop  = startScrollY - (e.clientY - startY);
+    });
+    const endDrag = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      scroll.classList.remove('is-dragging');
+      try { scroll.releasePointerCapture(e.pointerId); } catch (_) {}
+    };
+    scroll.addEventListener('pointerup', endDrag);
+    scroll.addEventListener('pointercancel', endDrag);
+  }
+
   /* ---------- Hero slideshow ----------
      Crossfades through the cottage photos stacked inside .hero__slides. The
      .is-active class controls opacity; only one slide is opaque at a time. */
@@ -187,6 +279,7 @@
     wireHubButtons();
     wireModal();
     wireCodeForm();
+    wireMapZoom();
     try {
       await loadCottages();
       drawCottages();

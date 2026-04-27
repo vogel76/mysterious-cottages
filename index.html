@@ -180,6 +180,17 @@
     </div>
   </footer>
 
+  <!-- Full-size map zoom (opened by clicking the map outside any pin) -->
+  <dialog class="map-zoom" id="mapZoom" aria-label="Powiększona mapa Chatynkowa">
+    <button class="map-zoom__close" id="mapZoomClose" type="button" aria-label="Zamknij powiększenie mapy">×</button>
+    <div class="map-zoom__scroll" id="mapZoomScroll">
+      <div class="map-zoom__stage" id="mapZoomStage">
+        <img class="map-zoom__img" id="mapZoomImg" alt="Pełna mapa Chatynkowa"/>
+        <div class="map-zoom__hotspots" id="mapZoomHotspots" aria-label="Chatynki na mapie"></div>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Cottage detail modal -->
   <dialog class="modal" id="cottageModal" aria-labelledby="modalTitle">
     <button class="modal__close" id="modalClose" aria-label="Zamknij">×</button>
