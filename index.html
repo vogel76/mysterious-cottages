@@ -20,15 +20,53 @@
     </div>
     <div class="hero__inner">
       <div class="hero__text">
-        <img src="assets/img/Projekt-bez-nazwy-3.png" alt="Chatynkowo — znacznik" class="hero__mark" loading="lazy"/>
-        <h1 class="hero__title">Witamy<br/>w&nbsp;Chatynkowie</h1>
+        <div class="hero__heading">
+          <img src="assets/img/Projekt-bez-nazwy-3.png" alt="Chatynkowo — znacznik" class="hero__mark" loading="lazy"/>
+          <h1 class="hero__title">Witamy<br/>w&nbsp;Chatynkowie</h1>
+        </div>
         <p class="hero__lede">
           To miejsce, gdzie baśnie stają się rzeczywistością. W&nbsp;ukrytych zakamarkach natury,
           czekają na Ciebie malutkie chatynki – domy prawdziwych elfów. Każda z&nbsp;nich kryje
           w&nbsp;sobie niezwykłą historię i&nbsp;mądrość jej mieszkańca, ukrytą w&nbsp;magicznej
-          opowieści. Przygotuj się na podróż, która obudzi Twoje wewnętrzne dziecko
-          i&nbsp;zainspiruje do poszukiwania ukrytych przesłań w&nbsp;otaczającym Cię świecie.
+          opowieści.
         </p>
+        <nav class="hub" aria-label="Wybierz, co chcesz zobaczyć">
+          <ul class="hub__nav">
+            <li>
+              <button class="hub__btn" type="button"
+                      data-target="magia"
+                      aria-expanded="false" aria-controls="magia">
+                <span class="hub__art">
+                  <img src="assets/img/discover_cottages.png"
+                       alt="" loading="eager" decoding="async"/>
+                </span>
+                <span class="hub__cap">Poznaj magię</span>
+              </button>
+            </li>
+            <li>
+              <button class="hub__btn" type="button"
+                      data-target="mapa"
+                      aria-expanded="false" aria-controls="mapa">
+                <span class="hub__art">
+                  <img src="assets/img/find_cottages.png"
+                       alt="" loading="eager" decoding="async"/>
+                </span>
+                <span class="hub__cap">Znajdź chatynki</span>
+              </button>
+            </li>
+            <li>
+              <button class="hub__btn" type="button"
+                      data-target="kod"
+                      aria-expanded="false" aria-controls="kod">
+                <span class="hub__art">
+                  <img src="assets/img/cottage_found.png"
+                       alt="" loading="eager" decoding="async"/>
+                </span>
+                <span class="hub__cap">Mam kod</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
       <figure class="hero__art">
         <div class="hero__art-frame">
@@ -42,7 +80,30 @@
   </header>
 
   <main>
-    <section id="mapa" class="section section--map">
+
+    <section id="magia" class="section section--panel" hidden>
+      <h2 class="section__title">Na czym polega magia Chatynek</h2>
+      <div class="faq">
+        <article class="faq__item">
+          <h3>Czym są Chatynki?</h3>
+          <p>To malutkie, tajemnicze leśne domki pełne magii i historii.</p>
+        </article>
+        <article class="faq__item">
+          <h3>Jak odnaleźć Chatynki?</h3>
+          <p>Na Elfa możesz trafić w każdej chwili. Jeśli chcesz ich poszukać, otwórz baśniową mapę.</p>
+        </article>
+        <article class="faq__item">
+          <h3>Kim są mieszkańcy Chatynek?</h3>
+          <p>To Elfy. Każdy z nich ma nam do powiedzenia swoją historię. Bardzo ważną.</p>
+        </article>
+        <article class="faq__item">
+          <h3>Co zrobić jak znajdę Chatynkę?</h3>
+          <p>Zeskanuj kod QR, który znajduje się na tabliczce w jej pobliżu, albo wpisz tajny 4-cyfrowy kod.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mapa" class="section section--panel section--map" hidden>
       <h2 class="section__title">Znajdź wszystkie Chatynki</h2>
       <p class="section__subtitle">
         Baśniowa mapa lasu. Kamienne ścieżki wiodące spomiędzy drzew prowadzą do Chatynek.
@@ -79,29 +140,7 @@
       </div>
     </section>
 
-    <section id="magia" class="section">
-      <h2 class="section__title">Na czym polega magia Chatynek</h2>
-      <div class="faq">
-        <article class="faq__item">
-          <h3>Czym są Chatynki?</h3>
-          <p>To malutkie, tajemnicze leśne domki pełne magii i historii.</p>
-        </article>
-        <article class="faq__item">
-          <h3>Jak odnaleźć Chatynki?</h3>
-          <p>Na Elfa możesz trafić w każdej chwili. Jeśli chcesz ich poszukać, użyj baśniowej mapy powyżej.</p>
-        </article>
-        <article class="faq__item">
-          <h3>Kim są mieszkańcy Chatynek?</h3>
-          <p>To Elfy. Każdy z nich ma nam do powiedzenia swoją historię. Bardzo ważną.</p>
-        </article>
-        <article class="faq__item">
-          <h3>Co zrobić jak znajdę Chatynkę?</h3>
-          <p>Zeskanuj kod QR, który znajduje się na tabliczce w jej pobliżu, albo wpisz tajny 4-cyfrowy kod poniżej.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="kod" class="section section--code">
+    <section id="kod" class="section section--panel section--code" hidden>
       <h2 class="section__title">Poznaj historię</h2>
       <p class="section__subtitle">
         Poszukiwaczu, jeśli znalazłeś Chatynkę, wpisz tajny czterocyfrowy kod z&nbsp;tabliczki

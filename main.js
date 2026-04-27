@@ -112,6 +112,36 @@
     });
   }
 
+  /* ---------- Hub buttons (toggle collapsible sections) ----------
+     Each .hub__btn carries data-target with the id of the section it controls.
+     At most ONE panel may be open at a time: clicking another button closes
+     whichever panel is currently visible before opening the new one. */
+  function wireHubButtons() {
+    const buttons = Array.from(document.querySelectorAll('.hub__btn'));
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.target;
+        const panel = document.getElementById(id);
+        if (!panel) return;
+        const willOpen = panel.hasAttribute('hidden');
+        // Close every panel + reset every button.
+        buttons.forEach((b) => {
+          const p = document.getElementById(b.dataset.target);
+          if (p) p.setAttribute('hidden', '');
+          b.setAttribute('aria-expanded', 'false');
+        });
+        if (willOpen) {
+          panel.removeAttribute('hidden');
+          btn.setAttribute('aria-expanded', 'true');
+          // Defer scroll so the layout settles after the panel becomes visible.
+          requestAnimationFrame(() => {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+      });
+    });
+  }
+
   /* ---------- 4-digit code form ---------- */
   function wireCodeForm() {
     const form = document.getElementById('codeForm');
@@ -134,11 +164,13 @@
 
   /* ---------- Boot ---------- */
   async function init() {
+    // Wire UI affordances first so toggles work even if data loading fails.
+    wireHubButtons();
+    wireModal();
+    wireCodeForm();
     try {
       await loadCottages();
       drawCottages();
-      wireModal();
-      wireCodeForm();
     } catch (err) {
       console.error('[Chatynkowo] init failed', err);
       const host = document.getElementById('mapHotspots');

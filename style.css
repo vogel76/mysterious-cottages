@@ -25,15 +25,25 @@ body {
   line-height: 1.6;
   color: var(--ink);
   min-height: 100vh;
-  /* Layered background:
-       1. darkening overlay (gradient) — keeps section text legible over the
-          bitmap,
-       2. the moonlit-forest photo covering the viewport,
-       3. a deep solid fallback while the image is loading. */
+  background-color: #0f1a14;
+  /* Sticky-footer layout: body fills viewport height; <main> grows to push
+     the footer to the bottom even when all collapsible panels are closed. */
+  display: flex;
+  flex-direction: column;
+}
+main { flex: 1 0 auto; }
+/* Viewport-fixed background layer.
+   Using position:fixed on a pseudo-element (instead of background-attachment:
+   fixed on body) is reliable on iOS Safari and Android Chrome — the moonlit
+   forest stays visible behind every section as the user scrolls, on any device. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background:
-    linear-gradient(180deg, rgba(8,14,10,.72) 0%, rgba(10,18,14,.86) 100%),
-    url('assets/img/background.png') center / cover no-repeat fixed,
-    #0f1a14;
+    linear-gradient(180deg, rgba(8,14,10,.55) 0%, rgba(10,18,14,.78) 100%),
+    url('assets/img/background.png') center / cover no-repeat;
 }
 
 .sr-only {
@@ -47,18 +57,10 @@ a:hover { color: var(--ember); }
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
-  padding: 4rem 1.5rem 5rem;
+  padding: 1rem 1.5rem 3rem;
   color: var(--parchment);
   overflow: hidden;
-  /* Kept the warm golden tints at the top and right for atmosphere,
-     but the base is now a SEMI-transparent darkening gradient rather
-     than an opaque block, so the body's moonlit-forest background
-     shows through the hero. */
-  background:
-    radial-gradient(ellipse at center top, rgba(255, 220, 150, .18) 0%, transparent 55%),
-    radial-gradient(circle at 80% 30%, rgba(255,246,200,.14) 0%, transparent 40%),
-    linear-gradient(180deg, rgba(10,18,14,.45) 0%, rgba(10,18,14,.72) 100%);
-  border-bottom: 2px solid rgba(199,154,75,.3);
+  background: transparent;
 }
 .hero__inner {
   position: relative; z-index: 3;
@@ -69,26 +71,36 @@ a:hover { color: var(--ember); }
   align-items: center;
 }
 .hero__text { text-align: left; }
+.hero__heading {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin: 0 0 1rem;
+}
 .hero__mark {
-  width: 96px; height: 96px; object-fit: contain;
+  flex: none;
+  width: 72px; height: 72px; object-fit: contain;
   filter: drop-shadow(0 6px 16px rgba(0,0,0,.6));
-  margin: 0 0 .5rem;
+  margin: 0;
 }
 .hero__title {
   font-family: 'Cinzel Decorative', 'Cormorant Garamond', serif;
-  font-size: clamp(2.4rem, 5.5vw, 4rem);
+  font-size: clamp(1.9rem, 4.4vw, 3.2rem);
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: .02em;
-  margin: .2rem 0 1rem;
+  margin: 0;
+  /* min-width:0 lets the flex item shrink below its intrinsic content width;
+     without it the longer line ("w Chatynkowie") overflows the column. */
+  min-width: 0;
   color: #f5e6b8;
   text-shadow: 0 2px 0 #000, 0 0 24px rgba(255,220,150,.4);
 }
 .hero__lede {
-  max-width: 640px; margin: 0 0 2rem;
-  font-size: 1.18rem;
+  max-width: 640px; margin: 0 0 1.25rem;
+  font-size: 1.1rem;
   color: #f1e2b5;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 /* Hero illustration beside the heading */
 .hero__art {
@@ -135,6 +147,7 @@ a:hover { color: var(--ember); }
   .hero { text-align: center; }
   .hero__inner { grid-template-columns: 1fr; gap: 2rem; }
   .hero__text { text-align: center; }
+  .hero__heading { justify-content: center; gap: .85rem; }
   .hero__art-frame { max-width: 340px; }
 }
 /* twinkling stars */
@@ -179,6 +192,87 @@ a:hover { color: var(--ember); }
   50%  { transform: translate(30px,-40px) scale(1.1); opacity: .9; }
   85%  { opacity: .8; }
   100% { transform: translate(-20px,-80px) scale(.7); opacity: 0; }
+}
+
+/* ---------- Hub (3 image buttons that toggle panels) ---------- */
+.hub {
+  max-width: 640px;
+  margin: 1.5rem auto 0;
+  padding: 0;
+}
+.hub__nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.hub__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .8rem;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: #f5e6b8;
+  font-family: inherit;
+}
+.hub__art {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 10px 26px rgba(0,0,0,.5),
+    inset 0 0 0 1px rgba(199,154,75,.45);
+  transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+}
+.hub__art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hub__btn:hover .hub__art,
+.hub__btn:focus-visible .hub__art {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow:
+    0 18px 38px rgba(0,0,0,.6),
+    inset 0 0 0 1px rgba(255,220,150,.7),
+    0 0 26px rgba(255,220,150,.35);
+}
+.hub__btn:focus-visible {
+  outline: none;
+}
+.hub__btn[aria-expanded="true"] .hub__art {
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.6),
+    inset 0 0 0 2px var(--gold),
+    0 0 28px rgba(255,220,150,.5);
+  filter: saturate(1.08);
+}
+.hub__cap {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.1rem;
+  letter-spacing: .04em;
+  color: #f5e6b8;
+  text-shadow: 0 2px 0 #000, 0 0 14px rgba(199,154,75,.35);
+}
+.hub__btn[aria-expanded="true"] .hub__cap {
+  color: var(--ember);
+}
+
+/* ---------- Collapsible panel sections ---------- */
+.section--panel {
+  /* The [hidden] attribute already sets display:none; no animation
+     needed — keep the toggle snappy. */
+  scroll-margin-top: 1rem;
 }
 
 /* ---------- Sections ---------- */
@@ -517,14 +611,22 @@ a:hover { color: var(--ember); }
 .footer {
   background: #0a120d;
   color: #b9a97a;
-  padding: 2rem 1.5rem;
+  padding: .85rem 1.5rem;
   border-top: 1px solid rgba(199,154,75,.25);
+  font-size: .85rem;
+  line-height: 1.4;
 }
+.footer p { margin: 0; }
 .footer__inner {
   max-width: 1200px; margin: 0 auto;
-  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; flex-wrap: wrap;
 }
-.socials { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.2rem; }
+.socials {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; gap: 1rem;
+  font-size: .85rem;
+}
 
 /* ---------- Modal ---------- */
 .modal {
@@ -593,22 +695,33 @@ a:hover { color: var(--ember); }
 /* Tablets */
 @media (max-width: 820px) {
   body             { font-size: 17px; }
-  .hero            { padding: 3rem 1.25rem 3.5rem; }
-  .hero__mark      { width: 76px; height: 76px; }
+  .hero            { padding: .75rem 1.25rem 2.5rem; }
+  .hero__mark      { width: 60px; height: 60px; }
   .hero__lede      { font-size: 1.05rem; }
   .section__title  { font-size: clamp(1.6rem, 5vw, 2.2rem); }
   .section__subtitle { font-size: 1rem; }
   .map-hint        { font-size: .95rem; }
+  .hub__nav        { gap: 1rem; }
+  .hub__cap        { font-size: .95rem; }
 }
 
 /* Phones */
 @media (max-width: 560px) {
   body             { font-size: 16px; }
-  .hero            { padding: 2.5rem 1rem 3rem; }
-  .hero__mark      { width: 64px; height: 64px; }
-  .hero__title     { font-size: clamp(2rem, 9vw, 2.8rem); }
+  .hero            { padding: .5rem 1rem 2.5rem; }
+  .hero__mark      { width: 48px; height: 48px; }
+  .hero__title     { font-size: clamp(1.6rem, 7.2vw, 2.4rem); }
   .hero__lede      { font-size: 1rem; line-height: 1.5; }
   .hero__art-frame { max-width: 260px; padding: 10px; }
+
+  /* Hub: keep all 3 ornaments side-by-side, just smaller. The illustrations
+     stay recognizable as fairy-tale icons; the caption below conveys the
+     action so the embedded text can be tiny without harm. */
+  .hub             { margin-top: 1.25rem; max-width: 360px; }
+  .hub__nav        { gap: .6rem; }
+  .hub__art        { border-radius: 12px; }
+  .hub__btn        { gap: .45rem; }
+  .hub__cap        { font-size: .85rem; letter-spacing: .02em; }
 
   .section         { padding: 2.5rem 1rem; }
 
@@ -636,16 +749,14 @@ a:hover { color: var(--ember); }
 
 /* Very narrow phones (e.g. older iPhone SE in portrait ~ 320 px) */
 @media (max-width: 380px) {
-  .hero__title     { font-size: 1.9rem; }
+  .hero__title     { font-size: 1.5rem; }
+  .hero__mark      { width: 42px; height: 42px; }
+  .hero__heading   { gap: .55rem; }
   .hero__lede      { font-size: .95rem; }
   .section         { padding: 2rem .85rem; }
   .cottage-hotspot { width: 18px; height: 25px; }
-}
-
-/* Background image scrolls with content on touch devices — fixed
-   attachment is janky/unsupported on iOS Safari and friends. */
-@media (max-width: 820px), (hover: none) {
-  body { background-attachment: scroll, scroll; }
+  .hub__cap        { font-size: .78rem; }
+  .hub__nav        { gap: .45rem; }
 }
 
 /* Respect reduced motion */
