@@ -139,7 +139,7 @@ body::before {
   z-index: -1;
   background:
     linear-gradient(180deg, rgba(8,14,10,.55) 0%, rgba(10,18,14,.78) 100%),
-    url('assets/img/background.jpg') center / cover no-repeat;
+    url('assets/img/background.webp') center / cover no-repeat;
 }
 
 .sr-only {
