@@ -1044,6 +1044,42 @@ a:hover { color: var(--ember); }
   margin: 0 0 .8rem;
   text-align: center;
 }
+
+/* Discovery-state pill under the title in the pin dialog. Driven by the
+   same persist.isFound(slug) check that paints the pin blue, so the two
+   indicators stay in sync. */
+.pin-status {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 1.2rem;
+  padding: .35rem 1rem;
+  border-radius: 999px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: .95rem;
+  letter-spacing: .03em;
+  text-align: center;
+}
+/* Blue + gold mirrors the assets/img/map-pin-found.svg colour pair. */
+.pin-status--found {
+  background: #0d2d6b;
+  color: #f3d27a;
+  border: 1px solid #2a6cd4;
+  box-shadow: 0 2px 6px rgba(13,45,107,.35);
+}
+.pin-status__check {
+  margin-right: .4rem;
+  color: #f3d27a;
+  font-weight: 700;
+}
+.pin-status__sep { margin: 0 .2rem; color: rgba(243,210,122,.6); }
+.pin-status--found time { color: inherit; font-style: normal; }
+.pin-status--unfound {
+  background: rgba(90,69,35,.08);
+  color: var(--ink-soft);
+  border: 1px dashed rgba(90,69,35,.4);
+  font-style: italic;
+  max-width: 100%;
+}
 .modal__actions {
   display: flex; gap: .8rem; flex-wrap: wrap;
   padding: 1rem 2.2rem 1.4rem;

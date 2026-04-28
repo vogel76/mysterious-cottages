@@ -155,6 +155,32 @@
     return window.marked ? window.marked.parse(md) : escapeHtml(md);
   }
 
+  /* Renders a small badge under the title in the pin dialog reflecting
+     whether this cottage has already been uncovered. Driven by exactly
+     the same persist.isFound(slug) check that paints the pin blue, so
+     the two indicators can never disagree. */
+  function pinStatusHtml(slug) {
+    if (persist.isFound(slug)) {
+      const entry = persist.data.found[slug] || {};
+      let when = '';
+      if (entry.foundAt) {
+        try {
+          when = new Date(entry.foundAt)
+            .toLocaleDateString('pl-PL', { dateStyle: 'long' });
+        } catch (_) { /* fall back to no date */ }
+      }
+      return `<p class="pin-status pin-status--found">
+                <span class="pin-status__check" aria-hidden="true">✓</span>
+                Chatynka odkryta${when
+                  ? ` <span class="pin-status__sep">·</span> <time datetime="${entry.foundAt}">${when}</time>`
+                  : ''}
+              </p>`;
+    }
+    return `<p class="pin-status pin-status--unfound">
+              Jeszcze nie odkryta — znajdź ją w lesie i wpisz tajny kod z&nbsp;tabliczki.
+            </p>`;
+  }
+
   /* ---------- Pin-click dialog ----------
      Shown when the user clicks a pin on either the inline map or the
      fullscreen zoomed map. Renders only the "Jak znaleźć Chatynkę" and
@@ -167,16 +193,21 @@
     const title   = document.getElementById('pinTitle');
     if (!modal || !content) return;
     title.textContent = c.title;
+    // Mirror the pin's "found" flag on the dialog itself so future styling
+    // hooks (border, header tint, ...) can react to discovery state.
+    modal.classList.toggle('modal--found', persist.isFound(c.slug));
+    const status = pinStatusHtml(c.slug);
     content.replaceChildren(title, document.createRange().createContextualFragment(
-      '<p><em>Ładuję wskazówki…</em></p>'));
+      status + '<p><em>Ładuję wskazówki…</em></p>'));
     showDialog(modal);
     try {
       const parts = splitMd(await fetchCottageMd(c.slug));
       const md    = renderSections(parts.sections, PIN_SECTIONS);
-      content.replaceChildren(title, document.createRange().createContextualFragment(mdToHtml(md)));
+      content.replaceChildren(title, document.createRange().createContextualFragment(
+        status + mdToHtml(md)));
     } catch (err) {
       content.replaceChildren(title, document.createRange().createContextualFragment(
-        '<p>Nie udało się wczytać wskazówek do tej Chatynki.</p>'));
+        status + '<p>Nie udało się wczytać wskazówek do tej Chatynki.</p>'));
     }
   }
 
