@@ -4,6 +4,7 @@
 
   const COTTAGES_URL = 'data/cottages.json';
   const MD_DIR       = 'cottages';
+  const AUDIO_DIR    = 'assets/stories';
 
   const state = {
     cottages: [],
@@ -50,18 +51,18 @@
     if (!host) return;
     host.innerHTML = '';
 
-    const modal = document.getElementById('cottageModal');
+    const modal = document.getElementById('pinModal');
 
     state.cottages.forEach((c) => {
       const btn = makeHotspot(c, (el, cot) => {
         el.classList.add('is-clicked');
         setTimeout(() => {
-          openCottageModal(cot);
+          openPinInfo(cot);
           const reset = () => {
             el.classList.remove('is-clicked');
-            modal.removeEventListener('close', reset);
+            if (modal) modal.removeEventListener('close', reset);
           };
-          modal.addEventListener('close', reset);
+          if (modal) modal.addEventListener('close', reset);
         }, ZOOM_DELAY_MS);
       });
       if (btn) host.appendChild(btn);
@@ -71,64 +72,229 @@
   }
 
   /* Zoom-mode hotspots: same positions, but click goes straight to the
-     cottage modal — the map is already large, no extra zoom animation. */
+     pin-info dialog — the map is already large, no extra zoom animation. */
   function drawZoomHotspots() {
     const host = document.getElementById('mapZoomHotspots');
     if (!host) return;
     host.innerHTML = '';
     state.cottages.forEach((c) => {
-      const btn = makeHotspot(c, (_el, cot) => openCottageModal(cot));
+      const btn = makeHotspot(c, (_el, cot) => openPinInfo(cot));
       if (btn) host.appendChild(btn);
     });
   }
 
-  /* ---------- Cottage detail modal ---------- */
-  async function openCottageModal(c) {
-    const modal = document.getElementById('cottageModal');
-    const content = document.getElementById('modalContent');
-    const dir = document.getElementById('modalDirections');
-    const osm = document.getElementById('modalOsm');
-    const md = document.getElementById('modalMd');
-
-    const mdUrl = `${MD_DIR}/${c.slug}.md`;
-    dir.href = `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=driving`;
-    osm.href = `https://www.openstreetmap.org/?mlat=${c.lat}&mlon=${c.lng}#map=16/${c.lat}/${c.lng}`;
-    md.href = mdUrl;
-    md.setAttribute('download', `${c.slug}.md`);
-
-    content.innerHTML = '<p><em>Ładuję opowieść…</em></p>';
-
+  function showDialog(modal) {
     if (typeof modal.showModal === 'function') modal.showModal();
     else modal.setAttribute('open', '');
+  }
+  function closeDialog(modal) {
+    if (typeof modal.close === 'function') modal.close();
+    else modal.removeAttribute('open');
+  }
+
+  /* Sections of every cottage .md file that belong in the PIN dialog (how
+     to get there + what to do once you arrive). Everything else stays in
+     the STORY dialog. */
+  const PIN_SECTIONS = ['Jak znaleźć Chatynkę', 'Co zrobić, gdy trafisz pod chatynkę?'];
+
+  async function fetchCottageMd(slug) {
+    const res = await fetch(`${MD_DIR}/${slug}.md`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.text();
+    return raw.replace(/^---[\s\S]*?---\s*/, '');  // strip YAML frontmatter
+  }
+
+  /* Split markdown by `## …` headings into { intro, sections: [{title, body}] }
+     where intro is everything before the first h2. */
+  function splitMd(raw) {
+    const lines = raw.split('\n');
+    let intro = [];
+    const sections = [];
+    let cur = null;
+    for (const line of lines) {
+      const m = line.match(/^##\s+(.+?)\s*$/);
+      if (m) {
+        if (cur) sections.push(cur);
+        cur = { title: m[1], lines: [] };
+      } else if (cur) {
+        cur.lines.push(line);
+      } else {
+        intro.push(line);
+      }
+    }
+    if (cur) sections.push(cur);
+    return {
+      intro: intro.join('\n').trim(),
+      sections: sections.map(s => ({ title: s.title, body: s.lines.join('\n').trim() })),
+    };
+  }
+
+  function renderSections(sections, includeTitles) {
+    const include = new Set(includeTitles);
+    return sections
+      .filter(s => include.has(s.title))
+      .map(s => `## ${s.title}\n\n${s.body}`)
+      .join('\n\n');
+  }
+  function renderStoryMd(parts) {
+    const exclude = new Set(PIN_SECTIONS);
+    const rest = parts.sections
+      .filter(s => !exclude.has(s.title))
+      .map(s => `## ${s.title}\n\n${s.body}`)
+      .join('\n\n');
+    return [parts.intro, rest].filter(Boolean).join('\n\n');
+  }
+  function mdToHtml(md) {
+    return window.marked ? window.marked.parse(md) : escapeHtml(md);
+  }
+
+  /* ---------- Pin-click dialog ----------
+     Shown when the user clicks a pin on either the inline map or the
+     fullscreen zoomed map. Renders only the "Jak znaleźć Chatynkę" and
+     "Co zrobić, gdy trafisz pod chatynkę?" sections of the cottage's
+     markdown — the rest (story body + audio) is the reward for finding
+     it and entering the code. */
+  async function openPinInfo(c) {
+    const modal   = document.getElementById('pinModal');
+    const content = document.getElementById('pinContent');
+    const title   = document.getElementById('pinTitle');
+    if (!modal || !content) return;
+    title.textContent = c.title;
+    content.replaceChildren(title, document.createRange().createContextualFragment(
+      '<p><em>Ładuję wskazówki…</em></p>'));
+    showDialog(modal);
+    try {
+      const parts = splitMd(await fetchCottageMd(c.slug));
+      const md    = renderSections(parts.sections, PIN_SECTIONS);
+      content.replaceChildren(title, document.createRange().createContextualFragment(mdToHtml(md)));
+    } catch (err) {
+      content.replaceChildren(title, document.createRange().createContextualFragment(
+        '<p>Nie udało się wczytać wskazówek do tej Chatynki.</p>'));
+    }
+  }
+
+  /* ---------- Story dialog (after entering a valid code) ----------
+     Shows the full markdown story (without the "how to find" sections) +
+     the gramophone audio player. NO map navigation — the user has already
+     found the cottage. */
+  async function openStory(c) {
+    const modal   = document.getElementById('storyModal');
+    const content = document.getElementById('storyContent');
+    if (!modal || !content) return;
+
+    content.innerHTML = '<p><em>Ładuję opowieść…</em></p>';
+    loadCottageAudio(c.slug);
+
+    showDialog(modal);
 
     try {
-      const res = await fetch(mdUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      let raw = await res.text();
-      // Strip YAML frontmatter
-      raw = raw.replace(/^---[\s\S]*?---\s*/, '');
-      const html = (window.marked ? window.marked.parse(raw) : escapeHtml(raw));
-      content.innerHTML = html;
+      const parts = splitMd(await fetchCottageMd(c.slug));
+      content.innerHTML = mdToHtml(renderStoryMd(parts));
     } catch (err) {
-      content.innerHTML = `<p>Nie udało się wczytać opowieści. <a href="${mdUrl}">Otwórz plik Markdown</a>.</p>`;
+      content.innerHTML = `<p>Nie udało się wczytać opowieści.</p>`;
     }
+  }
+
+  /* ---------- Audio (gramophone) ---------- */
+  function fmtTime(s) {
+    if (!Number.isFinite(s) || s < 0) return '0:00';
+    const m = Math.floor(s / 60);
+    const ss = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${ss}`;
+  }
+
+  function loadCottageAudio(slug) {
+    const audio  = document.getElementById('audioElement');
+    const player = document.getElementById('audioPlayer');
+    const seek   = document.getElementById('audioSeek');
+    const cur    = document.getElementById('audioCurrent');
+    const dur    = document.getElementById('audioDuration');
+    if (!audio || !player) return;
+
+    // Reset previous state.
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    player.classList.remove('is-playing');
+    player.setAttribute('hidden', '');
+    seek.value = 0;
+    cur.textContent = '0:00';
+    dur.textContent = '0:00';
+
+    // Reveal the player only once we know the file is loadable.
+    audio.preload = 'metadata';
+    audio.src = `${AUDIO_DIR}/${slug}.mp3`;
+    audio.load();
+  }
+
+  function wireAudioPlayer() {
+    const audio  = document.getElementById('audioElement');
+    const player = document.getElementById('audioPlayer');
+    const playBtn = document.getElementById('audioPlay');
+    const seek   = document.getElementById('audioSeek');
+    const cur    = document.getElementById('audioCurrent');
+    const dur    = document.getElementById('audioDuration');
+    if (!audio || !player) return;
+
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) audio.play().catch(() => {});
+      else audio.pause();
+    });
+    audio.addEventListener('play',  () => player.classList.add('is-playing'));
+    audio.addEventListener('pause', () => player.classList.remove('is-playing'));
+    audio.addEventListener('ended', () => player.classList.remove('is-playing'));
+
+    audio.addEventListener('loadedmetadata', () => {
+      player.removeAttribute('hidden');
+      dur.textContent = fmtTime(audio.duration);
+    });
+    audio.addEventListener('error', () => {
+      // No mp3 for this cottage — keep the player hidden.
+      player.setAttribute('hidden', '');
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      cur.textContent = fmtTime(audio.currentTime);
+      if (audio.duration > 0) {
+        seek.value = (audio.currentTime / audio.duration) * 1000;
+      }
+    });
+
+    let scrubbing = false;
+    seek.addEventListener('input', () => { scrubbing = true; });
+    seek.addEventListener('change', () => {
+      if (audio.duration > 0) {
+        audio.currentTime = (seek.value / 1000) * audio.duration;
+      }
+      scrubbing = false;
+    });
+
+    // Pause when the story dialog closes so audio doesn't keep playing in
+    // the background after the user dismisses it.
+    const story = document.getElementById('storyModal');
+    if (story) story.addEventListener('close', () => audio.pause());
   }
 
   function escapeHtml(s) {
     return s.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
 
-  function wireModal() {
-    const modal = document.getElementById('cottageModal');
-    const close = document.getElementById('modalClose');
-    close.addEventListener('click', () => modal.close ? modal.close() : modal.removeAttribute('open'));
-    // Close on backdrop click
+  function wireDialog(modalId, closeId) {
+    const modal = document.getElementById(modalId);
+    const close = document.getElementById(closeId);
+    if (!modal || !close) return;
+    close.addEventListener('click', () => closeDialog(modal));
+    // Close on backdrop click (click outside the dialog rect).
     modal.addEventListener('click', (e) => {
       const rect = modal.getBoundingClientRect();
       const inside = e.clientX >= rect.left && e.clientX <= rect.right &&
                      e.clientY >= rect.top  && e.clientY <= rect.bottom;
-      if (!inside) modal.close();
+      if (!inside) closeDialog(modal);
     });
+  }
+  function wireModal() {
+    wireDialog('pinModal',   'pinClose');
+    wireDialog('storyModal', 'storyClose');
   }
 
   /* ---------- Hub buttons (toggle collapsible sections) ----------
@@ -268,7 +434,7 @@
       const idx = parseInt(v, 10) % state.cottages.length;
       const c = state.cottages[idx];
       out.innerHTML = `✨ Magia ożywa… Elf z <strong>${c.title}</strong> chce Ci coś opowiedzieć.`;
-      openCottageModal(c);
+      openStory(c);
     });
   }
 
@@ -280,6 +446,7 @@
     wireModal();
     wireCodeForm();
     wireMapZoom();
+    wireAudioPlayer();
     try {
       await loadCottages();
       drawCottages();

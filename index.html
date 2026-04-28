@@ -191,16 +191,58 @@
     </div>
   </dialog>
 
-  <!-- Cottage detail modal -->
-  <dialog class="modal" id="cottageModal" aria-labelledby="modalTitle">
-    <button class="modal__close" id="modalClose" aria-label="Zamknij">×</button>
-    <article class="modal__content" id="modalContent">
+  <!-- Pin-click dialog: cottage name + the "Jak znaleźć" and "Co zrobić"
+       markdown sections (coordinates, navigation links, what-to-do guide).
+       NO story body, NO audio — those are the reward for actually finding
+       the cottage and entering the code from its tag. -->
+  <dialog class="modal modal--pin" id="pinModal" aria-labelledby="pinTitle">
+    <button class="modal__close" id="pinClose" type="button" aria-label="Zamknij">×</button>
+    <article class="modal__content" id="pinContent">
+      <h2 class="modal__title" id="pinTitle">Chatynka</h2>
+      <p><em>Ładuję wskazówki…</em></p>
+    </article>
+  </dialog>
+
+  <!-- Story dialog: opened ONLY after a valid 4-digit code. Shows the full
+       cottage story and the gramophone audio player. No map navigation —
+       the user already found the cottage. -->
+  <dialog class="modal modal--story" id="storyModal" aria-labelledby="storyTitle">
+    <button class="modal__close" id="storyClose" type="button" aria-label="Zamknij">×</button>
+    <article class="modal__content" id="storyContent">
       <p>Ładuję opowieść…</p>
     </article>
-    <div class="modal__actions">
-      <a href="#" id="modalDirections" target="_blank" rel="noopener" class="btn btn--primary">🧭 Nawigacja dojazdowa</a>
-      <a href="#" id="modalOsm" target="_blank" rel="noopener" class="btn btn--ghost">Otwórz w OSM</a>
-      <a href="#" id="modalMd" class="btn btn--ghost" download>📄 Pobierz .md</a>
+
+    <!-- Fairy-tale gramophone player. Hidden until the cottage's mp3 is
+         confirmed to load (keeps cottages without audio clean). -->
+    <div class="gramophone" id="audioPlayer" hidden>
+      <audio id="audioElement" preload="none"></audio>
+      <img class="gramophone__art"
+           src="assets/img/gramophone.png"
+           alt="Baśniowy gramofon" loading="lazy" decoding="async"/>
+      <button type="button" class="gramophone__play" id="audioPlay"
+              aria-label="Odtwórz baśń Elfa">
+        <svg class="gramophone__btn-icon" viewBox="0 0 40 40" aria-hidden="true">
+          <!-- Triangle (play) -->
+          <polygon class="gramophone__ico gramophone__ico--play"
+                   points="14,9 14,31 31,20" fill="#fff3b8"/>
+          <!-- Pause bars (toggled via CSS when .is-playing) -->
+          <g class="gramophone__ico gramophone__ico--pause" fill="#fff3b8">
+            <rect x="13" y="10" width="5" height="20" rx="1.2"/>
+            <rect x="22" y="10" width="5" height="20" rx="1.2"/>
+          </g>
+        </svg>
+      </button>
+      <div class="gramophone__main">
+        <p class="gramophone__label">Posłuchaj baśni Elfa</p>
+        <input type="range" min="0" max="1000" value="0" step="1"
+               class="gramophone__seek" id="audioSeek"
+               aria-label="Pozycja odtwarzania"/>
+        <div class="gramophone__time">
+          <span id="audioCurrent">0:00</span>
+          <span class="gramophone__time-sep">·</span>
+          <span id="audioDuration">0:00</span>
+        </div>
+      </div>
     </div>
   </dialog>
 

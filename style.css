@@ -730,6 +730,154 @@ a:hover { color: var(--ember); }
   transform: translate(-50%, -100%) translateY(-6px) scale(1.15);
 }
 
+/* ---------- Gramophone audio player ----------
+   The decorative artwork is a PNG; a separate circular triangle button
+   handles play/pause. The native <audio> tag is hidden. */
+.gramophone {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1rem 1.4rem 1.1rem;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(199,154,75,.18), transparent 60%),
+    linear-gradient(180deg, rgba(245,234,209,.55), rgba(232,214,162,.7));
+  border-top: 1px dashed rgba(90,69,35,.4);
+  color: var(--ink);
+}
+.gramophone audio { display: none; }
+.gramophone__art {
+  flex: none;
+  width: 110px;
+  height: 110px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 6px 14px rgba(0,0,0,.45);
+  border: 1px solid rgba(90,69,35,.5);
+  transition: transform .25s ease;
+}
+.gramophone.is-playing .gramophone__art {
+  /* Subtle wobble while the elf's voice is playing. */
+  animation: gram-art-bob 4s ease-in-out infinite;
+}
+@keyframes gram-art-bob {
+  0%, 100% { transform: translateY(0)    rotate(0deg); }
+  50%      { transform: translateY(-2px) rotate(-.5deg); }
+}
+
+/* Triangle / pause button — circular brass disc beside the gramophone art. */
+.gramophone__play {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #3a2308;
+  background: radial-gradient(circle at 35% 30%, #fff3b8, #c79a4b 60%, #6b3f0a);
+  box-shadow:
+    0 5px 12px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -3px 6px rgba(0,0,0,.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.gramophone__play:hover,
+.gramophone__play:focus-visible {
+  outline: none;
+  transform: scale(1.06);
+  box-shadow:
+    0 8px 16px rgba(0,0,0,.5),
+    0 0 18px rgba(255,220,150,.65),
+    inset 0 1px 0 rgba(255,255,255,.4),
+    inset 0 -3px 6px rgba(0,0,0,.25);
+}
+.gramophone__btn-icon {
+  width: 60%;
+  height: 60%;
+  display: block;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+}
+.gramophone__ico { transition: opacity .2s ease; }
+.gramophone__ico--pause { opacity: 0; }
+.gramophone.is-playing .gramophone__ico--play  { opacity: 0; }
+.gramophone.is-playing .gramophone__ico--pause { opacity: 1; }
+
+.gramophone__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gramophone__label {
+  margin: 0 0 .35rem;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.05rem;
+  letter-spacing: .03em;
+  color: var(--ink);
+}
+
+/* Parchment-themed seek slider — restyled for both WebKit and Firefox. */
+.gramophone__seek {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
+}
+.gramophone__seek::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #b9912f, #5e3a0a);
+  border: 1px solid #3a2308;
+  box-shadow: inset 0 1px 0 rgba(255,243,184,.35);
+}
+.gramophone__seek::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #b9912f, #5e3a0a);
+  border: 1px solid #3a2308;
+}
+.gramophone__seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3b8, #c79a4b 60%, #6b3f0a);
+  border: 1px solid #3a2308;
+  box-shadow: 0 2px 4px rgba(0,0,0,.45);
+  cursor: grab;
+}
+.gramophone__seek::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3b8, #c79a4b 60%, #6b3f0a);
+  border: 1px solid #3a2308;
+  box-shadow: 0 2px 4px rgba(0,0,0,.45);
+  cursor: grab;
+}
+.gramophone__seek:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(224,138,61,.6); }
+.gramophone__seek:focus-visible::-moz-range-thumb     { box-shadow: 0 0 0 3px rgba(224,138,61,.6); }
+
+.gramophone__time {
+  margin-top: .25rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: .95rem;
+  color: var(--ink-soft);
+  letter-spacing: .05em;
+  font-variant-numeric: tabular-nums;
+}
+.gramophone__time-sep { margin: 0 .4rem; color: var(--gold); }
+
+@media (max-width: 560px) {
+  .gramophone       { padding: .85rem 1rem 1rem; gap: .75rem; }
+  .gramophone__art  { width: 84px; height: 84px; }
+  .gramophone__play { width: 52px; height: 52px; }
+  .gramophone__label { font-size: .95rem; }
+}
+
 /* ---------- Modal ---------- */
 .modal {
   border: none;
@@ -782,6 +930,18 @@ a:hover { color: var(--ember); }
   padding: .1rem .4rem; border-radius: 4px;
 }
 .modal__content ul, .modal__content ol { padding-left: 1.4rem; }
+
+/* Pin-click modal styling: a touch narrower than the story dialog and
+   centered on the cottage name + the two how-to-find/what-to-do markdown
+   sections. */
+.modal--pin { max-width: min(560px, calc(100% - 2rem)); }
+.modal__title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.6rem;
+  color: var(--ink);
+  margin: 0 0 .8rem;
+  text-align: center;
+}
 .modal__actions {
   display: flex; gap: .8rem; flex-wrap: wrap;
   padding: 1rem 2.2rem 1.4rem;
