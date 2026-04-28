@@ -574,6 +574,10 @@ a:hover { color: var(--ember); }
 
 .cottage-hotspot:hover,
 .cottage-hotspot:focus-visible {
+  /* Lift the hovered pin (and its ::after tooltip, which shares this
+     stacking context) above all neighbouring pins, so the tooltip is
+     never obscured by an adjacent pin's body. */
+  z-index: 20;
   transform: translate(-50%, -100%) translateY(-6px) scale(1.2);
   filter: drop-shadow(0 8px 12px rgba(0,0,0,.55))
           drop-shadow(0 0 14px rgba(255,220,120,.85));
@@ -600,26 +604,35 @@ a:hover { color: var(--ember); }
   content: attr(data-label);
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% + 6px);
   transform: translateX(-50%);
   background: rgba(40,25,10,.95);
   color: #f5dfa8;
-  padding: 5px 10px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: .02em;
-  white-space: nowrap;
+  /* Allow long names ("Chatynka Strażnika Zamku") to wrap onto a second
+     line instead of overflowing the map; max-width keeps wrapping
+     conservative so single-word names still fit on one line. */
+  max-width: 280px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
   opacity: 0;
   pointer-events: none;
   transition: opacity .18s ease-out;
   border: 1px solid rgba(199,154,75,.7);
   box-shadow: 0 3px 8px rgba(0,0,0,.4);
 }
+/* Hover/focus only — the .is-clicked state scales the pin 3× and would
+   distort the tooltip and let the giant pin overlap its text. The modal
+   opening right after the click animation shows the name as a heading,
+   so suppressing the tooltip there is fine. */
 .cottage-hotspot:hover::after,
-.cottage-hotspot:focus-visible::after,
-.cottage-hotspot.is-clicked::after { opacity: 1; }
+.cottage-hotspot:focus-visible::after { opacity: 1; }
 
 /* -------- Responsive map + pins -------- */
 
@@ -633,8 +646,9 @@ a:hover { color: var(--ember); }
     transform: translate(-50%, -100%) translateY(-10px) scale(2.6);
   }
   .cottage-hotspot::after {
-    font-size: 13px;
-    padding: 3px 8px;
+    font-size: 15px;
+    padding: 5px 10px;
+    max-width: 220px;
   }
 }
 
@@ -647,16 +661,12 @@ a:hover { color: var(--ember); }
   .cottage-hotspot.is-clicked {
     transform: translate(-50%, -100%) translateY(-8px) scale(2.3);
   }
-  /* Tooltip stays hidden by default on phones too — it only appears on
-     tap (via .is-clicked). Also make it smaller and let it wrap so long
-     cottage names don't overflow the viewport. */
+  /* Tooltip on phones: a touch smaller than tablet but still readable;
+     wraps as on bigger screens so long names fit. */
   .cottage-hotspot::after {
-    font-size: 11px;
-    padding: 2px 6px;
-    max-width: min(140px, 40vw);
-    white-space: normal;
-    text-align: center;
-    line-height: 1.15;
+    font-size: 13px;
+    padding: 4px 9px;
+    max-width: min(180px, 60vw);
   }
   .map-placeholder h3 { font-size: 1.2rem; }
   .map-placeholder p  { font-size: .95rem; }
