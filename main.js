@@ -6,6 +6,11 @@
   const MD_DIR       = 'cottages';
   const AUDIO_DIR    = 'assets/stories';
 
+  // Persistent state (localStorage I/O + badge registry) lives in
+  // app_logic.js and is exposed on window.chatynkowo. Loaded with `defer`
+  // before this file in index.html, so it's ready by the time we run.
+  const { persist, BADGES } = window.chatynkowo;
+
   const state = {
     cottages: [],
   };
@@ -30,11 +35,13 @@
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cottage-hotspot';
+    if (persist.isFound(c.slug)) btn.classList.add('cottage-hotspot--found');
     btn.dataset.slug  = c.slug;
     btn.dataset.label = c.title;
+    const stateLabel = persist.isFound(c.slug) ? ' (odkryta)' : '';
     btn.setAttribute(
       'aria-label',
-      `${c.title}. Kliknij, aby otworzyć opis i nawigację.`
+      `${c.title}${stateLabel}. Kliknij, aby otworzyć opis i nawigację.`
     );
     btn.style.left = x + '%';
     btn.style.top  = y + '%';
@@ -433,6 +440,10 @@
       // Deterministic pick of a cottage based on the code — whimsical mapping.
       const idx = parseInt(v, 10) % state.cottages.length;
       const c = state.cottages[idx];
+      const justFound = persist.markFound(c.slug, { code: v });
+      // Repaint pins so the just-uncovered cottage shows in "found" colour
+      // both on the inline map and in the zoom dialog.
+      if (justFound) drawCottages();
       out.innerHTML = `✨ Magia ożywa… Elf z <strong>${c.title}</strong> chce Ci coś opowiedzieć.`;
       openStory(c);
     });
@@ -440,6 +451,7 @@
 
   /* ---------- Boot ---------- */
   async function init() {
+    persist.load();
     // Wire UI affordances first so toggles work even if data loading fails.
     wireHeroSlideshow();
     wireHubButtons();

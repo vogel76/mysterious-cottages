@@ -245,6 +245,9 @@
 
   <!-- Markdown renderer: https://github.com/markedjs/marked -->
   <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js" defer></script>
+  <!-- App data store + badge registry. Must load BEFORE main.js so the
+       window.chatynkowo namespace is ready when main.js runs. -->
+  <script src="app_logic.js" defer></script>
   <script src="main.js" defer></script>
 </body>
 </html>

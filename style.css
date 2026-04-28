@@ -565,6 +565,12 @@ a:hover { color: var(--ember); }
   background-repeat: no-repeat;
   background-position: center;
 }
+/* Cottage already discovered by the user — pin turns blue with a gold
+   centre to signal "found". The class is added by main.js based on the
+   localStorage state. */
+.cottage-hotspot--found::before {
+  background-image: url("assets/img/map-pin-found.svg");
+}
 
 .cottage-hotspot:hover,
 .cottage-hotspot:focus-visible {
