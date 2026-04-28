@@ -177,6 +177,53 @@
     </div>
   </footer>
 
+  <!-- Floating Skarbiec (treasury) button. Always visible in the lower-right
+       corner; opens the badge gallery dialog. The numeric pip on the upper
+       right shows how many badges have been earned. -->
+  <button class="trophies-toggle" id="trophiesOpen" type="button"
+          aria-label="Otwórz Twój Skarbiec" aria-controls="trophiesModal">
+    <svg class="trophies-toggle__icon" viewBox="0 0 32 32" aria-hidden="true">
+      <defs>
+        <linearGradient id="trophyGold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#fff3b8"/>
+          <stop offset="55%" stop-color="#e0a84a"/>
+          <stop offset="100%" stop-color="#6b3f0a"/>
+        </linearGradient>
+      </defs>
+      <!-- Treasure-chest body -->
+      <path d="M5 14 H27 V25 Q27 27 25 27 H7 Q5 27 5 25 Z"
+            fill="url(#trophyGold)" stroke="#3a2308" stroke-width="1.4"/>
+      <!-- Curved lid -->
+      <path d="M5 14 Q5 8 16 8 Q27 8 27 14"
+            fill="url(#trophyGold)" stroke="#3a2308" stroke-width="1.4"/>
+      <!-- Lid band -->
+      <rect x="5" y="13" width="22" height="2.2" fill="#3a2308" opacity=".55"/>
+      <!-- Lock plate -->
+      <rect x="14" y="16" width="4" height="5" rx=".6"
+            fill="#3a2308"/>
+      <circle cx="16" cy="17.6" r=".9" fill="url(#trophyGold)"/>
+    </svg>
+    <span class="trophies-toggle__count" id="trophiesCount" aria-live="polite">0</span>
+  </button>
+
+  <!-- Skarbiec dialog: grid of badge cards. Earned ones come from
+       persist.data.badges; the registry of definitions lives in
+       window.chatynkowo.BADGES (currently empty — fills in later). -->
+  <dialog class="modal modal--trophies" id="trophiesModal" aria-labelledby="trophiesTitle">
+    <button class="modal__close" id="trophiesClose" type="button" aria-label="Zamknij">×</button>
+    <article class="modal__content">
+      <h2 class="modal__title" id="trophiesTitle">Twój Skarbiec</h2>
+      <p class="modal__intro">
+        Tu pojawiają się odznaki, które zdobywasz odkrywając kolejne Chatynki.
+      </p>
+      <p class="trophy-empty" id="trophyEmpty" hidden>
+        Jeszcze pusto — wyrusz na poszukiwanie Chatynek, by zacząć
+        kolekcjonować odznaki.
+      </p>
+      <ul class="trophy-grid" id="trophyGrid" hidden></ul>
+    </article>
+  </dialog>
+
   <!-- Full-size map zoom (opened by clicking the map outside any pin) -->
   <dialog class="map-zoom" id="mapZoom" aria-label="Powiększona mapa Chatynkowa">
     <button class="map-zoom__close" id="mapZoomClose" type="button" aria-label="Zamknij powiększenie mapy">×</button>

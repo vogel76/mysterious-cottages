@@ -990,6 +990,171 @@ a:hover { color: var(--ember); }
   .gramophone__label { font-size: .95rem; }
 }
 
+/* ---------- Trophies (Skarbiec) ----------
+   A persistent floating button in the lower-right; clicking it opens a
+   modal that lists every defined or earned badge as a card. The count
+   pip on the button reflects persist.earnedBadges().length and updates
+   whenever the inventory is re-rendered. */
+.trophies-toggle {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 50;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 1px solid #3a2308;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3b8, #c79a4b 60%, #6b3f0a);
+  box-shadow:
+    0 8px 18px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -3px 6px rgba(0,0,0,.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.trophies-toggle:hover,
+.trophies-toggle:focus-visible {
+  outline: none;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow:
+    0 12px 24px rgba(0,0,0,.55),
+    0 0 18px rgba(255,220,150,.65),
+    inset 0 1px 0 rgba(255,255,255,.4),
+    inset 0 -3px 6px rgba(0,0,0,.25);
+}
+.trophies-toggle__icon {
+  width: 60%;
+  height: 60%;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
+}
+/* Numeric pip (top-right). Hidden when no badges earned yet. */
+.trophies-toggle__count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #0d2d6b;
+  color: #f3d27a;
+  border: 1px solid #2a6cd4;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 22px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(13,45,107,.45);
+  display: none;
+}
+.trophies-toggle--has .trophies-toggle__count { display: inline-block; }
+
+@media (max-width: 560px) {
+  .trophies-toggle { width: 48px; height: 48px; right: .75rem; bottom: .75rem; }
+  .trophies-toggle__count { min-width: 18px; height: 18px; line-height: 18px; font-size: 11px; }
+}
+
+/* Trophies dialog content */
+.modal--trophies { max-width: min(720px, calc(100% - 2rem)); }
+.modal__intro {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: -.4rem auto 1.5rem;
+  max-width: 540px;
+}
+.trophy-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.trophy {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .6rem;
+  padding: .9rem .9rem 1rem;
+  border-radius: 14px;
+  background: rgba(245,234,209,.65);
+  border: 1px solid rgba(90,69,35,.3);
+  text-align: center;
+}
+.trophy__art {
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  background: #f5e6c5;
+  border: 1px solid rgba(90,69,35,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: rgba(90,69,35,.45);
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 2.4rem;
+}
+.trophy__art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.trophy__name {
+  margin: 0;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.05rem;
+  color: var(--ink);
+  letter-spacing: .02em;
+}
+.trophy__desc {
+  margin: 0;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: .95rem;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+.trophy__date {
+  margin: .2rem 0 0;
+  font-size: .85rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.trophy__date time { font-style: normal; color: var(--ink); }
+
+/* Earned: blue + gold ring like the discovered-pin colour pair. */
+.trophy--earned {
+  background: linear-gradient(180deg, rgba(245,234,209,.95), rgba(232,214,162,.95));
+  border-color: #2a6cd4;
+  box-shadow: 0 4px 12px rgba(13,45,107,.25), inset 0 0 0 1px rgba(243,210,122,.5);
+}
+.trophy--earned .trophy__name { color: #0d2d6b; }
+
+/* Locked: greyscale + dashed parchment border. */
+.trophy--locked {
+  opacity: .65;
+  filter: grayscale(.7);
+  border-style: dashed;
+}
+
+.trophy-empty {
+  text-align: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 1rem 0 .5rem;
+}
+
+@media (max-width: 560px) {
+  .trophy-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .75rem; }
+  .trophy { padding: .7rem .7rem .9rem; }
+  .trophy__name { font-size: .95rem; }
+  .trophy__desc { font-size: .9rem; }
+}
+
 /* ---------- Modal ---------- */
 .modal {
   border: none;

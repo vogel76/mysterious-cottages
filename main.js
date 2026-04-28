@@ -456,6 +456,111 @@
     }, SLIDE_MS);
   }
 
+  /* ---------- Trophies (Skarbiec) ----------
+     Renders the union of (defined badges in BADGES) ∪ (earned badges in
+     persist.data.badges) as cards inside #trophyGrid. Earned badges get
+     full colour + the date; not-yet-earned defined badges show locked.
+     Earned-but-undefined badges (a future definition arrived later? a
+     console-awarded test?) still render so progress isn't hidden. The
+     numeric pip on the floating button mirrors the earned count. */
+  function renderTrophies() {
+    const grid    = document.getElementById('trophyGrid');
+    const empty   = document.getElementById('trophyEmpty');
+    const toggle  = document.getElementById('trophiesOpen');
+    const countEl = document.getElementById('trophiesCount');
+    if (!grid || !empty || !toggle || !countEl) return;
+
+    const earnedIds = persist.earnedBadges();
+    const earnedSet = new Set(earnedIds);
+    countEl.textContent = String(earnedIds.length);
+    toggle.classList.toggle('trophies-toggle--has', earnedIds.length > 0);
+
+    // Show every defined badge plus any earned ones we don't have a
+    // definition for yet (preserves progress across registry edits).
+    const ids = Array.from(new Set([...Object.keys(BADGES), ...earnedIds]));
+    grid.replaceChildren();
+
+    if (ids.length === 0) {
+      empty.removeAttribute('hidden');
+      grid.setAttribute('hidden', '');
+      return;
+    }
+    empty.setAttribute('hidden', '');
+    grid.removeAttribute('hidden');
+
+    for (const id of ids) {
+      const def = BADGES[id] || {};
+      const meta = persist.data.badges[id];
+      const isEarned = earnedSet.has(id);
+
+      const li = document.createElement('li');
+      li.className = 'trophy ' + (isEarned ? 'trophy--earned' : 'trophy--locked');
+      li.dataset.badge = id;
+
+      const art = document.createElement('div');
+      art.className = 'trophy__art';
+      if (def.image) {
+        const img = document.createElement('img');
+        img.src = def.image;
+        img.alt = def.name || id;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        art.appendChild(img);
+      } else {
+        art.textContent = isEarned ? '★' : '?';
+      }
+
+      const body = document.createElement('div');
+      body.className = 'trophy__body';
+
+      const h3 = document.createElement('h3');
+      h3.className = 'trophy__name';
+      h3.textContent = def.name || id;
+      body.appendChild(h3);
+
+      if (def.description) {
+        const p = document.createElement('p');
+        p.className = 'trophy__desc';
+        p.textContent = def.description;
+        body.appendChild(p);
+      }
+
+      if (isEarned && meta && meta.earnedAt) {
+        const p = document.createElement('p');
+        p.className = 'trophy__date';
+        let when = meta.earnedAt;
+        try {
+          when = new Date(meta.earnedAt)
+            .toLocaleDateString('pl-PL', { dateStyle: 'long' });
+        } catch (_) {}
+        p.innerHTML = `Zdobyto: <time datetime="${meta.earnedAt}">${escapeHtml(when)}</time>`;
+        body.appendChild(p);
+      }
+
+      li.appendChild(art);
+      li.appendChild(body);
+      grid.appendChild(li);
+    }
+  }
+
+  function wireTrophies() {
+    const modal = document.getElementById('trophiesModal');
+    const open  = document.getElementById('trophiesOpen');
+    const close = document.getElementById('trophiesClose');
+    if (!modal || !open || !close) return;
+    open.addEventListener('click', () => {
+      renderTrophies();   // refresh the grid each time the dialog opens
+      showDialog(modal);
+    });
+    close.addEventListener('click', () => closeDialog(modal));
+    modal.addEventListener('click', (e) => {
+      const r = modal.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right &&
+                     e.clientY >= r.top  && e.clientY <= r.bottom;
+      if (!inside) closeDialog(modal);
+    });
+  }
+
   /* ---------- 4-digit code form ---------- */
   function wireCodeForm() {
     const form = document.getElementById('codeForm');
@@ -473,8 +578,13 @@
       const c = state.cottages[idx];
       const justFound = persist.markFound(c.slug, { code: v });
       // Repaint pins so the just-uncovered cottage shows in "found" colour
-      // both on the inline map and in the zoom dialog.
-      if (justFound) drawCottages();
+      // both on the inline map and in the zoom dialog. Also refresh the
+      // trophies pip — future award rules (driven by foundSlugs.length,
+      // for example) may have unlocked a badge.
+      if (justFound) {
+        drawCottages();
+        renderTrophies();
+      }
       out.innerHTML = `✨ Magia ożywa… Elf z <strong>${c.title}</strong> chce Ci coś opowiedzieć.`;
       openStory(c);
     });
@@ -490,6 +600,8 @@
     wireCodeForm();
     wireMapZoom();
     wireAudioPlayer();
+    wireTrophies();
+    renderTrophies();   // initial paint of the count pip
     try {
       await loadCottages();
       drawCottages();
