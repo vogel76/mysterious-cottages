@@ -1,12 +1,21 @@
 import L from 'leaflet'
 import Editor from '@toast-ui/editor'
+import { marked } from 'marked'
 import 'leaflet/dist/leaflet.css'
 import '@toast-ui/editor/dist/toastui-editor.css'
 
 /* Chatynkowo internal editor — GitHub Pages edition.
    Reads/writes files directly through the GitHub Contents & Git Data APIs.
    Authentication: GitHub Personal Access Token stored in localStorage.
-   No server required. */
+   No server required.
+
+   The editor edits exactly what the published site reads, and nothing else:
+     • cottages/<slug>.md      — title/occupant/virtue + the story markdown
+     • data/cottages.json      — slug, lat/lng, and the photo manifest
+     • private/codes.json      — the secret plaque codes (+ the public hashes)
+     • assets/stories/<slug>.mp3, assets/img/cottages/<slug>/…
+     • data/rewards.json       — the Kronika: intro + reward levels
+*/
 
 (() => {
   'use strict';
@@ -77,9 +86,44 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     return res.json();
   }
 
+  /* Drop changes that would not actually change the repository.
+
+     GitHub accepts a tree identical to its parent and records an EMPTY commit:
+     no files, no diff. To the author that reads as "the editor threw my work
+     away" — the commit is right there in the history with nothing in it. It
+     happens whenever the dirty flag is set by an action that does not alter
+     content (re-picking the same image is the easy way to trigger it), because
+     the flag tracks "the user did something", not "the bytes differ".
+
+     Compare each change against the blob SHA we already know for that path and
+     drop the no-ops. Needs crypto.subtle (HTTPS/localhost) — where it is
+     missing we commit as before rather than skip a real change. */
+  async function effectiveChanges(changes) {
+    if (!window.isSecureContext || !window.crypto?.subtle) return changes;
+    const out = [];
+    for (const ch of changes) {
+      if (ch.delete) {
+        if (state.sha.has(ch.path)) out.push(ch);   // deleting a missing file: no-op
+        continue;
+      }
+      const known = state.sha.get(ch.path);
+      if (known) {
+        const bytes = ch.binary ? ch.binary : new TextEncoder().encode(ch.text || '');
+        if (await gitBlobSha(bytes) === known) continue;   // byte-identical already
+      }
+      out.push(ch);
+    }
+    return out;
+  }
+
   /* Commit multiple files (add/modify/delete) in a single Git commit.
-     changes: [{path, text?, binary?: ArrayBuffer, delete?: true}] */
-  async function commitChanges(changes, message) {
+     changes: [{path, text?, binary?: ArrayBuffer, delete?: true}]
+     Returns null when nothing would change — callers must not report a save
+     that never happened. */
+  async function commitChanges(rawChanges, message) {
+    const changes = await effectiveChanges(rawChanges);
+    if (!changes.length) return null;
+
     const ref = await ghFetch('GET', `git/refs/heads/${cfg.branch}`);
     const parentSha = ref.object.sha;
     const parentCommit = await ghFetch('GET', `git/commits/${parentSha}`);
@@ -115,8 +159,15 @@ import '@toast-ui/editor/dist/toastui-editor.css'
       await ghFetch('PATCH', `git/refs/heads/${cfg.branch}`, { sha: newCommit.sha });
     }
 
-    // Update local SHA cache from the returned tree.
-    for (const item of newTree.tree) {
+    // Update the local SHA cache from the blobs we just created — NOT from
+    // newTree.tree. Git trees are hierarchical, so the create-tree response
+    // lists the root's DIRECT children ("data", "assets", … as type "tree"),
+    // never "data/rewards.json". Reading SHAs back from it cached directory
+    // SHAs under directory names and left every real file path stale, which
+    // broke two things at once: rawUrl() kept minting the pre-save "?v=" so the
+    // browser re-served the cached OLD image after an upload, and
+    // effectiveChanges() compared against SHAs that never moved.
+    for (const item of treeItems) {
       if (item.sha) state.sha.set(item.path, item.sha);
     }
     for (const ch of changes) {
@@ -151,22 +202,9 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${path}?v=${sha.slice(0, 8)}`;
   }
 
-  /* ---------- editor freshness ----------
-     The editor is a static page that browsers and the GitHub Pages CDN cache.
-     A stale tab can keep writing an OUTDATED file layout long after the editor
-     was fixed in the repo — exactly how the legacy `title`/`code` fields crept
-     back into data/cottages.json. On the LIVE site we compare every editor
-     asset the page is running against its current repo blob; if the repo moved
-     ahead, we show a non-blocking banner asking the user to reload. Purely
-     informational — no auto-reload, no automatic data repair.
-
-     Production-only: locally you are editing these very files, so a mismatch is
-     expected and would just be noise. */
-  const EDITOR_ASSETS = ['admin/editor.ts', 'admin/index.html', 'admin/admin.css'];
-
   /* git's blob object hash: sha1("blob <byteLength>\0" + bytes). Computing it
-     in-browser lets us compare a loaded asset against the repo blob SHA from the
-     tree, with no manual version stamping to forget to bump. */
+     in-browser lets us compare a file's bytes against the repo blob SHA from
+     the tree, with no manual version stamping to forget to bump. */
   async function gitBlobSha(buf) {
     const data = new Uint8Array(buf);
     const header = new TextEncoder().encode(`blob ${data.length}\0`);
@@ -175,41 +213,6 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     full.set(data, header.length);
     const digest = await crypto.subtle.digest('SHA-1', full);
     return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  /* A dev host is anything that ISN'T production. Production = the github.io
-     Pages domain, or the custom domain declared in the repo's CNAME (e.g.
-     www.chatynkowo.pl, read into state.cnameHost at load). Both are matched
-     loosely — github.io as a suffix, the CNAME domain as a substring (with any
-     leading "www." dropped) — so the apex, www, and any subdomain all count as
-     production. Everywhere else — localhost, LAN IPs, previews — you are editing
-     these files, so we skip the freshness check. */
-  function isDevHost() {
-    const h = location.hostname.toLowerCase();
-    if (/\.github\.io$/.test(h)) return false;
-    const base = (state.cnameHost || '').replace(/^www\./, '');
-    if (base && h.includes(base)) return false;
-    return true;
-  }
-
-  async function checkEditorFreshness() {
-    if (isDevHost()) return;                                       // dev host — stay quiet
-    if (!window.isSecureContext || !window.crypto?.subtle) return; // SHA-1 needs a secure context
-    try {
-      for (const path of EDITOR_ASSETS) {
-        const repoSha = state.sha.get(path);
-        if (!repoSha) continue;
-        // The page is served from /admin/, so drop the leading "admin/".
-        // no-store bypasses the HTTP cache to read what the CDN serves now.
-        const res = await fetch(path.replace(/^admin\//, ''), { cache: 'no-store' });
-        if (!res.ok) continue;
-        if (await gitBlobSha(await res.arrayBuffer()) !== repoSha) { showUpdateBanner(); return; }
-      }
-    } catch (_) { /* network/permission hiccup — never block the editor */ }
-  }
-
-  function showUpdateBanner() {
-    if (els.updateBanner) els.updateBanner.hidden = false;
   }
 
   /* ---------- frontmatter / JSON serialisers ---------- */
@@ -248,9 +251,13 @@ import '@toast-ui/editor/dist/toastui-editor.css'
   }
 
   function serializeCottagesJson(records) {
-    // Location/map data ONLY. No 'title' — the .md frontmatter is the single
-    // source for text. No 'code' — the secret codes live in private/codes.json.
-    const fields = ['slug', 'lat', 'lng', 'mapX', 'mapY'];
+    // Location + the photo manifest ONLY. No 'title' — the .md frontmatter is
+    // the single source for text. No 'code' — the secret codes live in
+    // private/codes.json.
+    // NOTE: every save rewrites the whole file through this whitelist, so any
+    // field missing here is silently dropped from ALL records — when adding a
+    // new optional field to cottages.json, it MUST be listed here too.
+    const fields = ['slug', 'lat', 'lng', 'photos'];
     const segMax = {};
     for (const f of fields) {
       let max = 0;
@@ -275,7 +282,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
   /* ---------- secret plaque codes (private/codes.json) ----------
      The codes never enter any published file in plaintext. The site validates
      an entered code against data/code_hashes.json — sha256(`${salt}:${code}`)
-     hex, the same algorithm as private/build-code-hashes.mjs — so whenever
+     hex, the same algorithm as private/build-code-hashes.ts — so whenever
      the codes change, BOTH files must be rewritten in the same commit. */
 
   function serializeCodesJson(file) {
@@ -332,11 +339,20 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     cottagesJson: [],      // in-memory copy of data/cottages.json
     codesFile: null,       // in-memory copy of private/codes.json ({_comment, salt, codes})
     sha: new Map(),        // path → git blob SHA (for writes)
-    cnameHost: null,       // custom production domain from the repo's CNAME (lowercased)
     current: null,
     dirty: false,
     geo: null,
+    mde: null,             // toastui editor for the cottage story
     cleanBody: '',         // markdown snapshot at last load/save — for dirty detection
+    // ---- Rewards / Kronika mode ----
+    mode: 'cottages',      // active editor mode: 'cottages' | 'rewards'
+    rewards: null,         // in-memory data/rewards.json ({ treasury, levels })
+    rewardsLoaded: null,   // snapshot from last load/save — for discard
+    rwCurrent: 'treasury', // current reward selection: 'treasury' | level id
+    rwDirty: false,
+    rwMde: null,           // toastui editor for treasury intro / level body (lazy)
+    rwFilling: false,      // suppress dirty/preview while programmatically filling
+    rwPendingImages: new Map(), // path → { buffer, type, url } staged image uploads
   };
 
   /* ---------- load all ---------- */
@@ -361,22 +377,17 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     // Fetch file content via blob API — authoritative, no CDN propagation delay.
     const fetchBlob = sha => ghFetch('GET', `git/blobs/${sha}`).then(b => base64ToUtf8(b.content));
     const codesSha = state.sha.get('private/codes.json');
-    const cnameSha = state.sha.get('CNAME');
-    const [jsonRaw, codesRaw, cnameRaw, ...mdTexts] = await Promise.all([
+    const [jsonRaw, codesRaw, ...mdTexts] = await Promise.all([
       fetchBlob(state.sha.get('data/cottages.json')).then(t => JSON.parse(t)),
       // Branches that predate the secret-codes split have no private/codes.json;
       // start empty there and the first code edit will create the file.
       codesSha ? fetchBlob(codesSha).then(t => JSON.parse(t)) : Promise.resolve(null),
-      // The custom production domain (used to decide where the freshness check
-      // runs). Absent on repos served only from *.github.io.
-      cnameSha ? fetchBlob(cnameSha) : Promise.resolve(null),
       ...slugs.map(s => fetchBlob(state.sha.get(`cottages/${s}.md`))),
     ]);
 
-    state.cnameHost = cnameRaw ? cnameRaw.trim().toLowerCase() : null;
     state.cottagesJson = jsonRaw;
     state.codesFile = codesRaw || {
-      _comment: 'TAJNE pary slug → code. Nigdy nie publikować — patrz private/build-code-hashes.mjs.',
+      _comment: 'TAJNE pary slug → code. Nigdy nie publikować — patrz private/build-code-hashes.ts.',
       salt: Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join(''),
       codes: [],
     };
@@ -387,16 +398,18 @@ import '@toast-ui/editor/dist/toastui-editor.css'
       const { fm, body } = parseFrontmatter(mdTexts[i]);
       const j = bySlug.get(slug) || {};
       const audioPath = `assets/stories/${slug}.mp3`;
-      const photos = tree.tree
+      // The git tree is the truth about which files exist; the manifest in
+      // cottages.json only decides the ORDER the site shows them in, so a
+      // photo uploaded outside the editor is still picked up here.
+      const present = tree.tree
         .filter(item => item.type === 'blob' && item.path.startsWith(`assets/img/cottages/${slug}/`))
-        .map(item => ({
-          name: item.path.split('/').pop(),
-          url: `${baseUrl}/${item.path}?v=${item.sha.slice(0, 8)}`,
-        }));
+        .map(item => item.path.split('/').pop());
+      const manifest = Array.isArray(j.photos) ? j.photos.filter(n => present.includes(n)) : [];
+      const photos = [...manifest, ...present.filter(n => !manifest.includes(n)).sort()]
+        .map(name => ({ name, url: `${baseUrl}/assets/img/cottages/${slug}/${name}?v=${state.sha.get(`assets/img/cottages/${slug}/${name}`).slice(0, 8)}` }));
       return {
         slug, frontmatter: fm, body,
         lat: j.lat ?? null, lng: j.lng ?? null,
-        mapX: j.mapX ?? null, mapY: j.mapY ?? null,
         code: codeBySlug.get(slug) ?? null,
         audio: {
           exists: state.sha.has(audioPath),
@@ -409,10 +422,9 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     const order = new Map(jsonRaw.map((c, i) => [c.slug, i]));
     state.cottages.sort((a, b) => (order.get(a.slug) ?? 999) - (order.get(b.slug) ?? 999));
 
-    // Rebuild dropdown.
-    els.select.innerHTML = state.cottages
-      .map(c => `<option value="${c.slug}">${escapeHtml(c.frontmatter.title || c.slug)} — ${c.slug}</option>`)
-      .join('');
+    // Rebuild the shared dropdown (a no-op for the list when the rewards mode
+    // is the active one — it is rebuilt again once rewards.json is parsed).
+    renderItemSelect();
 
     const target = (preferSlug && state.cottages.some(c => c.slug === preferSlug))
       ? preferSlug
@@ -423,25 +435,35 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     if (target) selectCottage(target);
     else { state.current = null; setStatus('clean', 'brak chatynek'); }
 
-    // Fire-and-forget: warn (production only) if the repo has a newer editor.
-    checkEditorFreshness();
+    // ---- Rewards / Kronika config (data/rewards.json) ----
+    // Absent on branches that predate this feature; start from a default so the
+    // first save creates the file.
+    const rewardsSha = state.sha.get('data/rewards.json');
+    const rewardsRaw = rewardsSha
+      ? await fetchBlob(rewardsSha).then(t => JSON.parse(t)).catch(() => null)
+      : null;
+    state.rewards = normalizeRewardsEditor(rewardsRaw);
+    state.rewardsLoaded = cloneRewards(state.rewards);
+    state.rwPendingImages.clear();
+    rwMarkClean();
+    renderItemSelect();
+    // If the rewards editor is already open, re-fill its current view (no
+    // harvest — the freshly loaded config replaces any stale form values).
+    if (state.rwMde) rwFill(rwSelectionKey());
   }
 
   /* ---------- select / form ---------- */
 
   function selectCottage(slug) {
     if (state.dirty && !confirm('Masz niezapisane zmiany. Porzucić je?')) {
-      els.select.value = state.current?.slug || ''; return;
+      syncSelectValue(); return;
     }
     const c = state.cottages.find(x => x.slug === slug);
     if (!c) return;
     state.current = c;
-    els.select.value = slug;
+    syncSelectValue();
     els.delete.disabled = false;
     fillForm(c);
-    placeSymbolicPin(c.mapX, c.mapY);
-    renderGhostPins();
-    checkPinProximity();
     placeGeoMarker(c.lat, c.lng);
     refreshAudio();
     refreshPhotos();
@@ -455,8 +477,6 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.code.value = c.code ?? '';
     els.lat.value = c.lat ?? '';
     els.lng.value = c.lng ?? '';
-    els.mapX.value = c.mapX ?? '';
-    els.mapY.value = c.mapY ?? '';
     state.mde.setMarkdown(c.body ?? '');
     state.cleanBody = state.mde.getMarkdown();
   }
@@ -464,7 +484,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
   function harvestForm() {
     return {
       // Text only — the .md frontmatter is the single source for title &co.
-      // Location (lat/lng, mapX/mapY) goes to data/cottages.json instead.
+      // Location goes to data/cottages.json instead.
       frontmatter: {
         title: els.title.value.trim(),
         slug: state.current.slug,
@@ -474,8 +494,6 @@ import '@toast-ui/editor/dist/toastui-editor.css'
       body: state.mde.getMarkdown(),
       lat: numOrNull(els.lat.value),
       lng: numOrNull(els.lng.value),
-      mapX: numOrNull(els.mapX.value),
-      mapY: numOrNull(els.mapY.value),
       code: els.code.value.trim() || null,
     };
   }
@@ -498,56 +516,115 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.code.reportValidity();
   }
 
-  /* ---------- status ---------- */
+  /* The photo manifest the site reads for one cottage: file names in display
+     order, or undefined when there are none (keeps the JSON clean). */
+  function photoManifest(c) {
+    const names = (c?.photos || []).map(p => p.name);
+    return names.length ? names : undefined;
+  }
 
-  function setStatus(s, text) { els.status.dataset.state = s; els.status.textContent = text; }
-  function markDirty() { state.dirty = true; els.save.disabled = false; els.discard.disabled = false; setStatus('dirty', 'niezapisane'); }
-  function markClean() { state.dirty = false; els.save.disabled = true; els.discard.disabled = true; setStatus('clean', 'zapisane'); }
+  /* A fresh copy of data/cottages.json with one cottage's entry updated. */
+  function cottagesJsonWith(slug, patch) {
+    const fresh = state.cottagesJson.map(e => ({ ...e }));
+    let entry = fresh.find(c => c.slug === slug);
+    if (!entry) { entry = { slug }; fresh.push(entry); }
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === undefined) delete entry[k];
+      else entry[k] = v;
+    }
+    return fresh;
+  }
+
+  /* ---------- status ----------
+     One status pill and one discard/save pair serve both categories, so each
+     category keeps its own status text and dirty flag while the toolbar shows
+     whichever category is active. Every mutation goes through setModeStatus()
+     / renderToolbar() rather than poking els.* directly — that way a save in
+     one category can never mislabel the other one's pill. */
+
+  const modeStatus = {
+    cottages: { state: 'clean', text: 'gotowy' },
+    rewards:  { state: 'clean', text: 'gotowy' },
+  };
+
+  function isDirty(mode) { return mode === 'rewards' ? state.rwDirty : state.dirty; }
+
+  function renderToolbar() {
+    const st = modeStatus[state.mode];
+    els.status.dataset.state = st.state;
+    els.status.textContent = st.text;
+    // Nothing to save/discard when clean; nothing to touch while a commit or
+    // a reload is in flight (a second click would commit twice).
+    const busy = st.state === 'saving';
+    const dirty = isDirty(state.mode);
+    els.save.disabled = busy || !dirty;
+    els.discard.disabled = busy || !dirty;
+    // The toolbar only ever describes the ACTIVE category, so unsaved work in
+    // the other one would be invisible until you switched back into it.
+    els.tabCottages.classList.toggle('has-unsaved', state.dirty);
+    els.tabRewards.classList.toggle('has-unsaved', state.rwDirty);
+  }
+
+  /* Always re-render: the pill reads the ACTIVE mode either way, but the
+     unsaved dots describe both, so a background category going clean (e.g. a
+     reload) still has to clear its own dot. */
+  function setModeStatus(mode, s, text) {
+    modeStatus[mode] = { state: s, text };
+    renderToolbar();
+  }
+
+  function setStatus(s, text) { setModeStatus('cottages', s, text); }
+  function markDirty() { state.dirty = true; setStatus('dirty', 'niezapisane'); }
+  function markClean() { state.dirty = false; setStatus('clean', 'zapisane'); }
 
   /* ---------- discard changes ----------
-     Throw away unsaved edits to the current cottage and reload the canonical
-     version straight from the repository (GitHub). */
-  async function discardChanges() {
-    if (!state.current || !state.dirty) return;
-    if (!confirm('Odrzucić niezapisane zmiany i wczytać aktualną wersję z repozytorium?')) return;
-    const slug = state.current.slug;
-    // Clear the dirty flag first so the reload doesn't trigger the
+     The shared Discard button, always scoped to the ACTIVE category: throw away
+     its unsaved edits and reload the canonical version straight from the
+     repository (GitHub). loadAll() necessarily refreshes BOTH categories, so
+     unsaved work in the other one is called out before we pull the trigger
+     rather than vanishing silently. */
+  async function discardActive() {
+    const mode = state.mode;
+    if (!isDirty(mode)) return;
+    const other = mode === 'rewards' ? 'cottages' : 'rewards';
+    const lines = [`Odrzucić niezapisane zmiany w ${MODE_LABEL[mode]} i wczytać aktualną wersję z repozytorium?`];
+    if (isDirty(other)) {
+      lines.push('', `Uwaga: przeładowanie z repozytorium odrzuci też niezapisane zmiany w ${MODE_LABEL[other]}.`);
+    }
+    if (!confirm(lines.join('\n'))) return;
+
+    const slug = state.current?.slug;
+    for (const [, img] of state.rwPendingImages) URL.revokeObjectURL(img.url);
+    // Clear the dirty flags first so the reload doesn't trigger the
     // "unsaved changes" prompt again inside selectCottage().
+    const hadDirty = { cottages: state.dirty, rewards: state.rwDirty };
     state.dirty = false;
-    els.discard.disabled = true;
-    setStatus('saving', 'wczytuję z repozytorium…');
+    state.rwDirty = false;
+    setModeStatus(mode, 'saving', 'wczytuję z repozytorium…');
     try {
       await loadAll(slug);   // re-fetches the tree + blobs from the remote
     } catch (e) {
-      setStatus('error', `błąd: ${e.message}`);
-      state.dirty = true;
-      els.discard.disabled = false;
+      state.dirty = hadDirty.cottages;
+      state.rwDirty = hadDirty.rewards;
+      setModeStatus(mode, 'error', `błąd: ${e.message}`);
+      renderToolbar();
     }
   }
 
   /* ---------- save cottage ---------- */
 
+  /* Resolves true only when the commit landed — callers (e.g. the category
+     switch) must not move on after a failed or refused save. */
   async function save() {
-    if (!state.current) return;
+    if (!state.current) return false;
     const code = els.code.value.trim();
     const conflict = codeConflict(code);
     if (conflict) {
       setStatus('error', `kod ${code} zajęty przez „${conflict.frontmatter?.title || conflict.slug}"`);
       els.code.focus();
-      return;
+      return false;
     }
-    // Soft guard: overlapping pins are hard to tap on a phone. Let the author
-    // save anyway (two cottages may genuinely share a trailhead), but not by
-    // accident — require an explicit confirm.
-    const near = nearestConflict(numOrNull(els.mapX.value), numOrNull(els.mapY.value));
-    if (near) {
-      const t = near.cottage.frontmatter?.title || near.cottage.slug;
-      if (!confirm(`Pinezka nakłada się z chatynką „${t}" — będzie trudno ją kliknąć na telefonie. Zapisać mimo to?`)) {
-        return;
-      }
-    }
-    setStatus('saving', 'zapisuję…');
-    els.save.disabled = true;
+    setStatus('saving', 'zapisuję…');   // renderToolbar() locks the buttons
     try {
       const payload = harvestForm();
       const slug = state.current.slug;
@@ -555,15 +632,13 @@ import '@toast-ui/editor/dist/toastui-editor.css'
       const fm = { ...(payload.frontmatter || {}), slug };
       const mdText = serializeMd(fm, payload.body || '');
 
-      // cottages.json carries ONLY location/map data — no title (md
-      // frontmatter owns the text), no code (private/codes.json owns those).
-      const freshJson = state.cottagesJson.map(e => ({ ...e }));
-      let entry = freshJson.find(c => c.slug === slug);
-      if (!entry) { entry = { slug }; freshJson.push(entry); }
-      if (payload.lat != null) entry.lat = Number(payload.lat);
-      if (payload.lng != null) entry.lng = Number(payload.lng);
-      if (payload.mapX != null) entry.mapX = Number(payload.mapX);
-      if (payload.mapY != null) entry.mapY = Number(payload.mapY);
+      // cottages.json carries ONLY location + the photo manifest — no title
+      // (md frontmatter owns the text), no code (private/codes.json owns those).
+      const freshJson = cottagesJsonWith(slug, {
+        lat: payload.lat ?? undefined,
+        lng: payload.lng ?? undefined,
+        photos: photoManifest(state.current),
+      });
 
       const changes = [
         { path: `cottages/${slug}.md`, text: mdText },
@@ -576,22 +651,24 @@ import '@toast-ui/editor/dist/toastui-editor.css'
         ? withCode(state.codesFile, slug, payload.code) : null;
       if (freshCodes) changes.push(...await codeFileChanges(freshCodes));
 
-      await commitChanges(changes, `edit: ${slug}`);
+      const commit = await commitChanges(changes, `edit: ${slug}`);
 
       // Update in-memory state to the freshly committed version.
       state.cottagesJson = freshJson;
       if (freshCodes) state.codesFile = freshCodes;
-      Object.assign(state.current, { frontmatter: fm, body: payload.body, lat: payload.lat, lng: payload.lng, mapX: payload.mapX, mapY: payload.mapY, code: payload.code });
+      Object.assign(state.current, { frontmatter: fm, body: payload.body, lat: payload.lat, lng: payload.lng, code: payload.code });
 
       // Refresh the dropdown option label to reflect the new title.
-      const opt = Array.from(els.select.options).find(o => o.value === slug);
-      if (opt) opt.textContent = `${fm.title || slug} — ${slug}`;
+      renderItemSelect();
 
       state.cleanBody = state.mde.getMarkdown();
       markClean();
+      if (!commit) setStatus('clean', 'brak zmian do zapisania');
+      return true;
     } catch (e) {
       setStatus('error', `błąd: ${e.message}`);
-      els.save.disabled = false;
+      renderToolbar();
+      return false;
     }
   }
 
@@ -600,9 +677,9 @@ import '@toast-ui/editor/dist/toastui-editor.css'
   const DEFAULT_LAT = 50.32, DEFAULT_LNG = 19.6;
 
   function newCottageBody(title) {
-    // NO location section here — the pin dialog generates "Jak znaleźć
-    // Chatynkę" (coordinates + navigation link) from lat/lng in
-    // data/cottages.json, so hand-written coordinates would only drift.
+    // Everything above "Co zrobić, gdy trafisz pod chatynkę?" is the reward for
+    // entering the plaque code; the section below it is public and shows in the
+    // cottage panel on the map, so it holds the on-site instructions.
     return [
       `# ${title}`, '', '> Krótki opis chatynki.', '',
       '## Mieszka tu', '', '(uzupełnij: kto mieszka, jakiej cnoty uczy)', '',
@@ -627,10 +704,9 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.addConfirm.disabled = true;
     try {
       const fm = { title, slug, occupant: '', virtue: '' };
-      const newEntry = { slug, lat: DEFAULT_LAT, lng: DEFAULT_LNG, mapX: 50, mapY: 50 };
       const freshJson = state.cottagesJson.map(e => ({ ...e }));
       if (freshJson.some(c => c.slug === slug)) { showAddError(`Chatynka „${slug}" już istnieje.`); return; }
-      freshJson.push(newEntry);
+      freshJson.push({ slug, lat: DEFAULT_LAT, lng: DEFAULT_LNG });
       await commitChanges([
         { path: `cottages/${slug}.md`, text: serializeMd(fm, newCottageBody(title)) },
         { path: 'data/cottages.json', text: serializeCottagesJson(freshJson) },
@@ -722,7 +798,10 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     } catch (e) { setStatus('error', `błąd: ${e.message}`); }
   }
 
-  /* ---------- photos ---------- */
+  /* ---------- photos ----------
+     Uploads and deletions commit immediately, together with the rewritten
+     manifest in data/cottages.json — the static site has no directory listing,
+     so a file on disk that is missing from the manifest is invisible. */
 
   function refreshPhotos() {
     const photos = state.current?.photos || [];
@@ -758,16 +837,18 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     }
     if (!changes.length) return;
     try {
-      await commitChanges(changes, `photos: ${slug}`);
-      // Replace blob URLs with raw.githubusercontent.com now that SHA is known.
-      for (const p of newPhotos) {
-        const path = `assets/img/cottages/${slug}/${p.name}`;
-        p.url = rawUrl(path);
-      }
-      state.current.photos = [...(state.current.photos || []), ...newPhotos]
+      const merged = [...(state.current.photos || []).filter(p => !newPhotos.some(n => n.name === p.name)), ...newPhotos]
         .sort((a, b) => a.name.localeCompare(b.name));
+      const freshJson = cottagesJsonWith(slug, { photos: merged.map(p => p.name) });
+      changes.push({ path: 'data/cottages.json', text: serializeCottagesJson(freshJson) });
+
+      await commitChanges(changes, `photos: ${slug}`);
+      state.cottagesJson = freshJson;
+      // Replace blob URLs with raw.githubusercontent.com now that SHA is known.
+      for (const p of merged) p.url = rawUrl(`assets/img/cottages/${slug}/${p.name}`);
+      state.current.photos = merged;
       refreshPhotos();
-      setStatus('clean', `wgrano ${changes.length} zdjęci${changes.length === 1 ? 'e' : 'a'}`);
+      setStatus('clean', `wgrano ${newPhotos.length} zdjęci${newPhotos.length === 1 ? 'e' : 'a'}`);
     } catch (e) { setStatus('error', `błąd: ${e.message}`); }
   }
 
@@ -777,100 +858,29 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     const slug = state.current.slug;
     setStatus('saving', 'usuwam zdjęcie…');
     try {
-      await commitChanges([{ path: `assets/img/cottages/${slug}/${name}`, delete: true }], `remove photo: ${slug}/${name}`);
-      state.current.photos = state.current.photos.filter(p => p.name !== name);
+      const remaining = state.current.photos.filter(p => p.name !== name);
+      const freshJson = cottagesJsonWith(slug, {
+        photos: remaining.length ? remaining.map(p => p.name) : undefined,
+      });
+      await commitChanges([
+        { path: `assets/img/cottages/${slug}/${name}`, delete: true },
+        { path: 'data/cottages.json', text: serializeCottagesJson(freshJson) },
+      ], `remove photo: ${slug}/${name}`);
+      state.cottagesJson = freshJson;
+      state.current.photos = remaining;
       refreshPhotos();
       setStatus('clean', 'zdjęcie usunięte');
     } catch (e) { setStatus('error', `błąd: ${e.message}`); }
   }
 
-  /* ---------- symbolic pin ---------- */
-
-  // Pins closer than this — measured in native map-image pixels (the image is
-  // 1024x1536) — merge into an untappable blob on a phone. dx/dy are percentages,
-  // so scale to native px before measuring.
-  const MIN_GAP_PX = 50;
-  const gapPx = (ax, ay, bx, by) =>
-    Math.hypot((ax - bx) * 10.24, (ay - by) * 15.36);
-
-  function placeSymbolicPin(x, y) {
-    if (x == null || y == null || isNaN(x) || isNaN(y)) { els.symbolicPin.hidden = true; return; }
-    els.symbolicPin.hidden = false;
-    els.symbolicPin.style.left = `${x}%`;
-    els.symbolicPin.style.top = `${y}%`;
-  }
-
-  // Dimmed markers for every OTHER cottage, so the author can place into empty
-  // space instead of on top of an existing pin.
-  function renderGhostPins() {
-    els.symbolicMap.querySelectorAll('.symbolic-pin--ghost').forEach(n => n.remove());
-    const cur = state.current?.slug;
-    for (const c of state.cottages) {
-      if (c.slug === cur) continue;
-      const x = Number(c.mapX), y = Number(c.mapY);
-      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-      const g = document.createElement('div');
-      g.className = 'symbolic-pin--ghost';
-      g.dataset.slug = c.slug;
-      g.style.left = `${x}%`;
-      g.style.top = `${y}%`;
-      g.title = c.frontmatter?.title || c.slug;
-      els.symbolicMap.appendChild(g);
-    }
-  }
-
-  // Closest OTHER cottage within MIN_GAP_PX of (x,y), or null.
-  function nearestConflict(x, y) {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-    let best = null;
-    for (const c of state.cottages) {
-      if (c.slug === state.current?.slug) continue;
-      const cx = Number(c.mapX), cy = Number(c.mapY);
-      if (!Number.isFinite(cx) || !Number.isFinite(cy)) continue;
-      const d = gapPx(x, y, cx, cy);
-      if (d < MIN_GAP_PX && (!best || d < best.gapPx)) best = { cottage: c, gapPx: d };
-    }
-    return best;
-  }
-
-  // Live proximity feedback — mirrors checkCodeUniqueness().
-  function checkPinProximity() {
-    const hit = nearestConflict(numOrNull(els.mapX.value), numOrNull(els.mapY.value));
-    els.symbolicMap.querySelectorAll('.symbolic-pin--ghost.is-conflict')
-      .forEach(n => n.classList.remove('is-conflict'));
-    els.symbolicPin.classList.toggle('is-conflict', !!hit);
-    if (hit) {
-      const g = els.symbolicMap.querySelector(`.symbolic-pin--ghost[data-slug="${hit.cottage.slug}"]`);
-      if (g) g.classList.add('is-conflict');
-      const title = hit.cottage.frontmatter?.title || hit.cottage.slug;
-      els.pinWarning.textContent =
-        `⚠ Za blisko chatynki „${title}" — na telefonie pinezki będą się nakładać. Przesuń pinezkę dalej.`;
-      els.pinWarning.hidden = false;
-    } else {
-      els.pinWarning.hidden = true;
-      els.pinWarning.textContent = '';
-    }
-  }
-
-  function symbolicMapClick(ev) {
-    const rect = els.symbolicImg.getBoundingClientRect();
-    const x = Math.round(((ev.clientX - rect.left) / rect.width) * 10000) / 100;
-    const y = Math.round(((ev.clientY - rect.top) / rect.height) * 10000) / 100;
-    if (x < 0 || x > 100 || y < 0 || y > 100) return;
-    els.mapX.value = x; els.mapY.value = y;
-    placeSymbolicPin(x, y);
-    checkPinProximity();
-    markDirty();
-  }
-
   /* ---------- Leaflet geo map ---------- */
 
   function initGeoMap() {
-    const map = L.map(els.geoMap, { zoomControl: true }).setView([50.32, 19.6], 12);
+    const map = L.map(els.geoMap, { zoomControl: true }).setView([DEFAULT_LAT, DEFAULT_LNG], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors', maxZoom: 19,
     }).addTo(map);
-    const marker = L.marker([50.32, 19.6], { draggable: true });
+    const marker = L.marker([DEFAULT_LAT, DEFAULT_LNG], { draggable: true });
     const updateLatLng = ll => {
       els.lat.value = Math.round(ll.lat * 1e6) / 1e6;
       els.lng.value = Math.round(ll.lng * 1e6) / 1e6;
@@ -890,7 +900,506 @@ import '@toast-ui/editor/dist/toastui-editor.css'
       map.setView([lat, lng], 14);
     } else {
       map.removeLayer(marker);
-      map.setView([50.32, 19.6], 12);
+      map.setView([DEFAULT_LAT, DEFAULT_LNG], 12);
+    }
+  }
+
+  /* ---------- Rewards / Kronika editor ----------
+     Edits data/rewards.json — the Kronika intro and the ordered reward levels
+     (collectible cards): name, threshold (or the final full-set flag), an
+     illustration, and a markdown description. Mirrors the cottage editor: one
+     selection at a time, one shared markdown editor, staged image uploads,
+     everything committed to GitHub in a single commit on Save.
+
+     All edits accumulate in state.rewards (in memory) until Save, so switching
+     between the Kronika and the levels never loses work and never prompts —
+     Discard is the only thing that reloads from the repository. */
+
+  function normalizeRewardsEditor(raw) {
+    const t = (raw && raw.treasury) || {};
+    const levels = Array.isArray(raw && raw.levels) ? raw.levels : [];
+    return {
+      treasury: {
+        title: t.title || 'Twoja Kronika',
+        intro: t.intro || '',
+        image: t.image || '',
+      },
+      levels: levels.filter(l => l && l.id).map(l => ({
+        id: String(l.id),
+        name: l.name || '',
+        threshold: (l.threshold == null || l.threshold === '') ? null : Number(l.threshold),
+        final: Boolean(l.final),
+        image: l.image || '',
+        body: l.body || '',
+      })),
+    };
+  }
+
+  function cloneRewards(rw) { return JSON.parse(JSON.stringify(rw)); }
+
+  /* Pretty, stable JSON so diffs stay readable in git. Keys in a fixed order. */
+  function serializeRewardsJson(rw) {
+    const out = {
+      treasury: {
+        title: rw.treasury.title || '',
+        intro: rw.treasury.intro || '',
+        image: rw.treasury.image || '',
+      },
+      levels: rw.levels.map(l => ({
+        id: l.id,
+        name: l.name || '',
+        threshold: l.final ? null : (l.threshold == null || l.threshold === '' ? null : Number(l.threshold)),
+        final: Boolean(l.final),
+        image: l.image || '',
+        body: l.body || '',
+      })),
+    };
+    return JSON.stringify(out, null, 2) + '\n';
+  }
+
+  function rewardHas(id) {
+    return Boolean(state.rewards && state.rewards.levels.some(l => l.id === id));
+  }
+
+  function rwCurrentObj() {
+    if (!state.rewards) return null;
+    return state.rwCurrent === 'treasury'
+      ? state.rewards.treasury
+      : state.rewards.levels.find(l => l.id === state.rwCurrent) || null;
+  }
+
+  /* All reward-image paths under assets/img/rewards/ referenced by a config. */
+  function rewardImagePaths(rw) {
+    if (!rw) return [];
+    const out = [];
+    if (rw.treasury && rw.treasury.image) out.push(rw.treasury.image);
+    for (const l of rw.levels || []) if (l.image) out.push(l.image);
+    return out.filter(p => p.startsWith('assets/img/rewards/'));
+  }
+
+  /* Preview URL for an image path: a staged blob if freshly picked, else the
+     committed raw.githubusercontent.com URL. */
+  function rewardImageUrl(path) {
+    if (!path) return '';
+    const pending = state.rwPendingImages.get(path);
+    return pending ? pending.url : rawUrl(path);
+  }
+
+  /* ---------- mode switching ---------- */
+
+  const MODE_LABEL = { cottages: 'chatynce', rewards: 'nagrodach' };
+
+  /* Ask what to do with unsaved work before leaving a category.
+     Resolves to 'save' | 'discard' | 'cancel'. */
+  function askUnsaved(mode) {
+    return new Promise(resolve => {
+      let done = false;
+      const finish = choice => {
+        if (done) return;
+        done = true;
+        els.unsavedSave.removeEventListener('click', onSave);
+        els.unsavedDiscard.removeEventListener('click', onDiscard);
+        els.unsavedDialog.removeEventListener('close', onClose);
+        resolve(choice);
+      };
+      const onSave = () => { els.unsavedDialog.close(); finish('save'); };
+      const onDiscard = () => { els.unsavedDialog.close(); finish('discard'); };
+      // Anuluj, Esc, and any other dismissal. close() delivers this event
+      // asynchronously, so one queued by a PREVIOUS prompt can land after this
+      // one already reopened the dialog — that stale event must not answer a
+      // question the user is still looking at. If the dialog is open, it isn't
+      // ours to answer.
+      const onClose = () => { if (!els.unsavedDialog.open) finish('cancel'); };
+      els.unsavedSave.addEventListener('click', onSave);
+      els.unsavedDiscard.addEventListener('click', onDiscard);
+      els.unsavedDialog.addEventListener('close', onClose);
+      els.unsavedText.textContent =
+        `Masz niezapisane zmiany w ${MODE_LABEL[mode]}. Zapisać je przed przełączeniem kategorii?`;
+      els.unsavedDialog.showModal();
+    });
+  }
+
+  /* Category switch. Unsaved work in the category being left is never dropped
+     silently — save it, discard it, or stay put. */
+  let modeSwitching = false;   // a second tab click must not stack dialogs/saves
+
+  async function setMode(mode) {
+    if (mode === state.mode || modeSwitching) return;
+    modeSwitching = true;
+    try { await switchMode(mode); } finally { modeSwitching = false; }
+  }
+
+  async function switchMode(mode) {
+    const leaving = state.mode;
+    if (isDirty(leaving)) {
+      const choice = await askUnsaved(leaving);
+      if (choice === 'cancel') return;
+      if (choice === 'save') {
+        const saved = leaving === 'rewards' ? await rwSave() : await save();
+        if (!saved) return;   // save failed or was refused — the pill says why
+      } else {
+        revertMode(leaving);
+      }
+    }
+    applyMode(mode);
+  }
+
+  /* Drop unsaved edits in one category WITHOUT touching the other one: both
+     categories keep their own last-loaded state in memory, so reverting is a
+     local re-fill rather than a repo reload (which would take the other
+     category's unsaved work down with it). */
+  function revertMode(mode) {
+    if (mode === 'rewards') {
+      for (const [, img] of state.rwPendingImages) URL.revokeObjectURL(img.url);
+      state.rwPendingImages.clear();
+      state.rewards = cloneRewards(state.rewardsLoaded);
+      rwMarkClean();
+      renderItemSelect();
+      if (state.rwMde) rwFill(rwSelectionKey());
+    } else {
+      // Cottage edits live only in the form until Save, so re-filling from
+      // state.current restores exactly the last loaded/saved version.
+      state.dirty = false;
+      if (state.current) selectCottage(state.current.slug);
+      else markClean();
+    }
+  }
+
+  function applyMode(mode) {
+    state.mode = mode;
+    const rewards = mode === 'rewards';
+    els.tabCottages.classList.toggle('is-active', !rewards);
+    els.tabRewards.classList.toggle('is-active', rewards);
+    els.tabCottages.setAttribute('aria-selected', String(!rewards));
+    els.tabRewards.setAttribute('aria-selected', String(rewards));
+    els.cottageActions.hidden = rewards;
+    els.rewardsActions.hidden = !rewards;
+    els.cottageView.hidden = rewards;
+    els.rewardsView.hidden = !rewards;
+    if (rewards) ensureRewardsEditor();
+    renderItemSelect();   // repopulate the shared dropdown for this category
+    renderToolbar();      // …and the shared status/discard/save
+  }
+
+  /* Create the markdown editor the first time the rewards view is shown (so
+     toastui measures a visible container), then fill the current selection. */
+  function ensureRewardsEditor() {
+    if (state.rwMde) { rwRenderPreview(); rwUpdateToolbarButtons(); return; }
+    state.rwMde = new Editor({
+      el: els.rwBodyEditor,
+      height: 'auto',
+      minHeight: '320px',
+      initialEditType: 'wysiwyg',
+      previewStyle: 'tab',
+      toolbarItems: [['heading', 'bold', 'italic'], ['ul', 'ol'], ['link']],
+      hideModeSwitch: false,
+    });
+    state.rwMde.on('change', () => { if (!state.rwFilling) rwOnEdit(); });
+    renderItemSelect();
+    rwFill(rwSelectionKey());
+  }
+
+  /* ---------- shared dropdown ----------
+     A single <select> serves both categories: it is rebuilt from whichever
+     data set the ACTIVE mode owns, so the two lists can never show up side by
+     side. Everything that changes a label (rename, threshold, reorder, add,
+     delete, load) calls renderItemSelect(). */
+
+  function cottageOptionsHtml() {
+    return state.cottages
+      .map(c => `<option value="${escapeHtml(c.slug)}">${escapeHtml(c.frontmatter.title || c.slug)} — ${escapeHtml(c.slug)}</option>`)
+      .join('');
+  }
+
+  function rewardOptionsHtml() {
+    if (!state.rewards) return '';
+    const opts = ['<option value="treasury">🏛 Kronika (wstęp)</option>'];
+    state.rewards.levels.forEach((l, idx) => {
+      const thr = l.final ? 'komplet' : (l.threshold != null ? `próg ${l.threshold}` : 'próg —');
+      opts.push(`<option value="${escapeHtml(l.id)}">${idx + 1}. ${escapeHtml(l.name || l.id)} — ${thr}</option>`);
+    });
+    return opts.join('');
+  }
+
+  /* The reward selection, falling back to the Kronika when the level is gone. */
+  function rwSelectionKey() {
+    return (state.rwCurrent === 'treasury' || rewardHas(state.rwCurrent)) ? state.rwCurrent : 'treasury';
+  }
+
+  function syncSelectValue() {
+    if (state.mode === 'rewards') els.select.value = rwSelectionKey();
+    else if (state.current) els.select.value = state.current.slug;
+  }
+
+  function renderItemSelect() {
+    if (!els.select) return;
+    els.select.innerHTML = state.mode === 'rewards' ? rewardOptionsHtml() : cottageOptionsHtml();
+    syncSelectValue();
+  }
+
+  // User-initiated selection change: keep the outgoing edits, then fill.
+  function rwSelect(key) {
+    rwHarvestCurrent();
+    rwFill(key);
+  }
+
+  // Programmatic fill (no harvest) — used after loads, adds, deletes, reorders.
+  function rwFill(key) {
+    if (!state.rewards || !state.rwMde) return;
+    if (key !== 'treasury' && !rewardHas(key)) key = 'treasury';
+    state.rwCurrent = key;
+    syncSelectValue();
+    state.rwFilling = true;
+    if (key === 'treasury') {
+      els.rwTreasuryFields.hidden = false;
+      els.rwLevelFields.hidden = true;
+      els.rwTreTitle.value = state.rewards.treasury.title || '';
+      els.rwBodyLabel.textContent = 'Wstęp do Kroniki (markdown)';
+      els.rwBodyHint.textContent = 'Tekst pokazywany pod tytułem Kroniki.';
+      state.rwMde.setMarkdown(state.rewards.treasury.intro || '');
+    } else {
+      const l = state.rewards.levels.find(x => x.id === key);
+      els.rwTreasuryFields.hidden = true;
+      els.rwLevelFields.hidden = false;
+      els.rwName.value = l.name || '';
+      els.rwThreshold.value = (l.threshold == null ? '' : l.threshold);
+      els.rwFinal.checked = Boolean(l.final);
+      els.rwBodyLabel.textContent = 'Opis nagrody (markdown)';
+      els.rwBodyHint.textContent = 'Treść pokazywana po kliknięciu karty nagrody.';
+      state.rwMde.setMarkdown(l.body || '');
+      rwUpdateFinalUI();
+    }
+    state.rwFilling = false;
+    rwRefreshImage();
+    rwUpdateToolbarButtons();
+    rwRenderPreview();
+  }
+
+  function rwHarvestCurrent() {
+    if (!state.rwMde || !state.rewards) return;
+    const md = state.rwMde.getMarkdown();
+    if (state.rwCurrent === 'treasury') {
+      state.rewards.treasury.title = els.rwTreTitle.value;
+      state.rewards.treasury.intro = md;
+    } else {
+      const l = state.rewards.levels.find(x => x.id === state.rwCurrent);
+      if (l) {
+        l.name = els.rwName.value;
+        l.threshold = numOrNull(els.rwThreshold.value);
+        l.final = els.rwFinal.checked;
+        l.body = md;
+      }
+    }
+  }
+
+  function rwOnEdit() {
+    rwHarvestCurrent();
+    rwMarkDirty();
+    renderItemSelect();   // keep the dropdown label in sync (name/threshold)
+    rwRenderPreview();
+  }
+
+  function rwUpdateFinalUI() {
+    const final = els.rwFinal.checked;
+    els.rwThreshold.disabled = final;
+    els.rwFinalHint.hidden = !final;
+  }
+
+  function rwUpdateToolbarButtons() {
+    const isLevel = state.rwCurrent !== 'treasury';
+    els.rwDelete.disabled = !isLevel;
+    const arr = (state.rewards && state.rewards.levels) || [];
+    const i = arr.findIndex(l => l.id === state.rwCurrent);
+    els.rwMoveUp.disabled = !isLevel || i <= 0;
+    els.rwMoveDown.disabled = !isLevel || i < 0 || i >= arr.length - 1;
+  }
+
+  /* ---------- reward image ---------- */
+
+  function rwRefreshImage() {
+    const obj = rwCurrentObj();
+    const src = obj && obj.image ? rewardImageUrl(obj.image) : '';
+    if (src) {
+      els.rwImagePreview.src = src;
+      els.rwImagePreview.hidden = false;
+      els.rwImageEmpty.hidden = true;
+      els.rwImageDelete.disabled = false;
+    } else {
+      els.rwImagePreview.removeAttribute('src');
+      els.rwImagePreview.hidden = true;
+      els.rwImageEmpty.hidden = false;
+      els.rwImageDelete.disabled = true;
+    }
+  }
+
+  /* Content-addressed name: assets/img/rewards/<id>/card.<hash8>.webp
+
+     A fixed name would republish new bytes under an URL the visitor already
+     has cached. The Kronika renders `<img src={level.image}>` with no cache
+     buster and Pages serves assets with max-age=600, so a swapped card would
+     keep showing the old artwork to anyone who had seen it before — invisibly,
+     with the correct file sitting in the repo. Hashing the content into the
+     name means new artwork is always a new URL. The file it replaces is
+     removed by the orphan sweep in rwSave(), in the same commit.
+
+     Without crypto.subtle (plain http on a LAN host) there is no hash to use —
+     fall back to the fixed name, since a working upload beats a fresh URL. */
+  async function rewardImagePath(key, buffer, ext) {
+    const dir = key === 'treasury' ? 'treasury' : key;
+    const stem = key === 'treasury' ? 'cover' : 'card';
+    const tag = (window.isSecureContext && window.crypto?.subtle)
+      ? `.${(await gitBlobSha(buffer)).slice(0, 8)}`
+      : '';
+    return `assets/img/rewards/${dir}/${stem}${tag}.${ext}`;
+  }
+
+  async function rwImageChosen(file) {
+    const obj = rwCurrentObj();
+    if (!file || !obj) return;
+    if (file.size > MAX_PHOTO_BYTES) { rwSetStatus('error', `${file.name} za duży (maks. 10 MB)`); return; }
+    const ext = (file.name.match(/\.([a-z0-9]+)$/i)?.[1] || 'jpg').toLowerCase();
+    // Pin the selection now: the awaits below let the user switch levels, and
+    // the bytes must land on the level they were picked for.
+    const key = state.rwCurrent;
+    const buffer = await file.arrayBuffer();
+    const path = await rewardImagePath(key, buffer, ext);
+    const url = URL.createObjectURL(new Blob([buffer], { type: file.type }));
+    // Every pick with different bytes lands on a different path, so release the
+    // blob staged by the pick this one replaces.
+    if (obj.image && obj.image !== path && state.rwPendingImages.has(obj.image)) {
+      URL.revokeObjectURL(state.rwPendingImages.get(obj.image).url);
+      state.rwPendingImages.delete(obj.image);
+    }
+    state.rwPendingImages.set(path, { buffer, type: file.type, url });
+    obj.image = path;
+    rwMarkDirty();
+    rwRefreshImage();
+    rwRenderPreview();
+  }
+
+  function rwDeleteImage() {
+    const obj = rwCurrentObj();
+    if (!obj || !obj.image) return;
+    if (state.rwPendingImages.has(obj.image)) {
+      URL.revokeObjectURL(state.rwPendingImages.get(obj.image).url);
+      state.rwPendingImages.delete(obj.image);
+    }
+    // The committed file (if any) is removed as an orphan on the next Save.
+    obj.image = '';
+    rwMarkDirty();
+    rwRefreshImage();
+    rwRenderPreview();
+  }
+
+  /* ---------- add / delete / reorder level ---------- */
+
+  function rwOpenAddDialog() {
+    els.rwAddId.value = ''; els.rwAddName.value = ''; els.rwAddError.hidden = true;
+    els.rwAddDialog.showModal();
+    setTimeout(() => els.rwAddId.focus(), 0);
+  }
+
+  function rwAddErr(msg) { els.rwAddError.textContent = msg; els.rwAddError.hidden = false; }
+
+  function rwConfirmAddLevel() {
+    const id = els.rwAddId.value.trim();
+    const name = els.rwAddName.value.trim();
+    if (!/^[a-z0-9-]+$/.test(id)) { rwAddErr('Identyfikator: małe litery, cyfry, myślniki.'); return; }
+    if (!name) { rwAddErr('Podaj nazwę.'); return; }
+    if (rewardHas(id)) { rwAddErr(`Poziom „${id}" już istnieje.`); return; }
+    rwHarvestCurrent();
+    const maxThr = Math.max(0, ...state.rewards.levels.map(l => Number(l.threshold) || 0));
+    state.rewards.levels.push({ id, name, threshold: maxThr + 1, final: false, image: '', body: '' });
+    els.rwAddDialog.close();
+    rwMarkDirty();
+    renderItemSelect();
+    rwFill(id);
+  }
+
+  function rwDeleteLevel() {
+    if (state.rwCurrent === 'treasury') return;
+    const l = state.rewards.levels.find(x => x.id === state.rwCurrent);
+    if (!l) return;
+    if (!confirm(`Usunąć poziom nagrody „${l.name || l.id}"?\n\n`
+      + 'Gracze, którzy już go zdobyli, zachowają nagrodę w swojej Kronice.')) return;
+    state.rewards.levels = state.rewards.levels.filter(x => x.id !== state.rwCurrent);
+    rwMarkDirty();
+    renderItemSelect();
+    rwFill('treasury');
+  }
+
+  function rwMove(dir) {
+    if (state.rwCurrent === 'treasury') return;
+    const arr = state.rewards.levels;
+    const i = arr.findIndex(l => l.id === state.rwCurrent);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= arr.length) return;
+    rwHarvestCurrent();
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    rwMarkDirty();
+    renderItemSelect();
+    rwFill(state.rwCurrent);
+  }
+
+  /* ---------- preview ---------- */
+
+  function rwRenderPreview() {
+    if (!els.rwPreview) return;
+    const obj = rwCurrentObj();
+    if (!obj) { els.rwPreview.innerHTML = '<p class="rp-empty">—</p>'; return; }
+    const isTre = state.rwCurrent === 'treasury';
+    const name = isTre ? (obj.title || 'Twoja Kronika') : (obj.name || state.rwCurrent);
+    const text = isTre ? obj.intro : obj.body;
+    const art = obj.image
+      ? `<div class="rp-art"><img src="${escapeHtml(rewardImageUrl(obj.image))}" alt=""></div>`
+      : '';
+    const bodyHtml = text ? `<div class="rp-body">${marked.parse(text)}</div>` : '<p class="rp-empty">(brak opisu)</p>';
+    els.rwPreview.innerHTML = `<p class="rp-name">${escapeHtml(name)}</p>${art}${bodyHtml}`;
+  }
+
+  /* ---------- status / dirty ---------- */
+
+  function rwSetStatus(s, text) { setModeStatus('rewards', s, text); }
+  function rwMarkDirty() { state.rwDirty = true; rwSetStatus('dirty', 'niezapisane'); }
+  function rwMarkClean() { state.rwDirty = false; rwSetStatus('clean', 'zapisane'); }
+
+  /* ---------- save rewards ---------- */
+
+  /* Resolves true only when the commit landed — see save(). */
+  async function rwSave() {
+    if (!state.rewards) return false;
+    rwHarvestCurrent();
+    const ids = state.rewards.levels.map(l => l.id);
+    if (new Set(ids).size !== ids.length) { rwSetStatus('error', 'zduplikowane identyfikatory poziomów'); return false; }
+    rwSetStatus('saving', 'zapisuję…');
+    try {
+      const changes = [{ path: 'data/rewards.json', text: serializeRewardsJson(state.rewards) }];
+      for (const [path, img] of state.rwPendingImages) changes.push({ path, binary: img.buffer });
+      // Orphan cleanup: reward images referenced before but not now (extension
+      // changed, image cleared, or level deleted) are removed in this commit.
+      const newPaths = new Set(rewardImagePaths(state.rewards));
+      const staged = new Set(state.rwPendingImages.keys());
+      for (const oldPath of rewardImagePaths(state.rewardsLoaded)) {
+        if (!newPaths.has(oldPath) && !staged.has(oldPath) && state.sha.has(oldPath)) {
+          changes.push({ path: oldPath, delete: true });
+        }
+      }
+      const commit = await commitChanges(changes, 'rewards: edytuj Kronikę');
+      for (const [, img] of state.rwPendingImages) URL.revokeObjectURL(img.url);
+      state.rwPendingImages.clear();
+      state.rewardsLoaded = cloneRewards(state.rewards);
+      rwMarkClean();
+      // Nothing differed from the repository — say so instead of implying a
+      // commit that was never made.
+      if (!commit) rwSetStatus('clean', 'brak zmian do zapisania');
+      renderItemSelect();
+      rwRefreshImage();
+      rwRenderPreview();
+      return true;
+    } catch (e) {
+      rwSetStatus('error', `błąd: ${e.message}`);
+      renderToolbar();
+      return false;
     }
   }
 
@@ -904,13 +1413,14 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     authOwner: $('#auth-owner'),
     authRepo: $('#auth-repo'),
     authBranch: $('#auth-branch'),
+    authAdvanced: $('#auth-advanced'),
     authError: $('#auth-error'),
     authConfirm: $('#btn-auth-confirm'),
     authCancel: $('#btn-auth-cancel'),
     editorRoot: $('#editor-root'),
-    updateBanner: $('#update-banner'),
-    reload: $('#btn-reload'),
-    select: $('#cottage-select'),
+    // Shared toolbar — one dropdown, one status pill, one discard/save pair.
+    // All four always describe the ACTIVE category (state.mode).
+    select: $('#item-select'),
     save: $('#btn-save'),
     discard: $('#btn-discard'),
     add: $('#btn-add'),
@@ -918,16 +1428,31 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     settings: $('#btn-settings'),
     status: $('#status-pill'),
     title: $('#f-title'), occupant: $('#f-occupant'), virtue: $('#f-virtue'), code: $('#f-code'),
-    lat: $('#f-lat'), lng: $('#f-lng'), mapX: $('#f-mapx'), mapY: $('#f-mapy'),
+    lat: $('#f-lat'), lng: $('#f-lng'),
     bodyEditor: $('#f-body-editor'),
     audioPreview: $('#audio-preview'), audioFile: $('#audio-file'),
     audioDelete: $('#btn-audio-delete'), audioMeta: $('#audio-meta'),
     photosGrid: $('#photos-grid'), photosFile: $('#photos-file'), photosMeta: $('#photos-meta'),
-    symbolicMap: $('#symbolic-map'), symbolicImg: $('#symbolic-img'), symbolicPin: $('#symbolic-pin'),
-    pinWarning: $('#pin-warning'),
     geoMap: $('#geo-map'),
     addDialog: $('#add-dialog'), addSlug: $('#add-slug'), addTitle: $('#add-title'),
     addError: $('#add-error'), addConfirm: $('#btn-add-confirm'),
+    unsavedDialog: $('#unsaved-dialog'), unsavedText: $('#unsaved-text'),
+    unsavedSave: $('#btn-unsaved-save'), unsavedDiscard: $('#btn-unsaved-discard'),
+    // ---- Rewards mode ----
+    tabCottages: $('#tab-cottages'), tabRewards: $('#tab-rewards'),
+    cottageActions: $('#cottage-actions'), rewardsActions: $('#rewards-actions'),
+    cottageView: $('#cottage-view'), rewardsView: $('#rewards-view'),
+    rwAdd: $('#rw-add'), rwDelete: $('#rw-delete'),
+    rwTreasuryFields: $('#rw-treasury-fields'), rwLevelFields: $('#rw-level-fields'),
+    rwTreTitle: $('#rw-tre-title'),
+    rwName: $('#rw-name'), rwThreshold: $('#rw-threshold'), rwFinal: $('#rw-final'),
+    rwFinalHint: $('#rw-final-hint'), rwMoveUp: $('#rw-move-up'), rwMoveDown: $('#rw-move-down'),
+    rwImage: $('#rw-image'), rwImagePreview: $('#rw-image-preview'), rwImageEmpty: $('#rw-image-empty'),
+    rwImageFile: $('#rw-image-file'), rwImageDelete: $('#rw-image-delete'),
+    rwBodyLabel: $('#rw-body-label'), rwBodyHint: $('#rw-body-hint'), rwBodyEditor: $('#rw-body-editor'),
+    rwPreview: $('#rw-preview'),
+    rwAddDialog: $('#rw-add-dialog'), rwAddId: $('#rw-add-id'), rwAddName: $('#rw-add-name'),
+    rwAddError: $('#rw-add-error'), rwAddConfirm: $('#rw-add-confirm'),
   };
 
   function prefillAuthForm() {
@@ -939,6 +1464,10 @@ import '@toast-ui/editor/dist/toastui-editor.css'
 
   function showAuthOverlay(errorMsg) {
     prefillAuthForm();
+    // Repo auto-detection only works on the live *.github.io host. Anywhere
+    // else (localhost above all) these fields are mandatory, so don't hide
+    // them behind a fold the user has no reason to suspect.
+    els.authAdvanced.open = !detected.owner || !detected.repo || Boolean(errorMsg);
     if (errorMsg) { els.authError.textContent = errorMsg; els.authError.hidden = false; }
     else els.authError.hidden = true;
     // Show cancel only when editor was already loaded (settings mode, not initial auth).
@@ -983,8 +1512,20 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  /* The sticky preview pane has to start below the toolbar, and the toolbar
+     wraps to two or three rows as the window narrows — publish its real height
+     so the CSS offset follows instead of guessing. */
+  function trackTopbarHeight() {
+    const bar = document.querySelector('.topbar');
+    if (!bar) return;
+    new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--topbar-h', `${bar.offsetHeight}px`);
+    }).observe(bar);
+  }
+
   function wire() {
     initGeoMap();
+    trackTopbarHeight();
 
     state.mde = new Editor({
       el: els.bodyEditor,
@@ -1001,15 +1542,19 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     });
     state.mde.on('change', () => { if (state.mde.getMarkdown() !== state.cleanBody) markDirty(); });
 
-    els.reload?.addEventListener('click', () => location.reload());
-
     els.authConfirm.addEventListener('click', tryAuth);
     els.authCancel.addEventListener('click', hideAuthOverlay);
     els.authToken.addEventListener('keydown', ev => { if (ev.key === 'Enter') tryAuth(); });
 
-    els.select.addEventListener('change', () => selectCottage(els.select.value));
-    els.save.addEventListener('click', save);
-    els.discard.addEventListener('click', discardChanges);
+    // The shared dropdown / save / discard all dispatch on the active category.
+    els.select.addEventListener('change', () => {
+      if (state.mode === 'rewards') rwSelect(els.select.value);
+      else selectCottage(els.select.value);
+    });
+    els.save.addEventListener('click', () => {
+      if (state.mode === 'rewards') rwSave(); else save();
+    });
+    els.discard.addEventListener('click', discardActive);
     els.settings.addEventListener('click', () => showAuthOverlay());
     els.add.addEventListener('click', openAddDialog);
     els.delete.addEventListener('click', deleteCurrent);
@@ -1017,19 +1562,15 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.addSlug.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); els.addTitle.focus(); } });
     els.addTitle.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); confirmAdd(); } });
 
-    for (const id of ['title', 'occupant', 'virtue', 'code', 'lat', 'lng', 'mapX', 'mapY']) {
+    for (const id of ['title', 'occupant', 'virtue', 'code', 'lat', 'lng']) {
       els[id].addEventListener('input', () => {
         markDirty();
         if (id === 'code') checkCodeUniqueness();
-        if (id === 'mapX' || id === 'mapY') { placeSymbolicPin(numOrNull(els.mapX.value), numOrNull(els.mapY.value)); checkPinProximity(); }
         if ((id === 'lat' || id === 'lng') && state.geo) {
-          const lat = numOrNull(els.lat.value), lng = numOrNull(els.lng.value);
-          placeGeoMarker(lat, lng);
+          placeGeoMarker(numOrNull(els.lat.value), numOrNull(els.lng.value));
         }
       });
     }
-
-    els.symbolicMap.addEventListener('click', symbolicMapClick);
 
     els.audioFile.addEventListener('change', ev => {
       const f = ev.target.files?.[0]; if (f) uploadAudio(f); ev.target.value = '';
@@ -1044,10 +1585,39 @@ import '@toast-ui/editor/dist/toastui-editor.css'
       if (btn) { const fig = btn.closest('.photo-thumb'); if (fig?.dataset.name) deletePhoto(fig.dataset.name); }
     });
 
-    window.addEventListener('keydown', ev => {
-      if ((ev.ctrlKey || ev.metaKey) && ev.key === 's') { ev.preventDefault(); if (!els.save.disabled) save(); }
+    /* ---- Rewards mode ---- */
+    els.tabCottages.addEventListener('click', () => setMode('cottages'));
+    els.tabRewards.addEventListener('click', () => setMode('rewards'));
+    els.rwAdd.addEventListener('click', rwOpenAddDialog);
+    els.rwDelete.addEventListener('click', rwDeleteLevel);
+    els.rwAddConfirm.addEventListener('click', rwConfirmAddLevel);
+    els.rwAddId.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); els.rwAddName.focus(); } });
+    els.rwAddName.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); rwConfirmAddLevel(); } });
+    els.rwMoveUp.addEventListener('click', () => rwMove(-1));
+    els.rwMoveDown.addEventListener('click', () => rwMove(1));
+    for (const el of [els.rwTreTitle, els.rwName, els.rwThreshold]) {
+      el.addEventListener('input', () => { if (!state.rwFilling) rwOnEdit(); });
+    }
+    els.rwFinal.addEventListener('change', () => {
+      if (state.rwFilling) return;
+      rwUpdateFinalUI();
+      rwOnEdit();
     });
-    window.addEventListener('beforeunload', ev => { if (state.dirty) { ev.preventDefault(); ev.returnValue = ''; } });
+    els.rwImageFile.addEventListener('change', ev => {
+      const f = ev.target.files?.[0]; if (f) rwImageChosen(f); ev.target.value = '';
+    });
+    els.rwImageDelete.addEventListener('click', rwDeleteImage);
+
+    window.addEventListener('keydown', ev => {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === 's') {
+        ev.preventDefault();
+        if (els.save.disabled) return;
+        if (state.mode === 'rewards') rwSave(); else save();
+      }
+    });
+    window.addEventListener('beforeunload', ev => {
+      if (state.dirty || state.rwDirty) { ev.preventDefault(); ev.returnValue = ''; }
+    });
   }
 
   /* ---------- boot ---------- */

@@ -1,0 +1,41 @@
+{
+  "treasury": {
+    "title": "Twój Skarbiec",
+    "intro": "Zbierasz to, co daje las – zioła, liście, kwiaty i inne skarby natury. Nie po to, by mieć więcej, ale by wiedzieć, że kiedyś mogą się przydać Tobie lub innym. Każda odznaka to mały krok w stronę leśnej mądrości. Zbieraj dalej i twórz własny zielony skarbniczek!",
+    "image": ""
+  },
+  "levels": [
+    {
+      "id": "first-find",
+      "name": "Ziemia",
+      "threshold": 1,
+      "final": false,
+      "image": "assets/img/rewards/first-find/card.webp",
+      "body": ""
+    },
+    {
+      "id": "tropiciel",
+      "name": "Ogień",
+      "threshold": 5,
+      "final": false,
+      "image": "assets/img/rewards/tropiciel/card.webp",
+      "body": ""
+    },
+    {
+      "id": "polowa-drogi",
+      "name": "Wiatr",
+      "threshold": 13,
+      "final": false,
+      "image": "assets/img/rewards/polowa-drogi/card.webp",
+      "body": ""
+    },
+    {
+      "id": "mistrz-chatynkowa",
+      "name": "Gwiezdny pył",
+      "threshold": null,
+      "final": true,
+      "image": "assets/img/rewards/mistrz-chatynkowa/card.1b783372.webp",
+      "body": ""
+    }
+  ]
+}
