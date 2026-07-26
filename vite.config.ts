@@ -8,7 +8,12 @@ const staticEntries = [
   'data',
   'cottages',
   'legal',
+  // The standalone legal pages (legal/*.html) are plain HTML that links
+  // ../style.css, so the old stylesheet must ship alongside them.
+  'style.css',
   'CNAME',
+  'robots.txt',
+  'sitemap.xml',
 ]
 
 function copyStaticSite(): Plugin {
