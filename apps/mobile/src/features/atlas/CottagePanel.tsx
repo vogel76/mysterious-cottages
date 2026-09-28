@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import type { Cottage } from '@chatynkowo/core'
-import { Button, CloseIcon, FoundIcon, IconButton, KeyIcon, MarkdownView, NavigateIcon, NotebookIcon, Text, colors, iconSize, mapPalette, radius, space } from '../../ui'
+import { Button, CloseIcon, FoundIcon, IconButton, MarkdownView, NavigateIcon, NotebookIcon, PinIcon, Text, colors, iconSize, mapPalette, radius, space } from '../../ui'
 
 /* The parchment panel that rises over the map when a cottage is chosen,
    the site's cottage panel on a phone: the country, the name,
@@ -59,11 +59,11 @@ export function CottagePanel({ cottage, found, onClose, onNavigate, onHaveCode, 
             {t('map.navigate')}
           </Button>
           {found ? (
-            <Button style={styles.action} icon={<NotebookIcon size={iconSize.md} color={colors.ink} />} onPress={() => onOpenStory(cottage)}>
+            <Button surface="parchment" style={styles.action} icon={<NotebookIcon size={iconSize.md} color={mapPalette.panelButtonInk} />} onPress={() => onOpenStory(cottage)}>
               {t('mobile:atlas.story')}
             </Button>
           ) : (
-            <Button style={styles.action} icon={<KeyIcon size={iconSize.md} color={colors.ink} />} onPress={() => onHaveCode(cottage)}>
+            <Button surface="parchment" style={styles.action} icon={<PinIcon size={iconSize.md} color={mapPalette.panelButtonInk} />} onPress={() => onHaveCode(cottage)}>
               {t('map.haveCode')}
             </Button>
           )}
