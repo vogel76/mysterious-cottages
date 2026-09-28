@@ -722,7 +722,7 @@ h2 {
   isolation: isolate;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  background: #2a2419;
+  background: var(--map-frame);
   box-shadow: var(--shadow);
 }
 
@@ -807,9 +807,9 @@ h2 {
   display: block;
   width: 18px;
   height: 18px;
-  border: 3px solid #f6ecd3;
+  border: 3px solid var(--map-user-dot-border);
   border-radius: 50%;
-  background: #3d7fd9;
+  background: var(--map-user-dot);
   box-shadow: 0 0 0 2px rgb(28 52 84 / 0.35), 0 3px 8px rgb(22 15 9 / 0.4);
 }
 
@@ -833,11 +833,11 @@ h2 {
   width: 50px;
   height: 50px;
   place-items: center;
-  border: 2px solid #f0cf7f;
+  border: 2px solid var(--map-pin-border);
   border-radius: 50% 50% 50% 18%;
-  background: linear-gradient(145deg, #7d3f27, #45281c);
+  background: linear-gradient(145deg, var(--map-pin-top), var(--map-pin-bottom));
   box-shadow: 0 7px 14px rgb(44 25 13 / 0.38), inset 0 0 0 3px rgb(247 211 129 / 0.14);
-  color: #f4d37f;
+  color: var(--map-pin-ink);
   transform: rotate(-45deg);
   transition: transform 190ms ease, filter 190ms ease;
 }
@@ -853,9 +853,9 @@ h2 {
 }
 
 .cottage-marker.is-found {
-  border-color: #d9edbd;
-  background: linear-gradient(145deg, #517948, #294c36);
-  color: #e3f4c6;
+  border-color: var(--map-pin-found-border);
+  background: linear-gradient(145deg, var(--map-pin-found-top), var(--map-pin-found-bottom));
+  color: var(--map-pin-found-ink);
 }
 
 /* Optional per-cottage custom pin (data/cottages.json -> pin_custom_img), e.g.
@@ -878,11 +878,11 @@ h2 {
   place-content: center;
   align-items: center;
   gap: 4px;
-  border: 2px solid #edc671;
+  border: 2px solid var(--map-cluster-border);
   border-radius: 50%;
-  background: linear-gradient(145deg, #76502a, #3d2a1d);
+  background: linear-gradient(145deg, var(--map-cluster-top), var(--map-cluster-bottom));
   box-shadow: 0 8px 18px rgb(45 28 15 / 0.35), 0 0 0 5px rgb(225 184 99 / 0.18);
-  color: #f5d783;
+  color: var(--map-cluster-ink);
 }
 
 .cottage-cluster strong {
@@ -937,7 +937,7 @@ h2 {
   border: 1px solid rgb(225 184 99 / 0.5);
   background: rgb(40 32 23 / 0.92);
   box-shadow: 0 9px 22px rgb(22 15 9 / 0.25), inset 0 1px rgb(245 215 145 / 0.09);
-  color: #efdcab;
+  color: var(--map-chrome-ink);
   backdrop-filter: blur(12px);
   pointer-events: auto;
 }
@@ -1053,7 +1053,7 @@ h2 {
   border: 0;
   border-bottom: 1px solid rgb(225 184 99 / 0.25);
   background: transparent;
-  color: #efcf82;
+  color: var(--map-chrome-icon);
   cursor: pointer;
 }
 
@@ -1138,7 +1138,7 @@ h2 {
   width: min(390px, calc(100% - 40px));
   overflow: auto;
   padding: 28px;
-  border: 1px solid #b58b47;
+  border: 1px solid var(--map-panel-border);
   border-radius: var(--radius);
   background:
     linear-gradient(rgb(232 216 178 / 0.93), rgb(211 187 139 / 0.96)),
@@ -1163,12 +1163,12 @@ h2 {
   right: 16px;
   border-color: rgb(78 54 31 / 0.28);
   background: rgb(250 239 211 / 0.48);
-  color: #48321f;
+  color: var(--map-panel-ink);
 }
 
 .cottage-region {
   margin-bottom: 9px;
-  color: #76572f;
+  color: var(--map-panel-muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1197,7 +1197,7 @@ h2 {
   border: 1px solid rgb(69 101 61 / 0.3);
   border-radius: var(--radius-small);
   background: rgb(74 111 62 / 0.1);
-  color: #3f5835;
+  color: var(--map-clue-found-ink);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -1205,11 +1205,11 @@ h2 {
 .cottage-clue {
   border-color: rgb(111 76 35 / 0.28);
   background: rgb(138 97 43 / 0.1);
-  color: #604421;
+  color: var(--map-clue-ink);
 }
 
 .arrival-guide {
-  color: #4a3824;
+  color: var(--map-panel-text);
   font-size: 13px;
 }
 
@@ -1229,9 +1229,9 @@ h2 {
 }
 
 .cottage-panel .button-ghost {
-  border-color: #775630;
+  border-color: var(--map-panel-button-border);
   background: transparent;
-  color: #3e2d1d;
+  color: var(--map-panel-button-ink);
 }
 
 .code-form {

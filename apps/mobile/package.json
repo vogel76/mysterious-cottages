@@ -14,6 +14,7 @@
     "@chatynkowo/api": "workspace:*",
     "@chatynkowo/core": "workspace:*",
     "@chatynkowo/i18n": "workspace:*",
+    "@chatynkowo/theme": "workspace:*",
     "@expo-google-fonts/cinzel-decorative": "^0.4.1",
     "@expo-google-fonts/cormorant-garamond": "^0.4.1",
     "@formatjs/intl-displaynames": "^7.3.15",

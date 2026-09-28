@@ -152,12 +152,14 @@ the capability on the App ID; `ios.usesAppleSignIn` is already set.
 
 - Icons come only from `src/ui/icons.ts`, which mirrors the web vocabulary
   name for name (`CloseIcon`, `ChronicleIcon`, ...) and the `iconSize`
-  scale; `phosphor-react-native` is imported nowhere else, and no emoji or
-  typographic glyph is used as an icon. `scripts/check-conventions.mjs`
-  enforces both as part of `pnpm check`.
+  scale; the role names are the theme's `SHARED_ICON_ROLES` and
+  `MOBILE_ICON_ROLES`, checked at compile time. `phosphor-react-native` is
+  imported nowhere else, and no emoji or typographic glyph is used as an
+  icon. `scripts/check-conventions.mjs` enforces both as part of `pnpm check`.
 - Screens compose the primitives in `src/ui` and never restyle them; the
-  tokens in `src/ui/tokens.ts` are the `:root` values of the site's
-  `ui.css`, so a colour changes in both files together.
+  tokens come from `@chatynkowo/theme`, the same package the site's
+  stylesheet is generated from, so a colour changes in one place for both
+  clients.
 - Every user-facing string goes through i18next: the shared set
   (`packages/i18n/src/shared/`) as the `translation` namespace, the app-only
   set (`packages/i18n/src/mobile/`) as `mobile`, typed so both languages
