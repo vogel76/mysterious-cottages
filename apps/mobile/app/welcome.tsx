@@ -72,7 +72,7 @@ export default function WelcomeScreen() {
 
       <View style={styles.creed}>
         <CreedIcon size={iconSize.hero} weight="duotone" color={colors.accentStrong} />
-        <Text variant="lead" weight="italic">
+        <Text weight="italic">
           {t('lore.creedQuote')}
         </Text>
         <Text tone="soft">{t('lore.creedBody')}</Text>
@@ -121,7 +121,7 @@ export default function WelcomeScreen() {
           style={styles.photo}
           resizeMode="cover"
         />
-        <Text variant="lead" weight="italic" align="center" tone="soft">
+        <Text weight="italic" align="center" tone="soft">
           {t('guide.quote')}
         </Text>
       </View>

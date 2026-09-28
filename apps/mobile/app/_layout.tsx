@@ -32,7 +32,7 @@ const theme = {
   fonts: {
     regular: { fontFamily: fonts.body, fontWeight: '400' as const },
     medium: { fontFamily: fonts.semibold, fontWeight: '500' as const },
-    bold: { fontFamily: fonts.bold, fontWeight: '700' as const },
+    bold: { fontFamily: fonts.semibold, fontWeight: '700' as const },
     heavy: { fontFamily: fonts.display, fontWeight: '800' as const },
   },
 }

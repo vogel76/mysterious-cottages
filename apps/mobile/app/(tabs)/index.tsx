@@ -69,9 +69,7 @@ export default function AtlasScreen() {
           </Text>
           {total > 0 ? (
             <>
-              <Text variant="small" tone="faint">
-                {t('quest.stage', { stage: foundCount + 1 })}
-              </Text>
+              <Text variant="eyebrow">{t('quest.stage', { stage: foundCount + 1 })}</Text>
               <Text variant="small" tone="soft">
                 {upcoming ? t('quest.nextLevel', { name: upcoming.level.name, count: upcoming.remaining }) : t('quest.allFound')}
               </Text>

@@ -33,7 +33,7 @@ export function Sheet({ visible, onClose, closeLabel, title, eyebrow, presentati
         <View style={styles.header}>
           {eyebrow ? <Text variant="eyebrow">{eyebrow}</Text> : null}
           {title ? (
-            <Text variant="title" accessibilityRole="header">
+            <Text variant="heading" accessibilityRole="header">
               {title}
             </Text>
           ) : null}

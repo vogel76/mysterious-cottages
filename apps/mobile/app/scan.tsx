@@ -47,7 +47,7 @@ export default function ScanScreen() {
           <View style={styles.askIcon}>
             <CameraIcon size={iconSize.emblem} weight="duotone" color={colors.accentStrong} />
           </View>
-          <Text tone="soft" align="center" variant="lead">
+          <Text tone="soft" align="center">
             {blocked ? t('mobile:code.cameraDenied') : t('mobile:code.cameraRequest')}
           </Text>
           <View style={styles.askActions}>
