@@ -50,6 +50,23 @@ adb shell pm clear pl.chatynkowo.app                # the content cache keeps fi
 
 Remove the `.env` line afterwards; with it, the app needs that server.
 
+### A standalone APK for a phone
+
+The release variant embeds the JS bundle, so the installed app needs
+neither Metro nor the computer, like one from a store. Build it with no
+`.env` in place (the `EXPO_PUBLIC_*` values are inlined at build time):
+
+```bash
+cd apps/mobile/android
+./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a   # phones; drop the flag for a universal APK (all four ABIs, ~2.5x larger)
+# -> app/build/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/release/app-release.apk     # over USB or Wi-Fi debugging, or copy the file to the phone and open it
+```
+
+The release variant is signed with the debug keystore of the generated
+project, which is fine for your own devices but not for Google Play; a
+store build needs its own keystore or EAS Build.
+
 Checks, run from the repository root:
 
 ```bash
