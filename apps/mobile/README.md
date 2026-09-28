@@ -34,6 +34,22 @@ Configuration comes from `EXPO_PUBLIC_*` variables in `apps/mobile/.env`
 (template: `.env.example`); without the file the app uses the production
 Supabase project and `https://www.chatynkowo.pl` as the content origin.
 
+Because the content origin is the published site, a change under
+`packages/content/public` (a new cottage, a translation) reaches the app
+only once the site is deployed. To review it earlier, serve the package
+from the site's dev server and point the app at it through the emulator's
+port forwarding:
+
+```bash
+pnpm --filter @chatynkowo/web dev                   # serves packages/content/public at http://127.0.0.1:5173
+adb reverse tcp:5173 tcp:5173                       # the emulator's localhost:5173 -> the host
+echo 'EXPO_PUBLIC_CONTENT_BASE_URL=http://localhost:5173' > apps/mobile/.env
+npx expo start --dev-client --clear                 # the variable is inlined at bundle time
+adb shell pm clear pl.chatynkowo.app                # the content cache keeps files for up to a day
+```
+
+Remove the `.env` line afterwards; with it, the app needs that server.
+
 Checks, run from the repository root:
 
 ```bash
