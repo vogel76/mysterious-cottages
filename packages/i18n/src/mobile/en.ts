@@ -29,6 +29,7 @@ export const mobileEn: typeof mobilePl = {
     story: 'Open the tale',
   },
   code: {
+    openSettings: 'Open the app settings',
     scan: 'Scan the QR code',
     scanTitle: 'Scanning',
     scanHint: 'Point the camera at the QR code on the plaque.',

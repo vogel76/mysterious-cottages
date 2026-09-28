@@ -29,6 +29,7 @@ export const mobilePl = {
     story: 'Otwórz opowieść',
   },
   code: {
+    openSettings: 'Otwórz ustawienia aplikacji',
     scan: 'Zeskanuj kod QR',
     scanTitle: 'Skanowanie kodu',
     scanHint: 'Nakieruj aparat na kod QR z tabliczki.',
