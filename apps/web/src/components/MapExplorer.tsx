@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { Button, CloseIcon, CottageIcon, FoundIcon, IconButton, LinkButton, LocateIcon, NavigateIcon, PinIcon, ResetViewIcon, SearchIcon, SpinnerIcon, ZoomInIcon, ZoomOutIcon, iconSize } from '../ui'
 import L from 'leaflet'
 import 'leaflet.markercluster'
-import { COUNTRY_BOUNDS, detectCountry, EUROPE_BOUNDS } from '@chatynkowo/core'
+import { COUNTRY_BOUNDS, countryAt, detectCountry, EUROPE_BOUNDS } from '@chatynkowo/core'
 import { marked } from '../lib/markdown'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
@@ -30,6 +30,8 @@ const EUROPE = L.latLngBounds(EUROPE_BOUNDS)
    from TRAIL_ZOOM a single trail. */
 const REGION_ZOOM = 9.5
 const TRAIL_ZOOM = 13.5
+/* Where the kraj rung starts over the sea or outside the country presets. */
+const DEFAULT_KRAJ_ZOOM = 5.5
 
 function countryName(code: string, locale: string) {
   try {
@@ -281,14 +283,21 @@ export function MapExplorer({ cottages, foundSlugs, onOpenCode }: MapExplorerPro
       markersRef.current.set(cottage.slug, marker)
     })
 
-    /* Zoom tiers, recomputed on resize: the map floor fits Europe and the
-       kraj tier starts where the home country fills the view; above that the
-       view is a neighbourhood, then a single trail. Without a home country
-       there is no kraj rung and the ladder goes straight from europa. */
-    let krajMinZoom = 7
+    /* The level indicator describes what the view shows: europa until the
+       country under the map's centre fills the view's longer side (not just
+       fits inside it — a narrow view spans a country's width long before it
+       stops showing the neighbours), kraj from there, then a neighbourhood,
+       then a single trail. The map floor fits Europe and is recomputed on
+       resize. */
+    const tierPadding = () => L.point(container.clientWidth < 760 ? 32 : 64, container.clientWidth < 760 ? 80 : 64)
+    const krajMinZoom = () => {
+      const center = map.getCenter()
+      const country = countryAt({ lat: center.lat, lng: center.lng })
+      return country ? map.getBoundsZoom(L.latLngBounds(COUNTRY_BOUNDS[country]), true, tierPadding()) - 0.2 : DEFAULT_KRAJ_ZOOM
+    }
     const levelForZoom = (zoom: number): MapLevel => {
-      if (zoom < krajMinZoom - 0.45) return 'europa'
-      if (zoom < REGION_ZOOM) return homeCountry ? 'kraj' : 'europa'
+      if (zoom < krajMinZoom() - 0.45) return 'europa'
+      if (zoom < REGION_ZOOM) return 'kraj'
       return zoom < TRAIL_ZOOM ? 'region' : 'szlak'
     }
     levelForZoomRef.current = levelForZoom
@@ -303,10 +312,8 @@ export function MapExplorer({ cottages, foundSlugs, onOpenCode }: MapExplorerPro
       if (!selectedRef.current) setLevel(nextLevel)
     }
     const syncZoomTiers = () => {
-      const padding = L.point(container.clientWidth < 760 ? 32 : 64, container.clientWidth < 760 ? 80 : 64)
-      const nextMinimum = Math.max(3, map.getBoundsZoom(EUROPE, false, padding))
+      const nextMinimum = Math.max(3, map.getBoundsZoom(EUROPE, false, tierPadding()))
       map.setMinZoom(nextMinimum)
-      krajMinZoom = Math.max(nextMinimum, map.getBoundsZoom(homeBounds, false, padding))
       if (map.getZoom() < nextMinimum) map.setZoom(nextMinimum, { animate: false })
     }
     map.on('zoom', updatePresentation)
