@@ -22,6 +22,8 @@ export const mobilePl = {
     language: 'Język',
   },
   atlas: {
+    list: 'Lista Chatynek',
+    locateDenied: 'Aplikacja nie dostała zgody na odczyt położenia.',
     title: 'Atlas Chatynkowa',
     progress: '{{found}} z {{total}} Chatynek',
     story: 'Otwórz opowieść',
@@ -62,9 +64,13 @@ export const mobilePl = {
     notRanked: 'Zapisz pierwsze odkrycie w koncie, aby pojawić się w rankingu.',
   },
   profile: {
+    about: 'O Chatynkowie i jak zacząć',
     title: 'Profil zdobywcy',
     signedOut: 'Nie jesteś zalogowany.',
     saved: 'Zapisano.',
     finds: 'Odkrycia w koncie: {{count}}',
+  },
+  welcome: {
+    skip: 'Pomiń',
   },
 }
