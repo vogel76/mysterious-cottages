@@ -760,34 +760,6 @@ h2 {
     brightness(calc(0.83 + var(--map-reality) * 0.15));
 }
 
-.leaflet-regionLabels-pane,
-.leaflet-cottages-pane,
-.leaflet-atlas-pane {
-  transition: opacity 220ms ease, visibility 220ms ease;
-}
-
-/* data-atlas (set by MapExplorer) is "on" only in the zoom band where the
-   hand-drawn Jura atlas fills the view — there the region labels replace the
-   markers; everywhere else (country/Europe zooms, trails, abroad) the
-   clustered markers are the story. */
-.fantasy-map[data-atlas='on'] .leaflet-cottages-pane {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.fantasy-map[data-atlas='off'] .leaflet-regionLabels-pane {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.fantasy-map[data-level='europa'] .leaflet-atlas-pane {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
 .map-vignette {
   z-index: 480;
   border: 6px solid rgb(40 29 16 / 0.58);
@@ -823,20 +795,6 @@ h2 {
   color: #ead08c !important;
 }
 
-.atlas-area {
-  filter: drop-shadow(0 2px 3px rgb(53 35 18 / 0.22));
-  transition: opacity 160ms linear;
-}
-
-.atlas-area-1 { fill: #5b7357; }
-.atlas-area-2 { fill: #96763e; }
-.atlas-area-3 { fill: #5d5c74; }
-
-.fantasy-map[data-level='szlak'] .leaflet-atlas-pane {
-  opacity: 0.08;
-}
-
-.region-label-shell,
 .cottage-marker-shell,
 .cottage-cluster-shell,
 .user-location-shell {
@@ -868,36 +826,6 @@ h2 {
   0% { opacity: 0.9; transform: scale(0.55); }
   70% { opacity: 0; transform: scale(1.25); }
   100% { opacity: 0; transform: scale(1.25); }
-}
-
-.region-label {
-  display: grid;
-  width: 190px;
-  min-height: 58px;
-  place-content: center;
-  border: 1px solid rgb(95 68 35 / 0.5);
-  border-radius: 13px;
-  background: linear-gradient(#ddca98, #c7ad72);
-  box-shadow: 0 8px 16px rgb(44 30 17 / 0.25), inset 0 1px rgb(245 226 174 / 0.72);
-  color: #49321e;
-  cursor: pointer;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  line-height: 1.15;
-  transition: transform 180ms ease, filter 180ms ease;
-}
-
-.region-label:hover {
-  filter: brightness(1.06);
-  transform: translateY(-2px);
-}
-
-.region-label strong {
-  font-size: 15px;
-}
-
-.region-label span {
-  margin-top: 4px;
-  font-size: 10px;
 }
 
 .cottage-marker {
@@ -2115,10 +2043,6 @@ h2 {
     transform: none;
   }
 
-  .region-label {
-    transform: scale(0.82);
-  }
-
   .cottage-panel {
     top: auto;
     right: 0;
@@ -2894,7 +2818,6 @@ h2 {
 .map-search-error { font-size: 13px; }
 .map-legend { font-size: 12px; }
 .map-tip { font-size: 13px; }
-.region-label span { font-size: 12px; }
 .cottage-region { font-size: 12px; }
 .found-notice,
 .cottage-clue,
@@ -2913,13 +2836,7 @@ h2 {
 }
 
 .leaflet-marker-icon:focus-visible .cottage-marker,
-.leaflet-marker-icon:focus-visible .region-label {
-  outline: 3px solid #f2ca70;
-  outline-offset: 5px;
-  filter: brightness(1.12);
-}
-
-.main-nav button:focus-visible,
+.leaflet-marker-icon:focus-visible .main-nav button:focus-visible,
 .main-nav a:focus-visible,
 .quest-progress-mini:focus-visible,
 .quest-kronika:focus-visible,
@@ -2976,11 +2893,7 @@ h2 {
     transform: scale(1.06);
   }
 
-  .region-label:hover {
-    box-shadow: 0 12px 22px rgb(44 30 17 / .32), inset 0 1px rgb(245 226 174 / .82);
-  }
-
-  .treasury-toggle:hover {
+    .treasury-toggle:hover {
     filter: brightness(1.08);
     box-shadow: 0 16px 34px rgb(5 16 12 / .52), 0 0 0 5px rgb(210 166 77 / .13);
     transform: translateY(-3px) rotate(-3deg);
