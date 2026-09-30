@@ -94,6 +94,7 @@ export const mobileEn: typeof mobilePl = {
     levelProgress: '{{found}} of {{required}} finds',
   },
   ranking: {
+    showMore: 'Show more',
     signInTitle: 'Join the leaderboard',
     signInLead: 'Sign in to save your discoveries to an account and see your place.',
     signInGoogle: 'Sign in with Google',

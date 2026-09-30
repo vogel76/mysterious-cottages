@@ -94,6 +94,7 @@ export const mobilePl = {
     levelProgress: '{{found}} z {{required}} odkryć',
   },
   ranking: {
+    showMore: 'Pokaż więcej',
     signInTitle: 'Dołącz do rankingu',
     signInLead: 'Zaloguj się, aby zapisać odkrycia w koncie i zobaczyć swoje miejsce.',
     signInGoogle: 'Zaloguj przez Google',
