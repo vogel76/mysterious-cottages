@@ -80,6 +80,13 @@ export const mobileEn: typeof mobilePl = {
   },
   kronika: {
     subtitle: 'Seals and badges from your expedition',
+    cottagesTitle: 'Cottages',
+    openListAria: 'Open the list of Cottages: found and still waiting',
+    showAll: 'All',
+    showUndiscovered: 'Only undiscovered',
+    foundOn: 'Found {{date}}',
+    undiscovered: 'Not found yet',
+    noneUndiscovered: 'Every Cottage has been found.',
     earnedOn: 'Earned {{date}}',
     newBadge: 'New',
     unseenAria: 'New seals: {{count}}',

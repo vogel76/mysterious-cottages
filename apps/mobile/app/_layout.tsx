@@ -79,6 +79,17 @@ const fitSheet: NativeStackNavigationOptions = {
   contentStyle: { backgroundColor: colors.pageRaised },
 }
 
+/* A page sheet with its own header row (the heading and a close button):
+   the search and the cottage directory. Not a form sheet with detents: on
+   iOS 26 a detent sheet scrolls its list out of view when the keyboard
+   rises for the search field, and the page sheet handles the keyboard
+   itself. */
+const pageSheet: NativeStackNavigationOptions = {
+  presentation: 'modal',
+  headerShown: false,
+  contentStyle: { backgroundColor: colors.pageRaised },
+}
+
 /* Transparent, blurred bar on iOS; an opaque page-coloured bar on Android,
    where blur does not exist and the content starts beneath the bar. */
 const modalHeader = Platform.select<NativeStackNavigationOptions>({
@@ -208,17 +219,8 @@ function RootStack() {
           ...headerRightItems([{ role: 'close', label: t('mobile:common.close'), onPress: closeModal }]),
         }}
       />
-      {/* A page sheet, not a form sheet with detents: on iOS 26 the detent
-          sheet scrolls its list out of view when the keyboard rises for the
-          search field, and the page sheet handles the keyboard itself. */}
-      <Stack.Screen
-        name="search"
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.pageRaised },
-        }}
-      />
+      <Stack.Screen name="search" options={pageSheet} />
+      <Stack.Screen name="cottages" options={pageSheet} />
       <Stack.Screen
         name="story/[slug]"
         options={{

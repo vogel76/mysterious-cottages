@@ -80,6 +80,13 @@ export const mobilePl = {
   },
   kronika: {
     subtitle: 'Pieczęcie i odznaki z Twojej wyprawy',
+    cottagesTitle: 'Chatynki',
+    openListAria: 'Otwórz listę Chatynek: odkryte i te, które czekają',
+    showAll: 'Wszystkie',
+    showUndiscovered: 'Tylko nieodkryte',
+    foundOn: 'Odkryta {{date}}',
+    undiscovered: 'Jeszcze nieodkryta',
+    noneUndiscovered: 'Wszystkie Chatynki są już odkryte.',
     earnedOn: 'Zdobyta {{date}}',
     newBadge: 'Nowa',
     unseenAria: 'Nowe pieczęcie: {{count}}',
