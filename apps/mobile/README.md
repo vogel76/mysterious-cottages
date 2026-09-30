@@ -124,8 +124,8 @@ app/                     expo-router routes
                          about.tsx (the lore sections) and guide.tsx (the onboarding pager replayed)
   code.tsx               the code entry as a form sheet (auto-submits at the fourth digit)
   scan.tsx               the QR scanner, full screen under a transparent bar with torch and close items
-  search.tsx             the cottage search as a page sheet
-  cottages.tsx           every cottage, found first, with an undiscovered-only filter, a page sheet from the Kronika
+  cottages.tsx           every cottage, found first, with a search box and an undiscovered-only filter: one page
+                         sheet from the Atlas's search control (keyboard up) and the Kronika's progress card
   story/[slug].tsx       the story as a page sheet: the unlock ceremony the first time, a plain revisit later
   celebrate.tsx          the reward reveal, a transparent modal the Atlas presents after a story
   reward/[id].tsx        one reward card, a form sheet that opens at medium height and expands to full
@@ -143,7 +143,7 @@ src/
                          storage, Supabase and native sign-in, audio (expo-audio), recordings (file system), maps
                          hand-off, position, reachability store, haptics, accessibility announcements
   providers/             BootProvider, NetworkProvider, SessionProvider, ContentProvider, ProgressProvider, ToastProvider
-  features/              screen-level components per area: atlas/, code/, story/, kronika/, ranking/, profile/, welcome/
+  features/              screen-level components per area: atlas/, code/, cottages/ (the directory both tabs open), story/, kronika/, ranking/, profile/, welcome/
 plugins/                 config plugins: with-scene-delegate.js (UIScene life cycle for the iOS 27 SDK)
 locales/                 native permission strings per language (iOS Info.plist)
 assets/                  app icon, adaptive icon layers, the splash emblem and the logo, generated from the brand logo in
@@ -200,7 +200,7 @@ through `src/lib/haptics.ts`.
 | Story audio | `expo-audio` | background playback (`UIBackgroundModes: audio` via its plugin) and lock-screen / notification controls (`setActiveForLockScreen`); a language without a recording falls back to the Polish original when the file fails to load |
 | Recordings offline | `expo-file-system` | "Save on this device" downloads the mp3 into the document directory, one folder per language; a saved file plays from disk |
 | QR | `expo-camera` | `CameraView` scanning `qr` only, torch from the header; the code is resolved on the scanner itself through the same `useCodeEntry` as manual entry |
-| Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `formSheet` routes for the code, reward and rules, `modal` page sheets for the story, the search and the cottage list |
+| Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `formSheet` routes for the code, reward and rules, `modal` page sheets for the story and the cottage list |
 | Cottage sheet | `@gorhom/bottom-sheet` | the in-screen parchment sheet over the map with three snaps; the map stays pannable and the camera keeps room for the sheet |
 | Motion | `react-native-reanimated` 4 + `react-native-gesture-handler` | springs, entrances, the progress ring, the scrub bar, the toast gesture; every animation passes `ReduceMotion.System` |
 | Haptics | `expo-haptics` | one module (`src/lib/haptics.ts`): selection on controls, light on primary actions, medium on a pin and the seal, success and error on the code result |

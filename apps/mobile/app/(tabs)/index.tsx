@@ -211,7 +211,7 @@ export default function AtlasScreen() {
     map.current?.resetView()
   }, [])
 
-  const openSearch = useCallback(() => router.push('/search'), [router])
+  const openSearch = useCallback(() => router.push({ pathname: '/cottages', params: { search: '1' } }), [router])
 
   const onRingSettled = useCallback(() => haptic('light'), [])
 
