@@ -37,7 +37,6 @@ export const mobilePl = {
     firstDownloadTitle: 'Pobieram Chatynki',
     firstDownloadBody: 'Pierwsze uruchomienie wymaga połączenia. Potem mapa działa także bez zasięgu.',
     questCardAria: 'Postęp wyprawy: {{found}} z {{total}} Chatynek. Otwórz Kronikę.',
-    haveCodeAria: 'Mam kod. Przytrzymaj, aby zeskanować kod QR.',
   },
   code: {
     openSettings: 'Otwórz ustawienia aplikacji',

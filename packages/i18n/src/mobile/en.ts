@@ -37,7 +37,6 @@ export const mobileEn: typeof mobilePl = {
     firstDownloadTitle: 'Fetching the Cottages',
     firstDownloadBody: 'The first launch needs a connection. After that the map works offline too.',
     questCardAria: 'Expedition progress: {{found}} of {{total}} Cottages. Open the Chronicle.',
-    haveCodeAria: 'I have a code. Hold to scan a QR code.',
   },
   code: {
     openSettings: 'Open the app settings',
