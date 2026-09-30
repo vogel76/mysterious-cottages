@@ -69,7 +69,7 @@ const screenOptions: NativeStackNavigationOptions = {
   headerBackButtonDisplayMode: 'minimal',
 }
 
-/* A bottom sheet sized to its content: code entry, reward, rules. */
+/* A bottom sheet sized to its content: code entry, rules. */
 const fitSheet: NativeStackNavigationOptions = {
   presentation: 'formSheet',
   sheetAllowedDetents: 'fitToContents',
@@ -77,6 +77,16 @@ const fitSheet: NativeStackNavigationOptions = {
   sheetCornerRadius: radius.card,
   headerShown: false,
   contentStyle: { backgroundColor: colors.pageRaised },
+}
+
+/* A bottom sheet that opens at three fifths of the screen and can be pulled
+   to the full height: the reward, whose description scrolls as part of the
+   sheet. */
+const tallSheet: NativeStackNavigationOptions = {
+  ...fitSheet,
+  sheetAllowedDetents: [0.6, 1],
+  sheetInitialDetentIndex: 0,
+  sheetExpandsWhenScrolledToEdge: true,
 }
 
 /* A page sheet with its own header row (the heading and a close button):
@@ -246,7 +256,7 @@ function RootStack() {
           gestureEnabled: false,
         }}
       />
-      <Stack.Screen name="reward/[id]" options={fitSheet} />
+      <Stack.Screen name="reward/[id]" options={tallSheet} />
       <Stack.Screen name="rules" options={fitSheet} />
     </Stack>
   )
