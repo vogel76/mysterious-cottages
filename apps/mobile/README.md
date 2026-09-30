@@ -113,9 +113,9 @@ app/                     expo-router routes
   _layout.tsx            fonts and the bootstrap behind the splash, the providers, the root native Stack:
                          welcome and (tabs) behind Stack.Protected guards, the sheets and modals on top
   welcome.tsx            the onboarding pager (lore, creed, guide, notes, the two ways to begin), first launch only
-  (tabs)/_layout.tsx     native tabs (expo-router NativeTabs, SF Symbols on iOS, Material symbols on Android):
-                         Atlas / Kronika / Ranking / Profile, with a JS tab bar behind a rollback switch
-  (tabs)/index.tsx       the Atlas: the full-bleed map with floating chrome, the quest card, the "I have a code" pill
+  (tabs)/_layout.tsx     the tab bar (src/ui/TabBar.tsx): Atlas / Kronika / Ranking / Profile around a raised gold
+                         centre button that opens the code sheet (long press: the scanner)
+  (tabs)/index.tsx       the Atlas: the full-bleed map with floating chrome, the quest card, the seeker's position
                          and the parchment cottage sheet (a gesture sheet with three snaps)
   (tabs)/kronika/        its own native stack: the collection grid with the progress card
   (tabs)/ranking/        its own native stack: the leaderboard list, the rules and share header items
@@ -124,16 +124,17 @@ app/                     expo-router routes
   code.tsx               the code entry as a form sheet (auto-submits at the fourth digit)
   scan.tsx               the QR scanner, full screen under a transparent bar with torch and close items
   search.tsx             the cottage search as a page sheet
+  cottages.tsx           every cottage, found first, with an undiscovered-only filter, a page sheet from the Kronika
   story/[slug].tsx       the story as a page sheet: the unlock ceremony the first time, a plain revisit later
   celebrate.tsx          the reward reveal, a transparent modal the Atlas presents after a story
-  reward/[id].tsx        one reward card, form sheet
+  reward/[id].tsx        one reward card, a form sheet that opens at medium height and expands to full
   rules.tsx              the ranking rules, form sheet
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
   config.ts              EXPO_PUBLIC_* with production defaults, storage keys
   i18n/                  the i18next instance: "translation" + "mobile" namespaces, device locale, remembered choice
-  ui/                    the interface layer: tokens, fonts, icons (plus the native tab and header symbols), motion
+  ui/                    the interface layer: tokens, fonts, icons (plus the tab glyphs and the native header symbols), motion
                          tokens, Text, Button/LinkButton/IconButton on PressableScale, Screen, ContentImage (expo-image),
                          Skeleton, ProgressRing, ProgressBar, CrossfadeText, PageDots, GlowPulse, EmptyState, Toast,
                          SettingsList, SheetHandle, TabStack, headerItems, TextField, MarkdownView
@@ -150,7 +151,7 @@ assets/                  app icon, adaptive icon layers, the splash emblem and t
 
 Navigation model: the tab bar holds destinations only (the Atlas, the
 collection, the leaderboard, the profile); entering a code is an action and
-lives in a sheet reachable from the Atlas pill, the cottage sheet, the
+lives in a sheet reachable from the tab bar's centre button, the cottage sheet, the
 onboarding, the empty states and plaque links, so every `/code` href still
 works. A discovery runs in place (the sheet or the scanner shows the
 outcome), the story replaces that screen, and the Atlas presents the reward
@@ -193,16 +194,16 @@ through `src/lib/haptics.ts`.
 | Area | Library | Notes |
 |---|---|---|
 | Map | `@maplibre/maplibre-react-native` | the site's fairy-tale map: OpenStreetMap tiles washed into parchment that turn real as the seeker zooms in, teardrop pins gathered into clusters (`supercluster`), the search area around the chosen cottage, the level indicator, reset and search controls, the parchment cottage panel; the same per-country opening frame as the site (`homeCountry` / `homeBounds` in core `geo.ts`); "Navigate" opens the system maps app |
-| Position | `expo-location` | only on the locate control, foreground permission, one reading shown as a marker |
+| Position | `expo-location` | foreground permission asked from the locate control; once granted the Atlas watches the position while it is focused (balanced accuracy, 20 m) and shows it as a marker; the control centres the map |
 | Splash | `expo-splash-screen` | the brand logo on the page colour until the fonts and the bootstrap (language, progress, cached content, flags; capped at 1500 ms) are in, then a 300 ms fade into a fully formed first frame |
 | Story audio | `expo-audio` | background playback (`UIBackgroundModes: audio` via its plugin) and lock-screen / notification controls (`setActiveForLockScreen`); a language without a recording falls back to the Polish original when the file fails to load |
 | Recordings offline | `expo-file-system` | "Save on this device" downloads the mp3 into the document directory, one folder per language; a saved file plays from disk |
 | QR | `expo-camera` | `CameraView` scanning `qr` only, torch from the header; the code is resolved on the scanner itself through the same `useCodeEntry` as manual entry |
-| Tabs and stacks | `react-native-screens` through expo-router | `NativeTabs` (UITabBarController, Material 3 navigation bar), native stack headers (transparent with the system glass on iOS), `formSheet` routes for the code, reward and rules, `modal` page sheets for the story and the search |
+| Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `formSheet` routes for the code, reward and rules, `modal` page sheets for the story, the search and the cottage list |
 | Cottage sheet | `@gorhom/bottom-sheet` | the in-screen parchment sheet over the map with three snaps; the map stays pannable and the camera keeps room for the sheet |
 | Motion | `react-native-reanimated` 4 + `react-native-gesture-handler` | springs, entrances, the progress ring, the scrub bar, the toast gesture; every animation passes `ReduceMotion.System` |
 | Haptics | `expo-haptics` | one module (`src/lib/haptics.ts`): selection on controls, light on primary actions, medium on a pin and the seal, success and error on the code result |
-| Images | `expo-image` | `ContentImage`: memory and disk cache, cross-dissolve, prefetch of the reward art and the found cottages' photos |
+| Images | `expo-image` | `ContentImage`: memory and disk cache, cross-dissolve, retries with a backoff and on reconnect, a quiet fallback after the last failure, prefetch of the reward art and the found cottages' photos |
 | Legal pages | `expo-web-browser` | the terms and privacy pages open in an in-app browser sheet |
 | Fonts | `expo-font` + `@expo-google-fonts/*` | Cormorant Garamond and Cinzel Decorative, imported per weight; the repository's woff2 files cannot be used natively |
 | Locale | `expo-localization` | the device language picks the dictionary and, through `detectCountry`, the map's home country (never geolocation) |
@@ -238,10 +239,10 @@ TODO universal links: the plaque QR carries `https://www.chatynkowo.pl/?kod=NNNN
 
 ## Extending
 
-- A new tab is one `NativeTabs.Trigger` in `app/(tabs)/_layout.tsx` (icon
-  names in `TAB_ICONS`, `src/ui/icons.ts`) plus a file or a folder with a
-  `TabStack` layout; a new top-level surface (a companion's cottage, say) is
-  one `Stack.Screen` in `app/_layout.tsx`, as a sheet or a modal.
+- A new tab is one `Tabs.Screen` in `app/(tabs)/_layout.tsx` (glyph in
+  `TAB_ICONS`, `src/ui/icons.ts`) plus a file or a folder with a `TabStack`
+  layout; a new top-level surface (a companion's cottage, say) is one
+  `Stack.Screen` in `app/_layout.tsx`, as a sheet or a modal.
 - Per-user state that must reach the account follows the finds pattern:
   rules in core, a store in `src/lib`, a queue entry in `SyncQueue`, a
   push in `ProgressProvider`.
