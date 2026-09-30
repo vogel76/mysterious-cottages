@@ -7,6 +7,8 @@ export const mobilePl = {
     atlas: 'Atlas',
     kronika: 'Kronika',
     ranking: 'Ranking',
+    discover: 'Odkryj',
+    discoverAria: 'Odkryj Chatynkę: wpisz kod z tabliczki, albo przytrzymaj, aby zeskanować kod QR',
     profile: 'Profil',
   },
   common: {

@@ -7,6 +7,8 @@ export const mobileEn: typeof mobilePl = {
     atlas: 'Atlas',
     kronika: 'Chronicle',
     ranking: 'Leaderboard',
+    discover: 'Discover',
+    discoverAria: 'Discover a Cottage: enter the plaque code, or hold to scan the QR code',
     profile: 'Profile',
   },
   common: {

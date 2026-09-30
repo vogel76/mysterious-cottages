@@ -21,7 +21,7 @@ import {
   useProgress,
   useToast,
 } from '../src/providers'
-import { ToastHost, colors, fonts, headerRightItems, radius, useAppFonts } from '../src/ui'
+import { TabBarHeightProvider, ToastHost, colors, fonts, headerRightItems, radius, useAppFonts } from '../src/ui'
 
 /* The root of the app. Fonts and the bootstrap (language, progress, cached
    content, flags) load behind the native splash, which then fades into a
@@ -89,11 +89,15 @@ const modalHeader = Platform.select<NativeStackNavigationOptions>({
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={theme}>
-        <BootGate>
-          <AppShell />
-        </BootGate>
-      </ThemeProvider>
+      {/* The tab bar reports its height here so screens and the toast host,
+          which sits above the tabs, can keep clear of it. */}
+      <TabBarHeightProvider>
+        <ThemeProvider value={theme}>
+          <BootGate>
+            <AppShell />
+          </BootGate>
+        </ThemeProvider>
+      </TabBarHeightProvider>
     </GestureHandlerRootView>
   )
 }
