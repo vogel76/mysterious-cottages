@@ -6,24 +6,33 @@ import { Text, TrailIcon, colors, iconSize, space } from '../../ui'
 
 /* The guide's four steps drawn as a trail on a map: a footprint marker per
    step, alternating left and right of the column, with the number and the
-   title on one line and the body under them, and a dashed path winding from
-   one marker to the next behind them. Inside a row the path runs straight
-   under its marker's column; it crosses to the other bank only in the gap
-   between two rows, so it never passes over the words at any text size.
-   The rows are measured, so the path follows wherever the text lands. Shown
-   on the onboarding's guide page and on the profile's About screen. */
+   title on one line and a short line under them, and a dashed path winding
+   from one marker to the next behind them. Inside a row the path runs
+   straight under its marker's column; it crosses to the other bank only in
+   the gap between two rows, so it never passes over the words at any text
+   size. The rows are measured, so the path follows wherever the text lands.
+   Shown on the onboarding's guide page, where it takes the rest of the page
+   and the path runs from under the title to the footer, and on the
+   profile's About screen at its natural height. */
+
+type GuideTrailProps = {
+  /* Grow into the height the parent gives and spread the steps over it. */
+  fill?: boolean
+}
 
 const STEP_COUNT = 4
-const MARKER = 40
+const MARKER = 48
 const STROKE = 2
 const DASH = '6 8'
-/* The gap between rows is where the trail switches banks. */
-const ROW_GAP = space.xl
+/* The least room between two rows: the crossing to the other bank lives
+   there and needs this much height to read as a curve rather than a jog;
+   the fill mode spreads the rows wider than this. */
+const ROW_GAP = 2 * space.xl
 
 type Size = { width: number; height: number }
 type Band = { top: number; bottom: number }
 
-export function GuideTrail() {
+export function GuideTrail({ fill = false }: GuideTrailProps) {
   const { t } = useTranslation()
   const [size, setSize] = useState<Size>({ width: 0, height: 0 })
   /* Each step's row, in the trail's coordinates. */
@@ -54,7 +63,7 @@ export function GuideTrail() {
   const path = useMemo(() => trailPath(size, bands), [size, bands])
 
   return (
-    <View style={styles.trail} onLayout={onLayout} accessibilityRole="list">
+    <View style={[styles.trail, fill && styles.fill]} onLayout={onLayout} accessibilityRole="list">
       {path ? (
         <Svg
           style={StyleSheet.absoluteFill}
@@ -71,12 +80,12 @@ export function GuideTrail() {
         const right = index % 2 === 1
         const align = right ? 'right' : 'left'
         return (
-          <View key={step.number} style={[styles.step, right && styles.stepRight]} onLayout={(event) => placeRow(index, event)}>
+          <View key={step.number} style={[styles.step, right && styles.stepRight]} onLayout={(event) => placeRow(index, event)} accessible>
             <View style={styles.marker} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <TrailIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
+              <TrailIcon size={iconSize.lg} weight="fill" color={colors.accentStrong} />
             </View>
             <View style={[styles.text, right && styles.textRight]}>
-              <Text weight="bold" align={align}>
+              <Text variant="heading" align={align}>
                 <Text variant="eyebrow">{step.number}</Text>
                 {'  '}
                 {step.title}
@@ -117,6 +126,12 @@ function trailPath({ width, height }: Size, bands: Band[]): string {
 const styles = StyleSheet.create({
   trail: {
     gap: ROW_GAP,
+  },
+  /* Grows, never shrinks below the rows, so a large text size still scrolls
+     the page instead of clipping the trail. */
+  fill: {
+    flexGrow: 1,
+    justifyContent: 'space-evenly',
   },
   step: {
     flexDirection: 'row',

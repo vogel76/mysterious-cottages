@@ -112,7 +112,8 @@ sudo sysctl fs.inotify.max_user_watches=524288   # or: sudo apt install watchman
 app/                     expo-router routes
   _layout.tsx            fonts and the bootstrap behind the splash, the providers, the root native Stack:
                          welcome and (tabs) behind Stack.Protected guards, the sheets and modals on top
-  welcome.tsx            the onboarding pager (lore, creed, guide, notes, the two ways to begin), first launch only
+  welcome.tsx            the onboarding pager (the lore; the four questions and the creed; the guide as a trail;
+                         the photo, the notes and the two ways to begin), first launch only
   (tabs)/_layout.tsx     the tab bar (src/ui/TabBar.tsx): Atlas / Kronika / Ranking / Profile around a raised gold
                          centre button that opens the code sheet (long press: the scanner)
   (tabs)/index.tsx       the Atlas: the full-bleed map with floating chrome, the quest card, the seeker's position
