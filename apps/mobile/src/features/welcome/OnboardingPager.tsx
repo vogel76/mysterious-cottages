@@ -156,7 +156,7 @@ export function OnboardingPager({ mode, code }: OnboardingPagerProps) {
     ),
     questions: (
       <>
-        <LoreQuestions />
+        <LoreQuestions fill />
         <CreedCard />
       </>
     ),

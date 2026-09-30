@@ -2,9 +2,10 @@ import { CreedCard, ExpeditionNotes, GuideSection, LoreIntro, LoreQuestions, Tra
 import { Screen, space, useTabBarClearance } from '../../../src/ui'
 
 /* About: the site's lore and guide in one scroll under the native header,
-   the onboarding's blocks stacked in order, the guide in full with its lead
-   and the trail at its natural height. The scroll ends above the floating
-   tab bar. */
+   in the site's order (the intro, the creed, the four questions, the guide
+   in full with its lead and the trail at its natural height, the photo, the
+   notes); the onboarding puts the questions above the creed so they can
+   spread over their page. The scroll ends above the floating tab bar. */
 export default function AboutScreen() {
   const tabBarClearance = useTabBarClearance()
   return (

@@ -3,17 +3,21 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import { useTranslation } from 'react-i18next'
 import { Text, TrailIcon, colors, iconSize, space } from '../../ui'
+import { DISC, Disc } from './Disc'
 
-/* The guide's four steps drawn as a trail on a map: a footprint marker per
+/* The guide's four steps drawn as a trail on a map: a footprint disc per
    step, alternating left and right of the column, with the number and the
    title on one line and a short line under them, and a dashed path winding
-   from one marker to the next behind them. Inside a row the path runs
-   straight under its marker's column; it crosses to the other bank only in
-   the gap between two rows, so it never passes over the words at any text
-   size. The rows are measured, so the path follows wherever the text lands.
-   Shown on the onboarding's guide page, where it takes the rest of the page
-   and the path runs from under the title to the footer, and on the
-   profile's About screen at its natural height. */
+   from one disc to the next behind them. The number and the title are two
+   texts on one baseline, not one nested run: iOS takes a line's height from
+   its first character, so the small number in front capped the line and
+   clipped the tops of the title. Inside a row the path runs straight under
+   its disc's column; it crosses to the other bank only in the gap between
+   two rows, so it never passes over the words at any text size. The rows
+   are measured, so the path follows wherever the text lands. Shown on the
+   onboarding's guide page, where it takes the rest of the page and the path
+   runs from under the title to the footer, and on the profile's About
+   screen at its natural height. */
 
 type GuideTrailProps = {
   /* Grow into the height the parent gives and spread the steps over it. */
@@ -21,7 +25,6 @@ type GuideTrailProps = {
 }
 
 const STEP_COUNT = 4
-const MARKER = 48
 const STROKE = 2
 const DASH = '6 8'
 /* The least room between two rows: the crossing to the other bank lives
@@ -81,15 +84,16 @@ export function GuideTrail({ fill = false }: GuideTrailProps) {
         const align = right ? 'right' : 'left'
         return (
           <View key={step.number} style={[styles.step, right && styles.stepRight]} onLayout={(event) => placeRow(index, event)} accessible>
-            <View style={styles.marker} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Disc>
               <TrailIcon size={iconSize.lg} weight="fill" color={colors.accentStrong} />
-            </View>
+            </Disc>
             <View style={[styles.text, right && styles.textRight]}>
-              <Text variant="heading" align={align}>
+              <View style={[styles.title, right && styles.titleRight]}>
                 <Text variant="eyebrow">{step.number}</Text>
-                {'  '}
-                {step.title}
-              </Text>
+                <Text variant="heading" align={align} style={styles.titleText}>
+                  {step.title}
+                </Text>
+              </View>
               <Text variant="small" tone="soft" align={align}>
                 {step.body}
               </Text>
@@ -101,14 +105,14 @@ export function GuideTrail({ fill = false }: GuideTrailProps) {
   )
 }
 
-/* The trail as an SVG path: a straight run under each marker's column from
+/* The trail as an SVG path: a straight run under each disc's column from
    the row's top edge to its bottom edge, joined to the next row by a curve
    through the gap that carries it to the other bank, entering from the top
    edge above the first row and leaving through the bottom edge. Empty until
    every row has been measured. */
 function trailPath({ width, height }: Size, bands: Band[]): string {
   if (width <= 0 || bands.some((band) => band.bottom <= band.top)) return ''
-  const column = (index: number) => (index % 2 === 1 ? width - MARKER / 2 : MARKER / 2)
+  const column = (index: number) => (index % 2 === 1 ? width - DISC / 2 : DISC / 2)
   const first = bands[0]
   const segments = [`M ${column(0)} 0`, `L ${column(0)} ${first.bottom}`]
   for (let index = 1; index < bands.length; index += 1) {
@@ -141,21 +145,24 @@ const styles = StyleSheet.create({
   stepRight: {
     flexDirection: 'row-reverse',
   },
-  marker: {
-    width: MARKER,
-    height: MARKER,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-    borderRadius: MARKER / 2,
-    backgroundColor: colors.surface,
-  },
   text: {
     flex: 1,
     gap: space.xs,
   },
   textRight: {
     alignItems: 'flex-end',
+  },
+  /* As wide as the column, so a long title wraps inside it on either bank. */
+  title: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: space.sm,
+  },
+  titleRight: {
+    justifyContent: 'flex-end',
+  },
+  titleText: {
+    flexShrink: 1,
   },
 })

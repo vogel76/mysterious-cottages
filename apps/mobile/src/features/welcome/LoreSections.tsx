@@ -19,6 +19,7 @@ import {
   space,
   type Icon,
 } from '../../ui'
+import { Disc } from './Disc'
 import { GuideTrail } from './GuideTrail'
 
 /* The site's lore and guide sections as building blocks: the onboarding
@@ -45,10 +46,11 @@ export function LoreIntro() {
 }
 
 /* The four questions the site answers in its cards (what the cottages are,
-   who lives there, how to find one, what to do on arrival) as four rows: a
-   glyph, the question and its answer, at full width so every answer is a
-   line or two and the four read top-down in one column. */
-export function LoreQuestions() {
+   who lives there, how to find one, what to do on arrival) as four rows:
+   the glyph in a disc, the question and its answer, at full width so every
+   answer is a line or two and the four read top-down in one column. On the
+   onboarding page the rows spread over the height above the creed. */
+export function LoreQuestions({ fill = false }: { fill?: boolean }) {
   const { t } = useTranslation()
   const questions: Array<{ Glyph: Icon; title: string; body: string }> = [
     { Glyph: CottageIcon, title: t('lore.cardWhatTitle'), body: t('lore.cardWhatBody') },
@@ -57,10 +59,12 @@ export function LoreQuestions() {
     { Glyph: QrIcon, title: t('lore.cardArriveTitle'), body: t('lore.cardArriveBody') },
   ]
   return (
-    <View style={styles.rows} accessibilityRole="list">
+    <View style={[styles.rows, fill && styles.rowsFill]} accessibilityRole="list">
       {questions.map(({ Glyph, title, body }) => (
         <View key={title} style={styles.row} accessible>
-          <Glyph size={iconSize.xl} weight="duotone" color={colors.accentStrong} />
+          <Disc>
+            <Glyph size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
+          </Disc>
           <View style={styles.rowText}>
             <Text weight="bold">{title}</Text>
             <Text variant="small" tone="soft">
@@ -176,11 +180,17 @@ const styles = StyleSheet.create({
     gap: space.sm,
   },
   rows: {
-    gap: space.md,
+    gap: space.lg,
+  },
+  /* Grows, never shrinks below the rows, so a large text size still scrolls
+     the page instead of clipping the rows. */
+  rowsFill: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: space.md,
   },
   rowText: {
