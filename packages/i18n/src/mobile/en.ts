@@ -30,6 +30,10 @@ export const mobileEn: typeof mobilePl = {
   },
   atlas: {
     locateDenied: 'The app was not allowed to read your position.',
+    nearestAria: 'Nearest Cottage: {{title}}, {{distance}} away',
+    nearestHint: 'Takes the map to this Cottage',
+    distanceKm: '{{value}} km',
+    distanceM: '{{value}} m',
     title: 'Chatynkowo Atlas',
     progress: '{{found}} of {{total}} Cottages',
     story: 'Open the tale',

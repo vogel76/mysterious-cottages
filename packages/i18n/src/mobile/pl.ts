@@ -30,6 +30,10 @@ export const mobilePl = {
   },
   atlas: {
     locateDenied: 'Aplikacja nie dostała zgody na odczyt położenia.',
+    nearestAria: 'Najbliższa Chatynka: {{title}}, {{distance}} stąd',
+    nearestHint: 'Przenosi mapę do tej Chatynki',
+    distanceKm: '{{value}} km',
+    distanceM: '{{value}} m',
     title: 'Atlas Chatynkowa',
     progress: '{{found}} z {{total}} Chatynek',
     story: 'Otwórz opowieść',
