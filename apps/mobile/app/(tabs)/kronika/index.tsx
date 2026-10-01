@@ -143,6 +143,9 @@ export default function KronikaScreen() {
         renderItem={renderCell}
         numColumns={2}
         columnWrapperStyle={styles.row}
+        /* Android clips off-screen rows by default and a picture clipped
+           while loading can stay blank once it comes into view. */
+        removeClippedSubviews={false}
         contentContainerStyle={[styles.content, readable, { paddingBottom: space.xxl + tabBarClearance }]}
         contentInsetAdjustmentBehavior="automatic"
         scrollIndicatorInsets={{ bottom: tabBarClearance }}

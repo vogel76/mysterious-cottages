@@ -142,6 +142,8 @@ export default function RankingScreen() {
         renderItem={renderRow}
         getItemLayout={(_, index) => ({ length: LEADERBOARD_ROW_HEIGHT, offset: LEADERBOARD_ROW_HEIGHT * index, index })}
         initialNumToRender={INITIAL_ROWS}
+        /* As in the Kronika: an avatar clipped while loading can stay blank. */
+        removeClippedSubviews={false}
         itemLayoutAnimation={layoutLinear}
         onEndReached={loadMore}
         onEndReachedThreshold={END_REACHED_THRESHOLD}
