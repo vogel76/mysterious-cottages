@@ -227,6 +227,8 @@ through `src/lib/haptics.ts`.
 | Fonts | `expo-font` + `@expo-google-fonts/*` | Cormorant Garamond and Cinzel Decorative, imported per weight; the repository's woff2 files cannot be used natively |
 | Locale | `expo-localization` | the device language picks the dictionary and, through `detectCountry`, the map's home country (never geolocation) |
 | Country names | `@formatjs/intl-displaynames` | Hermes has no `Intl.DisplayNames`; the polyfill with Polish and English data names a cottage's country in the map panel, as the site does |
+| Release size | `expo-build-properties` | R8 and resource shrinking in Android release builds (`enableMinifyInReleaseBuilds`, `enableShrinkResourcesInReleaseBuilds`): the Java/Kotlin code drops from 55 MB to about 21 MB before packaging; the native libraries ship their own keep rules, so no rules of ours |
+| Locale filter | `plugins/with-locale-filters.js` | config plugin that writes the Android Gradle plugin's `localeFilters` from `expo.locales` in app.json, so the libraries' strings in the other eighty languages stay out of the APK (Google Play does the same split from an app bundle) |
 | Scene life cycle | `plugins/with-scene-delegate.js` | config plugin for the iOS 27 SDK, which asserts at launch unless the app adopts UIScene: the generated `AppDelegate` conforms to `ExpoReactNativeFactoryProvider` and stops starting React Native itself, a `SceneDelegate` subclasses Expo's `ExpoAppSceneDelegate` (it creates the window and starts React Native from the scene), and `Info.plist` gets the `UIApplicationSceneManifest`; idempotent, skipped from SDK 58 on (the template adopts scenes itself), refuses an expo older than 57.0.25 |
 
 Sign-in setup lives in `supabase/README.md` (the Google and Apple
@@ -248,8 +250,14 @@ TODO universal links: the plaque QR carries `https://www.chatynkowo.pl/?kod=NNNN
   name for name (`CloseIcon`, `ChronicleIcon`, ...) and the `iconSize`
   scale; the role names are the theme's `SHARED_ICON_ROLES` and
   `MOBILE_ICON_ROLES`, checked at compile time. `phosphor-react-native` is
-  imported nowhere else, and no emoji or typographic glyph is used as an
-  icon. `scripts/check-conventions.mjs` enforces both as part of `pnpm check`.
+  imported nowhere else, and only through its per-icon entries
+  (`phosphor-react-native/src/icons/<Name>`): Metro does not tree-shake,
+  and the package root would put all 1500 icons in the bundle. Those
+  entries are sources, so the type check needs Expo's augmentations
+  (`src/types/expo.d.ts` keeps the reference in every checkout; the
+  generated `expo-env.d.ts` is ignored). No emoji or typographic glyph is
+  used as an icon. `scripts/check-conventions.mjs` enforces all of this as
+  part of `pnpm check`.
 - Screens compose the primitives in `src/ui` and never restyle them; the
   tokens come from `@chatynkowo/theme`, the same package the site's
   stylesheet is generated from, so a colour changes in one place for both
