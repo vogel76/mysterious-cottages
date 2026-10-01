@@ -22,7 +22,7 @@ import {
   useProgress,
   useToast,
 } from '../src/providers'
-import { TabBarHeightProvider, ToastHost, colors, fonts, headerRightItems, radius, useAppFonts } from '../src/ui'
+import { TabBarHeightProvider, ToastHost, colors, fonts, headerRightItems, useAppFonts } from '../src/ui'
 
 /* The root of the app. Fonts and the bootstrap (language, progress, cached
    content, flags) load behind the native splash, which then fades into a
@@ -70,24 +70,14 @@ const screenOptions: NativeStackNavigationOptions = {
   headerBackButtonDisplayMode: 'minimal',
 }
 
-/* A bottom sheet sized to its content: code entry, rules. */
-const fitSheet: NativeStackNavigationOptions = {
-  presentation: 'formSheet',
-  sheetAllowedDetents: 'fitToContents',
-  sheetGrabberVisible: true,
-  sheetCornerRadius: radius.card,
+/* A route that rises as a sheet (src/ui/Sheet.tsx) over the screen
+   beneath: the code gate, a reward, the rules. The route is transparent
+   and still; the sheet brings its own motion and scrim. */
+const sheetRoute: NativeStackNavigationOptions = {
+  presentation: 'transparentModal',
+  animation: 'none',
   headerShown: false,
-  contentStyle: { backgroundColor: colors.pageRaised },
-}
-
-/* A bottom sheet that opens at three fifths of the screen and can be pulled
-   to the full height: the reward, whose description scrolls as part of the
-   sheet. */
-const tallSheet: NativeStackNavigationOptions = {
-  ...fitSheet,
-  sheetAllowedDetents: [0.6, 1],
-  sheetInitialDetentIndex: 0,
-  sheetExpandsWhenScrolledToEdge: true,
+  contentStyle: { backgroundColor: 'transparent' },
 }
 
 /* A page sheet with its own header row (the heading and a close button):
@@ -203,7 +193,7 @@ function RootStack() {
       <Stack.Protected guard={welcomeSeen}>
         <Stack.Screen name="(tabs)" options={{ presentation: 'card', animation: 'fade' }} />
       </Stack.Protected>
-      <Stack.Screen name="code" options={fitSheet} />
+      <Stack.Screen name="code" options={sheetRoute} />
       <Stack.Screen
         name="scan"
         options={{
@@ -247,8 +237,8 @@ function RootStack() {
           gestureEnabled: false,
         }}
       />
-      <Stack.Screen name="reward/[id]" options={tallSheet} />
-      <Stack.Screen name="rules" options={fitSheet} />
+      <Stack.Screen name="reward/[id]" options={sheetRoute} />
+      <Stack.Screen name="rules" options={sheetRoute} />
     </Stack>
   )
 }

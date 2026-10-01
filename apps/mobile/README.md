@@ -129,14 +129,14 @@ app/                     expo-router routes
   (tabs)/ranking/        its own native stack: the leaderboard list, the rules and share header items
   (tabs)/profile/        its own native stack: grouped settings (account, language, lore, legal, social),
                          about.tsx (the lore sections) and guide.tsx (the onboarding pager replayed)
-  code.tsx               the code entry as a form sheet (auto-submits at the fourth digit)
+  code.tsx               the code entry as a sheet (auto-submits at the fourth digit)
   scan.tsx               the QR scanner, full screen under a transparent bar with torch and close items
   cottages.tsx           every cottage, found first, with a search box and an undiscovered-only filter: one page
                          sheet from the Atlas's search control (keyboard up) and the Kronika's progress card
   story/[slug].tsx       the story as a page sheet: the unlock ceremony the first time, a plain revisit later
   celebrate.tsx          the reward reveal, a transparent modal the Atlas presents after a story
-  reward/[id].tsx        one reward card, a form sheet that opens at medium height and expands to full
-  rules.tsx              the ranking rules, form sheet
+  reward/[id].tsx        one reward card, a sheet that opens at three fifths and can be pulled to the top
+  rules.tsx              the ranking rules, a sheet sized to its content
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
@@ -145,7 +145,7 @@ src/
   ui/                    the interface layer: tokens, fonts, icons (plus the tab glyphs and the native header symbols), motion
                          tokens, Text, Button/LinkButton/IconButton on PressableScale, Screen, ContentImage (expo-image),
                          Skeleton, ProgressRing, CrossfadeText, PageDots, GlowPulse, EmptyState, Toast,
-                         SettingsList, SheetHandle, TabStack, headerItems, TextField, MarkdownView
+                         SettingsList, Sheet (the base of every sheet route), TabStack, headerItems, TextField, MarkdownView
   lib/                   adapters: bootstrap (what the splash reads), cached content client, progress + sync-queue
                          storage, Supabase and native sign-in, audio (expo-audio), recordings (file system), maps
                          hand-off, position, reachability store, haptics, accessibility announcements
@@ -218,8 +218,8 @@ through `src/lib/haptics.ts`.
 | Story audio | `expo-audio` | background playback (`UIBackgroundModes: audio` via its plugin) and lock-screen / notification controls (`setActiveForLockScreen`); a language without a recording falls back to the Polish original when the file fails to load |
 | Recordings offline | `expo-file-system` | "Save on this device" downloads the mp3 into the document directory, one folder per language; a saved file plays from disk |
 | QR | `expo-camera` | `CameraView` scanning `qr` only, torch from the header; the code is resolved on the scanner itself through the same `useCodeEntry` as manual entry |
-| Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `formSheet` routes for the code, reward and rules, `modal` page sheets for the story and the cottage list |
-| Cottage sheet | `@gorhom/bottom-sheet` | the in-screen parchment sheet over the map with three snaps; the map stays pannable and the camera keeps room for the sheet |
+| Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `transparentModal` routes carrying the shared sheet (src/ui/Sheet.tsx) for the code, reward and rules, `modal` page sheets for the story and the cottage list |
+| Sheets | `@gorhom/bottom-sheet` | one base for every sheet: the in-screen parchment panel over the map (three snaps, the map stays pannable, the camera keeps room for it) and the sheet routes (the code gate, a reward, the rules), which open at their own height or part-way and can be pulled to the top; a scroll inside moves the content first |
 | Motion | `react-native-reanimated` 4 + `react-native-gesture-handler` | springs, entrances, the progress ring, the scrub bar, the toast gesture; every animation passes `ReduceMotion.System` |
 | Haptics | `expo-haptics` | one module (`src/lib/haptics.ts`): selection on controls, light on primary actions, medium on a pin and the seal, success and error on the code result |
 | Images | `expo-image` | `ContentImage`: memory and disk cache, cross-dissolve, retries with a backoff and on reconnect, a quiet fallback after the last failure, prefetch of the reward art and the found cottages' photos |
