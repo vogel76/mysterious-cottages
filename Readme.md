@@ -19,7 +19,7 @@ packages/
     public/    the tree the site publishes as is: cottages/ (stories), data/ (manifests), assets/ (recordings, images)
     private/   the secret plaque codes and image originals; never published
     scripts/   the public code-hash lookup builder
-supabase/      backend description (README); the schema itself is not versioned here
+supabase/      backend description (README) and the Sign in with Apple script; the schema itself is not versioned here
 scripts/       repository-wide checks (conventions)
 ```
 
