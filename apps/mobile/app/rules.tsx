@@ -11,9 +11,11 @@ export default function RulesScreen() {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   return (
-    <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space.lg) + space.sm }]} accessible accessibilityLabel={t('ranking.rulesAria')}>
+    <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space.lg) + space.sm }]}>
       <SheetHandle style={styles.handleInset} />
-      <Text variant="eyebrow">{t('ranking.rulesTitle')}</Text>
+      <Text variant="eyebrow" accessibilityRole="header">
+        {t('ranking.rulesTitle')}
+      </Text>
       <Text>
         <Text weight="bold">{t('ranking.rule1Title')}. </Text>
         {t('ranking.rule1Body')}
@@ -28,7 +30,6 @@ export default function RulesScreen() {
     </View>
   )
 }
-
 
 const styles = StyleSheet.create({
   handleInset: {

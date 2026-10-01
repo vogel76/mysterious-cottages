@@ -4,7 +4,7 @@ import Animated, { cancelAnimation, interpolateColor, useAnimatedStyle, useShare
 import { useFocusEffect } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { haptic } from '../../lib/haptics'
-import { DURATIONS, ReduceMotion, SPRINGS, Text, colors, fonts, radius, space, useReducedMotion } from '../../ui'
+import { DURATIONS, ReduceMotion, SPRINGS, Text, colors, radius, space, useReducedMotion } from '../../ui'
 import type { CodePhase } from './useCodeEntry'
 import { SHAKE_MS, useShake } from './useShake'
 
@@ -113,7 +113,7 @@ export function PinInput({ value, onChange, onSubmit, phase, autoFocus = false }
         returnKeyType="done"
         caretHidden
         selectionColor="transparent"
-        accessibilityLabel={t('mobile:code.pasteAria')}
+        accessibilityLabel={t('mobile:code.inputAria')}
         style={styles.input}
       />
     </View>
@@ -166,7 +166,7 @@ function PinBox({ digit, active, phase, width }: { digit: string; active: boolea
 
   return (
     <Animated.View style={[styles.box, { width, height: Math.round(width * BOX_RATIO) }, motion]}>
-      <Text variant="display" style={styles.digit} adjustsFontSizeToFit numberOfLines={1}>
+      <Text variant="digit" adjustsFontSizeToFit numberOfLines={1}>
         {digit}
       </Text>
     </Animated.View>
@@ -187,11 +187,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderRadius: radius.control,
-  },
-  digit: {
-    fontFamily: fonts.display,
-    fontSize: 30,
-    lineHeight: 36,
   },
   /* Over the whole row, drawing nothing: a transparent colour rather than
      a zero opacity, which would stop the touches on iOS. */

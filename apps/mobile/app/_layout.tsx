@@ -17,6 +17,7 @@ import {
   SessionProvider,
   ToastProvider,
   useBoot,
+  useCloseModal,
   useContent,
   useProgress,
   useToast,
@@ -191,16 +192,8 @@ function Toasts() {
 
 function RootStack() {
   const { t } = useTranslation()
-  const router = useRouter()
   const { welcomeSeen } = useBoot()
-
-  /* Modals close back to whatever is beneath, or to the Atlas (the
-     onboarding on a fresh install) when they were the entry point of a
-     cold deep link. */
-  const closeModal = () => {
-    if (router.canGoBack()) router.back()
-    else router.replace(welcomeSeen ? '/' : '/welcome')
-  }
+  const closeModal = useCloseModal()
 
   return (
     <Stack screenOptions={screenOptions}>
@@ -219,7 +212,7 @@ function RootStack() {
           headerShown: true,
           headerTransparent: true,
           headerTitle: t('mobile:code.scanTitle'),
-          headerTitleStyle: { fontFamily: fonts.display, color: colors.ink, fontSize: 17 },
+          headerTitleStyle: { fontFamily: fonts.display, color: colors.ink },
           headerTintColor: colors.ink,
           headerBackVisible: false,
           gestureEnabled: false,

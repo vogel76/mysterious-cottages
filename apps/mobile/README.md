@@ -25,10 +25,17 @@ npx expo run:ios                    # macOS only
 npx expo start --dev-client         # later starts, with the client already installed
 ```
 
-The native projects (`android/`, `ios/`) are generated from `app.json` by
-continuous native generation and are not committed; `expo run:*` creates
-them on demand. After changing `app.json` or adding a native module, run
+The native projects (`android/`, `ios/`) are generated from `app.json` (and
+`app.config.ts`, which adds what depends on the environment) by continuous
+native generation and are not committed; `expo run:*` creates them on
+demand. After changing either file or adding a native module, run
 `npx expo prebuild --clean` or simply `expo run:*` again.
+
+Tablets are first-class: the iPhone keeps portrait, the iPad takes every
+orientation (`UISupportedInterfaceOrientations~ipad`), and since iPadOS 26
+runs apps in windows of any shape, reading content keeps to the readable
+width (`sizes.readable`, the `readable` column style in `src/ui`) while the
+Atlas stays full-bleed.
 
 Configuration comes from `EXPO_PUBLIC_*` variables in `apps/mobile/.env`
 (template: `.env.example`); without the file the app uses the production
@@ -137,13 +144,17 @@ src/
   i18n/                  the i18next instance: "translation" + "mobile" namespaces, device locale, remembered choice
   ui/                    the interface layer: tokens, fonts, icons (plus the tab glyphs and the native header symbols), motion
                          tokens, Text, Button/LinkButton/IconButton on PressableScale, Screen, ContentImage (expo-image),
-                         Skeleton, ProgressRing, ProgressBar, CrossfadeText, PageDots, GlowPulse, EmptyState, Toast,
+                         Skeleton, ProgressRing, CrossfadeText, PageDots, GlowPulse, EmptyState, Toast,
                          SettingsList, SheetHandle, TabStack, headerItems, TextField, MarkdownView
   lib/                   adapters: bootstrap (what the splash reads), cached content client, progress + sync-queue
                          storage, Supabase and native sign-in, audio (expo-audio), recordings (file system), maps
                          hand-off, position, reachability store, haptics, accessibility announcements
-  providers/             BootProvider, NetworkProvider, SessionProvider, ContentProvider, ProgressProvider, ToastProvider
+  providers/             BootProvider, NetworkProvider, SessionProvider, ContentProvider, ProgressProvider, ToastProvider,
+                         useCloseModal (the one way a modal route closes)
   features/              screen-level components per area: atlas/, code/, cottages/ (the directory both tabs open), story/, kronika/, ranking/, profile/, welcome/
+app.config.ts            the configuration that depends on the environment: Sign in with Apple (the capability and its
+                         plugin, unless EXPO_PUBLIC_APPLE_SIGN_IN is 0), the Google sign-in plugin with the iOS URL scheme
+                         derived from EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, the Apple team that signs device builds
 plugins/                 config plugins: with-scene-delegate.js (UIScene life cycle for the iOS 27 SDK)
 locales/                 native permission strings per language (iOS Info.plist)
 assets/                  app icon, adaptive icon layers, the splash emblem and the logo, generated from the brand logo in
@@ -186,9 +197,16 @@ through `src/lib/haptics.ts`.
   lives in AsyncStorage with URL detection off; token refresh runs only in
   the foreground. Sign-in is native: Google (`@react-native-google-signin`)
   and Apple (`expo-apple-authentication`), both handed to
-  `signInWithIdToken`. It is hidden behind `EXPO_PUBLIC_AUTH_ENABLED` until
-  the providers are configured in the backend; the app is fully usable
-  signed out.
+  `signInWithIdToken`. The build offers what it can: the Google button once
+  `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` is set (on iOS once
+  `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` is too), the Apple button on iOS unless
+  `EXPO_PUBLIC_APPLE_SIGN_IN=0` left the capability out of the build; with
+  neither, the account controls stay hidden and the app runs signed out,
+  like the site. A closed
+  dialog is not a failure; a failure is a toast and a console line. Signing
+  out revokes the session when the backend can be reached and forgets it on
+  the device either way; the sync queue ends with the session, the Kronika
+  stays.
 
 ## Native pieces
 
@@ -211,11 +229,16 @@ through `src/lib/haptics.ts`.
 | Country names | `@formatjs/intl-displaynames` | Hermes has no `Intl.DisplayNames`; the polyfill with Polish and English data names a cottage's country in the map panel, as the site does |
 | Scene life cycle | `plugins/with-scene-delegate.js` | config plugin for the iOS 27 SDK, which asserts at launch unless the app adopts UIScene: the generated `AppDelegate` conforms to `ExpoReactNativeFactoryProvider` and stops starting React Native itself, a `SceneDelegate` subclasses Expo's `ExpoAppSceneDelegate` (it creates the window and starts React Native from the scene), and `Info.plist` gets the `UIApplicationSceneManifest`; idempotent, skipped from SDK 58 on (the template adopts scenes itself), refuses an expo older than 57.0.25 |
 
-Google sign-in on iOS additionally needs the library's config plugin with
-the `iosUrlScheme` from the Google Cloud console; add it to `app.json`
-`plugins` when the provider is configured (the plugin refuses to run
-without the scheme, which is why it is not listed yet). Apple sign-in needs
-the capability on the App ID; `ios.usesAppleSignIn` is already set.
+Sign-in setup lives in `supabase/README.md` (the Google and Apple
+providers, their client ids, the Supabase side). On the app's side
+everything comes from `.env` through `app.config.ts`, and a change there is
+followed by a native rebuild: the Google sign-in plugin joins the build with
+`EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` read backwards as its iOS URL scheme (the
+plugin refuses to run without one); Sign in with Apple, the capability on
+the App ID (`ios.usesAppleSignIn`) and the `expo-apple-authentication`
+plugin, is in every build unless `EXPO_PUBLIC_APPLE_SIGN_IN=0`, which a free
+Personal Team sets because it cannot sign the capability; `APPLE_TEAM_ID`
+names the team that signs device builds.
 
 TODO universal links: the plaque QR carries `https://www.chatynkowo.pl/?kod=NNNN`. The Android half is in place (`android.intentFilters` for `https://www.chatynkowo.pl/`, `/index.html` and `https://chatynkowo.pl/` with `autoVerify`; it stays a plain browser choice until the site serves `/.well-known/assetlinks.json` with `delegate_permission/common.handle_all_urls` for `pl.chatynkowo.app` and the release signing SHA-256). The iOS half is not: add `ios.associatedDomains: ["applinks:www.chatynkowo.pl", "applinks:chatynkowo.pl"]` to `app.json` only once the site serves `/.well-known/apple-app-site-association` (applinks for `<TEAMID>.pl.chatynkowo.app` with components for `/` and `/index.html` carrying a `kod` or `code` query, so `ranking.html` share links keep opening the website), because the Associated Domains capability changes device code signing. `app/+native-intent.tsx` already maps both URL forms to the code sheet.
 

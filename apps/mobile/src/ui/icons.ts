@@ -167,7 +167,6 @@ export const TAB_ICONS = {
   profile: { Glyph: ProfileIcon },
 } as const satisfies Record<string, TabIcon>
 
-
 export type HeaderSymbol = {
   /* iOS: the SF Symbol the native bar draws. */
   sf: SFSymbol

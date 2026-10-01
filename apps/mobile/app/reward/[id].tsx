@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { kronikaLevels, requiredFinds } from '@chatynkowo/core'
+import { formatDay, kronikaLevels, requiredFinds } from '@chatynkowo/core'
 import { contentUrl } from '../../src/lib/content'
 import { useContent, useProgress } from '../../src/providers'
 import { colors, ContentImage, iconSize, MarkdownView, ProgressRing, radius, RewardIcon, SheetHandle, ShieldIcon, space, Text } from '../../src/ui'
@@ -37,7 +37,7 @@ export default function RewardScreen() {
 
   const required = requiredFinds(level, total)
   const hasRequirement = typeof required === 'number' && required > 0
-  const earnedOn = badge ? new Date(badge.earnedAt).toLocaleDateString(i18n.resolvedLanguage) : null
+  const earnedOn = badge ? formatDay(badge.earnedAt, i18n.resolvedLanguage ?? i18n.language) : null
   const justEarned = earned === '1'
 
   return (
