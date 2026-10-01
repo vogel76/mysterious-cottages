@@ -9,7 +9,7 @@ versioned in the repository: changes are made in the project, and a local
 
 | Element | Where | Used by |
 |---|---|---|
-| Google and Apple sign-in (browser OAuth on the site, native id tokens in the app) | Supabase Auth | `/ranking.html`, `index.html` (the account exchange), the app |
+| Google and Apple sign-in (browser OAuth on the site, native id tokens in the app) | Supabase Auth | `/profile.html` (the way in and the profile), `index.html` and `/ranking.html` (the account exchange), the app |
 | `profiles` — nickname, avatar, `public_id`, `completed_at` | Postgres | leaderboard, profile |
 | `finds` — discovered cottages per account | Postgres | Kronika sync |
 | `leaderboard(p_total)` — the ranking | SQL function | `/ranking.html` |
@@ -141,8 +141,13 @@ Team can create neither a Services ID nor a key.
 
 ### What a seeker sees
 
-Without the Google client id the app shows only the Apple button on iOS and
-no account controls on Android; without the Apple capability in the build
-(a free Personal Team cannot sign it) the Apple button stays away. The
-Kronika works the same either way: an account only collects what the
-devices found and hands it back to each of them.
+The site signs in on its profile page, with a button per provider
+switched on in the project (Authentication, Providers), read from the auth
+settings when the page loads: until Apple is set up there, only Google
+appears. The header of every page shows the way in, or the signed-in
+seeker's name; the ranking only points to the profile. Without the Google client id
+the app shows only the Apple button on iOS and no account controls on
+Android; without the Apple capability in the build (a free Personal Team
+cannot sign it) the Apple button stays away. The Kronika works the same
+either way: an account only collects what the devices found and hands it
+back to each of them.

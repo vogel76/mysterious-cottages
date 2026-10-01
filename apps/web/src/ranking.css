@@ -1,16 +1,11 @@
 /* The tokens, the page base and the primitives come from ui/ui.css,
-   imported before this file; this one lays the page out. */
-body {
-  /* The leaderboard adds the illustrated backdrop to the shared base. */
-  overflow-x: hidden;
-  background:
-    linear-gradient(180deg, rgb(5 16 13 / 0.3), var(--page) 34%),
-    url('/assets/img/background.webp') top center / max(1600px, 100vw) auto no-repeat,
-    var(--page);
-}
+   imported before this file; this one lays the leaderboard out. The
+   account row at the top brings its own stylesheet (features/ranking). */
 .rank-main {
-  width: min(1420px, calc(100% - 36px));
+  width: 100%;
+  max-width: var(--page-column);
   margin: 0 auto;
+  padding: 0 var(--page-gutter);
 }
 
 .rank-intro {
@@ -100,45 +95,6 @@ body {
   margin-bottom: 4px;
   color: var(--ink);
   font-size: 1rem;
-}
-
-.rank-account {
-  display: flex;
-  min-height: 46px;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.rank-account__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.rank-hello {
-  color: var(--ink-soft);
-}
-
-.rank-hello strong {
-  color: var(--ink);
-}
-
-.rank-note {
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-/* Buttons come from ui/ui.css (Button, LinkButton). */
-
-.rank-toast {
-  padding: 9px 12px;
-  border: 1px solid rgb(158 203 154 / 0.38);
-  border-radius: var(--radius-small);
-  background: rgb(53 88 67 / 0.8);
-  color: #d8f0d3;
-  font-size: 0.86rem;
 }
 
 .rank-results {
@@ -256,30 +212,13 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-
-.rank-ava {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  flex: none;
-  place-items: center;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
-  background: linear-gradient(145deg, #496b50, #233f31);
-  color: var(--ink);
-  font-family: 'Cinzel Decorative', Georgia, serif;
-  font-size: 0.88rem;
-  font-weight: 700;
-  object-fit: cover;
-}
-
-.podium__card .rank-ava {
+.podium__card .avatar {
   width: 62px;
   height: 62px;
   margin-top: 18px;
 }
 
-.podium__card--p1 .rank-ava {
+.podium__card--p1 .avatar {
   width: 74px;
   height: 74px;
 }
@@ -416,29 +355,6 @@ body {
   border-color: rgb(240 162 142 / 0.4);
   color: var(--danger);
 }
-
-.rank-status.is-loading {
-  display: grid;
-  gap: 10px;
-  text-align: left;
-}
-
-.rank-status.is-loading span {
-  margin-bottom: 5px;
-  text-align: center;
-}
-
-.rank-status.is-loading i {
-  display: block;
-  height: 58px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-small);
-  background: linear-gradient(100deg, rgb(210 166 77 / 0.03) 20%, rgb(210 166 77 / 0.1) 40%, rgb(210 166 77 / 0.03) 60%);
-  background-size: 200% 100%;
-  animation: loading-shimmer 1.5s ease-in-out infinite;
-}
-
 .rank-continue {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -478,79 +394,12 @@ body {
   text-decoration: none;
   white-space: nowrap;
 }
-
-@keyframes loading-shimmer {
-  to { background-position-x: -200%; }
-}
 @media (hover: hover) and (pointer: fine) {
   .rank-row:hover { background: rgb(210 166 77 / .085); }
 }
-
-/* The profile dialog is the shared Modal (ui/ui.css) with a narrower,
-   softer card. */
-.profile-modal {
-  width: min(510px, 100%);
-  padding: 34px;
-  background: linear-gradient(155deg, var(--surface-soft), var(--page-raised));
-  box-shadow: var(--shadow);
-  color: var(--ink);
-}
-
-.profile-modal h2 {
-  margin-bottom: 10px;
-  font-size: clamp(1.55rem, 4vw, 2.1rem);
-}
-
-.profile-lede {
-  margin-bottom: 25px;
-  color: var(--ink-soft);
-}
-
-.profile-field {
-  display: grid;
-  gap: 7px;
-  margin-bottom: 18px;
-  font-weight: 600;
-}
-
-.profile-field input {
-  width: 100%;
-  min-height: 50px;
-  padding: 10px 12px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-small);
-  outline: 0;
-  background: #0f211b;
-  color: var(--ink);
-}
-
-.profile-field input:focus-visible {
-  border-color: var(--accent-strong);
-  box-shadow: 0 0 0 3px rgb(210 166 77 / 0.18);
-}
-
-.profile-check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 25px;
-  color: var(--ink-soft);
-}
-
-.profile-check input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent);
-}
-
 @media (max-width: 820px) {
-  body {
-    font-size: 17px;
-  }
-
   .rank-main {
-    max-width: calc(100vw - 36px);
-    width: min(calc(100% - 36px), 680px);
+    max-width: calc(680px + 2 * var(--page-gutter));
   }
 
   .rank-intro {
@@ -628,15 +477,6 @@ body {
     right: -90%;
   }
 
-  .rank-account,
-  .rank-account__actions {
-    align-items: stretch;
-  }
-
-  .rank-account__actions {
-    width: 100%;
-  }
-
   .podium {
     grid-template-columns: 1fr;
     align-items: stretch;
@@ -661,8 +501,8 @@ body {
     grid-column: 1;
   }
 
-  .podium__card .rank-ava,
-  .podium__card--p1 .rank-ava {
+  .podium__card .avatar,
+  .podium__card--p1 .avatar {
     width: 48px;
     height: 48px;
     grid-row: 1 / 4;
@@ -695,7 +535,7 @@ body {
     padding: 12px;
   }
 
-  .rank-ava {
+  .rank-row .avatar {
     width: 40px;
     height: 40px;
   }

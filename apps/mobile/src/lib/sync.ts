@@ -141,7 +141,7 @@ export async function signOut() {
 /* The profile row, created on first contact with the name the sign-in
    handed over or the translated default. */
 export async function ensureProfile(session: Session, displayName: string | null = null) {
-  return supabase ? api.ensureProfile(supabase, session, { hint: displayName, fallback: i18n.t('ranking.defaultName') }) : null
+  return supabase ? api.ensureProfile(supabase, session, { hint: displayName, fallback: i18n.t('profile.defaultName') }) : null
 }
 
 export function providerAvatarUrl(session: Session) {

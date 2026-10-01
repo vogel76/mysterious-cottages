@@ -2,8 +2,8 @@
    The page base every entry point shares, imported by ui.css right after
    the tokens: the two type families, the box model and document defaults,
    the heading faces, the focus ring, the skip link and the eyebrow label.
-   Page stylesheets (styles.css, ranking.css) lay their pages out on top of
-   this and never repeat it.
+   Page stylesheets (styles.css, ranking.css, profile.css) lay their pages
+   out on top of this and never repeat it.
    ========================================================================== */
 
 /* ---------- Fonts ---------- */
@@ -117,6 +117,13 @@ body {
   line-height: 1.55;
 }
 
+/* A step smaller on a phone, on every page alike. */
+@media (max-width: 760px) {
+  body {
+    font-size: 17px;
+  }
+}
+
 button,
 input {
   font: inherit;
@@ -167,6 +174,34 @@ h2 {
 :focus-visible {
   outline: 3px solid var(--accent-strong);
   outline-offset: 4px;
+}
+
+/* ---------- Page column ---------- */
+/* The width the page content grows to and the gutter it keeps from the
+   edge: the home page's boards and the leaderboard share the column, the
+   profile keeps its narrower reading column inside the same gutters. */
+:root {
+  --page-column: 1420px;
+  --page-gutter: 18px;
+}
+
+/* The way back to the game at the top of every page away from it
+   (components/SitePage.tsx). */
+.page-back {
+  justify-self: start;
+  margin-top: 24px;
+}
+
+/* ---------- Page shell ---------- */
+/* The canvas of every page: the night sky over the forest fading into the
+   page colour, clipped so nothing wide can scroll the page sideways. */
+.site-shell {
+  min-height: 100dvh;
+  overflow: clip;
+  background:
+    linear-gradient(180deg, rgb(5 16 13 / 0.32), var(--page) 31%),
+    url('/assets/img/background.webp') top center / max(1600px, 100vw) auto no-repeat,
+    var(--page);
 }
 
 /* ---------- Skip link ---------- */
