@@ -3,7 +3,6 @@ import { Tabs, type BottomTabBarProps, type BottomTabNavigationOptions } from 'e
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useCelebrationPresenter } from '../../src/features/atlas/useCelebrationPresenter'
-import { haptic } from '../../src/lib/haptics'
 import { useProgress } from '../../src/providers'
 import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../../src/ui'
 
@@ -29,14 +28,8 @@ export default function TabsLayout() {
       label: t('mobile:tabs.discover'),
       accessibilityLabel: t('mobile:tabs.discoverAria'),
       scanLabel: t('mobile:code.scan'),
-      onPress: () => {
-        haptic('light')
-        router.push('/code')
-      },
-      onLongPress: () => {
-        haptic('medium')
-        router.push('/scan')
-      },
+      onPress: () => router.push('/code'),
+      onLongPress: () => router.push('/scan'),
     }),
     [t, router],
   )
