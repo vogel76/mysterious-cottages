@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "Chatynkowo odczytuje kod QR z tabliczki przy Chatynce.",
+    "NSLocationWhenInUseUsageDescription": "Chatynkowo pokazuje Twoje położenie na Atlasie, żeby znaleźć najbliższą Chatynkę."
+  }
+}

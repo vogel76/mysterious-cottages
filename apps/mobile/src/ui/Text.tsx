@@ -1,0 +1,89 @@
+import { Text as NativeText, StyleSheet, type TextProps as NativeTextProps } from 'react-native'
+import { colors, fonts, typeScale } from './tokens'
+
+/* The one text component of the app. Screens choose a variant (role) and a
+   tone (colour); they never set a font family or size themselves. */
+
+export type TextVariant = keyof typeof typeScale
+export type TextTone = 'ink' | 'soft' | 'faint' | 'accent' | 'accentInk' | 'danger' | 'success'
+export type TextWeight = 'regular' | 'italic' | 'semibold' | 'bold'
+
+export type TextProps = NativeTextProps & {
+  variant?: TextVariant
+  tone?: TextTone
+  weight?: TextWeight
+  align?: 'left' | 'center' | 'right'
+}
+
+const toneColor: Record<TextTone, string> = {
+  ink: colors.ink,
+  soft: colors.inkSoft,
+  faint: colors.inkFaint,
+  accent: colors.accentStrong,
+  accentInk: colors.accentInk,
+  danger: colors.danger,
+  success: colors.success,
+}
+
+/* The site has no 700 face of Cormorant: its "bold" copy is the 600 face,
+   so both names resolve to it here. */
+const weightFamily: Record<TextWeight, string> = {
+  regular: fonts.body,
+  italic: fonts.bodyItalic,
+  semibold: fonts.semibold,
+  bold: fonts.semibold,
+}
+
+/* How far the system text size may scale each role: body copy grows
+   freely, chrome (titles, eyebrows, display) stays within its layout. A
+   caller may override with the prop. */
+const maxMultiplier: Record<TextVariant, number> = {
+  display: 1.2,
+  title: 1.2,
+  heading: 1.35,
+  eyebrow: 1.3,
+  body: 1.6,
+  small: 1.6,
+  caption: 1.3,
+  compact: 1.35,
+  digit: 1.2,
+  label: 1.2,
+  micro: 1.2,
+}
+
+/* Display roles are the site's h1/h2 in Cinzel Decorative; heading is its
+   h3 (Cormorant 600); the eyebrow is Cormorant 600 in spaced small
+   capitals, accent coloured, as on every section header of the site; the
+   caption is the map chrome's smaller eyebrow in the caller's colour; the
+   digit is a plaque code's figure in the display face. */
+const variantStyles = StyleSheet.create({
+  small: typeScale.small,
+  body: typeScale.body,
+  compact: typeScale.compact,
+  label: typeScale.label,
+  micro: typeScale.micro,
+  heading: { ...typeScale.heading, fontFamily: fonts.semibold },
+  title: { ...typeScale.title, fontFamily: fonts.display },
+  display: { ...typeScale.display, fontFamily: fonts.display },
+  eyebrow: { ...typeScale.eyebrow, fontFamily: fonts.semibold, textTransform: 'uppercase', color: colors.accentStrong },
+  caption: { ...typeScale.caption, fontFamily: fonts.semibold, textTransform: 'uppercase' },
+  digit: { ...typeScale.digit, fontFamily: fonts.display },
+})
+
+export function Text({ variant = 'body', tone, weight, align, style, maxFontSizeMultiplier, ...rest }: TextProps) {
+  const fixedFace = variant === 'title' || variant === 'display' || variant === 'eyebrow' || variant === 'heading' || variant === 'caption' || variant === 'digit'
+  return (
+    <NativeText
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? maxMultiplier[variant]}
+      style={[
+        { color: colors.ink, fontFamily: fonts.body },
+        variantStyles[variant],
+        !fixedFace && weight ? { fontFamily: weightFamily[weight] } : null,
+        tone ? { color: toneColor[tone] } : null,
+        align ? { textAlign: align } : null,
+        style,
+      ]}
+      {...rest}
+    />
+  )
+}

@@ -1,0 +1,196 @@
+/* Geography of the expedition map. Deliberately free of Leaflet imports so the
+   country detection can be used outside the lazy-loaded map bundle. */
+
+/* [[south, west], [north, east]] — the tuple form L.latLngBounds accepts. */
+export type BoundsTuple = [[number, number], [number, number]]
+
+/* Country of the original cottages; entries in data/cottages.json without a
+   `country` field are treated as this one. */
+export const DEFAULT_COUNTRY = 'PL'
+
+/* The map never zooms or pans beyond this box — mainland Europe plus the
+   British Isles and Scandinavia. */
+export const EUROPE_BOUNDS: BoundsTuple = [[34.5, -11.5], [71.8, 35]]
+
+/* Approximate framing boxes per ISO 3166-1 alpha-2 code — what the map shows
+   as the "whole country" view. These are presentation boxes, not borders:
+   mainland only (France without its overseas territories, Spain without the
+   Canaries). A country absent here falls back to the bounds of its cottages. */
+export const COUNTRY_BOUNDS: Record<string, BoundsTuple> = {
+  AT: [[46.37, 9.53], [49.02, 17.16]],
+  BE: [[49.5, 2.54], [51.51, 6.41]],
+  BG: [[41.23, 22.36], [44.22, 28.61]],
+  CH: [[45.82, 5.96], [47.81, 10.49]],
+  CZ: [[48.55, 12.09], [51.06, 18.87]],
+  DE: [[47.27, 5.87], [55.06, 15.04]],
+  DK: [[54.56, 8.07], [57.75, 12.69]],
+  EE: [[57.51, 21.76], [59.68, 28.21]],
+  ES: [[35.95, -9.39], [43.79, 3.32]],
+  FI: [[59.81, 20.55], [70.09, 31.59]],
+  FR: [[41.33, -5.15], [51.09, 9.56]],
+  GB: [[49.96, -7.57], [58.64, 1.77]],
+  GR: [[34.8, 19.37], [41.75, 28.25]],
+  HR: [[42.38, 13.49], [46.55, 19.45]],
+  HU: [[45.74, 16.11], [48.59, 22.9]],
+  IE: [[51.42, -10.48], [55.39, -5.99]],
+  IT: [[36.62, 6.63], [47.1, 18.52]],
+  LT: [[53.9, 20.95], [56.45, 26.84]],
+  LU: [[49.44, 5.73], [50.18, 6.53]],
+  LV: [[55.67, 20.97], [58.09, 28.24]],
+  NL: [[50.75, 3.35], [53.55, 7.23]],
+  NO: [[57.98, 4.65], [71.19, 31.08]],
+  PL: [[49.0, 14.1], [54.9, 24.15]],
+  PT: [[36.96, -9.53], [42.15, -6.19]],
+  RO: [[43.62, 20.26], [48.27, 29.76]],
+  SE: [[55.34, 11.11], [69.06, 24.16]],
+  SI: [[45.42, 13.38], [46.88, 16.61]],
+  SK: [[47.7, 16.83], [49.62, 22.57]],
+  UA: [[44.38, 22.14], [52.38, 40.23]],
+}
+
+/* The site is served statically (GitHub Pages), so the Accept-Language header
+   never reaches any code we control — navigator.languages is the browser-side
+   mirror of that header. A locale's region subtag ("pl-PL", "de-AT") names the
+   country directly; a bare language code is expanded to its most likely region
+   ("pl" -> PL) by Intl.Locale.maximize(). Never asks for geolocation.
+   In React Native pass the locales from expo-localization instead. */
+function browserLanguages(): readonly string[] {
+  const g = globalThis as { navigator?: { languages?: readonly string[]; language?: string } }
+  return g.navigator?.languages ?? (g.navigator?.language ? [g.navigator.language] : [])
+}
+
+export function detectCountry(languages: readonly string[] = browserLanguages()): string | null {
+  for (const tag of languages) {
+    try {
+      const region = new Intl.Locale(tag).maximize().region
+      if (region && /^[A-Z]{2}$/.test(region)) return region
+    } catch {
+      // A malformed language tag is simply skipped.
+    }
+  }
+  return null
+}
+
+/* ------------------------------------------------------------------------
+   Framing and distances — shared by the Leaflet map on the site and the
+   MapLibre map in the app, so both open on the same view.
+   ------------------------------------------------------------------------ */
+
+export type LatLng = { lat: number; lng: number }
+
+/* The box around a set of points, or null for an empty set. */
+function boundsOf(points: readonly LatLng[]): BoundsTuple | null {
+  if (!points.length) return null
+  let south = Infinity
+  let west = Infinity
+  let north = -Infinity
+  let east = -Infinity
+  for (const point of points) {
+    south = Math.min(south, point.lat)
+    west = Math.min(west, point.lng)
+    north = Math.max(north, point.lat)
+    east = Math.max(east, point.lng)
+  }
+  return [[south, west], [north, east]]
+}
+
+/* Grow a box by a fraction of its size on every side (what Leaflet's
+   LatLngBounds.pad does), so a lone cottage still gets some map around it. */
+function padBounds(bounds: BoundsTuple, ratio: number, minimumSpanDegrees = 0.02): BoundsTuple {
+  const [[south, west], [north, east]] = bounds
+  const latSpan = Math.max(north - south, minimumSpanDegrees)
+  const lngSpan = Math.max(east - west, minimumSpanDegrees)
+  const latPad = latSpan * ratio
+  const lngPad = lngSpan * ratio
+  return [[south - latPad, west - lngPad], [north + latPad, east + lngPad]]
+}
+
+/* The country whose cottages the map opens on: the visitor's country when it
+   has cottages (detected from the device languages, never geolocation),
+   otherwise the only country in the data, otherwise none (Europe overview). */
+export function homeCountry(cottages: readonly { country?: string }[], detected: string | null): string | null {
+  const present = new Set(cottages.map((cottage) => cottage.country ?? DEFAULT_COUNTRY))
+  if (detected && present.has(detected)) return detected
+  return present.size === 1 ? [...present][0] : null
+}
+
+/* The "whole country" frame the map opens and resets to. Countries without a
+   preset box (and the no-country Europe overview) frame their cottages. */
+export function homeBounds(cottages: readonly (LatLng & { country?: string })[], country: string | null): BoundsTuple {
+  const preset = country ? COUNTRY_BOUNDS[country] : undefined
+  if (preset) return preset
+  const own = country ? cottages.filter((cottage) => (cottage.country ?? DEFAULT_COUNTRY) === country) : cottages
+  const bounds = boundsOf(own)
+  return bounds ? padBounds(bounds, 0.24) : EUROPE_BOUNDS
+}
+
+const EARTH_RADIUS_KM = 6371
+const KM_PER_DEGREE_LAT = 111.32
+
+function toRadians(degrees: number): number {
+  return (degrees * Math.PI) / 180
+}
+
+/* The great-circle distance between two points, in kilometres. */
+export function distanceKm(a: LatLng, b: LatLng): number {
+  const dLat = toRadians(b.lat - a.lat)
+  const dLng = toRadians(b.lng - a.lng)
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(a.lat)) * Math.cos(toRadians(b.lat)) * Math.sin(dLng / 2) ** 2
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h))
+}
+
+/* The place nearest to a point with its distance, or null when there is
+   none. */
+export function nearestPlace<T extends LatLng>(point: LatLng, places: readonly T[]): { place: T; distanceKm: number } | null {
+  let best: { place: T; distanceKm: number } | null = null
+  for (const place of places) {
+    const distance = distanceKm(point, place)
+    if (!best || distance < best.distanceKm) best = { place, distanceKm: distance }
+  }
+  return best
+}
+
+/* The initial bearing from one point towards another, in degrees
+   clockwise from north, 0 to 360. */
+export function bearingDegrees(from: LatLng, to: LatLng): number {
+  const fromLat = toRadians(from.lat)
+  const toLat = toRadians(to.lat)
+  const dLng = toRadians(to.lng - from.lng)
+  const y = Math.sin(dLng) * Math.cos(toLat)
+  const x = Math.cos(fromLat) * Math.sin(toLat) - Math.sin(fromLat) * Math.cos(toLat) * Math.cos(dLng)
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360
+}
+
+/* The box around a point and its company, reaching at least `radiusKm`
+   from the point on every side, so a neighbour next door still gets some
+   map around it. Frames a seeker with the nearest cottage. */
+export function boundsAround(point: LatLng, company: readonly LatLng[], radiusKm: number): BoundsTuple {
+  const latRadius = radiusKm / KM_PER_DEGREE_LAT
+  const lngRadius = latRadius / Math.max(Math.cos(toRadians(point.lat)), 0.01)
+  const [[south, west], [north, east]] = boundsOf([point, ...company]) as BoundsTuple
+  return [
+    [Math.min(south, point.lat - latRadius), Math.min(west, point.lng - lngRadius)],
+    [Math.max(north, point.lat + latRadius), Math.max(east, point.lng + lngRadius)],
+  ]
+}
+
+/* Whether a point falls inside a framing box — used to tell a seeker that
+   their position is outside the expedition map. */
+export function isWithinBounds({ lat, lng }: LatLng, [[south, west], [north, east]]: BoundsTuple): boolean {
+  return lat >= south && lat <= north && lng >= west && lng <= east
+}
+
+/* The country whose framing box holds a point — the smallest one when
+   boxes overlap — or null over the sea or outside the presets. Drives the
+   "kraj" rung of the map's level indicator: what the view shows, not where
+   the visitor is from. */
+export function countryAt(point: LatLng): string | null {
+  let best: { code: string; area: number } | null = null
+  for (const [code, bounds] of Object.entries(COUNTRY_BOUNDS)) {
+    if (!isWithinBounds(point, bounds)) continue
+    const [[south, west], [north, east]] = bounds
+    const area = (north - south) * (east - west)
+    if (!best || area < best.area) best = { code, area }
+  }
+  return best?.code ?? null
+}

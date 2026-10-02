@@ -1,0 +1,129 @@
+{
+  "expo": {
+    "name": "Chatynkowo",
+    "slug": "chatynkowo",
+    "scheme": "chatynkowo",
+    "version": "0.1.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0d1c18",
+    "newArchEnabled": true,
+    "locales": {
+      "pl": "./locales/pl.json",
+      "en": "./locales/en.json"
+    },
+    "ios": {
+      "bundleIdentifier": "pl.chatynkowo.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "comgooglemaps"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
+      }
+    },
+    "android": {
+      "package": "pl.chatynkowo.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0d1c18",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.chatynkowo.pl",
+              "pathPattern": "/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.chatynkowo.pl",
+              "pathPattern": "/index.html"
+            },
+            {
+              "scheme": "https",
+              "host": "chatynkowo.pl",
+              "pathPattern": "/"
+            }
+          ]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-dev-client",
+      "./plugins/with-scene-delegate",
+      "./plugins/with-locale-filters",
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Chatynkowo reads the QR code on a cottage plaque.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0d1c18"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Chatynkowo shows your position on the Atlas so you can find the nearest cottage.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      "expo-image",
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
