@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "frameWidth": 293,
+  "frameHeight": 422,
+  "anchor": {
+    "x": 146.7,
+    "y": 421.8
+  },
+  "fps": 24,
+  "sheets": [
+    {
+      "file": "body-1.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-2.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-3.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-4.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-5.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-6.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-7.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-8.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    },
+    {
+      "file": "body-9.webp",
+      "columns": 6,
+      "rows": 4,
+      "frames": 24
+    }
+  ],
+  "clips": {
+    "feed": {
+      "from": 0,
+      "to": 23,
+      "loop": false
+    },
+    "happy": {
+      "from": 24,
+      "to": 47,
+      "loop": false
+    },
+    "idle": {
+      "from": 48,
+      "to": 95,
+      "loop": true
+    },
+    "pet": {
+      "from": 96,
+      "to": 119,
+      "loop": false
+    },
+    "sad": {
+      "from": 120,
+      "to": 143,
+      "loop": true
+    },
+    "sleep": {
+      "from": 144,
+      "to": 191,
+      "loop": true
+    },
+    "wave": {
+      "from": 192,
+      "to": 215,
+      "loop": false
+    }
+  }
+}

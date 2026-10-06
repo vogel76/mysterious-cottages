@@ -89,14 +89,18 @@ export function TabBar({ state, descriptors, navigation, insets, discover }: Tab
     const onLongPress = () => navigation.emit({ type: 'tabLongPress', target: route.key })
     return <TabItem key={route.key} name={route.name} options={descriptors[route.key].options} focused={focused} onPress={onPress} onLongPress={onLongPress} />
   })
-  const middle = Math.ceil(tabs.length / 2)
+  /* The button stays in the middle of the bar whatever the count of tabs:
+     each half of the bar takes the same width and shares it among its
+     tabs, so an odd fifth tab makes one half's tabs narrower rather than
+     pushing the button aside. The extra tab goes to the right half. */
+  const middle = Math.floor(tabs.length / 2)
 
   return (
     <View style={styles.root} pointerEvents="box-none">
       <View style={[styles.bar, { height: sizes.tabBar + insets.bottom, paddingBottom: insets.bottom }]} onLayout={onLayout} accessibilityRole="tablist">
-        {tabs.slice(0, middle)}
+        <View style={styles.half}>{tabs.slice(0, middle)}</View>
         <DiscoverSlot {...discover} />
-        {tabs.slice(middle)}
+        <View style={styles.half}>{tabs.slice(middle)}</View>
       </View>
     </View>
   )
@@ -178,13 +182,17 @@ function DiscoverSlot({ label, accessibilityLabel, scanLabel, onPress, onLongPre
 }
 
 /* The bar's label size: smaller than the small role, since the bar's
-   height is fixed and the label sits under a glyph. */
+   height is fixed and the label sits under a glyph. A long label in a
+   narrow slot (the English "Leaderboard" with five tabs) shrinks a little
+   rather than being cut. */
 function TabLabel({ color, decorative, children }: { color: string; decorative?: boolean; children: string }) {
   return (
     <Text
       variant="label"
       weight="semibold"
       numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.8}
       maxFontSizeMultiplier={1.3}
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
@@ -211,6 +219,10 @@ const styles = StyleSheet.create({
     borderTopColor: colors.line,
     backgroundColor: colors.pageRaised,
   },
+  half: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   tab: {
     flex: 1,
     alignItems: 'center',
@@ -235,9 +247,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   /* The column overflows the bar upward by the raise, which puts the
-     button's centre on the top edge and its label on the tabs' baseline. */
+     button's centre on the top edge and its label on the tabs' baseline.
+     Its width is its own, so the halves around it stay equal. */
   discoverSlot: {
-    flex: 1,
+    width: DISCOVER_SIZE + space.xl,
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: LABEL_INSET,

@@ -51,7 +51,10 @@ The mobile app runs from its own directory (`cd apps/mobile && npx expo
 run:android`); see `apps/mobile/README.md` for the device setup, the JS
 bundle check, the structure and the support sheet (a coffee for the elf
 bought through the store, or a rewarded ad watched instead; neither
-unlocks anything).
+unlocks anything). The app also carries the elf companion prototype (a
+virtual-pet care loop in a cottage drawn in Skia from Blender-rendered
+sprites) as a separate tab that leaves the expedition flow untouched; its
+rules and art pipeline are described in the same README.
 
 The site's configuration (Supabase URL, publishable key, content origin) is
 in `apps/web/src/config.ts` and is overridden by `apps/web/.env` (template:
