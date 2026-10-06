@@ -6,19 +6,20 @@ import { useCelebrationPresenter } from '../../src/features/atlas/useCelebration
 import { useBoot, useProgress } from '../../src/providers'
 import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../../src/ui'
 
-/* The expedition loop as four tabs around one raised action: the Atlas
-   (the play field), the Kronika (the collection), the Ranking and the
-   Profile, with the gold "discover" button in the middle of the bar opening
-   the code sheet (a press) or the scanner (a long press). The bar is the
-   app's own (src/ui/TabBar.tsx) so the button can rise above it; it floats
-   over the tab screens, which read its height through useTabBarHeight().
-   Icons are the vocabulary's tab glyphs, labels come from the "mobile"
-   namespace, and the Kronika carries the badge of seals not yet viewed
-   (mounted only while the count is above zero). The layout also hosts the
-   two things that must act once the tabs are in the navigation state: the
-   celebration presenter and the route the onboarding left behind. Adding a
-   tab is one more Tabs.Screen here plus a folder (with a Stack _layout) or
-   a file in this directory. */
+/* The expedition loop as tabs around one raised action: the Atlas (the
+   play field), the Elf (the companion prototype, see src/features/elf),
+   the Kronika (the collection), the Ranking and the Profile, with the gold
+   "discover" button in the middle of the bar opening the code sheet (a
+   press) or the scanner (a long press). The bar is the app's own
+   (src/ui/TabBar.tsx) so the button can rise above it; it floats over the
+   tab screens, which read its height through useTabBarHeight(). Icons are
+   the vocabulary's tab glyphs, labels come from the "mobile" namespace, and
+   the Kronika carries the badge of seals not yet viewed (mounted only while
+   the count is above zero). The layout also hosts the two things that must
+   act once the tabs are in the navigation state: the celebration presenter
+   and the route the onboarding left behind. Adding a tab is one more
+   Tabs.Screen here plus a folder (with a Stack _layout) or a file in this
+   directory. */
 
 export default function TabsLayout() {
   const { t } = useTranslation()
@@ -46,6 +47,7 @@ export default function TabsLayout() {
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.page } }}
       >
         <Tabs.Screen name="index" options={{ title: t('mobile:tabs.atlas'), tabBarIcon: tabIcon(TAB_ICONS.index.Glyph) }} />
+        <Tabs.Screen name="elf" options={{ title: t('mobile:tabs.elf'), tabBarIcon: tabIcon(TAB_ICONS.elf.Glyph) }} />
         <Tabs.Screen
           name="kronika"
           options={{ title: t('mobile:tabs.kronika'), tabBarIcon: tabIcon(TAB_ICONS.kronika.Glyph), tabBarBadge: badge(unseenRewards.length) }}

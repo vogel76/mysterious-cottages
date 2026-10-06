@@ -35,4 +35,7 @@ export const STORAGE_KEYS = {
   rewardsSeen: 'chatynkowo:rewards-seen:v1',
   /* The maps app the seeker chose for "Navigate"; a device preference. */
   mapsApp: 'chatynkowo:maps-app',
+  /* The elf companion prototype (src/features/elf): the egg or the elf,
+     its needs, level and the moment they were last updated. */
+  elf: 'chatynkowo:elf:v1',
 } as const

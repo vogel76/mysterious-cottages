@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "plate": "plate.webp",
+  "width": 1000,
+  "height": 1600,
+  "floorY": 1152,
+  "rug": {
+    "x": 500,
+    "y": 1280
+  },
+  "sprites": [
+    {
+      "slot": "rug",
+      "variant": "braided",
+      "file": "rug_braided.webp",
+      "x": 231,
+      "y": 1199,
+      "width": 538,
+      "height": 178
+    },
+    {
+      "slot": "rug",
+      "variant": "green",
+      "file": "rug_green.webp",
+      "x": 211,
+      "y": 1197,
+      "width": 578,
+      "height": 190
+    },
+    {
+      "slot": "bed",
+      "variant": "wooden",
+      "file": "bed_wooden.webp",
+      "x": 139,
+      "y": 916,
+      "width": 251,
+      "height": 288
+    },
+    {
+      "slot": "bed",
+      "variant": "hammock",
+      "file": "bed_hammock.webp",
+      "x": 108,
+      "y": 696,
+      "width": 331,
+      "height": 516
+    },
+    {
+      "slot": "window",
+      "variant": "square",
+      "file": "window_square.webp",
+      "x": 167,
+      "y": 334,
+      "width": 309,
+      "height": 333
+    },
+    {
+      "slot": "window",
+      "variant": "round",
+      "file": "window_round.webp",
+      "x": 167,
+      "y": 334,
+      "width": 309,
+      "height": 333
+    },
+    {
+      "slot": "shelf",
+      "variant": "books",
+      "file": "shelf_books.webp",
+      "x": 158,
+      "y": 184,
+      "width": 158,
+      "height": 141
+    },
+    {
+      "slot": "lantern",
+      "variant": "iron",
+      "file": "lantern_iron.webp",
+      "x": 714,
+      "y": 28,
+      "width": 87,
+      "height": 268
+    },
+    {
+      "slot": "picture",
+      "variant": "framed",
+      "file": "picture_framed.webp",
+      "x": 485,
+      "y": 467,
+      "width": 84,
+      "height": 106
+    },
+    {
+      "slot": "basket",
+      "variant": "acorns",
+      "file": "basket_acorns.webp",
+      "x": 570,
+      "y": 1104,
+      "width": 133,
+      "height": 127
+    },
+    {
+      "slot": "fern",
+      "variant": "potted",
+      "file": "fern_potted.webp",
+      "x": 85,
+      "y": 1073,
+      "width": 297,
+      "height": 336
+    },
+    {
+      "slot": "candle",
+      "variant": "stool",
+      "file": "candle_stool.webp",
+      "x": 641,
+      "y": 1123,
+      "width": 223,
+      "height": 290
+    },
+    {
+      "slot": "herbs",
+      "variant": "dried",
+      "file": "herbs_dried.webp",
+      "x": 377,
+      "y": 55,
+      "width": 212,
+      "height": 164
+    }
+  ]
+}

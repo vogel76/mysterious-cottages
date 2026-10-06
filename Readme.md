@@ -48,7 +48,10 @@ pnpm codes:check  # fail when the committed hashes do not match the codes
 
 The mobile app runs from its own directory (`cd apps/mobile && npx expo
 run:android`); see `apps/mobile/README.md` for the device setup, the JS
-bundle check and the structure.
+bundle check and the structure. The app also carries the elf companion
+prototype (a virtual-pet care loop with a 3D model and a catch in the camera
+view) as a separate tab that leaves the expedition flow untouched; its
+rules, model licence and asset script are described in the same README.
 
 The site's configuration (Supabase URL, publishable key, content origin) is
 in `apps/web/src/config.ts` and is overridden by `apps/web/.env` (template:

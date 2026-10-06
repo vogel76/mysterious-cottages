@@ -65,6 +65,23 @@ export const MOBILE_ICON_ROLES = [
   'InfoIcon',
   /* The arrow of the nearest-cottage beacon, turned to the heading. */
   'BearingIcon',
+  /* The elf companion (apps/mobile/src/features/elf): the egg, the needs
+     and the care actions, the magic orb of the catch. */
+  'EggIcon',
+  'WarmIcon',
+  'LullabyIcon',
+  'FeedIcon',
+  'ToyIcon',
+  'BathIcon',
+  'MagicIcon',
+  'SleepIcon',
+  'WakeIcon',
+  'JoyIcon',
+  'EnergyIcon',
+  'OrbIcon',
+  /* The elf's wardrobe and the cottage's decor edit mode. */
+  'WardrobeIcon',
+  'DecorIcon',
 ] as const
 
 export type SharedIconRole = (typeof SHARED_ICON_ROLES)[number]

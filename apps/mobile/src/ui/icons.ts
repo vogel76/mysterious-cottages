@@ -17,10 +17,13 @@
 
    When a shared role is added, add it to SHARED_ICON_ROLES in the theme and
    to both vocabularies; app-only roles go to MOBILE_ICON_ROLES. */
+import { AcornIcon } from 'phosphor-react-native/src/icons/Acorn'
 import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowCounterClockwise'
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft'
 import { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight'
+import { ArmchairIcon } from 'phosphor-react-native/src/icons/Armchair'
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp'
+import { BalloonIcon } from 'phosphor-react-native/src/icons/Balloon'
 import { BookOpenTextIcon } from 'phosphor-react-native/src/icons/BookOpenText'
 import { CameraIcon as PhosphorCamera } from 'phosphor-react-native/src/icons/Camera'
 import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown'
@@ -32,22 +35,29 @@ import { CircleNotchIcon } from 'phosphor-react-native/src/icons/CircleNotch'
 import { CloudArrowUpIcon } from 'phosphor-react-native/src/icons/CloudArrowUp'
 import { CrownIcon } from 'phosphor-react-native/src/icons/Crown'
 import { DownloadSimpleIcon } from 'phosphor-react-native/src/icons/DownloadSimple'
+import { DropIcon } from 'phosphor-react-native/src/icons/Drop'
+import { EggIcon as PhosphorEgg } from 'phosphor-react-native/src/icons/Egg'
 import { FacebookLogoIcon } from 'phosphor-react-native/src/icons/FacebookLogo'
+import { FireIcon } from 'phosphor-react-native/src/icons/Fire'
 import { FlashlightIcon } from 'phosphor-react-native/src/icons/Flashlight'
 import { FootprintsIcon } from 'phosphor-react-native/src/icons/Footprints'
 import { GpsFixIcon } from 'phosphor-react-native/src/icons/GpsFix'
 import { HandHeartIcon } from 'phosphor-react-native/src/icons/HandHeart'
+import { HeartIcon } from 'phosphor-react-native/src/icons/Heart'
 import { HouseLineIcon } from 'phosphor-react-native/src/icons/HouseLine'
 import { InfoIcon as PhosphorInfo } from 'phosphor-react-native/src/icons/Info'
 import { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo'
 import { KeyIcon as PhosphorKey } from 'phosphor-react-native/src/icons/Key'
+import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning'
 import { LightningSlashIcon } from 'phosphor-react-native/src/icons/LightningSlash'
 import { LockKeyOpenIcon } from 'phosphor-react-native/src/icons/LockKeyOpen'
+import { MagicWandIcon } from 'phosphor-react-native/src/icons/MagicWand'
 import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass'
 import { MapPinIcon } from 'phosphor-react-native/src/icons/MapPin'
 import { MapTrifoldIcon } from 'phosphor-react-native/src/icons/MapTrifold'
 import { MinusIcon } from 'phosphor-react-native/src/icons/Minus'
 import { MoonStarsIcon } from 'phosphor-react-native/src/icons/MoonStars'
+import { MusicNotesIcon } from 'phosphor-react-native/src/icons/MusicNotes'
 import { NavigationArrowIcon } from 'phosphor-react-native/src/icons/NavigationArrow'
 import { PauseIcon as PhosphorPause } from 'phosphor-react-native/src/icons/Pause'
 import { PlayIcon as PhosphorPlay } from 'phosphor-react-native/src/icons/Play'
@@ -59,7 +69,10 @@ import { SignOutIcon as PhosphorSignOut } from 'phosphor-react-native/src/icons/
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
 import { SpeakerHighIcon } from 'phosphor-react-native/src/icons/SpeakerHigh'
 import { SpeakerSlashIcon } from 'phosphor-react-native/src/icons/SpeakerSlash'
+import { SphereIcon } from 'phosphor-react-native/src/icons/Sphere'
+import { SunIcon } from 'phosphor-react-native/src/icons/Sun'
 import { TranslateIcon } from 'phosphor-react-native/src/icons/Translate'
+import { TShirtIcon } from 'phosphor-react-native/src/icons/TShirt'
 import { TreeEvergreenIcon } from 'phosphor-react-native/src/icons/TreeEvergreen'
 import { TrophyIcon } from 'phosphor-react-native/src/icons/Trophy'
 import { UserCircleIcon } from 'phosphor-react-native/src/icons/UserCircle'
@@ -139,6 +152,27 @@ export const TorchIcon = FlashlightIcon
 export const TorchOffIcon = LightningSlashIcon
 export const InfoIcon = PhosphorInfo
 
+/* ---------- App-only roles: the elf companion (src/features/elf) ---------- */
+/* The egg before it hatches, and the two ways to hatch it. */
+export const EggIcon = PhosphorEgg
+export const WarmIcon = FireIcon
+export const LullabyIcon = MusicNotesIcon
+/* The four needs and the care actions that answer them: an acorn for food,
+   a balloon for play, a drop for the bath, a wand for magic training. */
+export const FeedIcon = AcornIcon
+export const ToyIcon = BalloonIcon
+export const BathIcon = DropIcon
+export const MagicIcon = MagicWandIcon
+export const SleepIcon = MoonStarsIcon
+export const WakeIcon = SunIcon
+export const JoyIcon = HeartIcon
+export const EnergyIcon = LightningIcon
+/* The magic orb thrown to catch the elf. */
+export const OrbIcon = SphereIcon
+/* The elf's wardrobe (swappable clothes) and the cottage's decor edit mode. */
+export const WardrobeIcon = TShirtIcon
+export const DecorIcon = ArmchairIcon
+
 /* The vocabulary as one object, checked against the shared and app-only
    roles: a missing role is a compile error. */
 export const ICON_VOCABULARY = {
@@ -149,6 +183,8 @@ export const ICON_VOCABULARY = {
   InstagramIcon, FacebookIcon,
   CameraIcon, ProfileIcon, SignOutIcon, OfflineIcon, SyncIcon, DownloadIcon, WarningIcon, LanguageIcon,
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
+  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, MagicIcon, SleepIcon, WakeIcon, JoyIcon, EnergyIcon, OrbIcon,
+  WardrobeIcon, DecorIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */
@@ -163,9 +199,10 @@ export type TabIcon = {
   Glyph: Icon
 }
 
-/* The four tabs' glyphs, keyed by route name (see app/(tabs)/_layout.tsx). */
+/* The tabs' glyphs, keyed by route name (see app/(tabs)/_layout.tsx). */
 export const TAB_ICONS = {
   index: { Glyph: AtlasIcon },
+  elf: { Glyph: ElfIcon },
   kronika: { Glyph: ChronicleIcon },
   ranking: { Glyph: RewardIcon },
   profile: { Glyph: ProfileIcon },

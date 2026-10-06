@@ -8,7 +8,11 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "export:android": "expo export --platform android --output-dir .expo/export",
-    "check": "tsc --noEmit --pretty false"
+    "check": "tsc --noEmit --pretty false",
+    "art:smoke": "blender --background --python art/blender/smoke.py -- art/out/smoke",
+    "art:elf": "blender --background --python art/blender/elf.py -- art/out/elf",
+    "art:room": "blender --background --python art/blender/room.py -- art/out/room",
+    "art:pack": "python3 art/blender/pack.py pack-layers art/out/elf --out assets/elf/sprites/elf --scale 0.5"
   },
   "dependencies": {
     "@chatynkowo/api": "workspace:*",
@@ -25,8 +29,11 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "12.0.1",
     "@react-native-google-signin/google-signin": "^16.1.5",
+    "@react-three/fiber": "^9.8.1",
+    "@shopify/react-native-skia": "^2.14.0",
     "expo": "~57.0.25",
     "expo-apple-authentication": "~57.0.2",
+    "expo-asset": "~57.0.18",
     "expo-audio": "~57.0.5",
     "expo-build-properties": "~57.0.22",
     "expo-camera": "~57.0.5",
@@ -35,6 +42,7 @@
     "expo-dev-client": "~57.0.19",
     "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.4",
+    "expo-gl": "~57.0.2",
     "expo-haptics": "~57.0.3",
     "expo-image": "~57.0.5",
     "expo-linear-gradient": "~57.0.2",
@@ -42,6 +50,7 @@
     "expo-localization": "~57.0.2",
     "expo-location": "~57.0.20",
     "expo-router": "~57.0.23",
+    "expo-sensors": "~57.0.3",
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
@@ -60,11 +69,13 @@
     "react-native-svg": "15.15.4",
     "react-native-url-polyfill": "^4.0.0",
     "react-native-worklets": "0.10.1",
-    "supercluster": "^8.0.1"
+    "supercluster": "^8.0.1",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
     "@types/supercluster": "^7.1.3",
+    "@types/three": "^0.186.0",
     "typescript": "~5.9.3"
   }
 }

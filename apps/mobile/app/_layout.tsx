@@ -12,6 +12,7 @@ import { bootstrap, type BootResult } from '../src/lib/bootstrap'
 import {
   BootProvider,
   ContentProvider,
+  ElfProvider,
   NetworkProvider,
   ProgressProvider,
   SessionProvider,
@@ -30,8 +31,9 @@ import { TabBarHeightProvider, ToastHost, colors, fonts, headerRightItems, useAp
    Atlas with cached pins later. The providers (boot, network, account,
    content, progress, toasts) wrap a native stack whose gated first screens
    are the welcome pager and the tab bar, and whose other screens are
-   sheets and modals presented on top. New top-level surfaces are added
-   here as further Stack.Screen entries, new tabs in (tabs)/_layout.tsx. */
+   sheets and modals presented on top (among them the elf prototype's catch
+   view and evolution card). New top-level surfaces are added here as
+   further Stack.Screen entries, new tabs in (tabs)/_layout.tsx. */
 
 void SplashScreen.preventAutoHideAsync()
 
@@ -152,12 +154,14 @@ function AppShell() {
       <SessionProvider>
         <ContentProvider initial={initial}>
           <ProgressProvider initial={initial}>
-            <ToastProvider>
-              <StatusBar style="light" />
-              <RootStack />
-              <BackfillToast />
-              <Toasts />
-            </ToastProvider>
+            <ElfProvider>
+              <ToastProvider>
+                <StatusBar style="light" />
+                <RootStack />
+                <BackfillToast />
+                <Toasts />
+              </ToastProvider>
+            </ElfProvider>
           </ProgressProvider>
         </ContentProvider>
       </SessionProvider>
@@ -238,6 +242,34 @@ function RootStack() {
       />
       <Stack.Screen name="reward/[id]" options={sheetRoute} />
       <Stack.Screen name="rules" options={sheetRoute} />
+      {/* The elf companion prototype (src/features/elf): the catch in the
+          camera view, full screen like the scanner, and the evolution card,
+          a transparent modal like the celebration. */}
+      <Stack.Screen
+        name="elf-catch"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+          headerShown: true,
+          headerTransparent: true,
+          headerTitle: t('mobile:elf.catchTitle'),
+          headerTitleStyle: { fontFamily: fonts.display, color: colors.ink },
+          headerTintColor: colors.ink,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          ...headerRightItems([{ role: 'close', label: t('mobile:common.close'), onPress: closeModal }]),
+        }}
+      />
+      <Stack.Screen
+        name="elf-evolve"
+        options={{
+          presentation: 'transparentModal',
+          animation: 'fade',
+          headerShown: false,
+          contentStyle: { backgroundColor: 'transparent' },
+          gestureEnabled: false,
+        }}
+      />
     </Stack>
   )
 }
