@@ -33,3 +33,9 @@ supabase/migrations/
 # tokens (apps/web/scripts/build-tokens-css.ts, from @chatynkowo/theme)
 apps/web/public/icons.svg
 apps/web/src/ui/tokens.css
+
+# The Blender sprite pipeline (apps/mobile/art): renders, logs and scene
+# dumps stay local; only the packed atlases under assets/elf/sprites ship.
+apps/mobile/art/out/
+apps/mobile/art/**/*.blend
+apps/mobile/art/**/__pycache__/

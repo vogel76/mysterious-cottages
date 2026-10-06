@@ -54,4 +54,7 @@ export const STORAGE_KEYS = {
   /* The support ledger (src/lib/support-store.ts): how many coffees and
      ads the player has given, on this device only. */
   support: 'chatynkowo:support:v1',
+  /* The elf companion prototype (src/features/elf): the egg or the elf,
+     its needs, level and the moment they were last updated. */
+  elf: 'chatynkowo:elf:v1',
 } as const
