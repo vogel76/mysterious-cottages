@@ -1,0 +1,36 @@
+/* The tokens, the page base and the primitives come from ui/ui.css,
+   imported before this file; this one lays the profile page out. The
+   account block brings its own stylesheet (features/account/Account.css). */
+
+.profile-main {
+  display: grid;
+  width: 100%;
+  max-width: calc(760px + 2 * var(--page-gutter));
+  margin: 0 auto;
+  padding: clamp(38px, 5vw, 66px) var(--page-gutter) 100px;
+  gap: 28px;
+}
+
+.profile-intro h1 {
+  margin: 0 0 14px;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  line-height: 1.05;
+}
+
+.profile-intro__lede {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(1.02rem, 1.25vw, 1.16rem);
+}
+
+.profile-main .profile-signout,
+.profile-main .account-delete {
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+/* The card with the receipt of a deletion under it: the receipt is on the
+   page all along (a live region) and takes room only once it has a say. */
+.profile-account { display: grid; }
+.profile-account .notice:not(:empty) { margin-top: 14px; }
