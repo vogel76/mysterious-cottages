@@ -8,7 +8,8 @@ import { AccountSection } from '../../../src/features/profile/AccountSection'
 import { useElf } from '../../../src/providers'
 import { SupportCard } from '../../../src/features/support/SupportCard'
 import { LANGUAGES, setLanguage, toLanguage } from '../../../src/i18n'
-import { ElfIcon, FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, SettingsRow, SettingsSection, ShieldIcon, colors, iconSize, readable, space, useTabBarClearance } from '../../../src/ui'
+import { appVersion } from '../../../src/lib/version'
+import { ElfIcon, FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, SettingsRow, SettingsSection, ShieldIcon, Text, colors, iconSize, readable, space, useTabBarClearance } from '../../../src/ui'
 
 /* The Profile tab: grouped settings in the system idiom. The account block
    (who is signed in, the way to the account screen, or the sign-in), the
@@ -17,8 +18,9 @@ import { ElfIcon, FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, SettingsR
    signed-out seeker too; the account screen repeats the row), the elf
    (the way to start it over, here rather than in its tab, out of the way
    of a child's thumb), the lore (how to play, about), the legal pages in
-   an in-app browser and the social profiles. Sign-out and account
-   deletion live on the account screen. */
+   an in-app browser, the social profiles and, last, the installed version
+   with the commit it was built from, for a bug report. Sign-out and
+   account deletion live on the account screen. */
 
 type Block = { key: string; node: ReactElement }
 
@@ -42,6 +44,7 @@ export default function ProfileScreen() {
       { text: t('mobile:common.cancel'), style: 'cancel' },
       { text: t('mobile:elf.resetConfirm'), style: 'destructive', onPress: elf.reset },
     ])
+  const { version, build, commit } = appVersion()
 
   const blocks: Block[] = [
     { key: 'account', node: <AccountSection /> },
@@ -129,6 +132,20 @@ export default function ProfileScreen() {
             onPress={() => void Linking.openURL(SOCIAL_LINKS.facebook)}
           />
         </SettingsSection>
+      ),
+    },
+    {
+      key: 'version',
+      node: (
+        <Text
+          variant="small"
+          tone="faint"
+          align="center"
+          selectable
+          accessibilityLabel={t('mobile:profile.versionAria', { version, build: build ?? '?', commit })}
+        >
+          {t('mobile:profile.version', { version, commit })}
+        </Text>
       ),
     },
   ]
