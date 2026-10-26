@@ -111,15 +111,20 @@ function RetryingImage({ uri, aspectRatio, radius = 0, policy = 'memory-disk', s
   )
 }
 
-/* The picture's file in the cache when it is there, else the picture's
-   own address: for a drawing that loads the picture itself (the elf's
-   frame) and should not go to the network for what the cache holds. */
-export async function cachedContentUri(uri: string): Promise<string> {
+/* The picture's file in the cache, fetched into it first when it is not
+   there yet, or null when it cannot be had (offline, a broken address):
+   for a drawing that loads the picture itself (the elf's frame) and must
+   not hold a remote address, which Skia would fetch outside the cache on
+   every mount and hang on when the fetch fails. */
+export async function cachedContentFile(uri: string): Promise<string | null> {
   try {
-    const path = await Image.getCachePathAsync(uri)
-    return path ? `file://${path}` : uri
+    const cached = await Image.getCachePathAsync(uri)
+    if (cached) return `file://${cached}`
+    await Image.prefetch([uri], 'memory-disk')
+    const fetched = await Image.getCachePathAsync(uri)
+    return fetched ? `file://${fetched}` : null
   } catch {
-    return uri
+    return null
   }
 }
 

@@ -40,8 +40,11 @@ import { elfKey } from './labels'
 
 export type ElfPickerProps = {
   decor: Decor
-  /* The latest cottage's picture; without one the frame offers no photo. */
+  /* The latest cottage's picture, for the frame's photo thumbnail. */
   photo: string | null
+  /* The slots on offer, as the tab decides them (the frame only with a
+     photo), in the room's order. */
+  slots: readonly SlotId[]
   /* The cottages found, which unlock some of the pieces. */
   foundCount: number
   activeSlot: SlotId
@@ -50,13 +53,13 @@ export type ElfPickerProps = {
   onDone: () => void
 }
 
-/* The furniture the panel offers, in the room's own order: the slots with
-   a choice of rendered variants. */
+/* The furniture the panel can offer, in the room's own order: the slots
+   with a choice of rendered variants. The tab narrows it to what is on
+   offer right now (the frame only once there is a photo). */
 export const DECOR_SLOTS: readonly SlotId[] = SLOTS.map((slot) => slot.id).filter((id) => id !== 'fireplace' && RENDERED_VARIANTS[id].length > 1)
 
-export function ElfPicker({ decor, photo, foundCount, activeSlot, onSelectSlot, onPick, onDone }: ElfPickerProps) {
+export function ElfPicker({ decor, photo, slots, foundCount, activeSlot, onSelectSlot, onPick, onDone }: ElfPickerProps) {
   const { t } = useTranslation()
-  const slots = DECOR_SLOTS.filter((slot) => slot !== 'picture' || photo)
   const ids = RENDERED_VARIANTS[activeSlot].filter((id) => id !== PHOTO_ID || photo)
   const current = renderedVariantFor(activeSlot, decor[activeSlot])
   const reduceMotion = useReducedMotion()
@@ -116,7 +119,8 @@ export function ElfPicker({ decor, photo, foundCount, activeSlot, onSelectSlot, 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} keyboardShouldPersistTaps="handled">
           {ids.map((id) => {
             const selected = id === current
-            const needed = decorFindsNeeded(activeSlot, id, foundCount)
+            /* The piece in the room is the player's whatever the lock says. */
+            const needed = selected ? 0 : decorFindsNeeded(activeSlot, id, foundCount)
             const name = itemLabel(id)
             const label = needed > 0 ? t('mobile:elf.lockedLabel', { count: needed }) : name
             return (
@@ -128,9 +132,11 @@ export function ElfPicker({ decor, photo, foundCount, activeSlot, onSelectSlot, 
                   scaleTo={0.92}
                   accessibilityLabel={needed > 0 ? `${name}. ${label}` : name}
                   accessibilityState={{ selected }}
-                  style={[styles.thumb, selected && styles.thumbSelected, needed > 0 && styles.thumbLocked]}
+                  style={[styles.thumb, selected && styles.thumbSelected]}
                 >
-                  <ElfThumb slot={activeSlot} id={id} photo={photo} />
+                  <View style={needed > 0 ? styles.thumbLocked : undefined}>
+                    <ElfThumb slot={activeSlot} id={id} photo={photo} />
+                  </View>
                   {selected ? (
                     <View style={styles.check} pointerEvents="none">
                       <CheckIcon size={iconSize.sm} weight="bold" color={colors.accentInk} />
@@ -221,7 +227,8 @@ const styles = StyleSheet.create({
     borderColor: colors.accentBorder,
     backgroundColor: colors.accentWash,
   },
-  /* A locked piece is still seen, so there is something to want. */
+  /* A locked piece is still seen, faded, so there is something to want;
+     the lock and the ring over it keep their strength. */
   thumbLocked: {
     opacity: 0.55,
   },
