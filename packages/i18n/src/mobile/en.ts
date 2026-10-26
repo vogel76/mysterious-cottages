@@ -253,7 +253,7 @@ export const mobileEn: typeof mobilePl = {
     wantsFullness: '{{name}} would love a snack.',
     wantsJoy: '{{name}} feels like playing.',
     wantsClean: '{{name}} is dreaming of a bath.',
-    moodEgg: "{{name}} will hatch when the countdown runs out, or at once when you discover your first Cottage. Keep it warm and rock it; today's quests already count.",
+    moodEgg: 'Hatches after the countdown, or at your first Cottage found.',
     moodEggDue: '{{name}} is about to hatch!',
     moodBeaming: '{{name}} is beaming with joy!',
     moodContent: '{{name}} looks around curiously.',
@@ -262,6 +262,8 @@ export const mobileEn: typeof mobilePl = {
     moodAsleep: '{{name}} is sleeping sweetly.',
     tapHint: 'Tap the elf to pet it.',
     tapHintEgg: 'Tap the egg to rock it.',
+    firstLine: 'Pet me! You can also drag the acorn from the button to me.',
+    firstLineEgg: 'Tap the egg to rock it. Warming counts too!',
     cottageAria: 'Your elf in its cottage',
     startOver: 'Start the elf over',
     resetFooter: 'The elf lives on this phone only. Starting over removes it with its whole world: acorns, dust, streak, quests and the furnishing. The Cottages you found stay.',
@@ -444,6 +446,5 @@ export const mobileEn: typeof mobilePl = {
     /* The elf calls for attention, greets a return, and the drag-to-feed hint */
     callHint: 'Hey! I could use something...',
     greetHint: 'I missed you!',
-    dragFeedHint: 'Drag the acorn to the elf.',
   },
 }

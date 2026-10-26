@@ -20,14 +20,13 @@ import { NEED_ICONS, elfKey } from './labels'
    the star dust in the purse, the streak of days and the day's quests
    done out of three (with a dot while the day's reward waits to be
    picked), one pressable row that opens the day's sheet (/elf-today).
-   Under it the mood pill: what the elf is doing (or when the egg hatches)
-   and under that the need the elf wants seen to, when one is under the
-   mark; the line keeps its height so the pill never jumps. What the elf
-   has to say in the moment (a refusal, a good night, a greeting, a quest
-   done) is not here but in the speech bubble over its head (ElfSpeech).
-   Both blocks sit at the top of the screen, so the elf in the middle of
-   the room is never covered; the tab places them and hides the pill while
-   a panel is open. */
+   The name block also carries the elf's mood in a line: what the elf is
+   doing (or, for the egg, how it hatches), or the need it wants seen to
+   when one is under the mark. What the elf has to say in the moment (a
+   refusal, a good night, a greeting, a quest done) is not here but in the
+   speech bubble over its head (ElfSpeech). Everything sits at the top of
+   the screen, so the room and the elf in the middle of it are never
+   covered. */
 
 /* ---------- The top block ---------- */
 
@@ -37,6 +36,9 @@ export type ElfPanel = 'none' | 'decor'
 export type ElfHudProps = {
   name: string
   stage: ElfStage
+  mood: ElfMood
+  /* The need the elf would like seen to, when one is under the mark. */
+  wantedNeed: ElfNeedId | null
   needs: ElfNeeds
   /* When the egg hatches on its own; null once hatched. */
   hatchAt: number | null
@@ -54,7 +56,7 @@ export type ElfHudProps = {
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, questsDone, rewardWaiting, panel, onDecorate, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, streak, questsDone, rewardWaiting, panel, onDecorate, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -65,6 +67,7 @@ export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, questsDone
             {name}
           </Text>
           <CrossfadeText value={t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
+          <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
         </View>
         <View style={styles.controls} pointerEvents="box-none">
           {/* The room can be arranged for the egg and the elf alike. */}
@@ -229,35 +232,27 @@ function LedgerChip({ Glyph, value }: { Glyph: Icon; value: number }) {
   )
 }
 
-/* ---------- The mood pill ---------- */
+/* ---------- The mood line ---------- */
 
-export type ElfMoodPillProps = {
+type MoodLineProps = {
   name: string
   stage: ElfStage
   mood: ElfMood
-  /* When the egg hatches on its own; null once hatched. The egg's
-     sentence counts the hours down and names the other way out: the
-     first cottage found. */
+  /* When the egg hatches on its own; null once hatched. */
   hatchAt: number | null
-  /* The need the elf would like seen to, when one is under the mark. */
   wantedNeed: ElfNeedId | null
 }
 
-export function ElfMoodPill({ name, stage, mood, hatchAt, wantedNeed }: ElfMoodPillProps) {
+/* What the elf is doing, in the name block: the mood's sentence, or the
+   need the elf wants seen to, which says more. The egg's sentence stays
+   the same until the hatch is due: the chip carries the countdown, and a
+   line that changed every minute would be read out every minute. */
+function MoodLine({ name, stage, mood, hatchAt, wantedNeed }: MoodLineProps) {
   const { t } = useTranslation()
-  /* The egg's sentence stays the same until the hatch is due: the chip
-     above carries the countdown, and a pill that changed every minute
-     would be read out every minute. */
   const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
-  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue', { name }) : t('mobile:elf.moodEgg', { name })) : t(elfKey('mood', mood), { name })
   const want = wantedNeed && stage !== 'egg' ? t(elfKey('wants', wantedNeed), { name }) : null
-
-  return (
-    <View style={[styles.chrome, styles.mood]} accessibilityLiveRegion="polite">
-      <CrossfadeText value={sentence} variant="small" align="center" style={styles.chromeInk} />
-      <View style={styles.hint}>{want ? <CrossfadeText value={want} variant="small" weight="semibold" align="center" style={styles.want} /> : null}</View>
-    </View>
-  )
+  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue', { name }) : t('mobile:elf.moodEgg', { name })) : t(elfKey('mood', mood), { name })
+  return <CrossfadeText value={want ?? sentence} variant="small" numberOfLines={2} style={want ? styles.want : styles.chromeInk} />
 }
 
 const styles = StyleSheet.create({
@@ -276,8 +271,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.control,
     backgroundColor: mapPalette.chrome,
   },
+  /* The name block takes the width the controls leave, so the mood line
+     has room for two lines. */
   identity: {
-    flexShrink: 1,
+    flex: 1,
     paddingVertical: space.sm,
     paddingHorizontal: space.md,
     gap: 1,
@@ -371,18 +368,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accentInk,
     backgroundColor: colors.accentStrong,
-  },
-  mood: {
-    alignSelf: 'center',
-    alignItems: 'center',
-    gap: 2,
-    paddingVertical: space.sm,
-    paddingHorizontal: space.lg,
-    borderRadius: radius.card,
-  },
-  hint: {
-    minHeight: 20,
-    alignItems: 'center',
   },
   want: {
     color: colors.accentStrong,

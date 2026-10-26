@@ -580,7 +580,7 @@ painted room in Skia (`src/features/elf/cottage`) that fills the screen
 under the status bar and the floating tab bar as the Atlas does, with the
 elf big in the middle, and a light HUD over it (`ElfHud.tsx`: the name,
 the form, the decorating button and the needs as small chips
-at the top, the mood pill under them; `ElfActionBar.tsx`: the round care
+at the top, the elf's mood as a line of the name block; `ElfActionBar.tsx`: the round care
 buttons above the tab bar, with the dots of each care's daily cap;
 `ElfSpeech.tsx`: the speech bubble over the elf's head for what it says,
 a refusal, a good night, a greeting, a quest done). A tap on the elf pets it (within the pet
@@ -625,7 +625,7 @@ every care, pet, egg, sleep and swap:
 |---|---|
 | Needs | fullness, joy, clean; each 0 to 100, never under the floor of 35 |
 | Drift | each need eases towards the floor over days (about two thirds of the way in 4 days for fullness, 5 for joy, 7 for clean), at half pace at night; a day away leaves the elf content, three days wanting, a week missing the player |
-| Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under 60 (the mood pill names it); beaming from an average of 75 with no want; otherwise content |
+| Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under 60 (the name block names it); beaming from an average of 75 with no want; otherwise content |
 | Sleep | by the clock: asleep from 21:00 to 07:00; the button tucks the elf in from 19:00 (until the morning) and before that answers that it is too early; woken at night it dozes off again after 10 minutes |
 | Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it hatches 6 hours after it appeared, or at the first cottage found, whichever comes first, and the HUD counts the hours down |
 | Care | feed fullness +25 (3 a day, refused at 90), play joy +30 (2 a day), bath clean +60 (1 a day); past the cap the elf has had enough for today |

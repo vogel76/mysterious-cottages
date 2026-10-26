@@ -284,8 +284,8 @@ export const mobilePl = {
     wantsFullness: '{{name}} chętnie by coś przekąsił.',
     wantsJoy: '{{name}} ma ochotę na zabawę.',
     wantsClean: '{{name}} marzy o kąpieli.',
-    /* The mood pill over the scene, and the first-time tap hint */
-    moodEgg: '{{name}} wykluje się, gdy minie odliczanie, albo od razu, gdy odkryjesz pierwszą Chatynkę. Ogrzewaj i kołysz, zadania dnia liczą się już teraz.',
+    /* The mood line in the HUD, and the hints a screen reader gets for the room */
+    moodEgg: 'Wykluje się po odliczaniu albo przy pierwszej odkrytej Chatynce.',
     moodEggDue: '{{name}} zaraz się wykluje!',
     moodBeaming: '{{name}} promienieje radością!',
     moodContent: '{{name}} rozgląda się ciekawie.',
@@ -294,6 +294,9 @@ export const mobilePl = {
     moodAsleep: '{{name}} śpi słodko.',
     tapHint: 'Dotknij elfa, aby go pogłaskać.',
     tapHintEgg: 'Dotknij jajka, aby je pokołysać.',
+    /* The elf's first words to a new player, said once in its bubble */
+    firstLine: 'Pogłaszcz mnie! Możesz też przeciągnąć do mnie żołądź z guzika.',
+    firstLineEgg: 'Dotknij jajka, żeby je pokołysać. Ogrzewanie też się liczy!',
     cottageAria: 'Twój elf w swojej chatynce',
     /* Starting over, from the profile */
     startOver: 'Zacznij elfa od nowa',
@@ -483,9 +486,8 @@ export const mobilePl = {
     itemCauldron: 'Kociołek',
     itemToyChest: 'Skrzynia z zabawkami',
     itemFieldstone: 'Kamienny kominek',
-    /* The elf calls for attention, greets a return, and the drag-to-feed hint */
+    /* The elf calls for attention and greets a return */
     callHint: 'Hej! Przydałoby mi się coś...',
     greetHint: 'Tęskniłem za Tobą!',
-    dragFeedHint: 'Przeciągnij żołądź do elfa.',
   },
 }
