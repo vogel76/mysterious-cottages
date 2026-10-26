@@ -575,15 +575,17 @@ under the status bar and the floating tab bar as the Atlas does, with the
 elf big in the middle, and a light HUD over it (`ElfHud.tsx`: the name,
 the form, the decorating button and the needs as small chips
 at the top, the mood pill under them; `ElfActionBar.tsx`: the round care
-buttons above the tab bar). A tap on the elf pets it (within the pet
+buttons above the tab bar, with the dots of each care's daily cap;
+`ElfSpeech.tsx`: the speech bubble over the elf's head for what it says,
+a refusal, a good night, a greeting, a quest done). A tap on the elf pets it (within the pet
 cooldown it is poked instead, so it always answers), a tap on the egg
 rocks it. It touches nothing of the expedition flow: no cottage, code,
 story or reward knows about it, but the cottages found decide the elf's
 form and the first find hatches the egg early. The day's quests, the purse
 (acorns and star dust) and the streak are counted by the rules and stand
 in the HUD's ledger, and a tap on it opens the sheet (`/elf-ledger`)
-that says what they are and what they earn; what an action earned
-passes through the hint. A
+that says what they are and what they earn; what an action earned the
+elf says in its bubble. A
 sheet to read the quests and pick the day's reward comes in a later step,
 and the shop the dust is for later still.
 
@@ -613,9 +615,10 @@ every care, pet, egg, sleep and swap:
 | Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3 |
 
 Every action is refused while the elf sleeps (the buttons dim and tell
-assistive tech so, but stay pressable: the rules refuse and the sleeping
-hint answers, waking excepted), and the first form and fresh needs are
-set when the egg hatches.
+assistive tech so, but stay pressable: the rules refuse and the elf says
+so from its bubble, waking excepted); a care past its daily cap is
+refused the same way, with its dots dark before the tap; and the first
+form and fresh needs are set when the egg hatches.
 
 ### The feel
 

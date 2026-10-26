@@ -4,15 +4,16 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { careLeft, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { useElf, useForeground } from '../../providers'
 import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import type { SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfAdoption } from './ElfAdoption'
-import { ElfHud, ElfMoodPill, type ElfHint, type ElfPanel } from './ElfHud'
+import { ElfHud, ElfMoodPill, type ElfPanel } from './ElfHud'
 import { DECOR_SLOTS, ElfPicker } from './ElfPicker'
+import { ElfSpeech } from './ElfSpeech'
 import { elfKey } from './labels'
 import { useEvolutionPresenter } from './useEvolutionPresenter'
 import { useReturnGreeting } from './useReturnGreeting'
@@ -31,18 +32,19 @@ import { useReturnGreeting } from './useReturnGreeting'
    separate head, leans towards it), and dropping it on the elf feeds it;
    dropped elsewhere it flies back. Every action is answered in the scene
    (the care, the tap, the wake, a cheer for the day's quests) and, when
-   the rules refuse or the elf sleeps, in the hint under the mood line; the
-   evolution card is presented by the hook while the tab is focused. The
-   elf also speaks first: a need it wants seen to makes it wave for
-   attention once per episode, and a return after half an hour away is
-   greeted.
+   the rules refuse or the elf sleeps, by the elf itself in a speech
+   bubble over its head (ElfSpeech); the care buttons show the day's caps
+   as dots, so a refusal is rarely a surprise. The evolution card is
+   presented by the hook while the tab is focused. The elf also speaks
+   first: a need it wants seen to makes it wave for attention once per
+   episode, and a return after half an hour away is greeted.
 
    Coming into view is a visit for the rules (packages/core, elf.ts): the
    day is settled, the streak counted, the quests dealt. What a visit or an
    action earned (a quest done and its acorns, the full set, a streak
    milestone) and what was lost (a streak that ended with a missed day)
-   comes back as news and is shown as hints in turn, the set and the
-   milestone with a cheer in the scene. The purse and the streak stand in
+   comes back as news and is said in the bubble line by line, the set and
+   the milestone with a cheer in the scene. The purse and the streak stand in
    the HUD's ledger, and a tap on it opens the sheet that says what they
    are (/elf-ledger); a sheet to read the day's quests and pick its reward
    comes in a later step.
@@ -68,8 +70,8 @@ import { useReturnGreeting } from './useReturnGreeting'
    top: the tabs keep this screen mounted, and its loops would otherwise
    run under the Atlas for nobody. A new egg gets a fresh scene. */
 
-/* How long a passing hint stays under the mood line. */
-const HINT_MS = 3500
+/* How long a line stays in the elf's speech bubble. */
+const SPEECH_MS = 4000
 /* The acorn under the finger. */
 const ACORN = 44
 
@@ -120,44 +122,47 @@ export function ElfTab() {
     if (focused && loaded) visit()
   })
 
-  /* The passing hints: one on screen at a time for its while, the news
-     waiting in a queue behind it. An answer to a touch (a refusal, the
-     greeting, the call) shows at once; a news hint it cuts short goes
-     back to the front of the queue, so what was earned or lost is never
-     missed. */
-  const [flash, setFlash] = useState<ElfHint | null>(null)
-  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const hintQueue = useRef<ElfHint[]>([])
-  /* The hint on screen, and whether it came from the queue. */
-  const showing = useRef<{ hint: ElfHint; queued: boolean } | null>(null)
-  const advanceHint = useCallback(() => {
-    flashTimer.current = null
-    const next = hintQueue.current.shift() ?? null
-    showing.current = next ? { hint: next, queued: true } : null
-    setFlash(next)
-    if (next) flashTimer.current = setTimeout(advanceHint, HINT_MS)
+  /* What the elf says: one line at a time in the bubble over its head
+     for its while, the news waiting in a queue behind it. An answer to a
+     touch (a refusal, the greeting, the call) is said at once; a news line
+     it cuts short goes back to the front of the queue, so what was earned
+     or lost is never missed. The bubble sits where the scene says the
+     figure's top is at the moment the line starts. */
+  const [speech, setSpeech] = useState<{ text: string; anchor: { x: number; y: number } | null } | null>(null)
+  const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const speechQueue = useRef<string[]>([])
+  /* The line on screen, and whether it came from the queue. */
+  const saying = useRef<{ text: string; queued: boolean } | null>(null)
+  const show = useCallback((text: string | null) => {
+    setSpeech(text ? { text, anchor: sceneRef.current?.figureTop() ?? null } : null)
   }, [])
-  const showHint = useCallback(
-    (text: string, tone: ElfHint['tone'] = 'soft') => {
-      if (flashTimer.current) clearTimeout(flashTimer.current)
-      if (showing.current?.queued) hintQueue.current.unshift(showing.current.hint)
-      const hint = { text, tone }
-      showing.current = { hint, queued: false }
-      setFlash(hint)
-      flashTimer.current = setTimeout(advanceHint, HINT_MS)
+  const advanceSpeech = useCallback(() => {
+    speechTimer.current = null
+    const next = speechQueue.current.shift() ?? null
+    saying.current = next ? { text: next, queued: true } : null
+    show(next)
+    if (next) speechTimer.current = setTimeout(advanceSpeech, SPEECH_MS)
+  }, [show])
+  const say = useCallback(
+    (text: string) => {
+      if (speechTimer.current) clearTimeout(speechTimer.current)
+      if (saying.current?.queued) speechQueue.current.unshift(saying.current.text)
+      saying.current = { text, queued: false }
+      show(text)
+      speechTimer.current = setTimeout(advanceSpeech, SPEECH_MS)
     },
-    [advanceHint],
+    [advanceSpeech, show],
   )
-  const queueHints = useCallback(
-    (hints: ElfHint[]) => {
-      hintQueue.current.push(...hints)
-      if (!flashTimer.current) advanceHint()
+  const queueSpeech = useCallback(
+    (lines: string[]) => {
+      speechQueue.current.push(...lines)
+      if (!speechTimer.current) advanceSpeech()
     },
-    [advanceHint],
+    [advanceSpeech],
   )
   useEffect(
     () => () => {
-      if (flashTimer.current) clearTimeout(flashTimer.current)
+      if (speechTimer.current) clearTimeout(speechTimer.current)
     },
     [],
   )
@@ -166,19 +171,19 @@ export function ElfTab() {
   const hatched = Boolean(state?.hatched)
   const awake = hatched && !state?.sleeping
 
-  /* The news of the last action or visit, as hints in turn: a streak lost
-     first (it is the one that stings), then what was earned. The full set
-     of quests and a streak milestone get a cheer in the scene. */
+  /* The news of the last action or visit, said line by line: a streak
+     lost first (it is the one that stings), then what was earned. The
+     full set of quests and a streak milestone get a cheer in the scene. */
   useEffect(() => {
     if (!news) return
-    const hints: ElfHint[] = []
-    if (news.streakLost !== null) hints.push({ text: t('mobile:elf.streakLost', { count: news.streakLost }), tone: 'danger' })
-    if (news.milestoneDust) hints.push({ text: t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }), tone: 'accent' })
-    if (news.completed.length) hints.push({ text: t('mobile:elf.questDone', { count: news.acorns }), tone: 'accent' })
-    if (news.setBonus) hints.push({ text: t('mobile:elf.questSet'), tone: 'accent' })
-    queueHints(hints)
+    const lines: string[] = []
+    if (news.streakLost !== null) lines.push(t('mobile:elf.streakLost', { count: news.streakLost }))
+    if (news.milestoneDust) lines.push(t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }))
+    if (news.completed.length) lines.push(t('mobile:elf.questDone', { count: news.acorns }))
+    if (news.setBonus) lines.push(t('mobile:elf.questSet'))
+    queueSpeech(lines)
     if (news.setBonus || news.milestoneDust) sceneRef.current?.react('cheer')
-  }, [news, queueHints, t])
+  }, [news, queueSpeech, t])
 
   /* The elf waking, by the button or by the morning: the scene plays the
      wake when the tab can see it (a wake while away is played on the
@@ -235,7 +240,7 @@ export function ElfTab() {
     lastInteraction,
     onGreet: () => {
       sceneRef.current?.react('greet')
-      showHint(t('mobile:elf.greetHint', { name }), 'accent')
+      say(t('mobile:elf.greetHint'))
     },
   })
 
@@ -255,8 +260,8 @@ export function ElfTab() {
     if (!sceneRef.current) return
     calledNeed.current = wanted
     sceneRef.current.react('call')
-    showHint(t('mobile:elf.callHint', { name }), 'accent')
-  }, [wanted, awake, focused, panel, greeting, size, showHint, t, name])
+    say(t('mobile:elf.callHint'))
+  }, [wanted, awake, focused, panel, greeting, size, say, t])
 
   /* ---------- The actions ---------- */
 
@@ -291,12 +296,12 @@ export function ElfTab() {
   const onCare = useCallback(
     (id: ElfCareAction) => {
       const outcome = elf.care(id)
-      if (outcome.kind === 'refused') showHint(t(elfKey('guard', outcome.reason), { name }), 'soft')
-      else if (outcome.kind === 'asleep') showHint(t('mobile:elf.asleepHint', { name }), 'soft')
+      if (outcome.kind === 'refused') say(t(elfKey('guard', outcome.reason)))
+      else if (outcome.kind === 'asleep') say(t('mobile:elf.asleepHint'))
       else if (outcome.kind === 'done') sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
       return outcome.kind
     },
-    [elf, showHint, t, name],
+    [elf, say, t],
   )
 
   const onTendEgg = useCallback(
@@ -310,9 +315,9 @@ export function ElfTab() {
   /* The wake itself is played by the sleeping edge above. */
   const onToggleSleep = useCallback(() => {
     const outcome = elf.toggleSleep()
-    if (outcome === 'slept') showHint(t('mobile:elf.fallsAsleep', { name }), 'soft')
-    else if (outcome === 'tooEarly') showHint(t('mobile:elf.tooEarlyHint', { name }), 'soft')
-  }, [elf, showHint, t, name])
+    if (outcome === 'slept') say(t('mobile:elf.fallsAsleep'))
+    else if (outcome === 'tooEarly') say(t('mobile:elf.tooEarlyHint'))
+  }, [elf, say, t])
 
   /* ---------- Drag-to-feed ---------- */
 
@@ -396,10 +401,13 @@ export function ElfTab() {
 
   const isEgg = stage === 'egg'
   const hatchTime = hatchAt(state)
+  /* What the day still allows of each care, for the buttons' dots. */
+  const now = Date.now()
+  const left = { feed: careLeft(state, 'feed', now), play: careLeft(state, 'play', now), bath: careLeft(state, 'bath', now) }
   const editing = panel === 'decor'
   /* Bedtime, before the elf is tucked in: heavy lids and yawns say it is
      time. Read at render: the drift re-renders the tab every few seconds. */
-  const sleepy = awake && isBedtimeAt(Date.now())
+  const sleepy = awake && isBedtimeAt(now)
   /* Where the action bar and the panels stand above the floating tab bar. */
   const bottomOffset = tabBarHeight + TAB_BAR_OVERHANG + space.md
   const bottomInset = panel === 'none' ? 0 : bottomOffset + panelHeight
@@ -439,7 +447,7 @@ export function ElfTab() {
         <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
-            <ElfMoodPill name={state.name} stage={stage} mood={mood} hatchAt={hatchTime} wantedNeed={wanted} flash={flash} />
+            <ElfMoodPill name={state.name} stage={stage} mood={mood} hatchAt={hatchTime} wantedNeed={wanted} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (
@@ -463,10 +471,14 @@ export function ElfTab() {
         )}
       </View>
 
+      {/* The elf's line, over its head where the scene put it when the
+          line started. */}
+      {size ? <ElfSpeech text={speech?.text ?? null} anchor={speech?.anchor ?? null} width={size.width} height={size.height} /> : null}
+
       <View style={[styles.bottom, { bottom: bottomOffset }]} pointerEvents="box-none">
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfActionBar stage={stage} sleeping={state.sleeping} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
+            <ElfActionBar stage={stage} sleeping={state.sleeping} careLeft={left} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
           </Animated.View>
         ) : (
           <View onLayout={onPanelLayout}>

@@ -252,7 +252,10 @@ export const mobilePl = {
     hatchSoon: 'lada chwila',
     hatchAria: 'Wykluwanie {{when}}',
     durationHours: '{{hours}} h {{minutes}} min',
+    durationHoursOnly: '{{hours}} h',
     durationMinutes: '{{minutes}} min',
+    /* A care's gain floating over a need's chip */
+    needGain: '+{{value}}',
     /* The needs and the hatching in the HUD */
     needFullness: 'Sytość',
     needJoy: 'Radość',
@@ -266,13 +269,13 @@ export const mobilePl = {
     actionBath: 'Wykąp',
     actionSleep: 'Uśpij',
     actionWake: 'Obudź',
-    /* Why an action was refused (a full belly, the day's cap, bedtime not
-       yet come), and the sleeping elf */
-    guardFull: '{{name}} jest już najedzony.',
-    guardCap: '{{name}} ma na dziś dość. Jutro chętnie znowu!',
-    tooEarlyHint: 'Na sen jeszcze za wcześnie. {{name}} kładzie się od 19:00.',
-    asleepHint: 'Ćśś... {{name}} śpi.',
-    fallsAsleep: '{{name}} zasypia...',
+    /* What the elf says in the bubble over its head: why it refused (a
+       full belly, the day's cap, bedtime not yet come), and asleep */
+    guardFull: 'Jestem już najedzony!',
+    guardCap: 'Na dziś mam dość. Jutro chętnie znowu!',
+    tooEarlyHint: 'Na sen jeszcze za wcześnie. Kładę się od 19:00.',
+    asleepHint: 'Ćśś... teraz śpię.',
+    fallsAsleep: 'Dobranoc...',
     /* What the elf would like seen to */
     wantsFullness: '{{name}} chętnie by coś przekąsił.',
     wantsJoy: '{{name}} ma ochotę na zabawę.',
@@ -323,10 +326,10 @@ export const mobilePl = {
     questDone_other: 'Zadanie wykonane! +{{count}} żołędzi.',
     questSet: 'Komplet zadań dnia! Gwiezdny pył: +1.',
     streakMilestone: '{{days}} dni z rzędu! Gwiezdny pył: +{{dust}}.',
-    streakLost_one: 'Seria {{count}} dnia przepadła. Dziś zaczynasz nową.',
-    streakLost_few: 'Seria {{count}} dni przepadła. Dziś zaczynasz nową.',
-    streakLost_many: 'Seria {{count}} dni przepadła. Dziś zaczynasz nową.',
-    streakLost_other: 'Seria {{count}} dni przepadła. Dziś zaczynasz nową.',
+    streakLost_one: 'Seria {{count}} dnia przepadła... Zaczynamy nową!',
+    streakLost_few: 'Seria {{count}} dni przepadła... Zaczynamy nową!',
+    streakLost_many: 'Seria {{count}} dni przepadła... Zaczynamy nową!',
+    streakLost_other: 'Seria {{count}} dni przepadła... Zaczynamy nową!',
     /* The wardrobe and the decor edit mode: the panels inside the tab */
     wardrobe: 'Szafa',
     decorate: 'Urządź',
@@ -406,8 +409,8 @@ export const mobilePl = {
     itemToyChest: 'Skrzynia z zabawkami',
     itemFieldstone: 'Kamienny kominek',
     /* The elf calls for attention, greets a return, and the drag-to-feed hint */
-    callHint: '{{name}} macha do Ciebie.',
-    greetHint: '{{name}} tęsknił!',
+    callHint: 'Hej! Przydałoby mi się coś...',
+    greetHint: 'Tęskniłem za Tobą!',
     dragFeedHint: 'Przeciągnij żołądź do elfa.',
   },
 }

@@ -174,6 +174,8 @@ const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; cap: number }
   play: { need: 'joy', gain: 30, cap: 2 },
   bath: { need: 'clean', gain: 60, cap: 1 },
 }
+/* How many times a day each care is welcome, for the buttons to show. */
+export const ELF_CARE_CAPS: Record<ElfCareAction, number> = { feed: CARE.feed.cap, play: CARE.play.cap, bath: CARE.bath.cap }
 /* A feed is refused at this fullness, with no penalty. */
 const FULL_AT = 90
 

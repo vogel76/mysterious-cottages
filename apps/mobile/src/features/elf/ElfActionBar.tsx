@@ -3,22 +3,24 @@ import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { BathIcon, FeedIcon, LullabyIcon, PressableScale, SleepIcon, Text, ToyIcon, WakeIcon, WarmIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
-import type { ElfCareAction, ElfEggAction, ElfStage } from '@chatynkowo/core'
+import { ELF_CARE_CAPS, type ElfCareAction, type ElfEggAction, type ElfStage } from '@chatynkowo/core'
 
 /* The care actions as a row of round buttons floating over the cottage
    scene, above the tab bar: for an egg the two ways to hatch it, for an
    elf feeding, playing, bathing and sleep or wake. The care buttons take
    the gold face of a primary button, the sleep toggle the ghost face, each
-   with a short label underneath. While the elf sleeps the care buttons
-   dim and tell assistive tech they are disabled, but they stay pressable:
-   the rules refuse the action and the tab answers with the sleeping hint,
-   so a tap is never met with silence. The feed button also lets the acorn
+   with a short label underneath, and under each care button the dots of
+   its daily cap (three feeds, two plays, one bath), lit while they are
+   left, so the player sees before tapping what the day still allows.
+   While the elf sleeps, or once a cap is used up, the button dims and
+   tells assistive tech it is disabled, but it stays pressable: the rules
+   refuse the action and the elf says why, so a tap is never met with
+   silence. The feed button also lets the acorn
    be dragged: a pan that starts on it reports the finger's position in
    window coordinates to the tab, which floats an acorn under the finger,
    has the elf follow it with its eyes and feeds it when the acorn is
    dropped on it (the pan and the plain tap race, so a still finger stays a
-   tap). A care past its cap for the day is refused the same way as a
-   sleeping elf's: the rules say no and the tab answers with the hint. */
+   tap). */
 
 export type FeedDragPhase = 'begin' | 'move' | 'end'
 /* The acorn under the finger, in window coordinates. */
@@ -27,6 +29,8 @@ export type FeedDragHandler = (phase: FeedDragPhase, x: number, y: number) => vo
 export type ElfActionBarProps = {
   stage: ElfStage
   sleeping: boolean
+  /* How many of each care the day still allows. */
+  careLeft: Record<ElfCareAction, number>
   onCare: (id: ElfCareAction) => void
   onTendEgg: (id: ElfEggAction) => void
   onToggleSleep: () => void
@@ -40,17 +44,29 @@ type Action = {
   /* The gold primary face, or the ghost face of the sleep toggle. */
   face: 'primary' | 'ghost'
   disabled?: boolean
+  /* The daily cap and what is left of it, as dots under the button. */
+  cap?: { total: number; left: number }
   onPress: () => void
 }
 
 const BUTTON = 56
+const DOT = 6
 /* The press feedback of the round buttons. */
 const PRESS_SCALE = 0.9
 /* How far the finger travels before a press on the acorn becomes a drag. */
 const DRAG_START = 10
 
-export function ElfActionBar({ stage, sleeping, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
+export function ElfActionBar({ stage, sleeping, careLeft, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
   const { t } = useTranslation()
+  const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => ({
+    key: id,
+    Glyph,
+    label,
+    face: 'primary',
+    disabled: sleeping || careLeft[id] === 0,
+    cap: { total: ELF_CARE_CAPS[id], left: careLeft[id] },
+    onPress: () => onCare(id),
+  })
 
   const actions: Action[] =
     stage === 'egg'
@@ -59,9 +75,9 @@ export function ElfActionBar({ stage, sleeping, onCare, onTendEgg, onToggleSleep
           { key: 'rock', Glyph: LullabyIcon, label: t('mobile:elf.actionRock'), face: 'primary', onPress: () => onTendEgg('rock') },
         ]
       : [
-          { key: 'feed', Glyph: FeedIcon, label: t('mobile:elf.actionFeed'), face: 'primary', disabled: sleeping, onPress: () => onCare('feed') },
-          { key: 'play', Glyph: ToyIcon, label: t('mobile:elf.actionPlay'), face: 'primary', disabled: sleeping, onPress: () => onCare('play') },
-          { key: 'bath', Glyph: BathIcon, label: t('mobile:elf.actionBath'), face: 'primary', disabled: sleeping, onPress: () => onCare('bath') },
+          care('feed', FeedIcon, t('mobile:elf.actionFeed')),
+          care('play', ToyIcon, t('mobile:elf.actionPlay')),
+          care('bath', BathIcon, t('mobile:elf.actionBath')),
           sleeping
             ? { key: 'wake', Glyph: WakeIcon, label: t('mobile:elf.actionWake'), face: 'ghost', onPress: onToggleSleep }
             : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', onPress: onToggleSleep },
@@ -77,7 +93,7 @@ export function ElfActionBar({ stage, sleeping, onCare, onTendEgg, onToggleSleep
 }
 
 function ActionButton({ action }: { action: Action }) {
-  const { Glyph, label, face, disabled, onPress } = action
+  const { Glyph, label, face, disabled, cap, onPress } = action
   const primary = face === 'primary'
   return (
     <View style={[styles.item, disabled && styles.itemDisabled]}>
@@ -93,9 +109,22 @@ function ActionButton({ action }: { action: Action }) {
       >
         <Glyph size={iconSize.lg} weight={primary ? 'fill' : 'duotone'} color={primary ? colors.accentInk : colors.ink} />
       </PressableScale>
+      <CapDots cap={cap} />
       <Text variant="label" weight="semibold" align="center" numberOfLines={1} style={styles.label}>
         {label}
       </Text>
+    </View>
+  )
+}
+
+/* The day's cap under a care button: one dot per allowed use, lit while
+   it is left. The button's label already says what the dots are for. A
+   button without a cap keeps the row's height, so every label sits on
+   the same line. */
+function CapDots({ cap }: { cap?: { total: number; left: number } }) {
+  return (
+    <View style={styles.dots} pointerEvents="none">
+      {cap ? Array.from({ length: cap.total }, (_, index) => <View key={index} style={[styles.dot, index < cap.left ? styles.dotLeft : styles.dotUsed]} />) : null}
     </View>
   )
 }
@@ -107,7 +136,7 @@ function ActionButton({ action }: { action: Action }) {
    name, and feeds on a screen reader's activate; its own press is left to
    the tap gesture so a finger feeds once. */
 function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: FeedDragHandler }) {
-  const { Glyph, label, disabled, onPress } = action
+  const { Glyph, label, disabled, cap, onPress } = action
 
   const gesture = useMemo(() => {
     const pan = Gesture.Pan()
@@ -145,6 +174,7 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
           <Glyph size={iconSize.lg} weight="fill" color={colors.accentInk} />
         </PressableScale>
       </GestureDetector>
+      <CapDots cap={cap} />
       <Text variant="label" weight="semibold" align="center" numberOfLines={1} style={styles.label}>
         {label}
       </Text>
@@ -166,6 +196,26 @@ const styles = StyleSheet.create({
   },
   itemDisabled: {
     opacity: 0.5,
+  },
+  dots: {
+    flexDirection: 'row',
+    gap: space.xs,
+    minHeight: DOT,
+  },
+  dot: {
+    width: DOT,
+    height: DOT,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+  },
+  dotLeft: {
+    backgroundColor: colors.accent,
+  },
+  /* A used dot keeps its ring, so the cap stays countable. */
+  dotUsed: {
+    backgroundColor: 'transparent',
+    opacity: 0.6,
   },
   button: {
     width: BUTTON,

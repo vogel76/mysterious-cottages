@@ -95,6 +95,9 @@ export type CottageSceneHandle = {
   hitsPuppet: (viewX: number, viewY: number) => boolean
   /* The elf turns to a slot and admires what stands there. */
   admireSlot: (slot: SlotId) => void
+  /* The view point just above the figure (the elf's or the egg's top),
+     where a speech bubble sits. */
+  figureTop: () => { x: number; y: number }
 }
 
 export type CottageSceneProps = {
@@ -342,8 +345,9 @@ export const CottageScene = memo(
           const centre = slotCentre(sceneSlots.find((slot) => slot.id === id) ?? slotById(id))
           admireAt(centre.x, centre.y)
         },
+        figureTop: () => ({ x: layout.offsetX + figureOrigin.x * layout.scale, y: layout.offsetY + (figureOrigin.y + figureBox.y) * layout.scale }),
       }),
-      [reactScene, lookAt, lookRelease, admireAt, layout, hitsFigure, sceneSlots],
+      [reactScene, lookAt, lookRelease, admireAt, layout, hitsFigure, sceneSlots, figureOrigin, figureBox],
     )
 
     /* The same pet for a screen reader's double tap: it has no point to
