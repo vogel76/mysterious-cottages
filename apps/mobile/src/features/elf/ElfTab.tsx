@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { careLeft, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
@@ -304,13 +304,20 @@ export function ElfTab() {
     if (DECOR_SLOTS.includes(slot)) setDecorSlot(slot)
   }, [])
 
+  /* A piece the finds have not unlocked yet is not placed: the elf says
+     how many cottages it still takes. */
   const { placeDecor } = elf
   const onPick = useCallback(
     (slot: SlotId, id: string) => {
+      const needed = decorFindsNeeded(slot, id, foundCount)
+      if (needed > 0) {
+        say(t('mobile:elf.lockedLine', { count: needed }))
+        return
+      }
       placeDecor(slot, id)
       sceneRef.current?.admireSlot(slot)
     },
-    [placeDecor],
+    [placeDecor, foundCount, say, t],
   )
 
   /* ---------- The elf's own voice ---------- */
@@ -460,12 +467,6 @@ export function ElfTab() {
     [acornX, acornY, acornScale, acornOpacity, onCare],
   )
 
-  const confirmReset = () =>
-    Alert.alert(t('mobile:elf.resetTitle'), t('mobile:elf.resetBody'), [
-      { text: t('mobile:common.cancel'), style: 'cancel' },
-      { text: t('mobile:elf.resetConfirm'), style: 'destructive', onPress: elf.reset },
-    ])
-
   /* The form and the skeleton scroll under no header, so they take the top
      inset themselves and end above the bar. */
   const bottom = { paddingBottom: tabBarHeight + space.xxl }
@@ -535,7 +536,7 @@ export function ElfTab() {
           of the room is never covered; the bottom holds the action bar or
           the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none" onLayout={onTopLayout}>
-        <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
+        <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
             <ElfMoodPill name={state.name} stage={stage} mood={mood} hatchAt={hatchTime} wantedNeed={wanted} />
@@ -572,7 +573,7 @@ export function ElfTab() {
           </Animated.View>
         ) : (
           <View onLayout={onPanelLayout}>
-            <ElfPicker decor={decor} photo={photo} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
+            <ElfPicker decor={decor} photo={photo} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
           </View>
         )}
       </View>

@@ -186,6 +186,19 @@ const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; cap: number }
   play: { need: 'joy', gain: 30, cap: 2 },
   bath: { need: 'clean', gain: 60, cap: 1 },
 }
+/* The furniture the finds unlock, by slot and id: a piece stays locked in
+   the decorating panel until this many cottages are found. The ids are
+   the app's catalogue's; the rules keep only the thresholds, so a shop
+   paid in acorns can use the same table later. What a player placed
+   before a lock existed is never taken away. */
+export const DECOR_UNLOCKS: Record<string, number> = { 'rug:woven': 1, 'window:round': 3, 'bed:hammock': 5 }
+
+/* How many more cottages a piece needs before it can be placed; 0 when it
+   is free. */
+export function decorFindsNeeded(slot: string, id: string, finds: number): number {
+  return Math.max(0, (DECOR_UNLOCKS[`${slot}:${id}`] ?? 0) - finds)
+}
+
 /* How many times a day each care is welcome, for the buttons to show,
    and which need each care answers, for the app to name the gain. */
 export const ELF_CARE_CAPS: Record<ElfCareAction, number> = { feed: CARE.feed.cap, play: CARE.play.cap, bath: CARE.bath.cap }

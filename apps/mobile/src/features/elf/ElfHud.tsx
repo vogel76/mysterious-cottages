@@ -3,13 +3,14 @@ import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { ELF_NEEDS, type ElfMood, type ElfNeedId, type ElfNeeds, type ElfStage, type ElfWallet } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, PressableScale, QuestIcon, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, PressableScale, QuestIcon, ReduceMotion, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
    cards so the two full-bleed tabs read alike. The top block: the elf's
    name with its form underneath, the decorating button (the panel it
-   opens lives inside the tab), the way to start over, the needs as a row
+   opens lives inside the tab; starting over lives in the profile, out of
+   the way of a child's thumb), the needs as a row
    of small chips (the glyph and a short bar whose colour says how the need
    stands: green while comfortable, gold when the elf would like it seen
    to; a care's gain floats up over the chip as "+25" for a moment), or,
@@ -51,10 +52,9 @@ export type ElfHudProps = {
   /* The ledger was tapped: the day's sheet (the quests, the reward to
      pick, the streak, and what the figures mean). */
   onLedger: () => void
-  onReset: () => void
 }
 
-export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, questsDone, rewardWaiting, panel, onDecorate, onLedger, onReset }: ElfHudProps) {
+export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, questsDone, rewardWaiting, panel, onDecorate, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -70,9 +70,6 @@ export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, questsDone
           {/* The room can be arranged for the egg and the elf alike. */}
           <IconButton label={t('mobile:elf.decorate')} onPress={onDecorate} active={panel === 'decor'} style={[styles.control, panel === 'decor' && styles.controlActive]}>
             <DecorIcon size={iconSize.md} color={mapPalette.chromeIcon} />
-          </IconButton>
-          <IconButton label={t('mobile:elf.startOver')} onPress={onReset} style={styles.control}>
-            <ResetViewIcon size={iconSize.md} color={mapPalette.chromeIcon} />
           </IconButton>
         </View>
       </View>
