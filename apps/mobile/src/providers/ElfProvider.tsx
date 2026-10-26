@@ -1,14 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { STORAGE_KEYS } from '../config'
-import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
 import {
   applyElapsed,
+  claimDailyReward as claimElfReward,
   equip as equipElf,
+  hatch,
+  hatchDue,
+  markFormShown,
   moodOf,
   newElf,
   normalizeElf,
+  pendingForm,
   performCare,
   pet as petElf,
   PET_COOLDOWN_MS,
@@ -16,83 +19,111 @@ import {
   stageOf,
   tendEgg,
   toggleSleep as toggleElfSleep,
-  touch,
+  visit as visitElf,
   WEARABLE_SLOT_IDS,
-  type CareActionId,
   type CareOutcome,
-  type EggActionId,
+  type ElfCareAction,
+  type ElfEggAction,
+  type ElfForm,
+  type ElfMood,
+  type ElfOutfit,
+  type ElfQuestId,
+  type ElfStage,
+  type ElfStarter,
   type ElfState,
-  type Growth,
-  type Mood,
-  type Outfit,
-  type Stage,
-  type StarterId,
+  type SleepOutcome,
+  type VisitOutcome,
   type WearableSlot,
-} from '../features/elf/rules'
-import { readJson, writeJson } from '../lib/storage'
+} from '@chatynkowo/core'
+import { STORAGE_KEYS } from '../config'
+import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
+import { readJsonStrict, writeJson } from '../lib/storage'
+import { useProgress } from './ProgressProvider'
 
-/* The elf companion's state for the whole app: the Elf tab reads and acts
-   on it. The state is
+/* The elf companion's state for the whole app, on the rules in
+   @chatynkowo/core (elf.ts): the Elf tab reads and acts on it. The state is
    read from the device when the provider mounts (the elf is not on the
-   first screen, so it stays out of the bootstrap), brought up to date every
-   second while the app is in the foreground, and saved after every action
-   and, while it drifts, every few seconds and when the app leaves the
-   foreground. A form reached by a gain waits in `pendingEvolution` until
-   the Elf tab has shown its card. Reactions the scene plays once (a happy
-   hop after a care action, a level gained) are published as events rather
-   than kept as state.
+   first screen, so it stays out of the bootstrap); a read that fails is
+   retried, and until one succeeds there is no state to show and nothing is
+   written, so a storage hiccup never lets a fresh egg overwrite the elf.
+   While the app is in the foreground the needs are brought up to date every
+   few seconds (the drift is slow, days not minutes), the egg hatches when
+   its time has come and the elf sleeps and wakes by the clock; the drift is
+   saved every few seconds and when the app leaves the foreground, every
+   action at once. A form reached (by the hatch, by the cottages found, by
+   time) waits in `pendingEvolution` until the Elf tab has shown its card.
+   What the day's rules said about an action or a visit (a quest completed
+   and its acorns, the full set, a streak milestone or a streak lost) is
+   published as `news`, one record the tab turns into hints.
 
-   The wardrobe and the decor are stored as the slots the player changed
-   (rules.ts keeps them as plain strings) and handed to the scene resolved
-   against the cottage's catalogues: an id the catalogue no longer knows
-   falls back to the slot's default, and the resolved records are memoised
-   on the stored ones, so the scene's memo holds through the drift that
-   commits a new state every second. Every action the player takes (a
-   care, a pet, the egg, sleep, a swap) also records the time, so the tab
-   can greet a return after a long absence. */
+   The cottages found come from the progress provider, which this one
+   mounts under: they decide the form, and the first find counts as the
+   first story read, which hatches the egg early. The wardrobe and the decor
+   are stored as the slots the player changed (the rules keep them as plain
+   strings) and handed to the scene resolved against the cottage's
+   catalogues: an id the catalogue no longer knows falls back to the slot's
+   default, and the resolved records are memoised on the stored ones, so the
+   scene's memo holds through the drift. */
 
-export type ElfReaction = 'care' | 'pet' | 'levelUp' | 'egg' | 'wake'
-type ReactionListener = (reaction: ElfReaction) => void
+/* What the day's rules reported on the last action or visit. */
+export type ElfNews = {
+  seq: number
+  /* The quests completed by the action and the acorns they paid. */
+  completed: ElfQuestId[]
+  acorns: number
+  /* The full set of the day's quests, paid in dust. */
+  setBonus: boolean
+  /* A visit on a new day: the streak that ended with a missed day, and the
+     dust a milestone paid; the streak as it stands now. */
+  streakLost: number | null
+  milestoneDust: number
+  streak: number
+}
 
 export type ElfValue = {
   /* Null until the device has been read, then the elf or null for no egg. */
   state: ElfState | null
   loaded: boolean
-  stage: Stage
-  mood: Mood
+  stage: ElfStage
+  mood: ElfMood
   /* What the elf wears and what stands in the room, every slot filled. */
-  outfit: Outfit
+  outfit: ElfOutfit
   decor: Decor
   /* When the player last did something for the elf; 0 without an elf. */
   lastInteraction: number
-  adopt: (name: string, starter: StarterId) => void
+  adopt: (name: string, starter: ElfStarter) => void
   /* Lets the egg go; the next visit starts with a fresh one. */
   reset: () => void
-  care: (id: CareActionId) => CareOutcome
-  tendEgg: (id: EggActionId) => void
-  toggleSleep: () => void
+  /* The tab came into view: the day is settled and the visit counted. */
+  visit: () => void
+  care: (id: ElfCareAction) => CareOutcome
+  tendEgg: (id: ElfEggAction) => void
+  toggleSleep: () => SleepOutcome['kind']
   /* A tap on the elf; false while asleep, an egg or within the cooldown. */
   pet: () => boolean
   /* Puts a wearable on (the slot's 'none' takes it off); unknown ids are ignored. */
   equip: (slot: WearableSlot, id: string) => void
   /* Swaps the furniture in a slot of the room; unknown ids are ignored. */
   placeDecor: (slot: SlotId, id: string) => void
-  pendingEvolution: Exclude<Stage, 'egg'> | null
+  /* Picks one of the day's reward options, once a day. */
+  claimDailyReward: (index: number) => void
+  pendingEvolution: ElfForm | null
   acknowledgeEvolution: () => void
-  /* Subscribe to one-shot reactions; returns the unsubscribe function. */
-  onReaction: (listener: ReactionListener) => () => void
+  news: ElfNews | null
 }
 
 const ElfContext = createContext<ElfValue | null>(null)
 
-const TICK_MS = 1000
+const TICK_MS = 5000
 /* How often a drifting state is written while nothing else saves it. */
 const DRIFT_SAVE_MS = 10000
+/* A failed read of the storage is tried again after these delays. */
+const READ_RETRY_MS = [1000, 5000, 15000, 60000]
 
 /* The stored choices against the catalogues: a slot the player never
    changed, or changed to an id the catalogue no longer has, shows its default. */
-function resolveOutfit(stored: Partial<Outfit> | undefined): Outfit {
-  const outfit: Outfit = { ...DEFAULT_OUTFIT }
+function resolveOutfit(stored: Partial<ElfOutfit> | undefined): ElfOutfit {
+  const outfit: ElfOutfit = { ...DEFAULT_OUTFIT }
   for (const slot of WEARABLE_SLOT_IDS) {
     const id = stored?.[slot]
     if (id && WEARABLE_IDS[slot].includes(id)) outfit[slot] = id
@@ -109,37 +140,39 @@ function resolveDecor(stored: Record<string, string> | undefined): Decor {
   return decor
 }
 
+/* What the quests said about an action, as the rules return it. */
+type QuestReport = { state: ElfState; completed: ElfQuestId[]; setBonus: boolean }
+type DayReport = Pick<VisitOutcome, 'streakLost' | 'milestoneDust'>
+
 export function ElfProvider({ children }: { children: ReactNode }) {
+  const { foundCount } = useProgress()
   const [state, setState] = useState<ElfState | null>(null)
   const [loaded, setLoaded] = useState(false)
-  const [pendingEvolution, setPendingEvolution] = useState<Exclude<Stage, 'egg'> | null>(null)
+  const [pendingEvolution, setPendingEvolution] = useState<ElfForm | null>(null)
+  const [news, setNews] = useState<ElfNews | null>(null)
   const stateRef = useRef<ElfState | null>(null)
+  const findsRef = useRef(foundCount)
   const dirtyRef = useRef(false)
   const petAtRef = useRef(0)
-  const listeners = useRef(new Set<ReactionListener>())
+  const newsSeq = useRef(0)
 
   useEffect(() => {
     stateRef.current = state
   }, [state])
-
   useEffect(() => {
-    let current = true
-    void readJson<unknown>(STORAGE_KEYS.elf).then((raw) => {
-      if (!current) return
-      const stored = raw ? normalizeElf(raw) : null
-      stateRef.current = stored ? applyElapsed(stored, Date.now()) : null
-      setState(stateRef.current)
-      setLoaded(true)
-    })
-    return () => {
-      current = false
-    }
-  }, [])
+    findsRef.current = foundCount
+  }, [foundCount])
 
   const persist = useCallback((next: ElfState | null) => {
     dirtyRef.current = false
     if (next) void writeJson(STORAGE_KEYS.elf, next)
     else void AsyncStorage.removeItem(STORAGE_KEYS.elf).catch(() => undefined)
+  }, [])
+
+  /* The form reached and not shown yet: derived from the state and the
+     finds whenever either changes. */
+  const refreshPending = useCallback((next: ElfState | null, now: number) => {
+    setPendingEvolution(next ? pendingForm(next, findsRef.current, now) : null)
   }, [])
 
   /* Every change goes through here: the ref for the next caller, the state
@@ -148,43 +181,80 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (next: ElfState | null, save: boolean) => {
       stateRef.current = next
       setState(next)
+      refreshPending(next, Date.now())
       if (save) persist(next)
       else dirtyRef.current = true
     },
-    [persist],
+    [persist, refreshPending],
   )
 
-  const emit = useCallback((reaction: ElfReaction) => {
-    for (const listener of listeners.current) listener(reaction)
+  /* The elf as it is now: the drift applied, the egg hatched when its
+     time has come (the first find counts as the first story read). */
+  const settle = useCallback((current: ElfState, now: number): ElfState => {
+    const drifted = applyElapsed(current, now)
+    return hatchDue(drifted, now, findsRef.current > 0) ? hatch(drifted, now) : drifted
   }, [])
 
-  const onReaction = useCallback((listener: ReactionListener) => {
-    listeners.current.add(listener)
-    return () => {
-      listeners.current.delete(listener)
+  useEffect(() => {
+    let current = true
+    let attempt = 0
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const read = async () => {
+      try {
+        const raw = await readJsonStrict<unknown>(STORAGE_KEYS.elf)
+        if (!current) return
+        const now = Date.now()
+        const stored = raw ? normalizeElf(raw, now) : null
+        const next = stored ? settle(stored, now) : null
+        stateRef.current = next
+        setState(next)
+        refreshPending(next, now)
+        setLoaded(true)
+      } catch {
+        if (!current) return
+        timer = setTimeout(() => void read(), READ_RETRY_MS[Math.min(attempt, READ_RETRY_MS.length - 1)])
+        attempt += 1
+      }
     }
+    void read()
+    return () => {
+      current = false
+      if (timer) clearTimeout(timer)
+    }
+  }, [settle, refreshPending])
+
+  /* What the rules reported, as one news record for the tab: the acorns
+     are the purse's growth from before the action. Nothing to tell stays
+     quiet. */
+  const report = useCallback((before: ElfState, quests: QuestReport, day?: DayReport) => {
+    const streakLost = day?.streakLost ?? null
+    const milestoneDust = day?.milestoneDust ?? 0
+    if (!quests.completed.length && !quests.setBonus && streakLost === null && !milestoneDust) return
+    newsSeq.current += 1
+    setNews({
+      seq: newsSeq.current,
+      completed: quests.completed,
+      acorns: Math.max(0, quests.state.wallet.acorns - before.wallet.acorns),
+      setBonus: quests.setBonus,
+      streakLost,
+      milestoneDust,
+      streak: quests.state.streak,
+    })
   }, [])
 
-  const growth = useCallback(
-    (result: Growth) => {
-      if (result.evolvedTo) setPendingEvolution(result.evolvedTo)
-      else if (result.leveled) emit('levelUp')
-    },
-    [emit],
-  )
-
-  /* The needs drift once a second while the app is in front; the drift is
+  /* The needs drift every few seconds while the app is in front, the egg
+     hatches when due, the elf sleeps and wakes by the clock; the drift is
      saved every few seconds and when the app goes to the background. */
   useEffect(() => {
     if (!loaded) return
     let lastSave = Date.now()
     const tick = () => {
       const current = stateRef.current
-      if (!current || !current.hatched) return
+      if (!current) return
       const now = Date.now()
-      const next = applyElapsed(current, now)
+      const next = settle(current, now)
       if (next === current) return
-      const save = now - lastSave >= DRIFT_SAVE_MS
+      const save = now - lastSave >= DRIFT_SAVE_MS || next.hatched !== current.hatched
       if (save) lastSave = now
       commit(next, save)
     }
@@ -203,79 +273,95 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       if (timer) clearInterval(timer)
       subscription.remove()
     }
-  }, [loaded, commit, persist])
+  }, [loaded, commit, persist, settle])
+
+  /* The finds decide the form: a find that arrives while the elf is on
+     screen is seen on the next render. */
+  useEffect(() => {
+    refreshPending(stateRef.current, Date.now())
+  }, [foundCount, refreshPending])
 
   const adopt = useCallback(
-    (name: string, starter: StarterId) => {
-      commit(newElf(name, starter, Date.now()), true)
-      setPendingEvolution(null)
-      emit('egg')
+    (name: string, starter: ElfStarter) => {
+      const now = Date.now()
+      const fresh = newElf(name, starter, now)
+      const outcome = visitElf(fresh, now)
+      commit(outcome.state, true)
+      report(fresh, outcome, outcome)
     },
-    [commit, emit],
+    [commit, report],
   )
 
   const reset = useCallback(() => {
     commit(null, true)
-    setPendingEvolution(null)
+    setNews(null)
   }, [commit])
 
+  const visit = useCallback(() => {
+    const current = stateRef.current
+    if (!current) return
+    const now = Date.now()
+    const outcome = visitElf(settle(current, now), now)
+    if (outcome.state !== current) commit(outcome.state, true)
+    report(current, outcome, outcome)
+  }, [commit, settle, report])
+
   const care = useCallback(
-    (id: CareActionId): CareOutcome => {
+    (id: ElfCareAction): CareOutcome => {
       const current = stateRef.current
       if (!current) return { kind: 'egg' }
       const now = Date.now()
-      const outcome = performCare(applyElapsed(current, now), id, now)
+      const outcome = performCare(settle(current, now), id, now)
       if (outcome.kind !== 'done') return outcome
-      commit(touch(outcome.state, now), true)
-      emit('care')
-      growth(outcome.growth)
+      commit(outcome.state, true)
+      report(current, outcome)
       return outcome
     },
-    [commit, emit, growth],
+    [commit, report, settle],
   )
 
   const tend = useCallback(
-    (id: EggActionId) => {
+    (id: ElfEggAction) => {
       const current = stateRef.current
       if (!current || current.hatched) return
       const now = Date.now()
-      const outcome = tendEgg(current, id, now)
-      commit(touch(outcome.state, now), true)
-      emit('egg')
-      if (outcome.hatched) setPendingEvolution('baby')
+      const outcome = tendEgg(settle(current, now), id, now)
+      commit(outcome.state, true)
+      report(current, outcome)
     },
-    [commit, emit],
+    [commit, report, settle],
   )
 
-  const toggleSleep = useCallback(() => {
+  const toggleSleep = useCallback((): SleepOutcome['kind'] => {
     const current = stateRef.current
-    if (!current || !current.hatched) return
+    if (!current) return 'egg'
     const now = Date.now()
-    const next = toggleElfSleep(applyElapsed(current, now), now)
-    commit(touch(next, now), true)
-    if (!next.sleeping) emit('wake')
-  }, [commit, emit])
+    const outcome = toggleElfSleep(settle(current, now), now)
+    if (outcome.kind === 'slept' || outcome.kind === 'woke') {
+      commit(outcome.state, true)
+      report(current, outcome)
+    }
+    return outcome.kind
+  }, [commit, report, settle])
 
   const pet = useCallback((): boolean => {
     const current = stateRef.current
     if (!current) return false
     const now = Date.now()
     if (now < petAtRef.current) return false
-    const outcome = petElf(applyElapsed(current, now), now)
+    const outcome = petElf(settle(current, now), now)
     if (outcome.kind !== 'petted') return false
     petAtRef.current = now + PET_COOLDOWN_MS
-    commit(touch(outcome.state, now), true)
-    emit('pet')
-    growth(outcome.growth)
+    commit(outcome.state, true)
+    report(current, outcome)
     return true
-  }, [commit, emit, growth])
+  }, [commit, report, settle])
 
   const equip = useCallback(
     (slot: WearableSlot, id: string) => {
       const current = stateRef.current
       if (!current || !WEARABLE_IDS[slot]?.includes(id)) return
-      const now = Date.now()
-      commit(touch(equipElf(current, slot, id), now), true)
+      commit(equipElf(current, slot, id, Date.now()), true)
     },
     [commit],
   )
@@ -284,13 +370,29 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (slot: SlotId, id: string) => {
       const current = stateRef.current
       if (!current || !DECOR_IDS[slot]?.includes(id)) return
-      const now = Date.now()
-      commit(touch(placeElfDecor(current, slot, id), now), true)
+      const outcome = placeElfDecor(current, slot, id, Date.now())
+      if (outcome.state === current) return
+      commit(outcome.state, true)
+      report(current, outcome)
+    },
+    [commit, report],
+  )
+
+  const claimDailyReward = useCallback(
+    (index: number) => {
+      const current = stateRef.current
+      if (!current) return
+      const next = claimElfReward(current, index, Date.now())
+      if (next !== current) commit(next, true)
     },
     [commit],
   )
 
-  const acknowledgeEvolution = useCallback(() => setPendingEvolution(null), [])
+  const acknowledgeEvolution = useCallback(() => {
+    const current = stateRef.current
+    if (!current || !pendingEvolution) return
+    commit(markFormShown(current, pendingEvolution), true)
+  }, [commit, pendingEvolution])
 
   /* The stored records keep their reference through the drift (applyElapsed
      spreads the state, not its nested records), so these only recompute
@@ -300,29 +402,31 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const outfit = useMemo(() => resolveOutfit(storedOutfit), [storedOutfit])
   const decor = useMemo(() => resolveDecor(storedDecor), [storedDecor])
 
-  const value = useMemo<ElfValue>(
-    () => ({
+  const value = useMemo<ElfValue>(() => {
+    const now = Date.now()
+    return {
       state,
       loaded,
-      stage: state ? stageOf(state) : 'egg',
-      mood: state ? moodOf(state) : 'ok',
+      stage: state ? stageOf(state, foundCount, now) : 'egg',
+      mood: state ? moodOf(state, now) : 'content',
       outfit,
       decor,
-      lastInteraction: state?.lastInteraction ?? state?.last ?? 0,
+      lastInteraction: state?.lastInteraction ?? 0,
       adopt,
       reset,
+      visit,
       care,
       tendEgg: tend,
       toggleSleep,
       pet,
       equip,
       placeDecor,
+      claimDailyReward,
       pendingEvolution,
       acknowledgeEvolution,
-      onReaction,
-    }),
-    [state, loaded, outfit, decor, adopt, reset, care, tend, toggleSleep, pet, equip, placeDecor, pendingEvolution, acknowledgeEvolution, onReaction],
-  )
+      news,
+    }
+  }, [state, loaded, foundCount, outfit, decor, adopt, reset, visit, care, tend, toggleSleep, pet, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

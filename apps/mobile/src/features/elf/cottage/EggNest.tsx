@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Circle, Group, LinearGradient, Oval, Path, RadialGradient, Skia, rect, vec, type SkPath } from '@shopify/react-native-skia'
 import { useDerivedValue } from 'react-native-reanimated'
-import type { StarterId } from '../rules'
+import type { ElfStarter } from '@chatynkowo/core'
 import type { PuppetMotion } from './motion'
 
 /* The egg before hatching, in its nest on the rug: a bowl of twigs, a big
@@ -13,7 +13,7 @@ import type { PuppetMotion } from './motion'
    from the origin, the base of the egg, upwards. */
 
 export type EggNestProps = {
-  starter: StarterId
+  starter: ElfStarter
   /* 0..100 */
   warmth: number
   motion: PuppetMotion
@@ -23,7 +23,7 @@ export type EggNestProps = {
 export const EGG_HIT_BOX = { x: -140, y: -300, width: 280, height: 320 } as const
 
 type EggPalette = { tunic: string; trim: string; glow: string }
-const PALETTES: Record<StarterId, EggPalette> = {
+const PALETTES: Record<ElfStarter, EggPalette> = {
   forest: { tunic: '#4e8a54', trim: '#c79a4b', glow: '#9af08f' },
   ember: { tunic: '#e08a3d', trim: '#f4c76b', glow: '#ffb46b' },
   mystic: { tunic: '#6b3fa0', trim: '#c79a4b', glow: '#c39bff' },

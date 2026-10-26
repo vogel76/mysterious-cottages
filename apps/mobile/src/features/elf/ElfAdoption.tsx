@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useElf } from '../../providers'
 import { Button, CheckIcon, EggIcon, GlowPulse, PressableScale, Text, TextField, colors, iconSize, radius, space } from '../../ui'
 import { STARTER_ICONS, elfKey, starterDescriptionKey } from './labels'
-import { NAME_MAX_LENGTH, STARTERS, type StarterId } from './rules'
+import { ELF_STARTERS, NAME_MAX_LENGTH, type ElfStarter } from '@chatynkowo/core'
 
 /* The first visit to the Elf tab: the egg has appeared, the player picks
    its element from the three starters and gives it a name, then takes it
@@ -17,7 +17,7 @@ const GLOW_MARGIN = 32
 export function ElfAdoption() {
   const { t } = useTranslation()
   const { adopt } = useElf()
-  const [starter, setStarter] = useState<StarterId>('forest')
+  const [starter, setStarter] = useState<ElfStarter>('forest')
   const [name, setName] = useState('')
 
   const submit = () => adopt(name.trim() || t('mobile:elf.defaultName'), starter)
@@ -40,7 +40,7 @@ export function ElfAdoption() {
 
       <View style={styles.group} accessibilityRole="radiogroup">
         <Text variant="eyebrow">{t('mobile:elf.adoptElement')}</Text>
-        {STARTERS.map((id) => {
+        {ELF_STARTERS.map((id) => {
           const Glyph = STARTER_ICONS[id]
           const selected = id === starter
           return (

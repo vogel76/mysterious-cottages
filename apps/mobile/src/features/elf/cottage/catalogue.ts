@@ -1,9 +1,10 @@
-import type { Outfit, WearableSlot } from '../rules'
+import type { ElfOutfit, WearableSlot } from '@chatynkowo/core'
 
 /* The catalogues of the cottage: the furniture slots of the room with the
    variants that can stand in each (the first id is the default the room
    starts with; the fireplace has one and is not editable), and the five
-   wardrobe slots with their ids. These are the ids the rules store and the
+   wardrobe slots with their ids. These are the ids the rules (packages/core,
+   elf.ts) store and the
    dictionaries name (packages/i18n, the item* and slot* entries of the elf
    group). Which of them have a rendered picture today is roomAssets'
    business (RENDERED_VARIANTS lists them per slot); a wearable has none
@@ -65,4 +66,4 @@ export const WEARABLE_IDS: Record<WearableSlot, readonly string[]> = {
   face: ['none', 'glasses', 'freckles'],
 }
 
-export const DEFAULT_OUTFIT: Outfit = { hat: 'hood', outfit: 'tunic', neck: 'none', hand: 'none', face: 'none' }
+export const DEFAULT_OUTFIT: ElfOutfit = { hat: 'hood', outfit: 'tunic', neck: 'none', hand: 'none', face: 'none' }
