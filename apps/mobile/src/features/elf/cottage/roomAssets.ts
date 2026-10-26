@@ -1,4 +1,4 @@
-import { DECOR_IDS, SLOT_IDS, isSlotId, type Decor, type SlotId } from './catalogue'
+import { DECOR_IDS, PHOTO_ID, SLOT_IDS, isSlotId, type Decor, type SlotId } from './catalogue'
 import { SLOTS, type Bounds, type Slot } from './room'
 
 /* The rendered room, as art/blender/room.py and its packer leave it in
@@ -116,10 +116,19 @@ export function roomSpriteFor(slot: SlotId, variantId: string): RoomSprite | nul
   return sprites[0] ?? null
 }
 
+/* The picture inside the frame's render: the frame is a thin dark border
+   around it, a little thicker at the bottom. Plate pixels. */
+const PHOTO_INSET = { side: 3, top: 3, bottom: 4 } as const
+export function photoRect(sprite: RoomSpriteEntry): Bounds {
+  return { x: sprite.x + PHOTO_INSET.side, y: sprite.y + PHOTO_INSET.top, width: sprite.width - 2 * PHOTO_INSET.side, height: sprite.height - PHOTO_INSET.top - PHOTO_INSET.bottom }
+}
+
 /* Per slot, the decor ids that have a render of their own, in the
    catalogue's order: the first id of every distinct render, so two ids
    that share a sprite are offered once. A slot with one render keeps its
-   default id only; the fireplace keeps its single id too. */
+   default id only; the fireplace keeps its single id too. The frame also
+   offers the photo of the latest cottage found, drawn into its render by
+   the scene; the panel shows it only once there is a find. */
 export const RENDERED_VARIANTS: Record<SlotId, readonly string[]> = (() => {
   const variants = {} as Record<SlotId, readonly string[]>
   for (const slot of SLOT_IDS) {
@@ -137,6 +146,7 @@ export const RENDERED_VARIANTS: Record<SlotId, readonly string[]> = (() => {
       return true
     })
   }
+  variants.picture = [...variants.picture, PHOTO_ID]
   return variants
 })()
 

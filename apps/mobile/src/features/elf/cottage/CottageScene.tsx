@@ -51,9 +51,10 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    tap on the head pokes it instead, when the tab listens for that), rocks
    the egg, or touches the room: the hearth flares, a shooting star
    crosses the window, and the elf glances (or leans) at whatever was
-   touched. In edit mode the taps select slots instead and the elf is not
-   petted; the editable slots wear dashed frames, the selected one in the
-   accent colour. A screen reader reaches the pet through the activate
+   touched; a tap on the picture frame is also reported to the tab, which
+   opens the cottage whose photo it shows. In edit mode the taps select
+   slots instead and the elf is not petted; the editable slots wear
+   dashed frames, the selected one in the accent colour. A screen reader reaches the pet through the activate
    action of the view around the canvas. The reactions the tab wants to
    show (a care action, a cheer, a greeting), the elf's gaze while food is
    dragged over the room, and the look at a freshly placed piece all go
@@ -129,6 +130,11 @@ export type CottageSceneProps = {
      coordinates, told on mount and whenever the layout or the figure
      changes: the speech bubble sits there. */
   onFigureTop?: (point: { x: number; y: number }) => void
+  /* The latest cottage found, as a picture URI: what the frame on the
+     wall shows when the decor asks for the photo. */
+  photo?: string | null
+  /* A tap on the picture frame; the tab opens the cottage it shows. */
+  onPictureTap?: () => void
 }
 
 /* How long the elf's glance at a touched item lasts. */
@@ -205,7 +211,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop },
+    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap },
     ref,
   ) {
     const { t } = useTranslation()
@@ -249,6 +255,10 @@ export const CottageScene = memo(
     /* The shooting star's progress; 0 when there is none. */
     const star = useSharedValue(0)
     const windowSlot = useMemo(() => slotById('window'), [])
+    /* The tap on the frame, read through a ref so the gesture is not
+       rebuilt when the tab's handler changes. */
+    const onPictureTapRef = useRef(onPictureTap)
+    onPictureTapRef.current = onPictureTap
 
     /* The elf stands on the rendered rug; the egg keeps the room's anchor
        in its nest. */
@@ -410,6 +420,7 @@ export const CottageScene = memo(
           glanceAt(slot)
           if (slot.id === 'fireplace') fire.flare()
           else if (slot.id === 'window') shootStar()
+          else if (slot.id === 'picture') onPictureTapRef.current?.()
         })
 
       return Gesture.Exclusive(pan, tap)
@@ -434,7 +445,7 @@ export const CottageScene = memo(
               never attaches there). */}
           <Canvas style={{ width, height }} opaque>
             <Group transform={roomTransform}>
-              <RoomSprites decor={decor} layer="back" />
+              <RoomSprites decor={decor} layer="back" photo={photo} />
               <RoomSprites decor={decor} layer="mid" />
               {hatched ? (
                 images ? (

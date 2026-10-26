@@ -1,40 +1,56 @@
 import { memo, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { Canvas, Image, useImage } from '@shopify/react-native-skia'
-import type { SlotId } from './cottage/catalogue'
-import { roomSpriteFor } from './cottage/roomAssets'
+import { Canvas, Group, Image, useImage } from '@shopify/react-native-skia'
+import { PHOTO_ID, type SlotId } from './cottage/catalogue'
+import { FramedPhoto } from './cottage/RoomSprites'
+import { roomSpriteFor, type RoomSprite } from './cottage/roomAssets'
 
 /* One thumbnail of the decorating panel: a small Skia canvas that shows
    the rendered crop of a piece of furniture (cottage/roomAssets), the very
    picture the room draws, fitted into a padded square and centred (the
-   Image node's contain fit keeps its proportions, which is all the room
-   itself does with it), so the player sees the real thing before choosing
-   it; the live preview is the room behind the panel. The crops are small
-   (a few hundred pixels a side), so Skia's useImage decoding them per
-   thumbnail is cheap, unlike the elf's sheets, which are shared. The panel
-   mounts only the active slot's strip, so a handful of canvases exist at a
-   time. An id without a render shows an empty square; the panel never
-   offers one. */
+   sprite is drawn at its own room box under one transform, which keeps
+   its proportions, all the room itself does with it), so the player sees
+   the real thing before choosing it; the live preview is the room behind
+   the panel. The frame's photo id draws the latest cottage's photo into
+   the frame the way the room does. The crops are small (a few hundred
+   pixels a side), so Skia's useImage decoding them per thumbnail is
+   cheap, unlike the elf's sheets, which are shared. The panel mounts only
+   the active slot's strip, so a handful of canvases exist at a time. An
+   id without a render shows an empty square; the panel never offers one. */
 
 export const THUMB_SIZE = 72
 const PADDING = 6
 const INNER = THUMB_SIZE - 2 * PADDING
 
-export type ElfThumbProps = { slot: SlotId; id: string }
+export type ElfThumbProps = {
+  slot: SlotId
+  id: string
+  /* The latest cottage's picture, for the frame's photo id. */
+  photo?: string | null
+}
 
-export const ElfThumb = memo(function ElfThumb({ slot, id }: ElfThumbProps) {
+export const ElfThumb = memo(function ElfThumb({ slot, id, photo = null }: ElfThumbProps) {
   const sprite = roomSpriteFor(slot, id)
-  return <View style={styles.thumb}>{sprite ? <SpriteThumb module={sprite.module} width={sprite.width} height={sprite.height} /> : null}</View>
+  const framed = slot === 'picture' && id === PHOTO_ID ? photo : null
+  return <View style={styles.thumb}>{sprite ? <SpriteThumb sprite={sprite} photo={framed} /> : null}</View>
 })
 
-function SpriteThumb({ module, width, height }: { module: number; width: number; height: number }) {
-  const image = useImage(module)
-  const rect = useMemo(() => {
+function SpriteThumb({ sprite, photo }: { sprite: RoomSprite; photo: string | null }) {
+  const image = useImage(sprite.module)
+  const { x, y, width, height } = sprite
+  const transform = useMemo(() => {
     const scale = Math.min(INNER / Math.max(1, width), INNER / Math.max(1, height))
     const fitted = { width: width * scale, height: height * scale }
-    return { x: (THUMB_SIZE - fitted.width) / 2, y: (THUMB_SIZE - fitted.height) / 2, ...fitted }
-  }, [width, height])
-  return <Canvas style={styles.canvas}>{image ? <Image image={image} fit="contain" x={rect.x} y={rect.y} width={rect.width} height={rect.height} /> : null}</Canvas>
+    return [{ translateX: (THUMB_SIZE - fitted.width) / 2 - x * scale }, { translateY: (THUMB_SIZE - fitted.height) / 2 - y * scale }, { scale }]
+  }, [x, y, width, height])
+  return (
+    <Canvas style={styles.canvas}>
+      <Group transform={transform}>
+        {image ? <Image image={image} fit="fill" x={x} y={y} width={width} height={height} /> : null}
+        {photo ? <FramedPhoto sprite={sprite} uri={photo} /> : null}
+      </Group>
+    </Canvas>
+  )
 }
 
 const styles = StyleSheet.create({

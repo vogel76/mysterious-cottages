@@ -20,9 +20,13 @@ export type SlotId = 'window' | 'herbs' | 'shelf' | 'lantern' | 'picture' | 'fir
 
 export const SLOT_IDS: readonly SlotId[] = ['window', 'herbs', 'shelf', 'lantern', 'picture', 'fireplace', 'rug', 'bed', 'basket', 'fern', 'candle']
 
+/* The picture slot's id for the latest cottage found: the frame's render
+   with the expedition's photo inside (roomAssets, RoomSprites). */
+export const PHOTO_ID = 'photo'
+
 export const DECOR_IDS: Record<SlotId, readonly string[]> = {
   window: ['arched', 'round', 'shuttered'],
-  picture: ['cottage', 'map', 'antlers'],
+  picture: ['cottage', PHOTO_ID, 'map', 'antlers'],
   herbs: ['herbs', 'garlic', 'dreamcatcher'],
   lantern: ['iron', 'paper', 'bell'],
   shelf: ['books', 'jars', 'seedlings'],

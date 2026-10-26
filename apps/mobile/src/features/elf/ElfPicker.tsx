@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-nati
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { CheckIcon, CloseIcon, IconButton, PressableScale, Text, colors, enterUp, fade, iconSize, leaveDown, mapPalette, radius, space, typeScale, useReducedMotion } from '../../ui'
-import type { Decor, SlotId } from './cottage/catalogue'
+import { PHOTO_ID, type Decor, type SlotId } from './cottage/catalogue'
 import { SLOTS } from './cottage/room'
 import { RENDERED_VARIANTS, renderedVariantFor, roomSpriteFor } from './cottage/roomAssets'
 import { ElfThumb, THUMB_SIZE } from './ElfThumb'
@@ -18,8 +18,9 @@ import { elfKey } from './labels'
    wears a check. Fixed slots with small catalogues, the way the pets that
    do this well do it. The panel offers only what the art pipeline has
    rendered: the slots with more than one rendered variant (the rug, the
-   bed and the window today) and within a slot only those variants, so no
-   pick can ask the room for a piece it has no picture of. The thumbnails
+   bed, the window and, once a cottage has been found, the frame with its
+   photo) and within a slot only those variants, so no pick can ask the
+   room for a piece it has no picture of. The thumbnails
    are the sprites themselves (ElfThumb), named after the render they
    show, and a stored id that shares a render with the one offered (the
    moss rug is drawn as the green one) wears the check of the look it has,
@@ -34,6 +35,8 @@ import { elfKey } from './labels'
 
 export type ElfPickerProps = {
   decor: Decor
+  /* The latest cottage's picture; without one the frame offers no photo. */
+  photo: string | null
   activeSlot: SlotId
   onSelectSlot: (slot: SlotId) => void
   onPick: (slot: SlotId, id: string) => void
@@ -44,9 +47,10 @@ export type ElfPickerProps = {
    a choice of rendered variants. */
 export const DECOR_SLOTS: readonly SlotId[] = SLOTS.map((slot) => slot.id).filter((id) => id !== 'fireplace' && RENDERED_VARIANTS[id].length > 1)
 
-export function ElfPicker({ decor, activeSlot, onSelectSlot, onPick, onDone }: ElfPickerProps) {
+export function ElfPicker({ decor, photo, activeSlot, onSelectSlot, onPick, onDone }: ElfPickerProps) {
   const { t } = useTranslation()
-  const ids = RENDERED_VARIANTS[activeSlot]
+  const slots = DECOR_SLOTS.filter((slot) => slot !== 'picture' || photo)
+  const ids = RENDERED_VARIANTS[activeSlot].filter((id) => id !== PHOTO_ID || photo)
   const current = renderedVariantFor(activeSlot, decor[activeSlot])
   const reduceMotion = useReducedMotion()
 
@@ -64,8 +68,8 @@ export function ElfPicker({ decor, activeSlot, onSelectSlot, onPick, onDone }: E
   }, [activeSlot, reduceMotion])
 
   /* A thumbnail is named after the render it shows, which is also what
-     the room draws for the id. */
-  const itemLabel = (id: string) => t(elfKey('item', roomSpriteFor(activeSlot, id)?.variant ?? id))
+     the room draws for the id; the frame's photo is named for itself. */
+  const itemLabel = (id: string) => t(elfKey('item', id === PHOTO_ID ? id : (roomSpriteFor(activeSlot, id)?.variant ?? id)))
 
   return (
     <Animated.View entering={enterUp()} exiting={leaveDown()} style={styles.card}>
@@ -79,7 +83,7 @@ export function ElfPicker({ decor, activeSlot, onSelectSlot, onPick, onDone }: E
       </View>
 
       <ScrollView ref={chipStrip} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} keyboardShouldPersistTaps="handled">
-        {DECOR_SLOTS.map((slot) => {
+        {slots.map((slot) => {
           const active = slot === activeSlot
           return (
             <PressableScale
@@ -117,7 +121,7 @@ export function ElfPicker({ decor, activeSlot, onSelectSlot, onPick, onDone }: E
                   accessibilityState={{ selected }}
                   style={[styles.thumb, selected && styles.thumbSelected]}
                 >
-                  <ElfThumb slot={activeSlot} id={id} />
+                  <ElfThumb slot={activeSlot} id={id} photo={photo} />
                   {selected ? (
                     <View style={styles.check} pointerEvents="none">
                       <CheckIcon size={iconSize.sm} weight="bold" color={colors.accentInk} />
