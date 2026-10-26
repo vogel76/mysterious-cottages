@@ -13,7 +13,7 @@ import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfAdoption } from './ElfAdoption'
-import { ElfHud, ElfMoodPill, type ElfPanel } from './ElfHud'
+import { ElfHud, type ElfPanel } from './ElfHud'
 import { DECOR_SLOTS, ElfPicker } from './ElfPicker'
 import { ElfSpeech } from './ElfSpeech'
 import { elfKey } from './labels'
@@ -24,9 +24,9 @@ import { useReturnGreeting } from './useReturnGreeting'
    the cottage. The elf (or its egg in the nest) lives in a full-screen
    painted room (src/features/elf/cottage) that fills the whole tab, under
    the status bar and the floating tab bar as the Atlas does, and a light
-   HUD floats over it: the name, the form, the decorating
-   buttons, the needs and the ledger at the top with the mood pill under
-   them, the round care buttons at the bottom. A tap on the elf pets it
+   HUD floats over it: the name, the form and the elf's mood, the
+   decorating button, the needs and the ledger at the top, the round care
+   buttons at the bottom; the room in between stays clear. A tap on the elf pets it
    (and when the rules are still in their cooldown the elf is poked
    instead, so it always answers), a tap on the egg rocks it. The acorn of
    the feed button can also be dragged to the elf: it floats under the
@@ -38,8 +38,10 @@ import { useReturnGreeting } from './useReturnGreeting'
    bubble over its head (ElfSpeech); the care buttons show the day's caps
    as dots, so a refusal is rarely a surprise. The evolution card is
    presented by the hook while the tab is focused. The elf also speaks
-   first: a need it wants seen to makes it wave for attention once per
-   episode, and a return after half an hour away is greeted.
+   first: its first words to a new player say how to pet it (once for the
+   egg, once for the hatched elf), a need it wants seen to makes it wave
+   for attention once per episode, and a return after half an hour away
+   is greeted.
 
    Coming into view is a visit for the rules (packages/core, elf.ts): the
    day is settled, the streak counted, the quests dealt. What a visit or an
@@ -65,8 +67,8 @@ import { useReturnGreeting } from './useReturnGreeting'
 
    The decorating mode is a panel inside the tab, not a route: a route
    would unfocus the tab and pause the scene, and the point of the panel
-   is the live preview in the room. It rises in place of the action bar
-   and hides the mood pill, and the room is lifted behind it (the panel's
+   is the live preview in the room. It rises in place of the action bar,
+   and the room is lifted behind it (the panel's
    measured height goes to the scene as its bottom inset) so the elf and
    the low furniture slots stay in view and in reach; the mode puts the
    scene in edit mode (its slots become tap targets that pick the panel's
@@ -100,7 +102,6 @@ export function ElfTab() {
   const sceneRef = useRef<CottageSceneHandle>(null)
   const rootRef = useRef<View>(null)
   const [size, setSize] = useState<{ width: number; height: number } | null>(null)
-  const [hintSeen, setHintSeen] = useState(false)
   /* Where the tab sits in the window: the drag reports window coordinates. */
   const windowOffset = useRef({ x: 0, y: 0 })
 
@@ -112,16 +113,12 @@ export function ElfTab() {
     })
   }
 
-  /* A new egg starts with the tap hint again, and so does the hatched elf:
-     the egg's hint is usually dismissed by the tap that hatched it. */
+  /* Whom the elf has introduced itself to: the egg's word and the hatched
+     elf's are each said once; a new egg starts over. */
+  const introduced = useRef<'egg' | 'elf' | null>(null)
   useEffect(() => {
-    if (!state) setHintSeen(false)
+    if (!state) introduced.current = null
   }, [state])
-  const prevStage = useRef(stage)
-  useEffect(() => {
-    if (prevStage.current === 'egg' && stage !== 'egg') setHintSeen(false)
-    prevStage.current = stage
-  }, [stage])
 
   /* The tab in view, or the app back in front with the tab on top, is a
      visit: the day is settled and counted. */
@@ -245,6 +242,17 @@ export function ElfTab() {
     queueSpeech(lines)
     if (news.setBonus || news.milestoneDust || news.celebrate.length) sceneRef.current?.react('cheer')
   }, [news, focused, queueSpeech, t, cottages, foundCount])
+
+  /* The elf's first word to a new player: how to pet it (and the acorn to
+     drag), once for the egg and once for the hatched elf, after whatever
+     news the visit brings. */
+  useEffect(() => {
+    if (!state || !focused) return
+    const form = stage === 'egg' ? 'egg' : 'elf'
+    if (introduced.current === form) return
+    introduced.current = form
+    queueSpeech([t(form === 'egg' ? 'mobile:elf.firstLineEgg' : 'mobile:elf.firstLine')])
+  }, [state, focused, stage, queueSpeech, t])
 
   /* The elf waking, by the button or by the morning: the scene plays the
      wake when the tab can see it (a wake while away is played on the
@@ -389,26 +397,19 @@ export function ElfTab() {
 
   const { pet, tendEgg } = elf
   const onPetElf = useCallback(() => {
-    setHintSeen(true)
     /* Within the cooldown the rules give nothing, but the elf still answers. */
     sceneRef.current?.react(pet() ? 'pet' : 'poke')
   }, [pet])
 
   const onPokeElf = useCallback(() => {
-    setHintSeen(true)
     sceneRef.current?.react('poke')
   }, [])
 
   /* The finger moving over the body: the rules count a pet, the scene
      already plays the stroke and its hearts. */
-  const onStrokeElf = useCallback(() => {
-    const counted = pet()
-    if (counted) setHintSeen(true)
-    return counted
-  }, [pet])
+  const onStrokeElf = useCallback(() => pet(), [pet])
 
   const onPetEgg = useCallback(() => {
-    setHintSeen(true)
     tendEgg('rock')
     sceneRef.current?.react('egg')
   }, [tendEgg])
@@ -468,7 +469,6 @@ export function ElfTab() {
       const y = windowY - windowOffset.current.y
       const scene = sceneRef.current
       if (phase === 'begin') {
-        setHintSeen(true)
         dragStart.current = { x, y }
         for (const value of [acornX, acornY, acornScale, acornOpacity]) cancelAnimation(value)
         acornX.value = x
@@ -522,7 +522,6 @@ export function ElfTab() {
     )
   }
 
-  const isEgg = stage === 'egg'
   const hatchTime = hatchAt(state)
   /* What the day still allows of each care, for the buttons' dots. */
   const now = Date.now()
@@ -567,16 +566,11 @@ export function ElfTab() {
         </View>
       ) : null}
 
-      {/* The words stay at the top with the needs, so the elf in the middle
-          of the room is never covered; the bottom holds the action bar or
-          the open panel alone. */}
+      {/* The words stay at the top with the needs, so the room and the elf
+          in the middle of it are never covered; the bottom holds the action
+          bar or the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none" onLayout={onTopLayout}>
-        <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} />
-        {panel === 'none' ? (
-          <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
-            <ElfMoodPill name={state.name} stage={stage} mood={mood} hatchAt={hatchTime} wantedNeed={wanted} />
-          </Animated.View>
-        ) : null}
+        <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} />
         {panel === 'decor' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none" style={styles.editHint} accessibilityLiveRegion="polite">
             <Text variant="small" align="center" style={styles.editHintInk}>
@@ -584,18 +578,6 @@ export function ElfTab() {
             </Text>
           </Animated.View>
         ) : null}
-        {hintSeen || panel !== 'none' ? null : (
-          <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
-            <Text variant="small" tone="faint" align="center" style={styles.tapHint}>
-              {t(isEgg ? 'mobile:elf.tapHintEgg' : 'mobile:elf.tapHint')}
-            </Text>
-            {isEgg ? null : (
-              <Text variant="small" tone="faint" align="center" style={styles.tapHint}>
-                {t('mobile:elf.dragFeedHint')}
-              </Text>
-            )}
-          </Animated.View>
-        )}
       </View>
 
       {/* The elf's line, over its head where the scene says it is. */}
@@ -637,13 +619,7 @@ const styles = StyleSheet.create({
     left: space.lg,
     right: space.lg,
   },
-  /* Over the painted floor, not on a surface: a shadow keeps it legible. */
-  tapHint: {
-    textShadowColor: colors.page,
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  /* The decorating hint takes the mood pill's place and chrome. */
+  /* The decorating hint, in the HUD's chrome, under the ledger. */
   editHint: {
     alignSelf: 'center',
     paddingVertical: space.sm,
