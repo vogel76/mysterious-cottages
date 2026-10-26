@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { ReduceMotion, cancelAnimation, useFrameCallback, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming, type SharedValue } from 'react-native-reanimated'
 import { EASING, SPRINGS } from '../../../ui'
-import type { Mood, Stage } from '../rules'
+import type { ElfMood, ElfStage } from '@chatynkowo/core'
 import { EGG_HIT_BOX } from './EggNest'
 import { ELF_HEIGHT_UNITS } from './SpriteElf'
 import { ROOM } from './room'
@@ -13,12 +13,12 @@ import { ROOM } from './room'
    pool of particles (hearts, sparkles, bubbles, zzz, crumbs) that the
    reactions borrow. Everything moves on the UI thread through reanimated
    loops; the JS thread only starts and cancels them. The idle loops follow
-   the mood (a happy elf bounces, a sad one slumps, a sick one wobbles, a
+   the mood (a beaming elf bounces, one that misses the player slumps, a
    sleeping one only breathes while zzz rise every two seconds), and
    react(kind) plays a short reaction on top: it cancels the previous one,
    drives the values it needs and, once it is over, hands them back to the
    idle loops; it says whether it took the reaction, since a paused or
-   sleeping elf, or one in the middle of its level hop, refuses most, and
+   sleeping elf, or one in the middle of its cheer, refuses most, and
    the scene's frames must not react where the body does not. Hops and chews start with a short crouch (anticipation), and
    the hood tip and the ears trail the body through a spring follower that
    runs once per frame, so they lag and overshoot (follow-through) without
@@ -30,24 +30,24 @@ import { ROOM } from './room'
    the admire reaction. While awake and left alone a scheduler picks a
    small fidget every 8-15 s (an ear twitch, a yawn, a scratch, a glance at
    the fire, a shift of weight, a hum) so the elf never freezes; yawns are
-   favoured when the elf is tired, and tired lids droop to half.
+   favoured at bedtime, when sleepy lids droop to half.
 
-   A level gained outranks the care reaction that caused it: the provider
-   emits it synchronously from care(), so the care reaction arrives right
-   after and would otherwise cut the hop short; while 'levelUp' plays, the
-   other kinds are ignored. 'stroke' is special too: it is called again and
+   A cheer (the day's quests all done, a streak milestone) outranks the
+   care reaction that earned it: the tab plays it right after the care,
+   which would otherwise cut the hop short; while 'cheer' plays, the other
+   kinds are ignored. 'stroke' is special too: it is called again and
    again while the finger moves, and each call only extends it and lets a
    heart go at most every 180 ms. With reduce motion on there are no loops
    at all, the puppet holds a still pose and a reaction is only a brief
    blip of its particles. Paused (the tab out of focus) is the same still
    pose with no reactions, no fidgets and no zzz, so nothing runs on the UI
    thread for a scene nobody sees; the loops resume when the focus returns.
-   Asleep, the elf answers nothing but the wake, a level and the egg, and
+   Asleep, the elf answers nothing but the wake, a cheer and the egg, and
    neither its eyes nor its head follow a finger: the wardrobe and the
    decorating mode stay open over a sleeping elf, and a twirl or a clap
    with the eyes shut would read as a wake that never happened. */
 
-export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'levelUp' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget'
+export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'cheer' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget'
 
 export type PuppetMotion = {
   /* 0..1 slow loop. */
@@ -78,7 +78,7 @@ export type PuppetMotion = {
      arm outwards and up. */
   armL: SharedValue<number>
   armR: SharedValue<number>
-  /* 0..1, tired half lids. */
+  /* 0..1, sleepy half lids. */
   lidDroop: SharedValue<number>
   /* 0..1, a proud grin that picks the happy mouth whatever the mood. */
   grin: SharedValue<number>
@@ -113,7 +113,7 @@ export type CottageMotion = {
   admireAt: (x: number, y: number) => void
 }
 
-type Options = { stage: Stage; mood: Mood; sleeping: boolean; reduceMotion: boolean; paused: boolean; tired?: boolean }
+type Options = { stage: ElfStage; mood: ElfMood; sleeping: boolean; reduceMotion: boolean; paused: boolean; sleepy?: boolean }
 
 /* Tuning knobs of the idle loops, in milliseconds and room units. */
 const IDLE = {
@@ -141,15 +141,13 @@ const IDLE = {
   ],
   sadTilt: -0.08,
   sadSquash: 0.94,
-  sickWobble: 0.05,
-  sickWobbleMs: 700,
   sleepTilt: -0.06,
   glowEggMs: 1400,
   glowElderMs: 2400,
   glowLow: 0.3,
   zzzEveryMs: 2000,
-  /* Tired lids rest at this droop. */
-  tiredDroop: 0.6,
+  /* Sleepy lids rest at this droop. */
+  sleepyDroop: 0.6,
 } as const
 
 /* The gaze: how far from the head (room units) a point is a full look,
@@ -180,7 +178,7 @@ const REACTION_MS: Record<Exclude<ReactionKind, 'fidget'>, number> = {
   bath: 1500,
   wake: 900,
   egg: 900,
-  levelUp: 1300,
+  cheer: 1300,
   stroke: 500,
   poke: 650,
   call: 1400,
@@ -214,7 +212,7 @@ const REACTION_PARTICLE: Partial<Record<ReactionKind, ParticleKind>> = {
   bath: 'bubble',
   wake: 'sparkle',
   egg: 'sparkle',
-  levelUp: 'sparkle',
+  cheer: 'sparkle',
   stroke: 'heart',
   greet: 'sparkle',
   twirl: 'sparkle',
@@ -240,7 +238,7 @@ type Spawn = {
   fall?: boolean
 }
 
-function figureHeight(stage: Stage): number {
+function figureHeight(stage: ElfStage): number {
   return stage === 'egg' ? EGG_HIT_BOX.height : ELF_HEIGHT_UNITS
 }
 
@@ -364,7 +362,7 @@ export function useCottageMotion(options: Options): CottageMotion {
 
   /* The idle loops (or the still pose) for the options as they are now. */
   const applyIdle = useCallback(() => {
-    const { stage, mood, sleeping, reduceMotion, paused, tired = false } = optionsRef.current
+    const { stage, mood, sleeping, reduceMotion, paused, sleepy = false } = optionsRef.current
     const motion = motionRef.current
     /* A gaze that is held, or easing back under unaim's own timer, keeps
        its three values: cancelling them here would freeze the eyes on
@@ -376,10 +374,10 @@ export function useCottageMotion(options: Options): CottageMotion {
     }
     cancelAnimation(earTwitch)
     const egg = stage === 'egg'
-    const sad = mood === 'sad'
-    const asleep = sleeping || mood === 'sleep'
+    const sad = mood === 'misses'
+    const asleep = sleeping || mood === 'asleep'
     const glows = egg || stage === 'elder'
-    const droop = tired && !asleep && !egg ? IDLE.tiredDroop : 0
+    const droop = sleepy && !asleep && !egg ? IDLE.sleepyDroop : 0
 
     if (reduceMotion || paused) {
       motion.breath.value = 0.5
@@ -442,7 +440,7 @@ export function useCottageMotion(options: Options): CottageMotion {
       return
     }
 
-    if (mood === 'happy') {
+    if (mood === 'beaming') {
       motion.bob.value = withRepeat(withSequence(withTiming(-IDLE.bobHappyUnits, { duration: IDLE.bobHappyMs / 2, easing: EASING.out }), withTiming(0, { duration: IDLE.bobHappyMs / 2, easing: EASING.inOut })), -1)
     } else if (sad) {
       motion.bob.value = withTiming(0, { duration: 400 })
@@ -454,8 +452,6 @@ export function useCottageMotion(options: Options): CottageMotion {
 
     if (sad) {
       motion.tilt.value = withTiming(IDLE.sadTilt, { duration: 600, easing: EASING.inOut })
-    } else if (mood === 'sick') {
-      motion.tilt.value = withRepeat(withSequence(withTiming(IDLE.sickWobble, { duration: IDLE.sickWobbleMs, easing: EASING.inOut }), withTiming(-IDLE.sickWobble, { duration: IDLE.sickWobbleMs, easing: EASING.inOut })), -1)
     } else {
       motion.tilt.value = withTiming(0, { duration: 400 })
     }
@@ -580,7 +576,7 @@ export function useCottageMotion(options: Options): CottageMotion {
     motion.look.value = withTiming(0, { duration: GAZE.releaseMs, easing: EASING.inOut })
     motion.lookY.value = withTiming(0, { duration: GAZE.releaseMs, easing: EASING.inOut })
     motion.headTilt.value = withTiming(0, { duration: GAZE.releaseMs, easing: EASING.inOut })
-    const awake = stage !== 'egg' && !sleeping && mood !== 'sleep'
+    const awake = stage !== 'egg' && !sleeping && mood !== 'asleep'
     if (!awake) return
     if (gazeTimer.current) clearTimeout(gazeTimer.current)
     gazeTimer.current = setTimeout(() => {
@@ -592,7 +588,7 @@ export function useCottageMotion(options: Options): CottageMotion {
   const lookAt = useCallback(
     (x: number, y: number) => {
       const { stage, reduceMotion, paused, sleeping, mood } = optionsRef.current
-      if (stage === 'egg' || reduceMotion || paused || sleeping || mood === 'sleep') return
+      if (stage === 'egg' || reduceMotion || paused || sleeping || mood === 'asleep') return
       if (gazeTimer.current) clearTimeout(gazeTimer.current)
       gazeTimer.current = null
       gazeHeld.current = true
@@ -613,7 +609,7 @@ export function useCottageMotion(options: Options): CottageMotion {
   const glance = useCallback(
     (x: number, y: number, holdMs: number) => {
       const { sleeping, mood } = optionsRef.current
-      if (gazeHeld.current || sleeping || mood === 'sleep') return
+      if (gazeHeld.current || sleeping || mood === 'asleep') return
       aim(x, y)
       if (gazeTimer.current) clearTimeout(gazeTimer.current)
       gazeTimer.current = setTimeout(() => {
@@ -625,8 +621,8 @@ export function useCottageMotion(options: Options): CottageMotion {
   )
 
   const pickFidget = useCallback((): Fidget => {
-    const { tired = false, mood } = optionsRef.current
-    const weights = FIDGETS.map((fidget) => (fidget === 'yawn' ? (tired ? 4 : 1) : fidget === 'hum' && mood !== 'happy' && mood !== 'ok' ? 0.3 : 1))
+    const { sleepy = false, mood } = optionsRef.current
+    const weights = FIDGETS.map((fidget) => (fidget === 'yawn' ? (sleepy ? 4 : 1) : fidget === 'hum' && mood !== 'beaming' && mood !== 'content' ? 0.3 : 1))
     const total = weights.reduce((sum, weight) => sum + weight, 0)
     let roll = Math.random() * total
     for (let index = 0; index < FIDGETS.length; index += 1) {
@@ -638,14 +634,14 @@ export function useCottageMotion(options: Options): CottageMotion {
 
   const react = useCallback(
     (kind: ReactionKind): boolean => {
-      const { stage, reduceMotion, paused, sleeping, mood, tired = false } = optionsRef.current
+      const { stage, reduceMotion, paused, sleeping, mood, sleepy = false } = optionsRef.current
       if (paused) return false
-      /* A sleeping elf only wakes, grows or is rocked in its egg. */
-      if ((sleeping || mood === 'sleep') && kind !== 'wake' && kind !== 'levelUp' && kind !== 'egg') return false
+      /* A sleeping elf only wakes, cheers or is rocked in its egg. */
+      if ((sleeping || mood === 'asleep') && kind !== 'wake' && kind !== 'cheer' && kind !== 'egg') return false
       const now = Date.now()
       const active = now < reactionUntil.current
-      /* The hop of a level is not cut short by the care reaction behind it. */
-      if (kind !== 'levelUp' && reactionKind.current === 'levelUp' && active) return false
+      /* The cheer's hop is not cut short by the care reaction behind it. */
+      if (kind !== 'cheer' && reactionKind.current === 'cheer' && active) return false
       /* A fidget never interrupts anything. */
       if (kind === 'fidget' && active) return false
       const motion = motionRef.current
@@ -764,7 +760,7 @@ export function useCottageMotion(options: Options): CottageMotion {
           tips.forEach((dx, index) => spawn({ kind: 'sparkle', x: ox + dx, y: headY - 0.2 * height, dx: dx * 0.6, dy: -60, delay: index * 120, duration: 650, scaleFrom: 0.4, scaleTo: 0.9 }))
           break
         }
-        case 'levelUp': {
+        case 'cheer': {
           cancelAnimation(motion.bob)
           cancelAnimation(motion.squash)
           cancelAnimation(motion.armL)
@@ -877,7 +873,7 @@ export function useCottageMotion(options: Options): CottageMotion {
               cancelAnimation(motion.headTilt)
               motion.mouth.value = withSequence(withTiming(1, { duration: 350, easing: EASING.out }), withTiming(1, { duration: 600 }), withTiming(0, { duration: 300, easing: EASING.inOut }))
               motion.squash.value = withSequence(withTiming(0.96, { duration: 350, easing: EASING.inOut }), withTiming(0.96, { duration: 600 }), withSpring(1, SPRINGS.gentle))
-              motion.lidDroop.value = withSequence(withTiming(0.5, { duration: 300 }), withTiming(0.5, { duration: 700 }), withTiming(tired ? IDLE.tiredDroop : 0, { duration: 400 }))
+              motion.lidDroop.value = withSequence(withTiming(0.5, { duration: 300 }), withTiming(0.5, { duration: 700 }), withTiming(sleepy ? IDLE.sleepyDroop : 0, { duration: 400 }))
               motion.headTilt.value = withSequence(withTiming(-0.06, { duration: 350, easing: EASING.inOut }), withTiming(-0.06, { duration: 600 }), withTiming(0, { duration: 400, easing: EASING.inOut }))
               break
             }
@@ -944,7 +940,7 @@ export function useCottageMotion(options: Options): CottageMotion {
       return
     }
     applyIdle()
-  }, [applyIdle, options.stage, options.mood, options.sleeping, options.reduceMotion, options.paused, options.tired])
+  }, [applyIdle, options.stage, options.mood, options.sleeping, options.reduceMotion, options.paused, options.sleepy])
 
   /* The follower runs only while the scene moves; a still pose resets it. */
   useEffect(() => {
@@ -962,7 +958,7 @@ export function useCottageMotion(options: Options): CottageMotion {
   /* The fidget scheduler: while awake and left alone, one small fidget
      every 8-15 s; busy moments are retried a little later. */
   useEffect(() => {
-    const awake = options.stage !== 'egg' && !options.sleeping && options.mood !== 'sleep'
+    const awake = options.stage !== 'egg' && !options.sleeping && options.mood !== 'asleep'
     if (!awake || options.reduceMotion || options.paused) return
     const schedule = (ms: number) => {
       fidgetTimer.current = setTimeout(() => {
@@ -981,7 +977,7 @@ export function useCottageMotion(options: Options): CottageMotion {
 
   /* Zzz while the elf sleeps. */
   useEffect(() => {
-    const asleep = options.stage !== 'egg' && (options.sleeping || options.mood === 'sleep')
+    const asleep = options.stage !== 'egg' && (options.sleeping || options.mood === 'asleep')
     if (!asleep || options.reduceMotion || options.paused) return
     const height = figureHeight(options.stage)
     const { x: ox, y: oy } = ROOM.elfAnchor

@@ -26,6 +26,7 @@ import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp'
 import { BalloonIcon } from 'phosphor-react-native/src/icons/Balloon'
 import { BookOpenTextIcon } from 'phosphor-react-native/src/icons/BookOpenText'
 import { CameraIcon as PhosphorCamera } from 'phosphor-react-native/src/icons/Camera'
+import { CalendarCheckIcon } from 'phosphor-react-native/src/icons/CalendarCheck'
 import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown'
 import { CaretLeftIcon } from 'phosphor-react-native/src/icons/CaretLeft'
 import { CaretRightIcon } from 'phosphor-react-native/src/icons/CaretRight'
@@ -49,10 +50,8 @@ import { HouseLineIcon } from 'phosphor-react-native/src/icons/HouseLine'
 import { InfoIcon as PhosphorInfo } from 'phosphor-react-native/src/icons/Info'
 import { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo'
 import { KeyIcon as PhosphorKey } from 'phosphor-react-native/src/icons/Key'
-import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning'
 import { LightningSlashIcon } from 'phosphor-react-native/src/icons/LightningSlash'
 import { LockKeyOpenIcon } from 'phosphor-react-native/src/icons/LockKeyOpen'
-import { MagicWandIcon } from 'phosphor-react-native/src/icons/MagicWand'
 import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass'
 import { MapPinIcon } from 'phosphor-react-native/src/icons/MapPin'
 import { MapTrifoldIcon } from 'phosphor-react-native/src/icons/MapTrifold'
@@ -68,6 +67,7 @@ import { QrCodeIcon } from 'phosphor-react-native/src/icons/QrCode'
 import { ShareNetworkIcon } from 'phosphor-react-native/src/icons/ShareNetwork'
 import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck'
 import { SignOutIcon as PhosphorSignOut } from 'phosphor-react-native/src/icons/SignOut'
+import { ShootingStarIcon } from 'phosphor-react-native/src/icons/ShootingStar'
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
 import { SpeakerHighIcon } from 'phosphor-react-native/src/icons/SpeakerHigh'
 import { SpeakerSlashIcon } from 'phosphor-react-native/src/icons/SpeakerSlash'
@@ -162,16 +162,19 @@ export const WatchAdIcon = MonitorPlayIcon
 export const EggIcon = PhosphorEgg
 export const WarmIcon = FireIcon
 export const LullabyIcon = MusicNotesIcon
-/* The four needs and the care actions that answer them: an acorn for food,
-   a balloon for play, a drop for the bath, a wand for magic training. */
+/* The three needs and the care actions that answer them: an acorn for
+   food, a balloon for play, a drop for the bath. */
 export const FeedIcon = AcornIcon
 export const ToyIcon = BalloonIcon
 export const BathIcon = DropIcon
-export const MagicIcon = MagicWandIcon
 export const SleepIcon = MoonStarsIcon
 export const WakeIcon = SunIcon
 export const JoyIcon = HeartIcon
-export const EnergyIcon = LightningIcon
+/* The purse and the streak: the acorns (the same acorn the elf eats), the
+   star dust and the days in a row. */
+export const AcornsIcon = AcornIcon
+export const DustIcon = ShootingStarIcon
+export const StreakIcon = CalendarCheckIcon
 /* The cottage's decor edit mode. */
 export const DecorIcon = ArmchairIcon
 
@@ -186,7 +189,7 @@ export const ICON_VOCABULARY = {
   CameraIcon, ProfileIcon, SignOutIcon, OfflineIcon, SyncIcon, DownloadIcon, WarningIcon, LanguageIcon,
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
   CoffeeIcon, WatchAdIcon,
-  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, MagicIcon, SleepIcon, WakeIcon, JoyIcon, EnergyIcon,
+  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon,
   DecorIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 

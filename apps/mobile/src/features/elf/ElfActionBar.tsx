@@ -3,7 +3,7 @@ import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { BathIcon, FeedIcon, LullabyIcon, PressableScale, SleepIcon, Text, ToyIcon, WakeIcon, WarmIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
-import type { CareActionId, EggActionId, Stage } from './rules'
+import type { ElfCareAction, ElfEggAction, ElfStage } from '@chatynkowo/core'
 
 /* The care actions as a row of round buttons floating over the cottage
    scene, above the tab bar: for an egg the two ways to hatch it, for an
@@ -17,18 +17,18 @@ import type { CareActionId, EggActionId, Stage } from './rules'
    window coordinates to the tab, which floats an acorn under the finger,
    has the elf follow it with its eyes and feeds it when the acorn is
    dropped on it (the pan and the plain tap race, so a still finger stays a
-   tap). Training and the catch in the camera view are not here: the game
-   mechanics around them are out of scope for the cottage prototype. */
+   tap). A care past its cap for the day is refused the same way as a
+   sleeping elf's: the rules say no and the tab answers with the hint. */
 
 export type FeedDragPhase = 'begin' | 'move' | 'end'
 /* The acorn under the finger, in window coordinates. */
 export type FeedDragHandler = (phase: FeedDragPhase, x: number, y: number) => void
 
 export type ElfActionBarProps = {
-  stage: Stage
+  stage: ElfStage
   sleeping: boolean
-  onCare: (id: CareActionId) => void
-  onTendEgg: (id: EggActionId) => void
+  onCare: (id: ElfCareAction) => void
+  onTendEgg: (id: ElfEggAction) => void
   onToggleSleep: () => void
   onFeedDrag?: FeedDragHandler
 }

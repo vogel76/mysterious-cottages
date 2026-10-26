@@ -4,7 +4,8 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { useElf } from '../../providers'
+import { isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { useElf, useForeground } from '../../providers'
 import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import type { SlotId } from './cottage/catalogue'
@@ -13,7 +14,6 @@ import { ElfAdoption } from './ElfAdoption'
 import { ElfHud, ElfMoodPill, type ElfHint, type ElfPanel } from './ElfHud'
 import { DECOR_SLOTS, ElfPicker } from './ElfPicker'
 import { elfKey } from './labels'
-import { lowestNeed, type CareActionId, type EggActionId, type NeedId } from './rules'
 import { useEvolutionPresenter } from './useEvolutionPresenter'
 import { useReturnGreeting } from './useReturnGreeting'
 
@@ -22,19 +22,29 @@ import { useReturnGreeting } from './useReturnGreeting'
    painted room (src/features/elf/cottage) that fills the whole tab, under
    the status bar and the floating tab bar as the Atlas does, and a light
    HUD floats over it: the name, the form, the decorating
-   buttons and the needs at the top with the mood pill under them, the
-   round care buttons at the bottom. A tap on the elf pets it (and when the
-   rules are still in their cooldown the elf is poked instead, so it always
-   answers), a tap on the egg rocks it. The acorn of the feed button can
-   also be dragged to the elf: it floats under the finger, the elf follows
-   it with its eyes (the sprite elf, with no separate head, leans towards
-   it), and dropping it on the elf feeds it; dropped elsewhere it flies
-   back. Every action is answered in the scene (the care, the tap,
-   the wake, a level gained) and, when the rules refuse or the elf sleeps,
-   in the hint under the mood line; the evolution card is presented by the
-   hook while the tab is focused. The elf also speaks first: a need under
-   the low mark makes it wave for attention once per episode, and a return
-   after half an hour away is greeted.
+   buttons, the needs and the ledger at the top with the mood pill under
+   them, the round care buttons at the bottom. A tap on the elf pets it
+   (and when the rules are still in their cooldown the elf is poked
+   instead, so it always answers), a tap on the egg rocks it. The acorn of
+   the feed button can also be dragged to the elf: it floats under the
+   finger, the elf follows it with its eyes (the sprite elf, with no
+   separate head, leans towards it), and dropping it on the elf feeds it;
+   dropped elsewhere it flies back. Every action is answered in the scene
+   (the care, the tap, the wake, a cheer for the day's quests) and, when
+   the rules refuse or the elf sleeps, in the hint under the mood line; the
+   evolution card is presented by the hook while the tab is focused. The
+   elf also speaks first: a need it wants seen to makes it wave for
+   attention once per episode, and a return after half an hour away is
+   greeted.
+
+   Coming into view is a visit for the rules (packages/core, elf.ts): the
+   day is settled, the streak counted, the quests dealt. What a visit or an
+   action earned (a quest done and its acorns, the full set, a streak
+   milestone) and what was lost (a streak that ended with a missed day)
+   comes back as news and is shown as hints in turn, the set and the
+   milestone with a cheer in the scene. The purse and the streak stand in
+   the HUD's ledger; a sheet to read the day's quests and pick its reward
+   comes in a later step.
 
    The room is the rendered art (the Blender plate, the furniture sprites
    and the elf's atlases, see apps/mobile/art/README.md). There is no
@@ -53,16 +63,12 @@ import { useReturnGreeting } from './useReturnGreeting'
    scene in edit mode (its slots become tap targets that pick the panel's
    tab) and the elf admires each piece placed. A stroke over the
    elf's body counts as a pet for the rules without a reaction of its own:
-   the scene plays the stroke. The scene is paused while another tab is on top: the tabs
-   keep this screen mounted, and its loops would otherwise run under the
-   Atlas for nobody. A new egg gets a fresh scene. The game mechanics
-   around the care loop (levels, skills, a shop) are out of scope for this
-   prototype; the rules keep working underneath. */
+   the scene plays the stroke. The scene is paused while another tab is on
+   top: the tabs keep this screen mounted, and its loops would otherwise
+   run under the Atlas for nobody. A new egg gets a fresh scene. */
 
 /* How long a passing hint stays under the mood line. */
 const HINT_MS = 3500
-/* Energy under this makes the elf droop and yawn. */
-const TIRED_ENERGY = 30
 /* The acorn under the finger. */
 const ACORN = 44
 
@@ -73,7 +79,7 @@ export function ElfTab() {
      gets no automatic content inset. */
   const tabBarHeight = useTabBarHeight()
   const elf = useElf()
-  const { state, loaded, stage, mood, decor, lastInteraction, onReaction } = elf
+  const { state, loaded, stage, mood, decor, lastInteraction, news, visit } = elf
   useEvolutionPresenter()
   const focused = useIsFocused()
 
@@ -103,17 +109,50 @@ export function ElfTab() {
     prevStage.current = stage
   }, [stage])
 
-  /* The passing hint and the timer that clears it. */
+  /* The tab in view, or the app back in front with the tab on top, is a
+     visit: the day is settled and counted. */
+  useEffect(() => {
+    if (focused && loaded) visit()
+  }, [focused, loaded, visit])
+  useForeground(() => {
+    if (focused && loaded) visit()
+  })
+
+  /* The passing hints: one on screen at a time for its while, the news
+     waiting in a queue behind it. An answer to a touch (a refusal, the
+     greeting, the call) shows at once; a news hint it cuts short goes
+     back to the front of the queue, so what was earned or lost is never
+     missed. */
   const [flash, setFlash] = useState<ElfHint | null>(null)
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const showHint = useCallback((text: string, tone: ElfHint['tone'] = 'soft') => {
-    if (flashTimer.current) clearTimeout(flashTimer.current)
-    setFlash({ text, tone })
-    flashTimer.current = setTimeout(() => {
-      flashTimer.current = null
-      setFlash(null)
-    }, HINT_MS)
+  const hintQueue = useRef<ElfHint[]>([])
+  /* The hint on screen, and whether it came from the queue. */
+  const showing = useRef<{ hint: ElfHint; queued: boolean } | null>(null)
+  const advanceHint = useCallback(() => {
+    flashTimer.current = null
+    const next = hintQueue.current.shift() ?? null
+    showing.current = next ? { hint: next, queued: true } : null
+    setFlash(next)
+    if (next) flashTimer.current = setTimeout(advanceHint, HINT_MS)
   }, [])
+  const showHint = useCallback(
+    (text: string, tone: ElfHint['tone'] = 'soft') => {
+      if (flashTimer.current) clearTimeout(flashTimer.current)
+      if (showing.current?.queued) hintQueue.current.unshift(showing.current.hint)
+      const hint = { text, tone }
+      showing.current = { hint, queued: false }
+      setFlash(hint)
+      flashTimer.current = setTimeout(advanceHint, HINT_MS)
+    },
+    [advanceHint],
+  )
+  const queueHints = useCallback(
+    (hints: ElfHint[]) => {
+      hintQueue.current.push(...hints)
+      if (!flashTimer.current) advanceHint()
+    },
+    [advanceHint],
+  )
   useEffect(
     () => () => {
       if (flashTimer.current) clearTimeout(flashTimer.current)
@@ -121,23 +160,33 @@ export function ElfTab() {
     [],
   )
 
-  /* A level gained is called out in the hint and in the scene. The other
-     reactions are answered where they happen (the handlers below), so they
-     are not doubled here. */
-  useEffect(
-    () =>
-      onReaction((reaction) => {
-        if (reaction === 'levelUp') {
-          showHint(t('mobile:elf.levelUp'), 'accent')
-          sceneRef.current?.react('levelUp')
-        }
-      }),
-    [onReaction, showHint, t],
-  )
-
   const name = state?.name ?? ''
   const hatched = Boolean(state?.hatched)
   const awake = hatched && !state?.sleeping
+
+  /* The news of the last action or visit, as hints in turn: a streak lost
+     first (it is the one that stings), then what was earned. The full set
+     of quests and a streak milestone get a cheer in the scene. */
+  useEffect(() => {
+    if (!news) return
+    const hints: ElfHint[] = []
+    if (news.streakLost !== null) hints.push({ text: t('mobile:elf.streakLost', { count: news.streakLost }), tone: 'danger' })
+    if (news.milestoneDust) hints.push({ text: t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }), tone: 'accent' })
+    if (news.completed.length) hints.push({ text: t('mobile:elf.questDone', { count: news.acorns }), tone: 'accent' })
+    if (news.setBonus) hints.push({ text: t('mobile:elf.questSet'), tone: 'accent' })
+    queueHints(hints)
+    if (news.setBonus || news.milestoneDust) sceneRef.current?.react('cheer')
+  }, [news, queueHints, t])
+
+  /* The elf waking, by the button or by the morning: the scene plays the
+     wake when the tab can see it (a wake while away is played on the
+     return, so the elf is seen to be up). */
+  const wasSleeping = useRef(Boolean(state?.sleeping))
+  useEffect(() => {
+    const sleeping = Boolean(state?.sleeping)
+    if (wasSleeping.current && !sleeping && hatched && focused) sceneRef.current?.react('wake')
+    wasSleeping.current = sleeping
+  }, [state?.sleeping, hatched, focused])
 
   /* ---------- The panels ---------- */
 
@@ -186,24 +235,24 @@ export function ElfTab() {
     },
   })
 
-  /* A need under the low mark: the elf turns to the player and waves, once
+  /* A need the elf wants seen to: it turns to the player and waves, once
      per episode (the ref remembers which need was called; it clears when
-     no need is low). Asleep, out of focus, behind a panel, while a
+     no need is wanted). Asleep, out of focus, behind a panel, while a
      greeting plays or before the scene is mounted it waits: the episode is
      only marked called once the scene has the wave. */
-  const lowNeed = state ? lowestNeed(state) : null
-  const calledNeed = useRef<NeedId | null>(null)
+  const wanted = state && hatched ? wantedNeed(state) : null
+  const calledNeed = useRef<ElfNeedId | null>(null)
   useEffect(() => {
-    if (!lowNeed) {
+    if (!wanted) {
       calledNeed.current = null
       return
     }
-    if (!awake || !focused || panel !== 'none' || greeting || calledNeed.current === lowNeed) return
+    if (!awake || !focused || panel !== 'none' || greeting || calledNeed.current === wanted) return
     if (!sceneRef.current) return
-    calledNeed.current = lowNeed
+    calledNeed.current = wanted
     sceneRef.current.react('call')
     showHint(t('mobile:elf.callHint', { name }), 'accent')
-  }, [lowNeed, awake, focused, panel, greeting, size, showHint, t, name])
+  }, [wanted, awake, focused, panel, greeting, size, showHint, t, name])
 
   /* ---------- The actions ---------- */
 
@@ -236,7 +285,7 @@ export function ElfTab() {
   /* Returns how the rules took it, so the drag-to-feed can tell an eaten
      acorn from a refused one. */
   const onCare = useCallback(
-    (id: CareActionId) => {
+    (id: ElfCareAction) => {
       const outcome = elf.care(id)
       if (outcome.kind === 'refused') showHint(t(elfKey('guard', outcome.reason), { name }), 'soft')
       else if (outcome.kind === 'asleep') showHint(t('mobile:elf.asleepHint', { name }), 'soft')
@@ -247,19 +296,19 @@ export function ElfTab() {
   )
 
   const onTendEgg = useCallback(
-    (id: EggActionId) => {
+    (id: ElfEggAction) => {
       tendEgg(id)
       sceneRef.current?.react('egg')
     },
     [tendEgg],
   )
 
+  /* The wake itself is played by the sleeping edge above. */
   const onToggleSleep = useCallback(() => {
-    const waking = Boolean(state?.sleeping)
-    elf.toggleSleep()
-    if (waking) sceneRef.current?.react('wake')
-    else showHint(t('mobile:elf.fallsAsleep', { name }), 'soft')
-  }, [elf, state, showHint, t, name])
+    const outcome = elf.toggleSleep()
+    if (outcome === 'slept') showHint(t('mobile:elf.fallsAsleep', { name }), 'soft')
+    else if (outcome === 'tooEarly') showHint(t('mobile:elf.tooEarlyHint', { name }), 'soft')
+  }, [elf, showHint, t, name])
 
   /* ---------- Drag-to-feed ---------- */
 
@@ -303,8 +352,8 @@ export function ElfTab() {
         acornScale.value = withTiming(0.3, { duration: DURATIONS.fast, reduceMotion: ReduceMotion.System })
         acornOpacity.value = withTiming(0, { duration: DURATIONS.fast, reduceMotion: ReduceMotion.System })
       } else {
-        /* Dropped elsewhere, or refused (asleep, a full belly): back to the
-           button, then gone. */
+        /* Dropped elsewhere, or refused (asleep, a full belly, the day's
+           feeds used up): back to the button, then gone. */
         acornX.value = withSpring(dragStart.current.x, SPRINGS.settle)
         acornY.value = withSpring(dragStart.current.y, SPRINGS.settle)
         acornScale.value = withSpring(0.6, SPRINGS.settle)
@@ -343,6 +392,9 @@ export function ElfTab() {
 
   const isEgg = stage === 'egg'
   const editing = panel === 'decor'
+  /* Bedtime, before the elf is tucked in: heavy lids and yawns say it is
+     time. Read at render: the drift re-renders the tab every few seconds. */
+  const sleepy = awake && isBedtimeAt(Date.now())
   /* Where the action bar and the panels stand above the floating tab bar. */
   const bottomOffset = tabBarHeight + TAB_BAR_OVERHANG + space.md
   const bottomInset = panel === 'none' ? 0 : bottomOffset + panelHeight
@@ -357,7 +409,7 @@ export function ElfTab() {
             starter={state.starter}
             mood={mood}
             sleeping={state.sleeping}
-            tired={hatched && state.needs.energy < TIRED_ENERGY}
+            sleepy={sleepy}
             warmth={state.warmth}
             decor={decor}
             width={size.width}
@@ -379,10 +431,10 @@ export function ElfTab() {
           of the room is never covered; the bottom holds the action bar or
           the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none">
-        <ElfHud name={state.name} stage={stage} needs={state.needs} warmth={state.warmth} panel={panel} onDecorate={onDecorate} onReset={confirmReset} />
+        <ElfHud name={state.name} stage={stage} needs={state.needs} warmth={state.warmth} wallet={state.wallet} streak={state.streak} panel={panel} onDecorate={onDecorate} onReset={confirmReset} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
-            <ElfMoodPill name={state.name} stage={stage} mood={mood} lowNeed={lowNeed} flash={flash} />
+            <ElfMoodPill name={state.name} stage={stage} mood={mood} wantedNeed={wanted} flash={flash} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (

@@ -7,7 +7,7 @@ export { NetworkProvider, useForeground, useOnline, useReconnect } from './Netwo
 export { SessionProvider, useSession } from './SessionProvider'
 export { ContentProvider, useContent, type ContentStatus, type ContentValue } from './ContentProvider'
 export { ProgressProvider, useProgress, type ProgressValue } from './ProgressProvider'
-export { ElfProvider, useElf, type ElfReaction, type ElfValue } from './ElfProvider'
+export { ElfProvider, useElf, type ElfNews, type ElfValue } from './ElfProvider'
 export { ToastProvider, useToast, type ToastOptions, type ToastTone } from './ToastProvider'
 export { SupportProvider, useSupport, type CoffeeMenuItem, type CoffeeStoreStatus, type SupportValue } from './SupportProvider'
 export { useCloseModal } from './useCloseModal'

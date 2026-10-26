@@ -2,25 +2,27 @@ import { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { CrossfadeText, DURATIONS, DecorIcon, EASING, EggIcon, IconButton, ReduceMotion, ResetViewIcon, Text, colors, iconSize, mapPalette, radius, space } from '../../ui'
+import { ELF_NEEDS, type ElfMood, type ElfNeedId, type ElfNeeds, type ElfStage, type ElfWallet } from '@chatynkowo/core'
+import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
-import { NEEDS, type Mood, type NeedId, type Needs, type Stage } from './rules'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
    cards so the two full-bleed tabs read alike. The top block: the elf's
    name with its form underneath, the decorating button (the panel it
-   opens lives inside the tab), the way to start over, and the needs as a
-   row of small chips (the glyph and a short bar whose
-   colour says how urgent the need is: green while comfortable, gold when
-   it wants attention, the danger tint when low), or, before the hatch, one
-   chip with the egg and how far the hatching has come. Under it the mood
-   pill: what the elf is doing (or how to hatch the egg) and under that a
-   hint, a passing message when the screen has one (a refused action, the
-   sleeping elf, a new level, the elf waving for attention or greeting a
-   return), otherwise the need most in want when one is low. The hint line
-   keeps its height so the pill never jumps. Both blocks sit at the top of
-   the screen, so the elf in the middle of the room is never covered; the
-   tab places them and hides the pill while a panel is open. */
+   opens lives inside the tab), the way to start over, the needs as a row
+   of small chips (the glyph and a short bar whose colour says how the need
+   stands: green while comfortable, gold when the elf would like it seen
+   to), or, before the hatch, one chip with
+   the egg and how far the hatching has come; and under them the ledger:
+   the acorns and the star dust in the purse and the streak of days. Under
+   it the mood pill: what the elf is doing (or how to hatch the egg) and
+   under that a hint, a passing message when the screen has one (a refused
+   action, the sleeping elf, a quest done, the streak, the elf waving for
+   attention or greeting a return), otherwise the need the elf wants seen
+   to. The hint line keeps its height so the pill never jumps. Both blocks
+   sit at the top of the screen, so the elf in the middle of the room is
+   never covered; the tab places them and hides the pill while a panel is
+   open. */
 
 /* ---------- The top block ---------- */
 
@@ -29,16 +31,19 @@ export type ElfPanel = 'none' | 'decor'
 
 export type ElfHudProps = {
   name: string
-  stage: Stage
-  needs: Needs
+  stage: ElfStage
+  needs: ElfNeeds
   /* Warmth of the egg, 0 to 100. */
   warmth: number
+  wallet: ElfWallet
+  /* Days visited in a row. */
+  streak: number
   panel: ElfPanel
   onDecorate: () => void
   onReset: () => void
 }
 
-export function ElfHud({ name, stage, needs, warmth, panel, onDecorate, onReset }: ElfHudProps) {
+export function ElfHud({ name, stage, needs, warmth, wallet, streak, panel, onDecorate, onReset }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -61,29 +66,30 @@ export function ElfHud({ name, stage, needs, warmth, panel, onDecorate, onReset 
         </View>
       </View>
       <View style={styles.chips} pointerEvents="none">
-        {hatched ? NEEDS.map((id) => <NeedChip key={id} id={id} value={needs[id]} />) : <EggChip warmth={warmth} />}
+        {hatched ? ELF_NEEDS.map((id) => <NeedChip key={id} id={id} value={needs[id]} />) : <EggChip warmth={warmth} />}
+      </View>
+      <View style={styles.ledger} pointerEvents="none">
+        <LedgerChip Glyph={AcornsIcon} value={wallet.acorns} label={t('mobile:elf.acornsAria', { value: wallet.acorns })} />
+        <LedgerChip Glyph={DustIcon} value={wallet.dust} label={t('mobile:elf.dustAria', { value: wallet.dust })} />
+        <LedgerChip Glyph={StreakIcon} value={streak} label={t('mobile:elf.streakAria', { count: streak })} />
       </View>
     </View>
   )
 }
 
-/* The HUD's own thresholds for the bar colour; the rules read the mood from
-   the average of the needs (28 sad, 72 happy) and call a single need out
-   under LOW_NEED, so a bar can turn before the rules say anything. */
-const COMFORTABLE = 55
-const WANTING = 25
+/* The bar turns gold where the rules name a want (under 60). There is no
+   danger tint: the needs never fall under the floor of 35, and an elf
+   left alone wants, it does not suffer. */
+const COMFORTABLE = 60
 const BAR_HEIGHT = 4
 
 function fillColor(value: number): string {
-  if (value > COMFORTABLE) return colors.success
-  if (value >= WANTING) return colors.accent
-  return colors.danger
+  return value >= COMFORTABLE ? colors.success : colors.accent
 }
 
 /* One need: the glyph and the bar, eased to each new value (the needs
-   drift every second, so the bars are always in slow motion while the elf
-   is awake). */
-function NeedChip({ id, value }: { id: NeedId; value: number }) {
+   drift every few seconds while the elf is on screen, a hair at a time). */
+function NeedChip({ id, value }: { id: ElfNeedId; value: number }) {
   const { t } = useTranslation()
   const Glyph = NEED_ICONS[id]
   const percent = Math.round(value)
@@ -132,6 +138,17 @@ function EggChip({ warmth }: { warmth: number }) {
   )
 }
 
+/* One figure of the ledger: the glyph and the count, which crossfades
+   when a quest pays. */
+function LedgerChip({ Glyph, value, label }: { Glyph: Icon; value: number; label: string }) {
+  return (
+    <View style={[styles.chrome, styles.ledgerChip]} accessible accessibilityLabel={label}>
+      <Glyph size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
+      <CrossfadeText value={String(value)} variant="small" weight="bold" style={styles.chromeInk} />
+    </View>
+  )
+}
+
 /* ---------- The mood pill ---------- */
 
 export type ElfHint = {
@@ -141,11 +158,11 @@ export type ElfHint = {
 
 export type ElfMoodPillProps = {
   name: string
-  stage: Stage
-  mood: Mood
-  /* The need below the low mark that most wants attention. */
-  lowNeed: NeedId | null
-  /* A passing message that outranks the low need while it lasts. */
+  stage: ElfStage
+  mood: ElfMood
+  /* The need the elf would like seen to, when one is under the mark. */
+  wantedNeed: ElfNeedId | null
+  /* A passing message that outranks the want while it lasts. */
   flash: ElfHint | null
 }
 
@@ -155,10 +172,10 @@ const hintColor: Record<ElfHint['tone'], string> = {
   danger: colors.danger,
 }
 
-export function ElfMoodPill({ name, stage, mood, lowNeed, flash }: ElfMoodPillProps) {
+export function ElfMoodPill({ name, stage, mood, wantedNeed, flash }: ElfMoodPillProps) {
   const { t } = useTranslation()
   const sentence = stage === 'egg' ? t('mobile:elf.moodEgg') : t(elfKey('mood', mood), { name })
-  const hint: ElfHint | null = flash ?? (lowNeed && stage !== 'egg' ? { text: t(elfKey('low', lowNeed), { name }), tone: 'danger' } : null)
+  const hint: ElfHint | null = flash ?? (wantedNeed && stage !== 'egg' ? { text: t(elfKey('wants', wantedNeed), { name }), tone: 'accent' } : null)
 
   return (
     <View style={[styles.chrome, styles.mood]} accessibilityLiveRegion="polite">
@@ -213,7 +230,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accentBorder,
     backgroundColor: colors.accentWash,
   },
-  /* One row of four, each chip sharing the width so the needs never wrap
+  /* One row of three, each chip sharing the width so the needs never wrap
      onto a second line over the room. */
   chips: {
     flexDirection: 'row',
@@ -238,6 +255,19 @@ const styles = StyleSheet.create({
   },
   fill: {
     height: '100%',
+    borderRadius: radius.pill,
+  },
+  /* The ledger's chips take only the width of their figure. */
+  ledger: {
+    flexDirection: 'row',
+    gap: space.sm,
+  },
+  ledgerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: radius.pill,
   },
   mood: {

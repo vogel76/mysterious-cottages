@@ -242,8 +242,9 @@ src/
   features/preferences/  the preferences screen: where the consent to ads stands and the row that opens Google's
                          form again (the privacy options in the EEA), with the consent hook on top of src/lib/ads.ts
                          ad (Google's sample ids until EXPO_PUBLIC_ADMOB_*_APP_ID are set), Sign in with Apple (the capability and its
-  features/elf/          the companion prototype: rules.ts (the pure care rules, the stored outfit and decor, the last
-                         interaction), cottage/ (the full-screen Skia room: room.ts with the room units and the slots,
+  features/elf/          the companion prototype, on the rules in packages/core (elf.ts: the needs, the day's quests,
+                         the purse and the streak, the stored outfit and decor), cottage/ (the full-screen Skia room:
+                         room.ts with the room units and the slots,
                          catalogue.ts with the slot, decor and wardrobe ids, roomAssets.ts (the room manifest, which
                          variants are rendered) and RoomSprites.tsx drawing the plate and the furniture crops,
                          SpriteElf.tsx (the elf's atlases on the figure's motion), fire.ts with the hearth's flicker,
@@ -363,19 +364,20 @@ through `src/lib/haptics.ts`.
   AsyncStorage under `STORAGE_KEYS.support`, on the device only; the
   invitation card reads it to turn into a thank-you after the first
   support.
-- **Elf companion** (`ElfProvider`, `src/features/elf/rules.ts`): the egg
-  or the elf lives in AsyncStorage under `STORAGE_KEYS.elf`, read when the
-  provider mounts (not in the bootstrap: the elf is not on the first
-  screen) and brought up to date with the time away. In the foreground a
-  one-second tick applies the needs' decay; the state is saved after every
-  action, every ten seconds while it only drifts, and when the app leaves
-  the foreground. A form reached by a gain waits in `pendingEvolution`
-  until the Elf tab has shown its card; one-shot reactions (`care`, `pet`,
-  `levelUp`, `egg`, `wake`) are published to listeners so the tab can
-  answer them once (a level gained reaches the scene and the hint from
-  there; the rest are answered where they happen) instead of deriving them
-  from state. Nothing reaches the
-  account yet.
+- **Elf companion** (`ElfProvider`, on the rules in `packages/core`,
+  `elf.ts`): the egg or the elf lives in AsyncStorage under
+  `STORAGE_KEYS.elf`, read when the provider mounts (not in the bootstrap:
+  the elf is not on the first screen) and brought up to date with the time
+  away. In the foreground a tick every five seconds applies the needs'
+  drift, hatches the egg when its time has come and puts the elf to sleep
+  or wakes it by the clock; the state is saved after every action, every
+  ten seconds while it only drifts, and when the app leaves the
+  foreground. A form reached (by the hatch, the cottages found or time)
+  waits in `pendingEvolution` until the Elf tab has shown its card. What
+  the day's rules said about an action or a visit (a quest done and its
+  acorns, the full set, a streak milestone, a streak lost) is published as
+  `news`, one record the tab turns into hints; the tab calls `visit()`
+  when it comes into view. Nothing reaches the account yet.
 
 ## Native pieces
 
@@ -575,38 +577,42 @@ at the top, the mood pill under them; `ElfActionBar.tsx`: the round care
 buttons above the tab bar). A tap on the elf pets it (within the pet
 cooldown it is poked instead, so it always answers), a tap on the egg
 rocks it. It touches nothing of the expedition flow: no cottage, code,
-story or reward knows about it. The game mechanics around the care loop
-(levels on show, skills, a shop) are deliberately out of scope for this
-iteration; the rules still count experience and forms underneath, so the
-evolution card still appears.
+story or reward knows about it, but the cottages found decide the elf's
+form and the first find hatches the egg early. The day's quests, the purse
+(acorns and star dust) and the streak are counted by the rules and stand
+in the HUD's ledger; what an action earned passes through the hint. A
+sheet to read the quests and pick the day's reward comes in a later step,
+and the shop the dust is for later still.
 
-The rules (`src/features/elf/rules.ts`, pure functions over an immutable
-state) carry the care loop of the first prototype plus what the player
-chose: the outfit and the decor as the slots they changed (plain strings;
-the catalogues live in the cottage and the provider resolves a stored id
-against them, so an id the catalogue no longer knows falls back to the
-slot's default) and `lastInteraction`, recorded by every care, pet, egg,
-sleep and swap:
+The rules (`packages/core`, `elf.ts`: pure functions over an immutable
+state with the moment injected, so a simulation can run a year in a
+second) are paced in days, not minutes: an absence never punishes, it
+only leaves the elf wanting, and the day's caps keep a visit short. They
+carry the care loop, the day's quests, the purse and the streak, plus what
+the player chose: the outfit and the decor as the slots they changed
+(plain strings; the catalogues live in the cottage and the provider
+resolves a stored id against them, so an id the catalogue no longer knows
+falls back to the slot's default) and `lastInteraction`, recorded by
+every care, pet, egg, sleep and swap:
 
 | Rule | Values |
 |---|---|
-| Needs | fullness, joy, energy, clean; each 0 to 100 |
-| Decay per minute awake | fullness 0.7, joy 0.55, energy 0.45, clean 0.35; asleep the losses fall to a fraction (0.4 / 0.35 / 0 / 0.3) and energy returns at 1.8 a minute, waking the elf at 100; an absence counts for at most 720 minutes |
-| Mood | sleep while asleep; sick when any need is at 0; sad under an average of 28; happy above 72; otherwise ok. A need under 20 is called out in the mood pill |
-| Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it); it hatches at 100 |
-| Feed | fullness +26, joy +3, energy -2, clean -6, 4 xp; refused at fullness 98 or more, and over 92 it spoils the joy by 6 |
-| Play | joy +24, energy -12, fullness -7, 7 xp; refused at energy 10 or less |
-| Bath | clean +42, joy +4, energy -5, 3 xp |
-| Train | joy +6, energy -18, fullness -8, clean -6, 13 xp; refused at energy 22 or less; no button for it in the cottage |
-| Pet (a tap on the elf) | joy +4, 1 xp, 1.4 s between taps |
-| Catch (camera view) | joy +12, 6 xp; the view is no longer reachable from the tab |
-| Levels | 20 xp for the first, then 18 more per level (`xpNeeded`) |
-| Forms | baby from level 1, young from 4, adult from 8, elder from 15; the egg is the state before hatching |
+| Needs | fullness, joy, clean; each 0 to 100, never under the floor of 35 |
+| Drift | each need eases towards the floor over days (about two thirds of the way in 4 days for fullness, 5 for joy, 7 for clean), at half pace at night; a day away leaves the elf content, three days wanting, a week missing the player |
+| Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under 60 (the mood pill names it); beaming from an average of 75 with no want; otherwise content |
+| Sleep | by the clock: asleep from 21:00 to 07:00; the button tucks the elf in from 19:00 (until the morning) and before that answers that it is too early; woken at night it dozes off again after 10 minutes |
+| Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it); it hatches 6 hours after it appeared, or at the first cottage found, whichever comes first |
+| Care | feed fullness +25 (3 a day, refused at 90), play joy +30 (2 a day), bath clean +60 (1 a day); past the cap the elf has had enough for today |
+| Pet (a tap on the elf) | joy +3, 1.4 s between taps |
+| Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days |
+| Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; the full set pays 1 star dust |
+| Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |
+| Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3 |
 
 Every action is refused while the elf sleeps (the buttons dim and tell
 assistive tech so, but stay pressable: the rules refuse and the sleeping
-hint answers, waking excepted), and the first form, the level and fresh
-needs are set when the egg hatches.
+hint answers, waking excepted), and the first form and fresh needs are
+set when the egg hatches.
 
 ### The feel
 
@@ -618,8 +624,9 @@ Talking Tom, Neko Atsume, Finch) says, applied in the tab:
   head, leans towards it); a stroke over the body is the most alive input
   (eyes close, the head leans in, hearts trickle).
 - **Idle fidgets** every 8 to 15 seconds (an ear twitch, a yawn, a glance
-  at the fire, a shift of weight) keep it alive between actions; a tired
-  elf (energy under 30) gets heavy lids and yawns.
+  at the fire, a shift of weight) keep it alive between actions; at
+  bedtime (from 19:00, until it is tucked in) the elf gets heavy lids and
+  yawns.
 - **Drag-to-feed.** The acorn of the feed button can be dragged: it floats
   under the finger (an `Animated.View` over the tab, fed by the action
   bar's pan gesture in window coordinates), the elf follows it with its

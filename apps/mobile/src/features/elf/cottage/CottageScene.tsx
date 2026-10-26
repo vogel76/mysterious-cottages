@@ -5,7 +5,7 @@ import { Canvas, Circle, Group, Line, vec } from '@shopify/react-native-skia'
 import { cancelAnimation, useDerivedValue, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '../../../ui'
-import { PET_COOLDOWN_MS, type Mood, type Stage, type StarterId } from '../rules'
+import { PET_COOLDOWN_MS, type ElfMood, type ElfStage, type ElfStarter } from '@chatynkowo/core'
 import { SPRITE_CHARACTERS, useSpriteImages, type SpriteSource } from '../sprites'
 import type { Decor, SlotId } from './catalogue'
 import { useDayClock } from './clock'
@@ -55,12 +55,12 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    petted; the editable slots wear dashed frames, the selected one in the
    accent colour. A screen reader reaches the pet through the activate
    action of the view around the canvas. The reactions the tab wants to
-   show (a care action, a level, a greeting), the elf's gaze while food is
+   show (a care action, a cheer, a greeting), the elf's gaze while food is
    dragged over the room, and the look at a freshly placed piece all go
    through the handle. While the tab is out of focus the scene is paused:
    every loop stops at a still pose, so the UI thread owes nothing to a
    room nobody sees. The component is memoised: the provider commits a new
-   state every second while the elf is awake and none of these props
+   state every few seconds while the elf is awake and none of these props
    change with it; the outfit and the decor arrive as stable references.
 
    The room is the rendered one (RoomSprites: the plate and the furniture
@@ -71,7 +71,7 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    keyed by a counter, so repeating one restarts it; the motion hook is
    told about every reaction first, so the particles, the hop and the
    squash still play over the baked frames, and a reaction the motion
-   refuses (asleep, paused, in the middle of the level hop) leaves the
+   refuses (asleep, paused, in the middle of the cheer) leaves the
    frames alone too, so body and frames never disagree. The egg is still
    the vector nest, drawn over the rendered rug, until the pipeline renders
    it. The slot table (the tap targets, the glance centres and the frames
@@ -98,12 +98,12 @@ export type CottageSceneHandle = {
 }
 
 export type CottageSceneProps = {
-  stage: Stage
-  starter: StarterId
-  mood: Mood
+  stage: ElfStage
+  starter: ElfStarter
+  mood: ElfMood
   sleeping: boolean
-  /* Energy under the low mark: heavy lids and yawns. */
-  tired: boolean
+  /* Bedtime, before the elf is tucked in: heavy lids and yawns. */
+  sleepy: boolean
   /* The egg's warmth, 0..100; ignored after the hatch. */
   warmth: number
   decor: Decor
@@ -156,7 +156,7 @@ const REACTION_CLIP: Partial<Record<ReactionKind, string>> = {
   pet: 'pet',
   feed: 'feed',
   play: 'happy',
-  levelUp: 'happy',
+  cheer: 'happy',
   twirl: 'happy',
   bath: 'pet',
   wake: 'wave',
@@ -170,9 +170,9 @@ const REACTION_CLIP: Partial<Record<ReactionKind, string>> = {
 const STROKE_CLIP_MS = 1500
 
 /* The loop the elf plays when nothing happens to it. */
-function moodClip(mood: Mood, sleeping: boolean): string {
-  if (sleeping || mood === 'sleep') return 'sleep'
-  if (mood === 'sad' || mood === 'sick') return 'sad'
+function moodClip(mood: ElfMood, sleeping: boolean): string {
+  if (sleeping || mood === 'asleep') return 'sleep'
+  if (mood === 'misses') return 'sad'
   return 'idle'
 }
 
@@ -201,7 +201,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, tired, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg },
+    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg },
     ref,
   ) {
     const { t } = useTranslation()
@@ -224,7 +224,7 @@ export const CottageScene = memo(
       drawnOffsetY.value = withTiming(layout.offsetY, { duration: DURATIONS.slow, easing: EASING.inOut, reduceMotion: ReduceMotion.System })
     }, [layout.offsetY, drawnOffsetY])
 
-    const { motion, particles, react, lookAt, lookRelease, admireAt } = useCottageMotion({ stage, mood, sleeping, tired, reduceMotion, paused })
+    const { motion, particles, react, lookAt, lookRelease, admireAt } = useCottageMotion({ stage, mood, sleeping, sleepy, reduceMotion, paused })
     /* The elf's sheets, decoded from the first mount, so they are in
        before the hatch. */
     const images = useSpriteImages(ELF_SPRITES)
@@ -278,7 +278,7 @@ export const CottageScene = memo(
     /* Every reaction goes to the motion (the particles, the hop, the
        squash); the ones with a clip also swap the frames, but only when
        the motion took the reaction: what it refuses (a pat
-       during the level hop, anything while asleep or paused) must not
+       during the cheer, anything while asleep or paused) must not
        restart the frames under a body that goes on with its hop. With
        reduce motion the frames hold still and a one shot would never
        end, so the loop stays. */
