@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { nextStreakMilestone, type ElfQuest, type ElfReward } from '@chatynkowo/core'
+import { announce } from '../../lib/announce'
 import { useElf } from '../../providers'
 import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
 import { QUEST_ICONS, elfKey } from './labels'
@@ -27,6 +28,13 @@ export function ElfTodaySheet() {
   const streak = state?.streak ?? 0
   const best = state?.bestStreak ?? 0
   const next = nextStreakMilestone(streak)
+  /* The pick, with the card's content spoken to a screen reader: the
+     card itself only changes its label. */
+  const pick = (index: number) => {
+    claimDailyReward(index)
+    const reward = rewards[index]
+    if (reward) announce(t('mobile:elf.rewardMineAria', { reward: rewardLabel(t, reward) }))
+  }
   return (
     <SheetRoute scroll>
       <View style={styles.sheet}>
@@ -35,7 +43,9 @@ export function ElfTodaySheet() {
         </Text>
 
         <View style={styles.section}>
-          <Text weight="bold">{t('mobile:elf.todayQuests')}</Text>
+          <Text weight="bold" accessibilityRole="header">
+            {t('mobile:elf.todayQuests')}
+          </Text>
           {quests.map((quest) => (
             <QuestRow key={quest.id} quest={quest} />
           ))}
@@ -48,19 +58,23 @@ export function ElfTodaySheet() {
         </View>
 
         <View style={styles.section}>
-          <Text weight="bold">{t('mobile:elf.todayReward')}</Text>
+          <Text weight="bold" accessibilityRole="header">
+            {t('mobile:elf.todayReward')}
+          </Text>
           <Text variant="small" tone="faint">
             {picked === null ? t('mobile:elf.rewardPick') : t('mobile:elf.rewardPicked')}
           </Text>
           <View style={styles.cards}>
             {rewards.map((reward, index) => (
-              <RewardCard key={index} index={index} reward={reward} picked={picked} onPick={claimDailyReward} />
+              <RewardCard key={index} index={index} reward={reward} picked={picked} onPick={pick} />
             ))}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text weight="bold">{t('mobile:elf.todayStreak')}</Text>
+          <Text weight="bold" accessibilityRole="header">
+            {t('mobile:elf.todayStreak')}
+          </Text>
           <View style={styles.row}>
             <StreakIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
             <View style={styles.column}>
@@ -86,12 +100,20 @@ export function ElfTodaySheet() {
   )
 }
 
-/* One quest: its glyph, its name, the progress or the tick, and its pay. */
+/* The content of a reward card in words, for a screen reader. */
+function rewardLabel(t: (key: string, options: { count: number }) => string, reward: ElfReward): string {
+  return reward.kind === 'dust' ? t('mobile:elf.rewardDustAria', { count: reward.amount }) : t('mobile:elf.rewardAcornsAria', { count: reward.amount })
+}
+
+/* One quest: its glyph, its name, the progress or the tick, and its pay
+   (the label says "done" and "1 of 2" in words: "1/2" would be read as a
+   fraction). */
 function QuestRow({ quest }: { quest: ElfQuest }) {
   const { t } = useTranslation()
   const Glyph = QUEST_ICONS[quest.event]
+  const state = quest.done ? t('mobile:elf.questDoneAria') : t('mobile:elf.questProgressAria', { progress: quest.progress, target: quest.target })
   return (
-    <View style={[styles.row, quest.done && styles.rowDone]} accessible accessibilityLabel={`${t(elfKey('quest', quest.id))}. ${quest.done ? t('mobile:elf.questSetDone') : t('mobile:elf.questProgress', { progress: quest.progress, target: quest.target })}. ${t('mobile:elf.rewardAcornsAria', { count: quest.acorns })}`}>
+    <View style={[styles.row, quest.done && styles.rowDone]} accessible accessibilityLabel={`${t(elfKey('quest', quest.id))}. ${state}. ${t('mobile:elf.rewardAcornsAria', { count: quest.acorns })}`}>
       <Glyph size={iconSize.md} weight="fill" color={quest.done ? colors.success : colors.accentStrong} />
       <Text style={styles.grow} numberOfLines={2}>
         {t(elfKey('quest', quest.id))}
@@ -115,27 +137,34 @@ function QuestRow({ quest }: { quest: ElfQuest }) {
 
 /* One of the day's three cards: face down until the pick, then the one
    picked turned and lit, the others turned and dimmed, so the player
-   sees what the day held. */
+   sees what the day held. One pressable for both faces, so the focus of
+   a screen reader stays on the card through the turn; turned, it is
+   disabled and says whose it is. */
 function RewardCard({ index, reward, picked, onPick }: { index: number; reward: ElfReward; picked: number | null; onPick: (index: number) => void }) {
   const { t } = useTranslation()
   const turned = picked !== null
   const mine = picked === index
   const Glyph: Icon = reward.kind === 'dust' ? DustIcon : AcornsIcon
-  const label = reward.kind === 'dust' ? t('mobile:elf.rewardDustAria', { count: reward.amount }) : t('mobile:elf.rewardAcornsAria', { count: reward.amount })
-  if (!turned) {
-    return (
-      <PressableScale onPress={() => onPick(index)} accessibilityLabel={t('mobile:elf.rewardCardAria', { index: index + 1 })} style={[styles.card, styles.cardDown]}>
-        <ElfIcon size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
-      </PressableScale>
-    )
-  }
+  const label = !turned ? t('mobile:elf.rewardCardAria', { index: index + 1 }) : t(mine ? 'mobile:elf.rewardMineAria' : 'mobile:elf.rewardMissedAria', { reward: rewardLabel(t, reward) })
   return (
-    <Animated.View entering={fade()} style={[styles.card, mine ? styles.cardMine : styles.cardMissed]} accessible accessibilityLabel={label}>
-      <Glyph size={iconSize.lg} weight="fill" color={mine ? colors.accentInk : colors.inkFaint} />
-      <Text variant="compact" weight="bold" style={mine ? styles.mineInk : styles.missedInk}>
-        {reward.amount}
-      </Text>
-    </Animated.View>
+    <PressableScale
+      onPress={() => onPick(index)}
+      disabled={turned}
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: turned, selected: mine }}
+      style={[styles.card, !turned ? styles.cardDown : mine ? styles.cardMine : styles.cardMissed]}
+    >
+      {turned ? (
+        <Animated.View entering={fade()} style={styles.face}>
+          <Glyph size={iconSize.lg} weight="fill" color={mine ? colors.accentInk : colors.inkFaint} />
+          <Text variant="compact" weight="bold" style={mine ? styles.mineInk : styles.missedInk}>
+            {reward.amount}
+          </Text>
+        </Animated.View>
+      ) : (
+        <ElfIcon size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
+      )}
+    </PressableScale>
   )
 }
 
@@ -143,7 +172,7 @@ function RewardCard({ index, reward, picked, onPick }: { index: number; reward: 
    how it is earned and what it is for. */
 function Figure({ Glyph, title, value, body }: { Glyph: Icon; title: string; value: number; body: string }) {
   return (
-    <View style={styles.row}>
+    <View style={styles.figure}>
       <View style={styles.glyph}>
         <Glyph size={iconSize.md} weight="fill" color={colors.accentStrong} />
       </View>
@@ -215,6 +244,16 @@ const styles = StyleSheet.create({
   cardMissed: {
     borderColor: colors.line,
     backgroundColor: colors.surface,
+  },
+  face: {
+    alignItems: 'center',
+    gap: space.xs,
+  },
+  /* An explanation runs to several lines: the glyph stays with the title. */
+  figure: {
+    flexDirection: 'row',
+    gap: space.md,
+    alignItems: 'flex-start',
   },
   mineInk: {
     color: colors.accentInk,

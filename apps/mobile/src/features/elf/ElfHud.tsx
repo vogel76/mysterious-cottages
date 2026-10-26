@@ -48,7 +48,8 @@ export type ElfHudProps = {
   rewardWaiting: boolean
   panel: ElfPanel
   onDecorate: () => void
-  /* The ledger was tapped: the sheet that explains its figures. */
+  /* The ledger was tapped: the day's sheet (the quests, the reward to
+     pick, the streak, and what the figures mean). */
   onLedger: () => void
   onReset: () => void
 }
@@ -83,6 +84,8 @@ export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, questsDone
       <PressableScale
         onPress={onLedger}
         accessibilityLabel={`${t('mobile:elf.ledgerAria', { acorns: wallet.acorns, dust: wallet.dust, streak, done: questsDone, total: QUESTS_TOTAL })}${rewardWaiting ? ` ${t('mobile:elf.rewardWaitingAria')}` : ''}`}
+        accessibilityHint={t('mobile:elf.ledgerHint')}
+        hitSlop={{ top: 8, bottom: 8 }}
         pressedFill="transparent"
         ripple={false}
         style={styles.ledger}
@@ -231,11 +234,6 @@ function LedgerChip({ Glyph, value }: { Glyph: Icon; value: number }) {
 
 /* ---------- The mood pill ---------- */
 
-type Hint = {
-  text: string
-  tone: 'soft' | 'accent' | 'danger'
-}
-
 export type ElfMoodPillProps = {
   name: string
   stage: ElfStage
@@ -248,24 +246,19 @@ export type ElfMoodPillProps = {
   wantedNeed: ElfNeedId | null
 }
 
-const hintColor: Record<Hint['tone'], string> = {
-  soft: mapPalette.chromeInk,
-  accent: colors.accentStrong,
-  danger: colors.danger,
-}
-
 export function ElfMoodPill({ name, stage, mood, hatchAt, wantedNeed }: ElfMoodPillProps) {
   const { t } = useTranslation()
+  /* The egg's sentence stays the same until the hatch is due: the chip
+     above carries the countdown, and a pill that changed every minute
+     would be read out every minute. */
   const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
-  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue', { name }) : t('mobile:elf.moodEgg', { name, when: hatch.when })) : t(elfKey('mood', mood), { name })
-  const hint: Hint | null = wantedNeed && stage !== 'egg' ? { text: t(elfKey('wants', wantedNeed), { name }), tone: 'accent' } : null
+  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue', { name }) : t('mobile:elf.moodEgg', { name })) : t(elfKey('mood', mood), { name })
+  const want = wantedNeed && stage !== 'egg' ? t(elfKey('wants', wantedNeed), { name }) : null
 
   return (
     <View style={[styles.chrome, styles.mood]} accessibilityLiveRegion="polite">
       <CrossfadeText value={sentence} variant="small" align="center" style={styles.chromeInk} />
-      <View style={styles.hint}>
-        {hint ? <CrossfadeText value={hint.text} variant="small" weight="semibold" align="center" style={[{ color: hintColor[hint.tone] }, hint.tone === 'soft' && styles.hintSoft]} /> : null}
-      </View>
+      <View style={styles.hint}>{want ? <CrossfadeText value={want} variant="small" weight="semibold" align="center" style={styles.want} /> : null}</View>
     </View>
   )
 }
@@ -394,7 +387,7 @@ const styles = StyleSheet.create({
     minHeight: 20,
     alignItems: 'center',
   },
-  hintSoft: {
-    opacity: 0.85,
+  want: {
+    color: colors.accentStrong,
   },
 })
