@@ -6,7 +6,7 @@ import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { careLeft, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
-import { useElf, useForeground } from '../../providers'
+import { useContent, useElf, useForeground, useProgress } from '../../providers'
 import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import type { SlotId } from './cottage/catalogue'
@@ -85,6 +85,10 @@ export function ElfTab() {
   const tabBarHeight = useTabBarHeight()
   const elf = useElf()
   const { state, loaded, stage, mood, decor, lastInteraction, news, visit } = elf
+  /* The cottages, to name the one the elf cheers about; the count for a
+     cheer about several at once. */
+  const { cottages } = useContent()
+  const { foundCount } = useProgress()
   useEvolutionPresenter()
   const router = useRouter()
   const focused = useIsFocused()
@@ -188,26 +192,31 @@ export function ElfTab() {
   const stateRef = useRef(state)
   stateRef.current = state
 
-  /* The news of the last action or visit, said line by line: a streak
-     lost first (it is the one that stings), the new day with its quests
-     and reward, then each quest earned. The full set of quests and a
-     streak milestone get a cheer in the scene. Each record is said once,
-     when the tab is in view: news that arrived while another tab was on
-     top (the tick turning the day) waits for the focus, and a language
-     change does not repeat the last lines. */
+  /* The news of the last action or visit, said line by line: a cottage
+     found since the last visit first (the elf's own joy), a streak lost
+     (the one that stings), the new day with its quests and reward, then
+     each quest earned. A find, the full set of quests and a streak
+     milestone get a cheer in the scene. Each record is said once, when
+     the tab is in view: news that arrived while another tab was on top
+     (the tick turning the day) waits for the focus, and a language change
+     does not repeat the last lines. */
   const consumedNews = useRef(0)
   useEffect(() => {
     if (!news || !focused || news.seq === consumedNews.current) return
     consumedNews.current = news.seq
     const lines: string[] = []
+    if (news.celebrate.length === 1) {
+      const title = cottages.find((cottage) => cottage.slug === news.celebrate[0])?.title
+      lines.push(title ? t('mobile:elf.findLine', { name: title }) : t('mobile:elf.findManyLine', { count: foundCount }))
+    } else if (news.celebrate.length > 1) lines.push(t('mobile:elf.findManyLine', { count: foundCount }))
     if (news.streakLost !== null) lines.push(t('mobile:elf.streakLost', { count: news.streakLost }))
     if (news.milestoneDust) lines.push(t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }))
     if (news.newDay) lines.push(t('mobile:elf.newDayLine'))
     for (const quest of news.completed) lines.push(t('mobile:elf.questDone', { count: quest.acorns }))
     if (news.setBonus) lines.push(t('mobile:elf.questSet'))
     queueSpeech(lines)
-    if (news.setBonus || news.milestoneDust) sceneRef.current?.react('cheer')
-  }, [news, focused, queueSpeech, t])
+    if (news.setBonus || news.milestoneDust || news.celebrate.length) sceneRef.current?.react('cheer')
+  }, [news, focused, queueSpeech, t, cottages, foundCount])
 
   /* The elf waking, by the button or by the morning: the scene plays the
      wake when the tab can see it (a wake while away is played on the

@@ -25,6 +25,7 @@ import {
   type CareOutcome,
   type ElfCareAction,
   type ElfEggAction,
+  type ElfFind,
   type ElfForm,
   type ElfMood,
   type ElfOutfit,
@@ -62,8 +63,11 @@ import { useProgress } from './ProgressProvider'
    lines.
 
    The cottages found come from the progress provider, which this one
-   mounts under: they decide the form, and the first find counts as the
-   first story read, which hatches the egg early. The wardrobe and the decor
+   mounts under: they decide the form, the first find counts as the first
+   story read, which hatches the egg early, each find is credited to the
+   day's find quest by the rules, and a find from an earlier day is
+   celebrated on the next visit (never on its own day, which belongs to
+   the expedition). The wardrobe and the decor
    are stored as the slots the player changed (the rules keep them as plain
    strings) and handed to the scene resolved against the cottage's
    catalogues: an id the catalogue no longer knows falls back to the slot's
@@ -84,6 +88,8 @@ export type ElfNews = {
   streakLost: number | null
   milestoneDust: number
   streak: number
+  /* Cottages found on an earlier day, for the elf to cheer about. */
+  celebrate: string[]
 }
 
 export type ElfValue = {
@@ -146,18 +152,27 @@ function resolveDecor(stored: Record<string, string> | undefined): Decor {
   return decor
 }
 
-/* What the quests said about an action, as the rules return it. */
-type QuestReport = { state: ElfState; completed: ElfQuestId[]; setBonus: boolean }
-type DayReport = Pick<VisitOutcome, 'newDay' | 'streakLost' | 'milestoneDust'>
+/* What the quests said about an action, as the rules return it, and what
+   the day said as it was settled (its quests credited from the finds). */
+type QuestReport = { state: ElfState; completed: ElfQuestId[]; setBonus: boolean; celebrate?: string[] }
+type DayReport = VisitOutcome
 
 export function ElfProvider({ children }: { children: ReactNode }) {
-  const { foundCount } = useProgress()
+  const { foundCount, state: progress } = useProgress()
   const [state, setState] = useState<ElfState | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [pendingEvolution, setPendingEvolution] = useState<ElfForm | null>(null)
   const [news, setNews] = useState<ElfNews | null>(null)
   const stateRef = useRef<ElfState | null>(null)
-  const findsRef = useRef(foundCount)
+  /* The cottages found with their moments, as the rules take them. */
+  const finds = useMemo<ElfFind[]>(
+    () =>
+      Object.entries(progress.found)
+        .map(([slug, find]) => ({ slug, at: Date.parse(find.foundAt) }))
+        .filter((find) => Number.isFinite(find.at)),
+    [progress.found],
+  )
+  const findsRef = useRef(finds)
   const dirtyRef = useRef(false)
   const petAtRef = useRef(0)
   const newsSeq = useRef(0)
@@ -166,8 +181,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     stateRef.current = state
   }, [state])
   useEffect(() => {
-    findsRef.current = foundCount
-  }, [foundCount])
+    findsRef.current = finds
+  }, [finds])
 
   const persist = useCallback((next: ElfState | null) => {
     dirtyRef.current = false
@@ -178,7 +193,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   /* The form reached and not shown yet: derived from the state and the
      finds whenever either changes. */
   const refreshPending = useCallback((next: ElfState | null, now: number) => {
-    setPendingEvolution(next ? pendingForm(next, findsRef.current, now) : null)
+    setPendingEvolution(next ? pendingForm(next, findsRef.current.length, now) : null)
   }, [])
 
   /* Every change goes through here: the ref for the next caller, the state
@@ -198,8 +213,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
      handed back for the caller to report), the egg hatched when its time
      has come (the first find counts as the first story read). */
   const settle = useCallback((current: ElfState, now: number): { state: ElfState; day: DayReport } => {
-    const settled = settleDay(current, now)
-    const next = hatchDue(settled.state, now, findsRef.current > 0) ? hatch(settled.state, now) : settled.state
+    const settled = settleDay(current, now, findsRef.current)
+    const next = hatchDue(settled.state, now, findsRef.current.length > 0) ? hatch(settled.state, now) : settled.state
     return { state: next, day: settled }
   }, [])
 
@@ -233,22 +248,28 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshPending])
 
-  /* What the rules reported, as one news record for the tab, each quest
-     completed with its own pay. Nothing to tell stays quiet. */
+  /* What the rules reported, as one news record for the tab: what the day
+     said as it was settled (a find credited to its quest) and what the
+     action said, each quest completed with its own pay. Nothing to tell
+     stays quiet. */
   const report = useCallback((before: ElfState, quests: QuestReport, day?: DayReport) => {
     const newDay = day?.newDay ?? false
     const streakLost = day?.streakLost ?? null
     const milestoneDust = day?.milestoneDust ?? 0
-    if (!quests.completed.length && !quests.setBonus && !newDay && streakLost === null && !milestoneDust) return
+    const completed = [...(day?.completed ?? []), ...quests.completed]
+    const setBonus = (day?.setBonus ?? false) || quests.setBonus
+    const celebrate = quests.celebrate ?? []
+    if (!completed.length && !setBonus && !newDay && streakLost === null && !milestoneDust && !celebrate.length) return
     newsSeq.current += 1
     setNews({
       seq: newsSeq.current,
-      completed: quests.completed.map((id) => ({ id, acorns: quests.state.daily.quests.find((quest) => quest.id === id)?.acorns ?? 0 })),
-      setBonus: quests.setBonus,
+      completed: completed.map((id) => ({ id, acorns: quests.state.daily.quests.find((quest) => quest.id === id)?.acorns ?? 0 })),
+      setBonus,
       newDay,
       streakLost,
       milestoneDust,
       streak: quests.state.streak,
+      celebrate,
     })
   }, [])
 
@@ -268,7 +289,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const save = now - lastSave >= DRIFT_SAVE_MS || next.hatched !== current.hatched || day.newDay
       if (save) lastSave = now
       commit(next, save)
-      if (day.newDay) report(current, { state: next, completed: [], setBonus: false }, day)
+      if (day.newDay || day.completed.length) report(current, { state: next, completed: [], setBonus: false }, day)
     }
     let timer: ReturnType<typeof setInterval> | null = AppState.currentState === 'active' ? setInterval(tick, TICK_MS) : null
     const subscription = AppState.addEventListener('change', (status) => {
@@ -297,7 +318,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (name: string, starter: ElfStarter) => {
       const now = Date.now()
       const fresh = newElf(name, starter, now)
-      const outcome = visitElf(fresh, now)
+      const outcome = visitElf(fresh, now, findsRef.current)
       commit(outcome.state, true)
       report(fresh, outcome, outcome)
     },
@@ -314,7 +335,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     if (!current) return
     const now = Date.now()
     const { state: settled, day } = settle(current, now)
-    const outcome = visitElf(settled, now)
+    const outcome = visitElf(settled, now, findsRef.current)
     if (outcome.state !== current) commit(outcome.state, true)
     report(current, outcome, day)
   }, [commit, settle, report])
@@ -405,7 +426,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const { state: settled, day } = settle(current, now)
       const next = claimElfReward(settled, index, now)
       if (next !== current) commit(next, true)
-      if (day.newDay) report(current, { state: next, completed: [], setBonus: false }, day)
+      if (day.newDay || day.completed.length) report(current, { state: next, completed: [], setBonus: false }, day)
     },
     [commit, settle, report],
   )

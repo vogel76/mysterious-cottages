@@ -328,6 +328,7 @@ export const mobilePl = {
     questEggThree: 'Zaopiekuj się jajkiem 3 razy',
     questEvening: 'Zajrzyj wieczorem, po 18:00',
     questOpen: 'Zajrzyj do chatynki',
+    questFindOne: 'Odkryj Chatynkę w terenie',
     questProgress: '{{progress}}/{{target}}',
     questProgressAria: '{{progress}} z {{target}}',
     questDoneAria: 'Wykonane',
@@ -362,6 +363,13 @@ export const mobilePl = {
     ledgerBest_few: 'Najdłuższa seria: {{count}} dni.',
     ledgerBest_many: 'Najdłuższa seria: {{count}} dni.',
     ledgerBest_other: 'Najdłuższa seria: {{count}} dni.',
+    /* A cottage found on an earlier day, cheered on the next visit: one
+       by its title, several by their count */
+    findLine: 'Nowa Chatynka w naszej kolekcji: {{name}}! Ale przygoda!',
+    findManyLine_one: 'Mamy już {{count}} Chatynkę! Ale przygody!',
+    findManyLine_few: 'Mamy już {{count}} Chatynki! Ale przygody!',
+    findManyLine_many: 'Mamy już {{count}} Chatynek! Ale przygody!',
+    findManyLine_other: 'Mamy już {{count}} Chatynek! Ale przygody!',
     /* What an action or a visit earned: a quest of the day, the full set,
        the streak; and the streak that ended with a missed day */
     questDone_one: 'Zadanie wykonane! +{{count}} żołądź.',

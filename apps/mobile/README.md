@@ -583,8 +583,12 @@ buttons above the tab bar, with the dots of each care's daily cap;
 a refusal, a good night, a greeting, a quest done). A tap on the elf pets it (within the pet
 cooldown it is poked instead, so it always answers), a tap on the egg
 rocks it. It touches nothing of the expedition flow: no cottage, code,
-story or reward knows about it, but the cottages found decide the elf's
-form and the first find hatches the egg early. The day's quests, the purse
+story or reward knows about it, but the cottages found reach the elf:
+they decide its form, the first find hatches the egg early, a find pays
+the weekend's find quest (credited to the day of the find even when the
+elf is visited later), and on the first visit of a later day the elf
+cheers for it by the cottage's title (several at once by their count),
+never on the find's own day, which belongs to the expedition. The day's quests, the purse
 (acorns and star dust) and the streak are counted by the rules and stand
 in the HUD's ledger with the quests done out of three, and a tap on it
 opens the day's sheet (`/elf-today`): the quests with their progress and
@@ -614,7 +618,7 @@ every care, pet, egg, sleep and swap:
 | Care | feed fullness +25 (3 a day, refused at 90), play joy +30 (2 a day), bath clean +60 (1 a day); past the cap the elf has had enough for today |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days |
-| Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; the full set pays 1 star dust |
+| Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |
 | Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3 |
 
