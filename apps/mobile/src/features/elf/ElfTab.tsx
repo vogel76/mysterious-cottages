@@ -4,7 +4,8 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { careLeft, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { careLeft, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { announce } from '../../lib/announce'
 import { useElf, useForeground } from '../../providers'
 import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
@@ -131,28 +132,41 @@ export function ElfTab() {
      the scene reports as it lays the room out (so a line said before the
      scene has mounted, the new day's on the first open, still shows once
      it has). */
-  const [speech, setSpeech] = useState<string | null>(null)
+  const [speech, setSpeech] = useState<{ text: string; seq: number } | null>(null)
   const [figureTop, setFigureTop] = useState<{ x: number; y: number } | null>(null)
   const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const speechQueue = useRef<string[]>([])
+  const speechSeq = useRef(0)
   /* The line on screen, and whether it came from the queue. */
   const saying = useRef<{ text: string; queued: boolean } | null>(null)
+  /* A line starts: a new bubble (the same words twice included) and the
+     line spoken to a screen reader, which the bubble alone would not
+     reach on iOS. */
+  const start = useCallback((text: string | null) => {
+    if (text === null) {
+      setSpeech(null)
+      return
+    }
+    speechSeq.current += 1
+    setSpeech({ text, seq: speechSeq.current })
+    announce(text)
+  }, [])
   const advanceSpeech = useCallback(() => {
     speechTimer.current = null
     const next = speechQueue.current.shift() ?? null
     saying.current = next ? { text: next, queued: true } : null
-    setSpeech(next)
+    start(next)
     if (next) speechTimer.current = setTimeout(advanceSpeech, SPEECH_MS)
-  }, [])
+  }, [start])
   const say = useCallback(
     (text: string) => {
       if (speechTimer.current) clearTimeout(speechTimer.current)
       if (saying.current?.queued) speechQueue.current.unshift(saying.current.text)
       saying.current = { text, queued: false }
-      setSpeech(text)
+      start(text)
       speechTimer.current = setTimeout(advanceSpeech, SPEECH_MS)
     },
-    [advanceSpeech],
+    [advanceSpeech, start],
   )
   const queueSpeech = useCallback(
     (lines: string[]) => {
@@ -168,25 +182,32 @@ export function ElfTab() {
     [],
   )
 
-  const name = state?.name ?? ''
   const hatched = Boolean(state?.hatched)
   const awake = hatched && !state?.sleeping
+  /* The latest state for the handlers, without re-making them on the drift. */
+  const stateRef = useRef(state)
+  stateRef.current = state
 
   /* The news of the last action or visit, said line by line: a streak
      lost first (it is the one that stings), the new day with its quests
-     and reward, then what was earned. The full set of quests and a streak
-     milestone get a cheer in the scene. */
+     and reward, then each quest earned. The full set of quests and a
+     streak milestone get a cheer in the scene. Each record is said once,
+     when the tab is in view: news that arrived while another tab was on
+     top (the tick turning the day) waits for the focus, and a language
+     change does not repeat the last lines. */
+  const consumedNews = useRef(0)
   useEffect(() => {
-    if (!news) return
+    if (!news || !focused || news.seq === consumedNews.current) return
+    consumedNews.current = news.seq
     const lines: string[] = []
     if (news.streakLost !== null) lines.push(t('mobile:elf.streakLost', { count: news.streakLost }))
     if (news.milestoneDust) lines.push(t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }))
     if (news.newDay) lines.push(t('mobile:elf.newDayLine'))
-    if (news.completed.length) lines.push(t('mobile:elf.questDone', { count: news.acorns }))
+    for (const quest of news.completed) lines.push(t('mobile:elf.questDone', { count: quest.acorns }))
     if (news.setBonus) lines.push(t('mobile:elf.questSet'))
     queueSpeech(lines)
     if (news.setBonus || news.milestoneDust) sceneRef.current?.react('cheer')
-  }, [news, queueSpeech, t])
+  }, [news, focused, queueSpeech, t])
 
   /* The elf waking, by the button or by the morning: the scene plays the
      wake when the tab can see it (a wake while away is played on the
@@ -201,6 +222,12 @@ export function ElfTab() {
   /* ---------- The panels ---------- */
 
   const [panel, setPanel] = useState<ElfPanel>('none')
+  /* How far the HUD reaches down, measured, so the bubble stays under it. */
+  const [hudHeight, setHudHeight] = useState(0)
+  const onTopLayout = useCallback((event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout
+    setHudHeight((current) => (current === height ? current : height))
+  }, [])
   /* The open panel's height, measured, so the scene can lift the room. */
   const [panelHeight, setPanelHeight] = useState(0)
   const onPanelLayout = useCallback((event: LayoutChangeEvent) => {
@@ -208,9 +235,17 @@ export function ElfTab() {
     setPanelHeight((current) => (current === height ? current : height))
   }, [])
   const [decorSlot, setDecorSlot] = useState<SlotId>(DECOR_SLOTS[0] ?? 'rug')
-  /* No elf, no panel. */
+  /* No elf: no panel, and nothing left to say (a new egg would otherwise
+     be told the old elf's lines). */
   useEffect(() => {
-    if (!state) setPanel('none')
+    if (state) return
+    setPanel('none')
+    if (speechTimer.current) clearTimeout(speechTimer.current)
+    speechTimer.current = null
+    speechQueue.current = []
+    saying.current = null
+    setSpeech(null)
+    setFigureTop(null)
   }, [state])
 
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
@@ -302,7 +337,14 @@ export function ElfTab() {
       const outcome = elf.care(id)
       if (outcome.kind === 'refused') say(t(elfKey('guard', outcome.reason)))
       else if (outcome.kind === 'asleep') say(t('mobile:elf.asleepHint'))
-      else if (outcome.kind === 'done') sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
+      else if (outcome.kind === 'done') {
+        sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
+        /* The scene and the "+N" over the chip show it; a screen reader
+           is told the need and its gain. */
+        const need = ELF_CARE_NEEDS[id]
+        const gain = Math.round(outcome.state.needs[need] - (stateRef.current?.needs[need] ?? outcome.state.needs[need]))
+        if (gain > 0) announce(t('mobile:elf.needGainAria', { need: t(elfKey('need', need)), value: gain }))
+      }
       return outcome.kind
     },
     [elf, say, t],
@@ -448,7 +490,7 @@ export function ElfTab() {
       {/* The words stay at the top with the needs, so the elf in the middle
           of the room is never covered; the bottom holds the action bar or
           the open panel alone. */}
-      <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none">
+      <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none" onLayout={onTopLayout}>
         <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
@@ -477,7 +519,7 @@ export function ElfTab() {
       </View>
 
       {/* The elf's line, over its head where the scene says it is. */}
-      {size ? <ElfSpeech text={speech} anchor={figureTop} width={size.width} height={size.height} /> : null}
+      {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={insets.top + space.md + hudHeight + space.sm} /> : null}
 
       <View style={[styles.bottom, { bottom: bottomOffset }]} pointerEvents="box-none">
         {panel === 'none' ? (

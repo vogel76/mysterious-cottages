@@ -70,7 +70,7 @@ export const MOBILE_ICON_ROLES = [
   'CoffeeIcon',
   'WatchAdIcon',
   /* The elf companion (apps/mobile/src/features/elf): the egg, the needs,
-     the care actions, the purse and the streak. */
+     the care actions, the purse, the streak and the day's quests. */
   'EggIcon',
   'WarmIcon',
   'LullabyIcon',

@@ -4,21 +4,27 @@ import { Text, colors, enterUp, leave, radius, space } from '../../ui'
 
 /* What the elf says, as a comic speech bubble over its head: a refusal
    ("I'm full already"), a good night, a greeting, a call for attention, a
-   quest done, the streak. The tab keeps the queue and the timing (one line
-   at a time, a few seconds each); this draws the current line at the
-   anchor the scene gives for the figure's top, in the tab's view
-   coordinates, and keeps the bubble inside the side margins. Light on the
-   dark room, with the ink of the gold buttons, so it reads as the elf's
-   voice and not as another HUD chip; the tail points at the head. It
-   never takes a touch and tells a screen reader politely. */
+   quest done, the streak, a new day. The tab keeps the queue and the
+   timing (one line at a time, a few seconds each) and speaks each line to
+   a screen reader as it starts; this draws the current line at the anchor
+   the scene gives for the figure's top, in the tab's view coordinates,
+   keeps the bubble inside the side margins and under the HUD (a lifted
+   room can put the head high up), and restarts the entrance for every
+   line, the same words twice included. Light on the dark room, with the
+   ink of the gold buttons, so it reads as the elf's voice and not as
+   another HUD chip; the tail points at the head. It never takes a touch. */
 
 export type ElfSpeechProps = {
-  text: string | null
+  /* The line and its number in the tab's count: a new number is a new
+     bubble, even for the same words. */
+  line: { text: string; seq: number } | null
   /* The view point just above the figure's head. */
   anchor: { x: number; y: number } | null
-  /* The tab's size, to place the bubble from its bottom edge. */
+  /* The tab's size, to place the bubble from its bottom edge, and how far
+     the HUD reaches down from the top, which the bubble stays under. */
   width: number
   height: number
+  topLimit: number
 }
 
 /* The bubble's widest, and the room kept from the tab's sides. */
@@ -27,17 +33,19 @@ const MARGIN = space.lg
 /* The tail's side, and the gap it leaves over the head. */
 const TAIL = 12
 const GAP = 10
+/* A two-line bubble with its tail, the room kept under the HUD. */
+const BUBBLE_HEIGHT = 84
 
-export function ElfSpeech({ text, anchor, width, height }: ElfSpeechProps) {
-  if (!text || !anchor) return null
+export function ElfSpeech({ line, anchor, width, height, topLimit }: ElfSpeechProps) {
+  if (!line || !anchor) return null
   const boxWidth = Math.min(MAX_WIDTH, width - MARGIN * 2)
   const left = Math.min(Math.max(anchor.x - boxWidth / 2, MARGIN), width - MARGIN - boxWidth)
-  const bottom = height - anchor.y + GAP
+  const bottom = Math.min(height - anchor.y + GAP, height - topLimit - BUBBLE_HEIGHT)
   return (
-    <Animated.View key={text} entering={enterUp()} exiting={leave()} style={[styles.box, { left, bottom, width: boxWidth }]} pointerEvents="none" accessibilityLiveRegion="polite">
+    <Animated.View key={line.seq} entering={enterUp()} exiting={leave()} style={[styles.box, { left, bottom, width: boxWidth }]} pointerEvents="none">
       <View style={styles.bubble}>
         <Text variant="compact" weight="semibold" align="center" style={styles.ink}>
-          {text}
+          {line.text}
         </Text>
       </View>
       <View style={styles.tail} />

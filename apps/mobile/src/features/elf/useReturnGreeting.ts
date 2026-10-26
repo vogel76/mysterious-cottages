@@ -9,13 +9,13 @@ import { AppState } from 'react-native'
    common way back to the pet: both run the same check. The greeting
    itself counts as the last interaction for the next check, so a player
    who only looks, or hops to the Atlas and back, is not told again until
-   another half hour has passed; a need that drifts or a hint that passes
+   another half hour has passed; a need that drifts or a line the elf says
    while the tab is open never repeats it either. A short delay lets the
    scene settle out of its paused pose first, and the hook reports that a
    greeting is pending or playing so the tab can hold back the elf's call
    for attention, which would otherwise cut the wave short on the same
    edge. The tab wires what the greeting does (the scene's reaction and
-   the hint). */
+   the elf's line in its bubble). */
 
 /* An absence counts from here. */
 export const RETURN_AFTER_MS = 30 * 60 * 1000

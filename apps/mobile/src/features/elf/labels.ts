@@ -1,8 +1,8 @@
 import type { ElfEvent, ElfMood, ElfNeedId, ElfStage, ElfStarter } from '@chatynkowo/core'
 import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, JoyIcon, LoreIcon, SleepIcon, ToyIcon, WarmIcon, type Icon } from '../../ui'
 
-/* How the elf's ids (a form, an element, a need, a mood, a wearable or
-   decor slot, an item of either catalogue) map to the copy in the "elf"
+/* How the elf's ids (a form, an element, a need, a mood, a quest, a
+   wearable or decor slot, an item of either catalogue) map to the copy in the "elf"
    group of the mobile dictionary and to the vocabulary's glyphs. The
    dictionary names each entry with a prefix and the id in title case
    (stageBaby, starterEmber, needJoy, moodAsleep, wantsClean, guardCap,

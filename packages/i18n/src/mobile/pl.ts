@@ -254,9 +254,13 @@ export const mobilePl = {
     durationHours: '{{hours}} h {{minutes}} min',
     durationHoursOnly: '{{hours}} h',
     durationMinutes: '{{minutes}} min',
-    /* A care's gain floating over a need's chip */
+    /* A care's gain floating over a need's chip, and the same in words */
     needGain: '+{{value}}',
-    /* The needs and the hatching in the HUD */
+    needGainAria: '{{need}} +{{value}}',
+    /* The care buttons' daily caps in words */
+    careLeftAria: 'Zostało dziś: {{left}} z {{total}}',
+    careUsedAria: 'Na dziś wykorzystane',
+    /* The needs in the HUD */
     needFullness: 'Sytość',
     needJoy: 'Radość',
     needClean: 'Czystość',
@@ -281,7 +285,7 @@ export const mobilePl = {
     wantsJoy: '{{name}} ma ochotę na zabawę.',
     wantsClean: '{{name}} marzy o kąpieli.',
     /* The mood pill over the scene, and the first-time tap hint */
-    moodEgg: '{{name}} wykluje się {{when}} albo od razu, gdy odkryjesz pierwszą Chatynkę. Ogrzewaj i kołysz, zadania dnia liczą się już teraz.',
+    moodEgg: '{{name}} wykluje się, gdy minie odliczanie, albo od razu, gdy odkryjesz pierwszą Chatynkę. Ogrzewaj i kołysz, zadania dnia liczą się już teraz.',
     moodEggDue: '{{name}} zaraz się wykluje!',
     moodBeaming: '{{name}} promienieje radością!',
     moodContent: '{{name}} rozgląda się ciekawie.',
@@ -306,7 +310,8 @@ export const mobilePl = {
     evoElder: '{{name}} osiągnął najwyższą formę, Arcyelfa! Jego magia rozświetla Chatynkowo.',
     evoOk: 'Wspaniale!',
     /* The purse, the streak and the quests in the HUD, and the day's sheet */
-    ledgerAria: 'Żołędzie: {{acorns}}, gwiezdny pył: {{dust}}, seria dni: {{streak}}, zadania dnia: {{done}} z {{total}}. Dotknij, aby zobaczyć dzisiejsze zadania i nagrodę.',
+    ledgerAria: 'Żołędzie: {{acorns}}, gwiezdny pył: {{dust}}, seria dni: {{streak}}, zadania dnia: {{done}} z {{total}}.',
+    ledgerHint: 'Otwiera dzisiejsze zadania i nagrodę dnia.',
     rewardWaitingAria: 'Nagroda dnia czeka na odebranie.',
     questsChip: '{{done}}/{{total}}',
     newDayLine: 'Nowy dzień! Nowe zadania i nagroda dnia czekają.',
@@ -324,6 +329,8 @@ export const mobilePl = {
     questEvening: 'Zajrzyj wieczorem, po 18:00',
     questOpen: 'Zajrzyj do chatynki',
     questProgress: '{{progress}}/{{target}}',
+    questProgressAria: '{{progress}} z {{target}}',
+    questDoneAria: 'Wykonane',
     questAcorns: '+{{count}}',
     questSetLine: 'Komplet trzech zadań: +1 gwiezdny pył',
     questSetDone: 'Komplet zdobyty!',
@@ -331,6 +338,8 @@ export const mobilePl = {
     rewardPick: 'Odkryj jedną z trzech kart. Jutro będą nowe.',
     rewardPicked: 'Dziś odebrane. Nowe karty jutro.',
     rewardCardAria: 'Zakryta karta {{index}} z 3. Dotknij, aby odkryć.',
+    rewardMineAria: 'Twoja dzisiejsza nagroda: {{reward}}',
+    rewardMissedAria: 'Pominięta karta: {{reward}}',
     rewardAcornsAria: 'Żołędzie: {{count}}',
     rewardDustAria: 'Gwiezdny pył: {{count}}',
     todayStreak: 'Seria dni',

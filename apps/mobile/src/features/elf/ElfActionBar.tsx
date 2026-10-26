@@ -44,8 +44,10 @@ type Action = {
   /* The gold primary face, or the ghost face of the sleep toggle. */
   face: 'primary' | 'ghost'
   disabled?: boolean
-  /* The daily cap and what is left of it, as dots under the button. */
+  /* The daily cap and what is left of it, as dots under the button, and
+     the same in words for a screen reader. */
   cap?: { total: number; left: number }
+  valueText?: string
   onPress: () => void
 }
 
@@ -65,6 +67,7 @@ export function ElfActionBar({ stage, sleeping, careLeft, onCare, onTendEgg, onT
     face: 'primary',
     disabled: sleeping || careLeft[id] === 0,
     cap: { total: ELF_CARE_CAPS[id], left: careLeft[id] },
+    valueText: careLeft[id] > 0 ? t('mobile:elf.careLeftAria', { left: careLeft[id], total: ELF_CARE_CAPS[id] }) : t('mobile:elf.careUsedAria'),
     onPress: () => onCare(id),
   })
 
@@ -93,7 +96,7 @@ export function ElfActionBar({ stage, sleeping, careLeft, onCare, onTendEgg, onT
 }
 
 function ActionButton({ action }: { action: Action }) {
-  const { Glyph, label, face, disabled, cap, onPress } = action
+  const { Glyph, label, face, disabled, cap, valueText, onPress } = action
   const primary = face === 'primary'
   return (
     <View style={[styles.item, disabled && styles.itemDisabled]}>
@@ -102,6 +105,7 @@ function ActionButton({ action }: { action: Action }) {
         scaleTo={PRESS_SCALE}
         accessibilityLabel={label}
         accessibilityState={{ disabled: Boolean(disabled) }}
+        accessibilityValue={valueText ? { text: valueText } : undefined}
         /* The accent wash is invisible on the gold face; the lighter border
            gold reads as a pressed shade there, as on the primary button. */
         pressedFill={primary ? colors.accentBorder : colors.accentWash}
@@ -136,7 +140,7 @@ function CapDots({ cap }: { cap?: { total: number; left: number } }) {
    name, and feeds on a screen reader's activate; its own press is left to
    the tap gesture so a finger feeds once. */
 function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: FeedDragHandler }) {
-  const { Glyph, label, disabled, cap, onPress } = action
+  const { Glyph, label, disabled, cap, valueText, onPress } = action
 
   const gesture = useMemo(() => {
     const pan = Gesture.Pan()
@@ -166,6 +170,7 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
           scaleTo={PRESS_SCALE}
           accessibilityLabel={label}
           accessibilityState={{ disabled: Boolean(disabled) }}
+          accessibilityValue={valueText ? { text: valueText } : undefined}
           accessibilityActions={[{ name: 'activate' }]}
           onAccessibilityAction={onAccessibilityAction}
           pressedFill={colors.accentBorder}

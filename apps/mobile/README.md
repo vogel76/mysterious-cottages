@@ -376,9 +376,11 @@ through `src/lib/haptics.ts`.
   ten seconds while it only drifts, and when the app leaves the
   foreground. A form reached (by the hatch, the cottages found or time)
   waits in `pendingEvolution` until the Elf tab has shown its card. What
-  the day's rules said about an action or a visit (a quest done and its
-  acorns, the full set, a streak milestone, a streak lost) is published as
-  `news`, one record the tab turns into hints; the tab calls `visit()`
+  the day's rules said about an action or a visit (a new day, a quest
+  done and its acorns, the full set, a streak milestone, a streak lost)
+  is published as `news`, one record the tab turns into the elf's lines
+  in its bubble; the day is settled on every path (the tick, the visit,
+  each action) so its news is never lost, and the tab calls `visit()`
   when it comes into view. Nothing reaches the account yet.
 
 ## Native pieces

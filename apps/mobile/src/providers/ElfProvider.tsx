@@ -16,6 +16,7 @@ import {
   pet as petElf,
   PET_COOLDOWN_MS,
   placeDecor as placeElfDecor,
+  settleDay,
   stageOf,
   tendEgg,
   toggleSleep as toggleElfSleep,
@@ -47,10 +48,13 @@ import { useProgress } from './ProgressProvider'
    retried, and until one succeeds there is no state to show and nothing is
    written, so a storage hiccup never lets a fresh egg overwrite the elf.
    While the app is in the foreground the needs are brought up to date every
-   few seconds (the drift is slow, days not minutes), the egg hatches when
-   its time has come and the elf sleeps and wakes by the clock; the drift is
-   saved every few seconds and when the app leaves the foreground, every
-   action at once. A form reached (by the hatch, by the cottages found, by
+   few seconds (the drift is slow, days not minutes), the calendar day is
+   settled as it turns, the egg hatches when its time has come and the elf
+   sleeps and wakes by the clock; the drift is saved every few seconds and
+   when the app leaves the foreground, every action at once. The day is
+   settled on every path (the tick, the visit, each action) and its news
+   reported from whichever path settled it, so the new day is never
+   consumed in silence. A form reached (by the hatch, by the cottages found, by
    time) waits in `pendingEvolution` until the Elf tab has shown its card.
    What the day's rules said about an action or a visit (a quest completed
    and its acorns, the full set, a new day, a streak milestone or a streak
@@ -69,9 +73,8 @@ import { useProgress } from './ProgressProvider'
 /* What the day's rules reported on the last action or visit. */
 export type ElfNews = {
   seq: number
-  /* The quests completed by the action and the acorns they paid. */
-  completed: ElfQuestId[]
-  acorns: number
+  /* The quests completed by the action, each with the acorns it paid. */
+  completed: Array<{ id: ElfQuestId; acorns: number }>
   /* The full set of the day's quests, paid in dust. */
   setBonus: boolean
   /* A visit on a new day (fresh quests and a reward to pick): the streak
@@ -191,11 +194,13 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [persist, refreshPending],
   )
 
-  /* The elf as it is now: the drift applied, the egg hatched when its
-     time has come (the first find counts as the first story read). */
-  const settle = useCallback((current: ElfState, now: number): ElfState => {
-    const drifted = applyElapsed(current, now)
-    return hatchDue(drifted, now, findsRef.current > 0) ? hatch(drifted, now) : drifted
+  /* The elf as it is now: the drift applied, the day settled (its news
+     handed back for the caller to report), the egg hatched when its time
+     has come (the first find counts as the first story read). */
+  const settle = useCallback((current: ElfState, now: number): { state: ElfState; day: DayReport } => {
+    const settled = settleDay(current, now)
+    const next = hatchDue(settled.state, now, findsRef.current > 0) ? hatch(settled.state, now) : settled.state
+    return { state: next, day: settled }
   }, [])
 
   useEffect(() => {
@@ -208,7 +213,9 @@ export function ElfProvider({ children }: { children: ReactNode }) {
         if (!current) return
         const now = Date.now()
         const stored = raw ? normalizeElf(raw, now) : null
-        const next = stored ? settle(stored, now) : null
+        /* Only the drift here: the day and the hatch wait for the first
+           tick or visit, which report their news. */
+        const next = stored ? applyElapsed(stored, now) : null
         stateRef.current = next
         setState(next)
         refreshPending(next, now)
@@ -224,11 +231,10 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       current = false
       if (timer) clearTimeout(timer)
     }
-  }, [settle, refreshPending])
+  }, [refreshPending])
 
-  /* What the rules reported, as one news record for the tab: the acorns
-     are the purse's growth from before the action. Nothing to tell stays
-     quiet. */
+  /* What the rules reported, as one news record for the tab, each quest
+     completed with its own pay. Nothing to tell stays quiet. */
   const report = useCallback((before: ElfState, quests: QuestReport, day?: DayReport) => {
     const newDay = day?.newDay ?? false
     const streakLost = day?.streakLost ?? null
@@ -237,8 +243,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     newsSeq.current += 1
     setNews({
       seq: newsSeq.current,
-      completed: quests.completed,
-      acorns: Math.max(0, quests.state.wallet.acorns - before.wallet.acorns),
+      completed: quests.completed.map((id) => ({ id, acorns: quests.state.daily.quests.find((quest) => quest.id === id)?.acorns ?? 0 })),
       setBonus: quests.setBonus,
       newDay,
       streakLost,
@@ -247,9 +252,10 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  /* The needs drift every few seconds while the app is in front, the egg
-     hatches when due, the elf sleeps and wakes by the clock; the drift is
-     saved every few seconds and when the app goes to the background. */
+  /* The needs drift every few seconds while the app is in front, the day
+     turns, the egg hatches when due, the elf sleeps and wakes by the
+     clock; the drift is saved every few seconds and when the app goes to
+     the background, a new day or a hatch at once. */
   useEffect(() => {
     if (!loaded) return
     let lastSave = Date.now()
@@ -257,11 +263,12 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const current = stateRef.current
       if (!current) return
       const now = Date.now()
-      const next = settle(current, now)
+      const { state: next, day } = settle(current, now)
       if (next === current) return
-      const save = now - lastSave >= DRIFT_SAVE_MS || next.hatched !== current.hatched
+      const save = now - lastSave >= DRIFT_SAVE_MS || next.hatched !== current.hatched || day.newDay
       if (save) lastSave = now
       commit(next, save)
+      if (day.newDay) report(current, { state: next, completed: [], setBonus: false }, day)
     }
     let timer: ReturnType<typeof setInterval> | null = AppState.currentState === 'active' ? setInterval(tick, TICK_MS) : null
     const subscription = AppState.addEventListener('change', (status) => {
@@ -278,7 +285,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       if (timer) clearInterval(timer)
       subscription.remove()
     }
-  }, [loaded, commit, persist, settle])
+  }, [loaded, commit, persist, settle, report])
 
   /* The finds decide the form: a find that arrives while the elf is on
      screen is seen on the next render. */
@@ -306,9 +313,10 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     const current = stateRef.current
     if (!current) return
     const now = Date.now()
-    const outcome = visitElf(settle(current, now), now)
+    const { state: settled, day } = settle(current, now)
+    const outcome = visitElf(settled, now)
     if (outcome.state !== current) commit(outcome.state, true)
-    report(current, outcome, outcome)
+    report(current, outcome, day)
   }, [commit, settle, report])
 
   const care = useCallback(
@@ -316,10 +324,11 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const current = stateRef.current
       if (!current) return { kind: 'egg' }
       const now = Date.now()
-      const outcome = performCare(settle(current, now), id, now)
+      const { state: settled, day } = settle(current, now)
+      const outcome = performCare(settled, id, now)
       if (outcome.kind !== 'done') return outcome
       commit(outcome.state, true)
-      report(current, outcome)
+      report(current, outcome, day)
       return outcome
     },
     [commit, report, settle],
@@ -330,9 +339,10 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const current = stateRef.current
       if (!current || current.hatched) return
       const now = Date.now()
-      const outcome = tendEgg(settle(current, now), id, now)
+      const { state: settled, day } = settle(current, now)
+      const outcome = tendEgg(settled, id, now)
       commit(outcome.state, true)
-      report(current, outcome)
+      report(current, outcome, day)
     },
     [commit, report, settle],
   )
@@ -341,10 +351,11 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     const current = stateRef.current
     if (!current) return 'egg'
     const now = Date.now()
-    const outcome = toggleElfSleep(settle(current, now), now)
+    const { state: settled, day } = settle(current, now)
+    const outcome = toggleElfSleep(settled, now)
     if (outcome.kind === 'slept' || outcome.kind === 'woke') {
       commit(outcome.state, true)
-      report(current, outcome)
+      report(current, outcome, day)
     }
     return outcome.kind
   }, [commit, report, settle])
@@ -354,11 +365,12 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     if (!current) return false
     const now = Date.now()
     if (now < petAtRef.current) return false
-    const outcome = petElf(settle(current, now), now)
+    const { state: settled, day } = settle(current, now)
+    const outcome = petElf(settled, now)
     if (outcome.kind !== 'petted') return false
     petAtRef.current = now + PET_COOLDOWN_MS
     commit(outcome.state, true)
-    report(current, outcome)
+    report(current, outcome, day)
     return true
   }, [commit, report, settle])
 
@@ -375,22 +387,27 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (slot: SlotId, id: string) => {
       const current = stateRef.current
       if (!current || !DECOR_IDS[slot]?.includes(id)) return
-      const outcome = placeElfDecor(current, slot, id, Date.now())
+      const now = Date.now()
+      const { state: settled, day } = settle(current, now)
+      const outcome = placeElfDecor(settled, slot, id, now)
       if (outcome.state === current) return
       commit(outcome.state, true)
-      report(current, outcome)
+      report(current, outcome, day)
     },
-    [commit, report],
+    [commit, report, settle],
   )
 
   const claimDailyReward = useCallback(
     (index: number) => {
       const current = stateRef.current
       if (!current) return
-      const next = claimElfReward(current, index, Date.now())
+      const now = Date.now()
+      const { state: settled, day } = settle(current, now)
+      const next = claimElfReward(settled, index, now)
       if (next !== current) commit(next, true)
+      if (day.newDay) report(current, { state: next, completed: [], setBonus: false }, day)
     },
-    [commit],
+    [commit, settle, report],
   )
 
   const acknowledgeEvolution = useCallback(() => {

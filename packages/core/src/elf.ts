@@ -175,8 +175,10 @@ const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; cap: number }
   play: { need: 'joy', gain: 30, cap: 2 },
   bath: { need: 'clean', gain: 60, cap: 1 },
 }
-/* How many times a day each care is welcome, for the buttons to show. */
+/* How many times a day each care is welcome, for the buttons to show,
+   and which need each care answers, for the app to name the gain. */
 export const ELF_CARE_CAPS: Record<ElfCareAction, number> = { feed: CARE.feed.cap, play: CARE.play.cap, bath: CARE.bath.cap }
+export const ELF_CARE_NEEDS: Record<ElfCareAction, ElfNeedId> = { feed: CARE.feed.need, play: CARE.play.need, bath: CARE.bath.need }
 /* A feed is refused at this fullness, with no penalty. */
 const FULL_AT = 90
 
@@ -231,6 +233,14 @@ const QUEST_POOL: readonly QuestSpec[] = [
 
 function pad(value: number): string {
   return value < 10 ? `0${value}` : String(value)
+}
+
+/* The same time of day on the previous local calendar day: a day of
+   23 or 25 hours (the clock change) is still one day back. */
+function previousDay(ms: number): number {
+  const date = new Date(ms)
+  date.setDate(date.getDate() - 1)
+  return date.getTime()
 }
 
 /* The local calendar day of a moment, YYYY-MM-DD. */
@@ -331,11 +341,20 @@ function dealQuests(day: string, name: string, hatched: boolean): ElfQuest[] {
 }
 
 /* The reward offered for a day: a small and a larger handful of acorns,
-   and every third day or so a grain of dust in place of a middling one. */
+   and every third day or so a grain of dust in place of a middling one,
+   shuffled by the same seed so the face-down pick is blind on every day
+   and yet the same on every device. */
 function dealRewards(day: string, name: string): ElfReward[] {
   const seed = hashOf(`${day}|${name}|reward`)
   const third: ElfReward = seed % 3 === 0 ? { kind: 'dust', amount: 1 } : { kind: 'acorns', amount: 20 }
-  return [{ kind: 'acorns', amount: 15 }, { kind: 'acorns', amount: 30 }, third]
+  const cards: ElfReward[] = [{ kind: 'acorns', amount: 15 }, { kind: 'acorns', amount: 30 }, third]
+  let roll = hashOf(`${seed}|order`)
+  for (let index = cards.length - 1; index > 0; index -= 1) {
+    const other = roll % (index + 1)
+    ;[cards[index], cards[other]] = [cards[other]!, cards[index]!]
+    roll = hashOf(`${roll}`)
+  }
+  return cards
 }
 
 function freshDaily(day: string, name: string, hatched: boolean): ElfDaily {
@@ -558,7 +577,7 @@ export type VisitOutcome = {
 function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boolean; streakLost: number | null; milestoneDust: number } {
   const day = dayKey(now)
   if (state.lastVisitDay === day) return { state, newDay: false, streakLost: null, milestoneDust: 0 }
-  const yesterday = dayKey(now - DAY_MS)
+  const yesterday = dayKey(previousDay(now))
   const continues = state.lastVisitDay === yesterday
   const streak = continues ? state.streak + 1 : 1
   const streakLost = !continues && state.lastVisitDay !== null && state.streak > 1 ? state.streak : null
@@ -613,6 +632,14 @@ export function visit(state: ElfState, now: number): VisitOutcome {
     completed: [...opened.completed, ...evening.completed],
     setBonus: opened.setBonus || evening.setBonus,
   }
+}
+
+/* The day settled without a visit's events, for the app's tick and its
+   actions: a day that turns while the elf is on screen, or that the hatch
+   would otherwise consume, still reports its news (the new day, a streak
+   lost, a milestone). */
+export function settleDay(state: ElfState, now: number): VisitOutcome {
+  return { ...ensureDay(applyElapsed(state, now), now), completed: [], setBonus: false }
 }
 
 /* The day's reward, picked once: the option at the index goes to the
@@ -694,13 +721,13 @@ export function tendEgg(state: ElfState, id: ElfEggAction, now: number): EggOutc
   return recordEvent(tended, 'egg')
 }
 
-/* The egg hatches at the first opening six hours after it appeared, or
-   the moment the first cottage story is read. */
 /* When the egg hatches on its own, for a countdown; null once hatched. */
 export function hatchAt(state: ElfState): number | null {
   return state.hatched ? null : state.eggAppearedAt + HATCH_AFTER_MS
 }
 
+/* The egg hatches at the first opening six hours after it appeared, or
+   the moment the first cottage story is read. */
 export function hatchDue(state: ElfState, now: number, storyRead: boolean): boolean {
   return !state.hatched && (storyRead || now - state.eggAppearedAt >= HATCH_AFTER_MS)
 }
@@ -709,9 +736,17 @@ export function hatch(state: ElfState, now: number): ElfState {
   if (state.hatched) return state
   const hatched: ElfState = { ...state, hatched: true, warmth: 100, born: now, needs: { ...HATCHED_NEEDS }, last: now, lastInteraction: now }
   const settled = ensureDay(hatched, now).state
-  /* The day's quests were dealt for an egg; the elf gets its own. */
-  const daily = settled.daily.day === state.daily.day && settled.daily.quests.some((quest) => quest.event === 'egg') ? { ...settled.daily, quests: dealQuests(settled.daily.day, settled.name, true), bonusGranted: false } : settled.daily
-  return { ...settled, daily, sleeping: isAsleepAt({ ...settled, hatched: true }, now) }
+  /* The day's quests were dealt for an egg; the elf gets its own, with
+     what the day already counted carried over (a quest done and paid
+     stays done, and the set's dust is paid once a day). */
+  const redeal = settled.daily.day === state.daily.day && settled.daily.quests.some((quest) => quest.event === 'egg')
+  const quests = redeal
+    ? dealQuests(settled.daily.day, settled.name, true).map((quest) => {
+        const before = settled.daily.quests.find((old) => old.id === quest.id)
+        return before ? { ...quest, progress: before.progress, done: before.done } : quest
+      })
+    : settled.daily.quests
+  return { ...settled, daily: { ...settled.daily, quests }, sleeping: isAsleepAt({ ...settled, hatched: true }, now) }
 }
 
 /* ---------- Sleep ---------- */
