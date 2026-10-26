@@ -1,10 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "frameWidth": 293,
-  "frameHeight": 422,
+  "frameHeight": 427,
   "anchor": {
-    "x": 146.7,
-    "y": 421.8
+    "x": 139.2,
+    "y": 412.94
   },
   "fps": 24,
   "sheets": [
@@ -99,5 +99,20 @@
       "to": 215,
       "loop": false
     }
+  },
+  "pixelsPerMetre": 180.0,
+  "modelHeight": 1.9655,
+  "source": {
+    "render": {
+      "script": "elf.py",
+      "args": [
+        "--stages",
+        "still,allanims"
+      ],
+      "width": 640,
+      "height": 832,
+      "orthoScale": 2.773333
+    },
+    "pack": "pack-layers --base body --scale 0.6 --fps 24 --once feed,happy,pet,wave"
   }
 }

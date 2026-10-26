@@ -28,10 +28,11 @@ export const ELF_HEIGHT_UNITS = 540
 /* Where the feet stand in sprite mode: the upper half of the rendered
    rug, whose centre is (500, 1280). */
 export const SPRITE_ELF_ORIGIN = { x: 500, y: 1240 } as const
-/* The figure's height in cell pixels: the model is 1.965 m to the hood's
-   tip and the cell has 180 px to the metre. */
-const FIGURE_CELL_PX = 354
-export const SPRITE_ELF_SCALE = ELF_HEIGHT_UNITS / FIGURE_CELL_PX
+/* Cell pixels to room units: the figure, modelHeight metres tall at the
+   manifest's pixels to the metre, stands ELF_HEIGHT_UNITS tall. */
+function figureScale(manifest: SpriteManifest): number {
+  return ELF_HEIGHT_UNITS / (manifest.pixelsPerMetre * manifest.modelHeight)
+}
 /* How much of the head's tilt (the gaze, the stroke's lean) the whole
    figure takes, since the sprite has no separate head to turn. */
 const HEAD_LEAN = 0.3
@@ -79,6 +80,7 @@ export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origi
   )
   const shadowOpacity = useDerivedValue(() => SHADOW.opacity * Math.max(0.3, 1 + bob.value / 200))
   const layers = useMemo<SpriteLayer[]>(() => [{ sheets: images.body }], [images])
+  const scale = useMemo(() => figureScale(manifest), [manifest])
 
   return (
     <>
@@ -86,7 +88,7 @@ export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origi
         <RadialGradient c={vec(x, y)} r={SHADOW.rx} colors={['#000000', 'transparent']} />
       </Oval>
       <Group transform={transform}>
-        <LayeredSprite key={clipKey} manifest={manifest} layers={layers} clip={clip} playing={playing} onEnd={onClipEnd} x={x} y={y} scale={SPRITE_ELF_SCALE} flipX={flipX} />
+        <LayeredSprite key={clipKey} manifest={manifest} layers={layers} clip={clip} playing={playing} onEnd={onClipEnd} x={x} y={y} scale={scale} flipX={flipX} />
       </Group>
     </>
   )

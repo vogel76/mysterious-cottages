@@ -19,6 +19,7 @@ The render helpers at the top mirror the contract of common.py (the shared
 pipeline module); once that module exists, swap them for a single import.
 """
 
+import json
 import math
 import os
 import subprocess
@@ -1034,9 +1035,18 @@ def build_clips(rig):
 # Review renders
 # ---------------------------------------------------------------------------
 
-FRAME_W, FRAME_H = 512, 768
-CAMERA_CENTER = (0.0, 0.0, 1.0)
-ORTHO_SCALE = 2.56
+# The frame and the camera: 300 pixels to the metre, the feet (the world
+# origin) FEET_MARGIN_PX above the bottom edge, headroom above the hood's
+# tip (about 2.0 m with its outline) for the hops of the happy clip, which
+# lift the figure by 0.19 m and stretch it on the way up, and room at the
+# sides for the lean of the pet clip. The packer trims the frame to the
+# figure, so the margins cost render time only; check.py refuses a frame
+# the figure touches the edge of.
+PX_PER_M = 300
+FRAME_W, FRAME_H = 640, 832
+FEET_MARGIN_PX = 30
+ORTHO_SCALE = FRAME_H / PX_PER_M
+CAMERA_CENTER = (0.0, 0.0, (FRAME_H / 2 - FEET_MARGIN_PX) / PX_PER_M)
 # Watts that put the lit front of the figure at the palette colours (the skin
 # #f1d2b0 is bright and clips first). The shared rig keeps its lights farther
 # away than the local one, hence the two sets.
@@ -1113,10 +1123,14 @@ def stage_hats(scene, rig, out):
 
 
 def stage_anims(scene, rig, out, clips):
+    layer_dir = os.path.join(out, "layers", "body")
+    # The feet, the world origin, in frame pixels: the packer carries the
+    # point through the trim and the scale, and the app places the sprite by it.
+    _common.write_anchor(scene, scene.camera, layer_dir)
     for clip in clips:
         rig.apply(clip)
         start, end = rig.clips[clip]
-        paths = render_frames(scene, os.path.join(out, "layers", "body"), clip, start, end)
+        paths = render_frames(scene, layer_dir, clip, start, end)
         items = [(f"f{start + i}", p) for i, p in enumerate(paths) if i % 6 == 0]
         contact_sheet(os.path.join(out, f"{clip}_sheet.png"), 8, 0.4, items)
 
@@ -1131,6 +1145,27 @@ def stage_hero(scene, rig, out, cycles=True):
     render_still(scene, os.path.join(out, "hero.png"))
     scene.render.engine = "BLENDER_EEVEE"
     scene.render.resolution_x, scene.render.resolution_y = FRAME_W, FRAME_H
+
+
+def write_render_info(out, argv, model_height):
+    """Writes <out>/layers/render.json: the frame, the camera's scale, the pixels
+    to the metre and the model's height, which the packer carries into the
+    manifest (so the app sizes the figure from the atlas, not from a constant,
+    and the atlas records how it was made)."""
+    layers = os.path.join(out, "layers")
+    os.makedirs(layers, exist_ok=True)
+    info = {
+        "script": "elf.py",
+        "args": argv[1:],
+        "width": FRAME_W,
+        "height": FRAME_H,
+        "orthoScale": round(ORTHO_SCALE, 6),
+        "pixelsPerMetre": PX_PER_M,
+        "modelHeight": round(model_height, 4),
+    }
+    with open(os.path.join(layers, "render.json"), "w", encoding="utf-8") as handle:
+        json.dump(info, handle, indent=2)
+        handle.write("\n")
 
 
 def report_dimensions(objs):
@@ -1166,7 +1201,8 @@ def main():
     add_light_rig(target=CAMERA_CENTER, key_strength=LIGHT_WATTS["key"], fill_strength=LIGHT_WATTS["fill"],
                   top_strength=LIGHT_WATTS["top"])
     add_ortho_camera(CAMERA_CENTER, ORTHO_SCALE)
-    report_dimensions(objs)
+    _, top = report_dimensions(objs)
+    write_render_info(out, argv, top.z)
     print(f"[elf] shared common.py in use: {USING_COMMON}")
     for name, (start, end) in clips.items():
         print(f"[elf] clip {name}: frames {start}-{end} ({end - start + 1} frames)")

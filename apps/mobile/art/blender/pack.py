@@ -24,18 +24,25 @@ called "body") of at most 2048 x 2048 pixels, frames in reading order,
 plus manifest.json:
 
     {
-      "version": 1,
+      "version": 2,
       "frameWidth": 180, "frameHeight": 260,     // one cell, after the trim and the scale
       "anchor": { "x": 90, "y": 250 },           // the feet inside a cell, pixels
       "fps": 24,
+      "pixelsPerMetre": 180, "modelHeight": 1.965, // the render's scale after --scale, and the model's height
       "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 7, "frames": 77 } ],
       "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
-      "layers": { "hat_pompom": { "sheets": [ ... ] } }   // pack-layers only: the overlays, same grid as "sheets"
+      "layers": { "hat_pompom": { "sheets": [ ... ] } },  // pack-layers only: the overlays, same grid as "sheets"
+      "source": { "render": { "script": "elf.py", ... }, "pack": "pack-layers --base body --scale 0.6 ..." }
     }
 
 Frame indices are global and contiguous across sheets: frame i sits on the
 first sheet whose cumulative "frames" exceeds i, in cell (i - frames before
 it), column-major by row. Every clip loops unless named in --once.
+pixelsPerMetre and modelHeight come from render.json, which the render
+script writes next to the layers (the frame, the camera's scale, the
+pixels to the metre, the model's height); the app sizes the figure from
+them instead of a constant. "source" records the render and the pack that
+made the atlas, so check.py can prove the scripts still reproduce it.
 
 Format: WebP at quality 92 by default, which on the smoke test's soft-shaded
 frames is indistinguishable from lossless at a third of the bytes (the
@@ -102,6 +109,15 @@ def read_clips(frames_dir: str) -> list[Clip]:
     if not groups:
         fail(f'no <clip>_####.png frames in {frames_dir}')
     return [Clip(name, [path for _, path in sorted(frames)]) for name, frames in sorted(groups.items())]
+
+
+def read_render(directory: str) -> dict | None:
+    """render.json next to the layers, as the render script writes it; None when the renderer wrote none."""
+    path = os.path.join(directory, 'render.json')
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding='utf-8') as handle:
+        return json.load(handle)
 
 
 def read_anchor(frames_dir: str) -> tuple[float, float] | None:
@@ -208,7 +224,7 @@ def write_sheets(paths: list[str], layer: str, box: Box, scale: float, grid: Gri
 # The two modes
 
 def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: float, fps: int, once: set[str],
-                lossy: bool) -> dict:
+                lossy: bool, render: dict | None = None, command: str = '') -> dict:
     """Packs one or more layers that share clips and frame numbers into one manifest."""
     if base not in layer_dirs:
         fail(f'the base layer "{base}" is not among {sorted(layer_dirs)}')
@@ -241,7 +257,7 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
         start += len(clip.files)
 
     manifest = {
-        'version': 1,
+        'version': 2,
         'frameWidth': cell[0],
         'frameHeight': cell[1],
         'anchor': {'x': round(anchor_x, 2), 'y': round(anchor_y, 2)},
@@ -249,9 +265,16 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
         'sheets': sheets_per_layer[base],
         'clips': clips,
     }
+    if render is not None:
+        manifest['pixelsPerMetre'] = round(float(render['pixelsPerMetre']) * scale, 3)
+        manifest['modelHeight'] = float(render['modelHeight'])
     overlays = {layer: {'sheets': sheets} for layer, sheets in sheets_per_layer.items() if layer != base}
     if overlays:
         manifest['layers'] = overlays
+    manifest['source'] = {
+        'render': {key: render[key] for key in ('script', 'args', 'width', 'height', 'orthoScale') if key in render} if render else None,
+        'pack': command,
+    }
     with open(os.path.join(out_dir, 'manifest.json'), 'w', encoding='utf-8') as handle:
         json.dump(manifest, handle, indent=2)
         handle.write('\n')
@@ -288,7 +311,14 @@ def main(argv: list[str]) -> None:
         if not layers:
             fail(f'no layer directories in {args.source}')
         base = args.base
-    pack_layers(layers, base, args.out, args.scale, args.fps, once, not args.lossless)
+    # The arguments that shape the atlas, recorded in the manifest without the
+    # paths, so a check pack into another directory records the same command.
+    command = f'{args.mode} --base {base} --scale {args.scale} --fps {args.fps}'
+    if once:
+        command += f' --once {",".join(sorted(once))}'
+    if args.lossless:
+        command += ' --lossless'
+    pack_layers(layers, base, args.out, args.scale, args.fps, once, not args.lossless, read_render(args.source), command)
 
 
 if __name__ == '__main__':
