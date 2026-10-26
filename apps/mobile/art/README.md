@@ -117,18 +117,24 @@ Next to the sheets goes `manifest.json`:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "frameWidth": 180, "frameHeight": 260,
   "anchor": { "x": 90, "y": 250 },
   "fps": 24,
+  "pixelsPerMetre": 180, "modelHeight": 1.965,
   "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 7, "frames": 77 } ],
   "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
-  "layers": { "hat_pompom": { "sheets": [ { "file": "hat_pompom-1.webp", "columns": 11, "rows": 7, "frames": 77 } ] } }
+  "layers": { "hat_pompom": { "sheets": [ { "file": "hat_pompom-1.webp", "columns": 11, "rows": 7, "frames": 77 } ] } },
+  "source": { "render": { "script": "elf.py", "args": ["--stages", "still,allanims"], "width": 512, "height": 832, "orthoScale": 2.773333 }, "pack": "pack-layers --base body --scale 0.6 --fps 24 --once feed,happy,pet,wave" }
 }
 ```
 
 Frame indices are global and run on across sheets; the anchor is in cell
-pixels. Only the final atlases and manifests are committed, under
+pixels. `pixelsPerMetre` is the render's scale (`render.json`, which the
+render script writes next to the layers: 300 for the elf) after the pack's
+`--scale`, and with `modelHeight` it gives the figure's height in cell
+pixels, which the app scales to its room units instead of keeping a
+constant; `source` records the render and the pack that made the atlas. Only the final atlases and manifests are committed, under
 `assets/elf/sprites/<character>/`; frames and intermediate renders stay in
 `art/out`.
 

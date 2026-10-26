@@ -681,9 +681,9 @@ exactly the room units) with the furniture laid over it as transparent
 crops (`assets/elf/room/manifest.json` says where each variant sits in
 the plate, `cottage/RoomSprites.tsx` draws them, the rug under the elf
 and the rest in their depth), and the elf is an atlas
-(`assets/elf/sprites/elf/`: a cell of 293 by 422 pixels per frame, the
-feet as the anchor, 24 fps; the clips idle, happy, sad, sleep, pet, feed
-and wave) played by `cottage/SpriteElf.tsx` on the sprite player's
+(`assets/elf/sprites/elf/`: a cell of 293 by 427 pixels per frame at 180
+pixels to the metre, the feet as the anchor, 24 fps; the clips idle,
+happy, sad, sleep, pet, feed and wave) played by `cottage/SpriteElf.tsx` on the sprite player's
 UI-thread frame clock, with the figure's procedural motion (the bob, the
 squash, the tilt of the reactions) layered on top as a transform of the
 frame, so a pet or a feed still moves the whole figure. The egg is still

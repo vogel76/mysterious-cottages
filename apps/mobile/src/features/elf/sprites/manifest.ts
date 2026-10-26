@@ -31,12 +31,19 @@ export type SpriteClip = {
 }
 
 export type SpriteManifest = {
-  version: 1
+  version: 2
   frameWidth: number
   frameHeight: number
   /* The feet inside a cell, pixels from its top left. */
   anchor: { x: number; y: number }
   fps: number
+  /* The render's pixels to the metre after the pack's scale, and the
+     model's height in metres: together the figure's height in cell pixels,
+     which the scene scales to its room units. */
+  pixelsPerMetre: number
+  modelHeight: number
+  /* The render and the pack that made the atlas (art/README.md, "Packing"). */
+  source?: { render: Record<string, unknown> | null; pack: string }
   /* The base layer's sheets (the body). */
   sheets: SpriteSheet[]
   clips: Record<string, SpriteClip>
