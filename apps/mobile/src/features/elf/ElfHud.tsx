@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { ELF_NEEDS, type ElfMood, type ElfNeedId, type ElfNeeds, type ElfStage, type ElfWallet } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, InfoIcon, PressableScale, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
@@ -14,8 +14,10 @@ import { NEED_ICONS, elfKey } from './labels'
    stands: green while comfortable, gold when the elf would like it seen
    to), or, before the hatch, one chip with
    the egg and how far the hatching has come; and under them the ledger:
-   the acorns and the star dust in the purse and the streak of days. Under
-   it the mood pill: what the elf is doing (or how to hatch the egg) and
+   the acorns and the star dust in the purse and the streak of days, one
+   pressable row that opens the sheet saying what they are and what they
+   earn (/elf-ledger), with an info glyph at its end so it reads as a way
+   in. Under it the mood pill: what the elf is doing (or how to hatch the egg) and
    under that a hint, a passing message when the screen has one (a refused
    action, the sleeping elf, a quest done, the streak, the elf waving for
    attention or greeting a return), otherwise the need the elf wants seen
@@ -40,10 +42,12 @@ export type ElfHudProps = {
   streak: number
   panel: ElfPanel
   onDecorate: () => void
+  /* The ledger was tapped: the sheet that explains its figures. */
+  onLedger: () => void
   onReset: () => void
 }
 
-export function ElfHud({ name, stage, needs, warmth, wallet, streak, panel, onDecorate, onReset }: ElfHudProps) {
+export function ElfHud({ name, stage, needs, warmth, wallet, streak, panel, onDecorate, onLedger, onReset }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -68,11 +72,22 @@ export function ElfHud({ name, stage, needs, warmth, wallet, streak, panel, onDe
       <View style={styles.chips} pointerEvents="none">
         {hatched ? ELF_NEEDS.map((id) => <NeedChip key={id} id={id} value={needs[id]} />) : <EggChip warmth={warmth} />}
       </View>
-      <View style={styles.ledger} pointerEvents="none">
-        <LedgerChip Glyph={AcornsIcon} value={wallet.acorns} label={t('mobile:elf.acornsAria', { value: wallet.acorns })} />
-        <LedgerChip Glyph={DustIcon} value={wallet.dust} label={t('mobile:elf.dustAria', { value: wallet.dust })} />
-        <LedgerChip Glyph={StreakIcon} value={streak} label={t('mobile:elf.streakAria', { count: streak })} />
-      </View>
+      {/* The row hugs its chips and gives only the scale as feedback: a
+          fill or a ripple would paint the gaps between the pills. */}
+      <PressableScale
+        onPress={onLedger}
+        accessibilityLabel={t('mobile:elf.ledgerAria', { acorns: wallet.acorns, dust: wallet.dust, streak })}
+        pressedFill="transparent"
+        ripple={false}
+        style={styles.ledger}
+      >
+        <LedgerChip Glyph={AcornsIcon} value={wallet.acorns} />
+        <LedgerChip Glyph={DustIcon} value={wallet.dust} />
+        <LedgerChip Glyph={StreakIcon} value={streak} />
+        <View style={[styles.chrome, styles.ledgerChip]}>
+          <InfoIcon size={iconSize.sm} color={mapPalette.chromeIcon} />
+        </View>
+      </PressableScale>
     </View>
   )
 }
@@ -139,10 +154,10 @@ function EggChip({ warmth }: { warmth: number }) {
 }
 
 /* One figure of the ledger: the glyph and the count, which crossfades
-   when a quest pays. */
-function LedgerChip({ Glyph, value, label }: { Glyph: Icon; value: number; label: string }) {
+   when a quest pays; the row's label names them all for a screen reader. */
+function LedgerChip({ Glyph, value }: { Glyph: Icon; value: number }) {
   return (
-    <View style={[styles.chrome, styles.ledgerChip]} accessible accessibilityLabel={label}>
+    <View style={[styles.chrome, styles.ledgerChip]}>
       <Glyph size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
       <CrossfadeText value={String(value)} variant="small" weight="bold" style={styles.chromeInk} />
     </View>
@@ -257,8 +272,10 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: radius.pill,
   },
-  /* The ledger's chips take only the width of their figure. */
+  /* The ledger's chips take only the width of their figure, and the row
+     only that of its chips. */
   ledger: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     gap: space.sm,
   },
