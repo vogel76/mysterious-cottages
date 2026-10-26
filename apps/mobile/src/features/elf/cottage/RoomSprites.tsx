@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { FilterMode, Image, MipmapMode, Rect, useImage } from '@shopify/react-native-skia'
-import type { Decor } from './items'
+import type { Decor } from './catalogue'
 import { ROOM, slotsIn, type SlotZ } from './room'
 import { ROOM_PLATE, roomSpriteFor, type RoomSprite } from './roomAssets'
 

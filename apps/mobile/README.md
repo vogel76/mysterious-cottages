@@ -244,24 +244,22 @@ src/
                          ad (Google's sample ids until EXPO_PUBLIC_ADMOB_*_APP_ID are set), Sign in with Apple (the capability and its
   features/elf/          the companion prototype: rules.ts (the pure care rules, the stored outfit and decor, the last
                          interaction), cottage/ (the full-screen Skia room: room.ts with the room units and the slots,
-                         CottageScene with its two ways of drawing the room; the rendered one in RoomSprites.tsx (the
-                         plate and the furniture sprites), SpriteElf.tsx (the elf's atlases on the puppet's motion)
-                         and roomAssets.ts (the room manifest, which variants are rendered); the vector one in
-                         items/<slot>/<Variant> with the decor catalogue in items/index.ts, wearables/ with the
-                         wardrobe catalogue, ElfPuppet with puppet/geometry.ts; shared by both: Lighting, clock.ts
-                         with the day phase, motion, EggNest, Particles, SlotMarkers for the edit mode), the screen
-                         components (ElfTab, ElfHud, ElfActionBar with drag-to-feed, ElfPicker and ElfThumb for the
-                         wardrobe and the decorating panel, useReturnGreeting, the adoption form, the evolution card);
-                         sprites/ plays the atlases the art pipeline packs (manifest and registry, the decoded
-                         sheets, a UI-thread frame clock, SpritePlayer and LayeredSprite on Skia's Atlas, SpriteDemo)
+                         catalogue.ts with the slot, decor and wardrobe ids, roomAssets.ts (the room manifest, which
+                         variants are rendered) and RoomSprites.tsx drawing the plate and the furniture crops,
+                         SpriteElf.tsx (the elf's atlases on the figure's motion), fire.ts with the hearth's flicker,
+                         Lighting with the glow and the night tint over the plate, clock.ts with the day phase, motion,
+                         EggNest, Particles, SlotMarkers for the edit mode), the screen components (ElfTab, ElfHud,
+                         ElfActionBar with drag-to-feed, ElfPicker and ElfThumb for the decorating panel,
+                         useReturnGreeting, the adoption form, the evolution card); sprites/ plays the atlases the art
+                         pipeline packs (manifest and registry, the decoded sheets, a UI-thread frame clock,
+                         SpritePlayer and LayeredSprite on Skia's Atlas)
 art/                     the Blender art pipeline (art/README.md): common.py with the shared scene, camera, light
                          and materials, elf.py (the character, its rig and clips) and room.py (the room plate and
                          the furniture), pack.py (frames to WebP atlases and a manifest), the contact sheets;
                          renders go to art/out, only the packed result is committed under assets/elf
 assets/elf/              room/ (manifest.json, plate.webp: the empty room at the room units, 1000 by 1600, and one
                          transparent crop per furniture variant with its place in the plate), sprites/<character>/
-                         (the packed atlases and manifests the sprite player draws; elf/ today) and background.webp
-                         (the Chatynkowo painting, seen through the vector cottage's window)
+                         (the packed atlases and manifests the sprite player draws; elf/ today)
 metro.config.js          the monorepo watch and resolve settings
 app.config.ts            the configuration that depends on the environment: the AdMob app ids of the support sheet's rewarded
                          plugin, unless EXPO_PUBLIC_APPLE_SIGN_IN is 0), the Google sign-in plugin with the iOS URL scheme
@@ -387,7 +385,7 @@ through `src/lib/haptics.ts`.
 | Story audio | `expo-audio` | background playback (`UIBackgroundModes: audio` via its plugin) and lock-screen / notification controls (`setActiveForLockScreen`); a language without a recording falls back to the Polish original when the file fails to load |
 | Recordings offline | `expo-file-system` | "Save on this device" downloads the mp3 into the document directory, one folder per language; a saved file plays from disk |
 | QR | `expo-camera` | `CameraView` scanning `qr` only, torch from the header; the code is resolved on the scanner itself through the same `useCodeEntry` as manual entry |
-| Cottage scene | `@shopify/react-native-skia` | the elf's cottage (`src/features/elf/cottage`): one full-screen `Canvas` whose transforms, opacities and control values are Reanimated shared values, so every loop and reaction runs on the UI thread with no React state per frame; in sprite mode the room is the Blender plate as an `Image`, the furniture its rendered crops and the elf an `Atlas` node fed one cell per frame from the packed sheets (`src/features/elf/sprites`), in the vector fallback a 2D scene graph of paths, gradients, blur and shadow effects with the painting through the window; the room is designed in room units (1000 by 1600) and scaled to cover the screen; the canvas is `opaque` (the room covers it anyway), which backs it with a SurfaceView on Android, the cheapest path and the only one that draws on the emulator |
+| Cottage scene | `@shopify/react-native-skia` | the elf's cottage (`src/features/elf/cottage`): one full-screen `Canvas` whose transforms, opacities and control values are Reanimated shared values, so every loop and reaction runs on the UI thread with no React state per frame; the room is the Blender plate as an `Image`, the furniture its rendered crops and the elf an `Atlas` node fed one cell per frame from the packed sheets (`src/features/elf/sprites`); the room is designed in room units (1000 by 1600) and scaled to cover the screen; the canvas is `opaque` (the room covers it anyway), which backs it with a SurfaceView on Android, the cheapest path and the only one that draws on the emulator |
 | Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `transparentModal` routes carrying the shared sheet (src/ui/Sheet.tsx) for the code, reward and rules, `modal` page sheets for the story and the cottage list |
 | Sheets | `@gorhom/bottom-sheet` | one base for every sheet: the in-screen parchment panel over the map (three snaps, the map stays pannable, the camera keeps room for it) and the sheet routes (the code gate, a reward, the rules), which open at their own height or part-way and can be pulled to the top; a scroll inside moves the content first |
 | Motion | `react-native-reanimated` 4 + `react-native-gesture-handler` | springs, entrances, the progress ring, the scrub bar, the toast gesture; every animation passes `ReduceMotion.System` |
@@ -570,7 +568,7 @@ forms. The elf lives in its cottage, and the cottage is the whole tab: a
 painted room in Skia (`src/features/elf/cottage`) that fills the screen
 under the status bar and the floating tab bar as the Atlas does, with the
 elf big in the middle, and a light HUD over it (`ElfHud.tsx`: the name,
-the form, the wardrobe and decorating buttons and the needs as small chips
+the form, the decorating button and the needs as small chips
 at the top, the mood pill under them; `ElfActionBar.tsx`: the round care
 buttons above the tab bar). A tap on the elf pets it (within the pet
 cooldown it is poked instead, so it always answers), a tap on the egg
@@ -635,35 +633,31 @@ Talking Tom, Neko Atsume, Finch) says, applied in the tab:
   `greetHint`) when the tab comes into focus or the app comes back to the
   foreground on it; the greeting counts as the interaction, so it is not
   repeated until another half hour has passed.
-- **A clock-driven light** (`cottage/clock.ts`) in the vector room:
-  `Lighting.tsx` and the window variants change the moonlight, the fire's
-  warmth and the sky in the glass with the hour. Over the rendered plate,
-  lit in Blender, only the hearth's pulse and the night tint of sleep are
-  painted (`PlateLighting`); the hour will return once the pipeline
+- **A clock-driven light** (`cottage/clock.ts`): the plate is lit in
+  Blender, so over it only the hearth's pulse and the night tint of sleep
+  are painted (`PlateLighting`); the hour will return once the pipeline
   renders a day and a night plate.
 
-### The wardrobe and the decorating mode
+### The decorating mode
 
 Customisation follows the pattern that works in these games: fixed slots
-with small catalogues and an instant live preview. The wardrobe
-(`cottage/wearables/`) has five slots (hat, outfit, neck, hand, face) and
-the decor (`cottage/items/index.ts`) one variant list per furniture slot
-of the room, the fireplace excepted. In sprite mode (below) the wardrobe
-button is hidden, since the rendered elf has no hat layers yet, and the
-decorating panel offers only the slots with more than one rendered
-variant (`cottage/roomAssets.ts`: the rug, the bed and the window today)
-and only those variants. Both open from the HUD as a panel
-inside the tab (`ElfPicker.tsx`), not as a route: a route would unfocus
-the tab and pause the scene, and the point of the panel is the live
-preview in the room behind it. The panel rises in place of the action bar
-in the Atlas's chrome, with a tab strip of slots and a strip of
-thumbnails (`ElfThumb.tsx`: a 72 pt Skia canvas that shows the piece's
-rendered sprite, or draws the vector item or the baby elf wearing the real
-wearable with still shared values, so a strip costs nothing per frame;
-only the active slot's strip is mounted).
-A tap equips or places at once through the provider, which saves it; the
-equipped item wears a check, and tapping it again takes it off where the
-slot has a 'none'. In the wardrobe the elf twirls after each pick. In the
+with small catalogues and an instant live preview. The decor
+(`cottage/catalogue.ts`) has one variant list per furniture slot of the
+room, the fireplace excepted, and the decorating panel offers the slots
+with more than one rendered variant (`cottage/roomAssets.ts`: the rug,
+the bed and the window today) and only those variants. The wardrobe's
+five slots (hat, outfit, neck, hand, face) and their ids are in the same
+catalogue and in the stored outfit, but there is no wardrobe panel until
+the art pipeline renders the wearables as layers: the rendered elf's face
+and hood are baked into its frames, so a wearable would change nothing.
+The panel opens from the HUD inside the tab (`ElfPicker.tsx`), not as a
+route: a route would unfocus the tab and pause the scene, and the point
+of the panel is the live preview in the room behind it. It rises in place
+of the action bar in the Atlas's chrome, with a tab strip of slots and a
+strip of thumbnails (`ElfThumb.tsx`: a 72 pt Skia canvas that shows the
+piece's rendered sprite; only the active slot's strip is mounted). A tap
+places at once through the provider, which saves it, and the placed item
+wears a check. In the
 decorating mode the scene is in edit mode: the slots become tap targets
 that pick the panel's tab, the hint says so, and the elf admires each
 piece placed (`admireSlot`: it looks at it and sparkles).
@@ -676,47 +670,43 @@ frames with alpha and packed into WebP; the phone draws pictures, which is
 smooth on any device, and the light, the cloth and the outlines are
 computed offline where they can be as rich as the renders allow. The
 cottage started as vectors drawn in code (Skia paths, gradients and
-effects) and the owner found that look clumsy, so the scene now has two
-ways of drawing the room and picks the rendered one, its sprite mode,
-whenever the elf character is registered in `sprites/manifest.ts` and the
-room manifest loads.
+effects); the owner found that look clumsy and the vectors are gone, so
+the scene has one way of drawing the room and needs the elf character
+registered in `sprites/manifest.ts` (a missing registration is an error
+at load, not a blank room).
 
-In sprite mode the room is a plate (`assets/elf/room/plate.webp`, the
-empty room with its walls, floor, beams and the fireplace with its fire,
-rendered at exactly the room units) with the furniture laid over it as
-transparent crops (`assets/elf/room/manifest.json` says where each
-variant sits in the plate, `cottage/RoomSprites.tsx` draws them, the
-rug under the elf and the rest in their depth), and the elf is an atlas
+The room is a plate (`assets/elf/room/plate.webp`, the empty room with
+its walls, floor, beams and the fireplace with its fire, rendered at
+exactly the room units) with the furniture laid over it as transparent
+crops (`assets/elf/room/manifest.json` says where each variant sits in
+the plate, `cottage/RoomSprites.tsx` draws them, the rug under the elf
+and the rest in their depth), and the elf is an atlas
 (`assets/elf/sprites/elf/`: a cell of 293 by 422 pixels per frame, the
 feet as the anchor, 24 fps; the clips idle, happy, sad, sleep, pet, feed
 and wave) played by `cottage/SpriteElf.tsx` on the sprite player's
-UI-thread frame clock, with the puppet's procedural motion (the bob, the
+UI-thread frame clock, with the figure's procedural motion (the bob, the
 squash, the tilt of the reactions) layered on top as a transform of the
-frame, so a pet or a feed still moves the whole figure the way it did.
-The egg stays the vector `EggNest`, drawn over the rendered rug. What is
-baked into the body frames today: the face (neutral, with blinks in the
-idle clip) and the hood. What comes next: the face and the hat as layers
-of their own on the same frame grid (then the wardrobe returns), the egg,
-the four forms, and more furniture variants; until the sprites cover
-everything the vector cottage remains in the tree as the fallback, which
-is also what the scene draws when the character is not registered.
+frame, so a pet or a feed still moves the whole figure. The egg is still
+the vector `EggNest`, drawn over the rendered rug, until the pipeline
+renders it. What is baked into the body frames today: the face (neutral,
+with blinks in the idle clip) and the hood. What comes next: the face and
+the hat as layers of their own on the same frame grid (then the wardrobe
+returns), the egg, the four forms, and more furniture variants.
 
-Both modes share the room's geometry and the motion. The room is designed
-in room units (`ROOM` in `cottage/room.ts`: 1000 wide, 1600 tall, the
-floor line at 1150, the elf's feet at 500 by 1240) and `fitRoom` scales
-it to cover the view, centred, so a narrow phone crops a little of each
-side; everything that matters stays within the middle band the HUD leaves
-free. Depth runs wall and window, floor and rug, the items behind the elf,
-the elf (or the egg in its nest), the items in front, the particles, then
-the light overlays. The puppet's motion (`cottage/motion.ts`: breath,
-bob, squash, tilt, blink, look and lookY, the head's own tilt, the ears,
-the hood's swing, the arms, the lids, mouth, glow, a fidget scheduler and
-a small particle pool) lives in Reanimated shared values that Skia reads
-directly, so loops and reactions run on the UI thread, paths are built
-once and only transforms, opacities and a few control values animate (the
-sprite reads the body values, the vector puppet all of them); reduced
-motion collapses the loops to a still pose and the reactions to a plain
-fade.
+The room is designed in room units (`ROOM` in `cottage/room.ts`: 1000
+wide, 1600 tall, the floor line at 1150, the elf's feet at 500 by 1240)
+and `fitRoom` scales it to cover the view, centred, so a narrow phone
+crops a little of each side; everything that matters stays within the
+middle band the HUD leaves free. Depth runs the plate, the furniture
+behind the elf, the elf (or the egg in its nest), the furniture in front,
+the particles, then the light overlays. The figure's motion
+(`cottage/motion.ts`: breath, bob, squash, tilt, blink, look and lookY,
+the head's own tilt, the ears, the hood's swing, the arms, the lids,
+mouth, glow, a fidget scheduler and a small particle pool, written for
+the vector puppet and only partly read by the sprite) lives in Reanimated
+shared values that Skia reads directly, so loops and reactions run on the
+UI thread; reduced motion collapses the loops to a still pose and the
+reactions to a plain fade.
 
 Deliberately left out: sounds, and haptics (the product rule stands: the
 app vibrates only for a plaque code and a reward, never in the elf's tab).

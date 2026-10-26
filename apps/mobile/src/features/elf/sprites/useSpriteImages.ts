@@ -6,13 +6,12 @@ import { sheetModules, type SpriteSource } from './manifest'
 /* Decodes a character's sheets into Skia images: the base layer and every
    overlay of the manifest, each as an array in sheet order. Null until the
    last sheet is in, so a player never draws a half-loaded character. A
-   sheet is decoded once for the whole app and kept (as the painting behind
-   the window is): a 2048 by 2048 sheet is sixteen megabytes once decoded,
-   and the pickers that preview an outfit would otherwise decode the same
-   sheet again for every thumbnail. A sheet that fails to decode leaves
-   the character null, which the dev log reports. A caller without a
-   character (the scene in vector mode) passes undefined and gets null, so
-   its hooks stay the same in both modes. */
+   sheet is decoded once for the whole app and kept: a 2048 by 2048 sheet
+   is sixteen megabytes once decoded, and every scene that mounts would
+   otherwise decode the same sheets again. A sheet that fails to decode
+   leaves the character null, which the dev log reports. A caller without
+   a character passes undefined and gets null, so its hooks stay the
+   same. */
 
 export type SpriteImages = {
   body: SkImage[]

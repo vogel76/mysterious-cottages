@@ -82,8 +82,7 @@ export const MOBILE_ICON_ROLES = [
   'WakeIcon',
   'JoyIcon',
   'EnergyIcon',
-  /* The elf's wardrobe and the cottage's decor edit mode. */
-  'WardrobeIcon',
+  /* The cottage's decor edit mode. */
   'DecorIcon',
 ] as const
 

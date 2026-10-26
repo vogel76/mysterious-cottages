@@ -35,15 +35,14 @@ export type NeedId = 'fullness' | 'joy' | 'energy' | 'clean'
 export const NEEDS: readonly NeedId[] = ['fullness', 'joy', 'energy', 'clean']
 export type Needs = Record<NeedId, number>
 
-/* The wearable slots of the puppet. The same union is declared in
-   cottage/wearables (the catalogue and the drawings); the rules must not
-   import from the cottage, so the two are kept identical by hand. */
+/* The wearable slots of the elf; cottage/catalogue lists the ids each one
+   takes and imports this union, so it is declared once. */
 export type WearableSlot = 'hat' | 'outfit' | 'neck' | 'hand' | 'face'
 export const WEARABLE_SLOT_IDS: readonly WearableSlot[] = ['hat', 'outfit', 'neck', 'hand', 'face']
 /* What the elf wears: a wearable id per slot. */
 export type Outfit = Record<WearableSlot, string>
 /* What stands in the room: a decor id per furniture slot. The rules do not
-   know the slot union (it belongs to cottage/items), so the key is a string. */
+   know the slot union (it belongs to cottage/catalogue), so the key is a string. */
 export type Decor = Record<string, string>
 
 export type ElfState = {

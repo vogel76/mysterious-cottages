@@ -136,8 +136,7 @@ is added there by hand), `useSpriteImages` decodes the sheets once,
 manifest's fps, `SpriteFrame` draws the current cell from the sheets with
 an Atlas node, `SpritePlayer` is one sprite with its own clock,
 `LayeredSprite` draws the body and its overlays from one clock so they
-never drift, and `SpriteDemo` is a stage to look at a freshly packed
-character. Sprites are placed by the feet: `x`, `y` are where the anchor
+never drift. Sprites are placed by the feet: `x`, `y` are where the anchor
 goes, `scale` turns cell pixels into canvas pixels, `flipX` mirrors the
 character around its feet.
 

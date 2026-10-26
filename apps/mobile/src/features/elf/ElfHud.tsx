@@ -2,17 +2,15 @@ import { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { CrossfadeText, DURATIONS, DecorIcon, EASING, EggIcon, IconButton, ReduceMotion, ResetViewIcon, Text, WardrobeIcon, colors, iconSize, mapPalette, radius, space } from '../../ui'
+import { CrossfadeText, DURATIONS, DecorIcon, EASING, EggIcon, IconButton, ReduceMotion, ResetViewIcon, Text, colors, iconSize, mapPalette, radius, space } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
 import { NEEDS, type Mood, type NeedId, type Needs, type Stage } from './rules'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
    cards so the two full-bleed tabs read alike. The top block: the elf's
-   name with its form underneath, the wardrobe and the decorating buttons
-   (the panels they open live inside the tab; the tab says whether the
-   wardrobe is offered at all, since the rendered elf has nothing to wear
-   yet), the way to start over, and
-   the needs as a row of small chips (the glyph and a short bar whose
+   name with its form underneath, the decorating button (the panel it
+   opens lives inside the tab), the way to start over, and the needs as a
+   row of small chips (the glyph and a short bar whose
    colour says how urgent the need is: green while comfortable, gold when
    it wants attention, the danger tint when low), or, before the hatch, one
    chip with the egg and how far the hatching has come. Under it the mood
@@ -27,7 +25,7 @@ import { NEEDS, type Mood, type NeedId, type Needs, type Stage } from './rules'
 /* ---------- The top block ---------- */
 
 /* Which panel of the tab is open, if any; the matching button is marked. */
-export type ElfPanel = 'none' | 'wardrobe' | 'decor'
+export type ElfPanel = 'none' | 'decor'
 
 export type ElfHudProps = {
   name: string
@@ -36,17 +34,11 @@ export type ElfHudProps = {
   /* Warmth of the egg, 0 to 100. */
   warmth: number
   panel: ElfPanel
-  /* Whether the wardrobe button is shown: a hatched elf drawn as the
-     vector puppet. The rendered elf keeps the button hidden until the art
-     pipeline renders hat layers (its face and hood are baked into the body
-     frames today, so a wearable would change nothing). */
-  wardrobe: boolean
-  onWardrobe: () => void
   onDecorate: () => void
   onReset: () => void
 }
 
-export function ElfHud({ name, stage, needs, warmth, panel, wardrobe, onWardrobe, onDecorate, onReset }: ElfHudProps) {
+export function ElfHud({ name, stage, needs, warmth, panel, onDecorate, onReset }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -59,13 +51,7 @@ export function ElfHud({ name, stage, needs, warmth, panel, wardrobe, onWardrobe
           <CrossfadeText value={t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
         </View>
         <View style={styles.controls} pointerEvents="box-none">
-          {/* An egg has nothing to wear yet, nor has the rendered elf (see
-              the prop); the room can be arranged for both. */}
-          {wardrobe ? (
-            <IconButton label={t('mobile:elf.wardrobe')} onPress={onWardrobe} active={panel === 'wardrobe'} style={[styles.control, panel === 'wardrobe' && styles.controlActive]}>
-              <WardrobeIcon size={iconSize.md} color={mapPalette.chromeIcon} />
-            </IconButton>
-          ) : null}
+          {/* The room can be arranged for the egg and the elf alike. */}
           <IconButton label={t('mobile:elf.decorate')} onPress={onDecorate} active={panel === 'decor'} style={[styles.control, panel === 'decor' && styles.controlActive]}>
             <DecorIcon size={iconSize.md} color={mapPalette.chromeIcon} />
           </IconButton>

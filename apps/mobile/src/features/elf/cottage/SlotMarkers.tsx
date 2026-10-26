@@ -2,14 +2,14 @@ import { useEffect, useMemo } from 'react'
 import { DashPathEffect, Group, RoundedRect } from '@shopify/react-native-skia'
 import { cancelAnimation, useDerivedValue, useSharedValue, withRepeat, withSequence, withTiming, type SharedValue } from 'react-native-reanimated'
 import { EASING, colors, withAlpha } from '../../../ui'
-import type { SlotId } from './items'
+import type { SlotId } from './catalogue'
 import type { Slot } from './room'
 
 /* The outlines of edit mode: a dashed rounded frame over the hit box of
    every slot whose furniture can be swapped, so the player sees what is a
    piece and where to tap. The scene hands in the slot table it converts
-   its taps through (the vector room's, or the rendered room's with the
-   drawn pieces' boxes) and the filter it accepts taps with, so the
+   its taps through (the rendered room's, with the drawn pieces' boxes)
+   and the filter it accepts taps with, so the
    frames, the taps and the panel always name the same slots and the same
    boxes. The frames breathe together on one shared
    opacity; the selected slot's frame stops breathing, turns the accent

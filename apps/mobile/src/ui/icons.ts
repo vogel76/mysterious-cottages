@@ -73,7 +73,6 @@ import { SpeakerHighIcon } from 'phosphor-react-native/src/icons/SpeakerHigh'
 import { SpeakerSlashIcon } from 'phosphor-react-native/src/icons/SpeakerSlash'
 import { SunIcon } from 'phosphor-react-native/src/icons/Sun'
 import { TranslateIcon } from 'phosphor-react-native/src/icons/Translate'
-import { TShirtIcon } from 'phosphor-react-native/src/icons/TShirt'
 import { TreeEvergreenIcon } from 'phosphor-react-native/src/icons/TreeEvergreen'
 import { TrophyIcon } from 'phosphor-react-native/src/icons/Trophy'
 import { UserCircleIcon } from 'phosphor-react-native/src/icons/UserCircle'
@@ -173,8 +172,7 @@ export const SleepIcon = MoonStarsIcon
 export const WakeIcon = SunIcon
 export const JoyIcon = HeartIcon
 export const EnergyIcon = LightningIcon
-/* The elf's wardrobe (swappable clothes) and the cottage's decor edit mode. */
-export const WardrobeIcon = TShirtIcon
+/* The cottage's decor edit mode. */
 export const DecorIcon = ArmchairIcon
 
 /* The vocabulary as one object, checked against the shared and app-only
@@ -189,7 +187,7 @@ export const ICON_VOCABULARY = {
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
   CoffeeIcon, WatchAdIcon,
   EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, MagicIcon, SleepIcon, WakeIcon, JoyIcon, EnergyIcon,
-  WardrobeIcon, DecorIcon,
+  DecorIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */
