@@ -127,32 +127,32 @@ export function ElfTab() {
      for its while, the news waiting in a queue behind it. An answer to a
      touch (a refusal, the greeting, the call) is said at once; a news line
      it cuts short goes back to the front of the queue, so what was earned
-     or lost is never missed. The bubble sits where the scene says the
-     figure's top is at the moment the line starts. */
-  const [speech, setSpeech] = useState<{ text: string; anchor: { x: number; y: number } | null } | null>(null)
+     or lost is never missed. The bubble sits over the figure's top, which
+     the scene reports as it lays the room out (so a line said before the
+     scene has mounted, the new day's on the first open, still shows once
+     it has). */
+  const [speech, setSpeech] = useState<string | null>(null)
+  const [figureTop, setFigureTop] = useState<{ x: number; y: number } | null>(null)
   const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const speechQueue = useRef<string[]>([])
   /* The line on screen, and whether it came from the queue. */
   const saying = useRef<{ text: string; queued: boolean } | null>(null)
-  const show = useCallback((text: string | null) => {
-    setSpeech(text ? { text, anchor: sceneRef.current?.figureTop() ?? null } : null)
-  }, [])
   const advanceSpeech = useCallback(() => {
     speechTimer.current = null
     const next = speechQueue.current.shift() ?? null
     saying.current = next ? { text: next, queued: true } : null
-    show(next)
+    setSpeech(next)
     if (next) speechTimer.current = setTimeout(advanceSpeech, SPEECH_MS)
-  }, [show])
+  }, [])
   const say = useCallback(
     (text: string) => {
       if (speechTimer.current) clearTimeout(speechTimer.current)
       if (saying.current?.queued) speechQueue.current.unshift(saying.current.text)
       saying.current = { text, queued: false }
-      show(text)
+      setSpeech(text)
       speechTimer.current = setTimeout(advanceSpeech, SPEECH_MS)
     },
-    [advanceSpeech, show],
+    [advanceSpeech],
   )
   const queueSpeech = useCallback(
     (lines: string[]) => {
@@ -440,6 +440,7 @@ export function ElfTab() {
             onPokeElf={onPokeElf}
             onStrokeElf={onStrokeElf}
             onPetEgg={onPetEgg}
+            onFigureTop={setFigureTop}
           />
         </View>
       ) : null}
@@ -475,9 +476,8 @@ export function ElfTab() {
         )}
       </View>
 
-      {/* The elf's line, over its head where the scene put it when the
-          line started. */}
-      {size ? <ElfSpeech text={speech?.text ?? null} anchor={speech?.anchor ?? null} width={size.width} height={size.height} /> : null}
+      {/* The elf's line, over its head where the scene says it is. */}
+      {size ? <ElfSpeech text={speech} anchor={figureTop} width={size.width} height={size.height} /> : null}
 
       <View style={[styles.bottom, { bottom: bottomOffset }]} pointerEvents="box-none">
         {panel === 'none' ? (
