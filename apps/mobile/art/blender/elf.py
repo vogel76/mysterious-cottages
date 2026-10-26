@@ -1116,7 +1116,7 @@ def stage_anims(scene, rig, out, clips):
     for clip in clips:
         rig.apply(clip)
         start, end = rig.clips[clip]
-        paths = render_frames(scene, os.path.join(out, "frames", clip), clip, start, end)
+        paths = render_frames(scene, os.path.join(out, "layers", "body"), clip, start, end)
         items = [(f"f{start + i}", p) for i, p in enumerate(paths) if i % 6 == 0]
         contact_sheet(os.path.join(out, f"{clip}_sheet.png"), 8, 0.4, items)
 

@@ -41,10 +41,11 @@ art/blender/common.py    shared helpers, imported by every build script: the sce
                          the toon material, the outline modifier, meshes from bmesh, armature parenting, the
                          renders, the anchor, saving a .blend for inspection
 art/blender/smoke.py     the smoke test described above
-art/blender/elf.py       the elf: the chibi model, its rig, its clips, rendered as layers (body, face_<mood>, hat_<id>)
+art/blender/elf.py       the elf: the chibi model, its rig, its clips, rendered as the body layer (face and hat layers to come)
 art/blender/room.py      the cottage: the walls and the floor, the furniture of each slot, the fire (see The room)
 art/blender/room_sheet.py the room's post-processing (system Python): sprite boxes, contact sheet, phone crop
 art/blender/pack.py      the packer: frames to atlases and a manifest (system Python)
+art/blender/check.py     the atlas check: packs the frames again and compares with the committed atlas (system Python)
 art/out/                 renders, logs, .blend files (not committed)
 ```
 
@@ -79,11 +80,15 @@ material, both materials culling backfaces. The whole look is set in
 
 `render_frames(scene, out_dir, name, first, last)` writes
 `<out_dir>/<name>_####.png`, one file per frame, `name` being the clip
-(`idle`, `blink`, `happy`, `wave`, ...). A character rendered as layers
-writes each layer into its own directory with the same clips and frame
-numbers (`body/idle_0001.png`, `face_happy/idle_0001.png`,
-`hat_pompom/idle_0001.png`), by hiding everything but the layer's objects
-between passes (`hide_for_render`). `write_anchor(scene, camera, out_dir)`
+(`idle`, `blink`, `happy`, `wave`, ...). A character is rendered as
+layers, one directory per layer under `layers/` with the same clips and
+frame numbers (`layers/body/idle_0001.png`, later
+`layers/face_happy/idle_0001.png`, `layers/hat_pompom/idle_0001.png`).
+The elf has the body layer alone today, its face and hood baked in; the
+smoke scene shows the layout with two layers, which it separates by
+hiding objects, whereas the elf's layers will be holdout passes (the other
+parts keep cutting the alpha and casting shadows, so a hat never draws
+over an ear). `write_anchor(scene, camera, out_dir)`
 stores `anchor.json` next to the frames: where the feet, the world origin,
 land in the frame's pixels. The packer carries that point through the
 trim and the scale, and the app places a sprite by it.
@@ -95,7 +100,8 @@ Clips run at 24 fps. Every clip loops unless the packer is told otherwise
 
 ```bash
 python3 art/blender/pack.py pack art/out/room/fireplace --out assets/elf/sprites/fireplace --scale 0.5
-python3 art/blender/pack.py pack-layers art/out/elf --out assets/elf/sprites/elf --scale 0.5 --once wave,yawn   # pnpm art:pack
+python3 art/blender/pack.py pack-layers art/out/elf/layers --out assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave   # pnpm art:pack
+python3 art/blender/check.py pack-layers art/out/elf/layers --against assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave   # pnpm art:check
 ```
 
 `pack` takes one directory of frames, `pack-layers` a directory with one
@@ -125,6 +131,17 @@ Frame indices are global and run on across sheets; the anchor is in cell
 pixels. Only the final atlases and manifests are committed, under
 `assets/elf/sprites/<character>/`; frames and intermediate renders stay in
 `art/out`.
+
+Before an atlas is committed, `pnpm art:check` packs the frames again into
+a temporary directory with the same arguments as `pnpm art:pack` and
+compares the result with the committed one: the manifest must be
+identical, every cell must match within 24/255 on every channel (lossy
+WebP and Eevee's sampling noise account for less), and no frame may touch
+the edge of its render, which would mean the camera cut the figure. It
+needs the frames in `art/out`, so it is run by hand after `pnpm art:elf`,
+not from `pnpm check`. The pack command in `package.json` is the one that
+reproduces the committed atlas; when it changes, the atlas is re-rendered
+and re-committed with it.
 
 ## In the app
 
