@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { ELF_NEEDS, type ElfMood, type ElfNeedId, type ElfNeeds, type ElfStage, type ElfWallet } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, InfoIcon, PressableScale, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, InfoIcon, PressableScale, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
@@ -12,21 +12,21 @@ import { NEED_ICONS, elfKey } from './labels'
    opens lives inside the tab), the way to start over, the needs as a row
    of small chips (the glyph and a short bar whose colour says how the need
    stands: green while comfortable, gold when the elf would like it seen
-   to), or, before the hatch, one chip with
-   the egg and how long until it hatches (the warmth the player gives it
-   shows in the scene's glow, not here: it does not decide the hatch); and
-   under them the ledger:
-   the acorns and the star dust in the purse and the streak of days, one
-   pressable row that opens the sheet saying what they are and what they
-   earn (/elf-ledger), with an info glyph at its end so it reads as a way
-   in. Under it the mood pill: what the elf is doing (or how to hatch the egg) and
-   under that a hint, a passing message when the screen has one (a refused
-   action, the sleeping elf, a quest done, the streak, the elf waving for
-   attention or greeting a return), otherwise the need the elf wants seen
-   to. The hint line keeps its height so the pill never jumps. Both blocks
-   sit at the top of the screen, so the elf in the middle of the room is
-   never covered; the tab places them and hides the pill while a panel is
-   open. */
+   to; a care's gain floats up over the chip as "+25" for a moment), or,
+   before the hatch, one chip with the egg and how long until it hatches
+   (the warmth the player gives it shows in the scene's glow, not here: it
+   does not decide the hatch); and under them the ledger: the acorns and
+   the star dust in the purse and the streak of days, one pressable row
+   that opens the sheet saying what they are and what they earn
+   (/elf-ledger), with an info glyph at its end so it reads as a way in.
+   Under it the mood pill: what the elf is doing (or when the egg hatches)
+   and under that the need the elf wants seen to, when one is under the
+   mark; the line keeps its height so the pill never jumps. What the elf
+   has to say in the moment (a refusal, a good night, a greeting, a quest
+   done) is not here but in the speech bubble over its head (ElfSpeech).
+   Both blocks sit at the top of the screen, so the elf in the middle of
+   the room is never covered; the tab places them and hides the pill while
+   a panel is open. */
 
 /* ---------- The top block ---------- */
 
@@ -104,17 +104,46 @@ function fillColor(value: number): string {
   return value >= COMFORTABLE ? colors.success : colors.accent
 }
 
+/* A rise of at least this much is a care, not a pet: it floats up as "+N". */
+const GAIN_SHOWN = 10
+const GAIN_MS = 1400
+
 /* One need: the glyph and the bar, eased to each new value (the needs
-   drift every few seconds while the elf is on screen, a hair at a time). */
+   drift every few seconds while the elf is on screen, a hair at a time);
+   a care's gain floats up over the chip for a moment. */
 function NeedChip({ id, value }: { id: ElfNeedId; value: number }) {
   const { t } = useTranslation()
   const Glyph = NEED_ICONS[id]
   const percent = Math.round(value)
   const width = useSharedValue(value)
+  const [gain, setGain] = useState<{ amount: number; key: number } | null>(null)
+  const previous = useRef(value)
+  /* Its own timer: the drift changes the value every few seconds, and a
+     timer tied to the effect would be cancelled by it before it fired. */
+  const gainTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     width.value = withTiming(value, { duration: DURATIONS.base, easing: EASING.out, reduceMotion: ReduceMotion.System })
   }, [value, width])
+
+  /* The drift only lowers a need, so a rise is the player's doing. */
+  useEffect(() => {
+    const rise = value - previous.current
+    previous.current = value
+    if (rise < GAIN_SHOWN) return
+    setGain((current) => ({ amount: Math.round(rise), key: (current?.key ?? 0) + 1 }))
+    if (gainTimer.current) clearTimeout(gainTimer.current)
+    gainTimer.current = setTimeout(() => {
+      gainTimer.current = null
+      setGain(null)
+    }, GAIN_MS)
+  }, [value])
+  useEffect(
+    () => () => {
+      if (gainTimer.current) clearTimeout(gainTimer.current)
+    },
+    [],
+  )
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${width.value}%` }))
 
@@ -130,6 +159,13 @@ function NeedChip({ id, value }: { id: ElfNeedId; value: number }) {
       <View style={styles.track}>
         <Animated.View style={[styles.fill, { backgroundColor: fillColor(value) }, fillStyle]} />
       </View>
+      {gain ? (
+        <Animated.View key={gain.key} entering={enterUp()} exiting={leaveUp()} style={styles.gain} pointerEvents="none">
+          <Text variant="small" weight="bold" style={styles.gainInk}>
+            {t('mobile:elf.needGain', { value: gain.amount })}
+          </Text>
+        </Animated.View>
+      ) : null}
     </View>
   )
 }
@@ -152,7 +188,8 @@ function useHatchWhen(hatchAt: number | null): { when: string; due: boolean } | 
   if (left <= 0) return { when: t('mobile:elf.hatchSoon'), due: true }
   const minutes = Math.ceil(left / 60000)
   const hours = Math.floor(minutes / 60)
-  const time = hours > 0 ? t('mobile:elf.durationHours', { hours, minutes: minutes % 60 }) : t('mobile:elf.durationMinutes', { minutes })
+  const rest = minutes % 60
+  const time = hours > 0 ? (rest > 0 ? t('mobile:elf.durationHours', { hours, minutes: rest }) : t('mobile:elf.durationHoursOnly', { hours })) : t('mobile:elf.durationMinutes', { minutes })
   return { when: t('mobile:elf.hatchIn', { time }), due: false }
 }
 
@@ -185,7 +222,7 @@ function LedgerChip({ Glyph, value }: { Glyph: Icon; value: number }) {
 
 /* ---------- The mood pill ---------- */
 
-export type ElfHint = {
+type Hint = {
   text: string
   tone: 'soft' | 'accent' | 'danger'
 }
@@ -200,21 +237,19 @@ export type ElfMoodPillProps = {
   hatchAt: number | null
   /* The need the elf would like seen to, when one is under the mark. */
   wantedNeed: ElfNeedId | null
-  /* A passing message that outranks the want while it lasts. */
-  flash: ElfHint | null
 }
 
-const hintColor: Record<ElfHint['tone'], string> = {
+const hintColor: Record<Hint['tone'], string> = {
   soft: mapPalette.chromeInk,
   accent: colors.accentStrong,
   danger: colors.danger,
 }
 
-export function ElfMoodPill({ name, stage, mood, hatchAt, wantedNeed, flash }: ElfMoodPillProps) {
+export function ElfMoodPill({ name, stage, mood, hatchAt, wantedNeed }: ElfMoodPillProps) {
   const { t } = useTranslation()
   const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
   const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue', { name }) : t('mobile:elf.moodEgg', { name, when: hatch.when })) : t(elfKey('mood', mood), { name })
-  const hint: ElfHint | null = flash ?? (wantedNeed && stage !== 'egg' ? { text: t(elfKey('wants', wantedNeed), { name }), tone: 'accent' } : null)
+  const hint: Hint | null = wantedNeed && stage !== 'egg' ? { text: t(elfKey('wants', wantedNeed), { name }), tone: 'accent' } : null
 
   return (
     <View style={[styles.chrome, styles.mood]} accessibilityLiveRegion="polite">
@@ -284,6 +319,21 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: radius.pill,
+  },
+  /* The gain rises from the chip's middle, half over its top edge: any
+     higher and it would run into the name block above the first chip. */
+  gain: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -10,
+    alignItems: 'center',
+  },
+  gainInk: {
+    color: colors.success,
+    textShadowColor: colors.page,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   track: {
     flex: 1,
