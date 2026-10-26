@@ -95,9 +95,6 @@ export type CottageSceneHandle = {
   hitsPuppet: (viewX: number, viewY: number) => boolean
   /* The elf turns to a slot and admires what stands there. */
   admireSlot: (slot: SlotId) => void
-  /* The view point just above the figure (the elf's or the egg's top),
-     where a speech bubble sits. */
-  figureTop: () => { x: number; y: number }
 }
 
 export type CottageSceneProps = {
@@ -128,6 +125,10 @@ export type CottageSceneProps = {
      whether the rules counted it, so a refused call is tried again. */
   onStrokeElf?: () => boolean
   onPetEgg?: () => void
+  /* Where the figure's top (the elf's or the egg's) is in view
+     coordinates, told on mount and whenever the layout or the figure
+     changes: the speech bubble sits there. */
+  onFigureTop?: (point: { x: number; y: number }) => void
 }
 
 /* How long the elf's glance at a touched item lasts. */
@@ -204,7 +205,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg },
+    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop },
     ref,
   ) {
     const { t } = useTranslation()
@@ -258,6 +259,10 @@ export const CottageScene = memo(
     const hitsFigure = useCallback((point: { x: number; y: number }) => inBounds(point, figureOrigin, figureBox), [figureOrigin, figureBox])
     /* Above this line a tap on the figure lands on the head. */
     const headLine = hatched ? SPRITE_ELF_ORIGIN.y - SPRITE_ELF_HEAD_LINE : Number.NEGATIVE_INFINITY
+    /* The figure's top in the view, for the bubble over its head. */
+    useEffect(() => {
+      onFigureTop?.({ x: layout.offsetX + figureOrigin.x * layout.scale, y: layout.offsetY + (figureOrigin.y + figureBox.y) * layout.scale })
+    }, [onFigureTop, layout, figureOrigin, figureBox])
 
     /* The clip: the mood's loop, or a reaction's one shot over
        it, keyed so the same reaction twice restarts the clip. The end of
@@ -345,9 +350,8 @@ export const CottageScene = memo(
           const centre = slotCentre(sceneSlots.find((slot) => slot.id === id) ?? slotById(id))
           admireAt(centre.x, centre.y)
         },
-        figureTop: () => ({ x: layout.offsetX + figureOrigin.x * layout.scale, y: layout.offsetY + (figureOrigin.y + figureBox.y) * layout.scale }),
       }),
-      [reactScene, lookAt, lookRelease, admireAt, layout, hitsFigure, sceneSlots, figureOrigin, figureBox],
+      [reactScene, lookAt, lookRelease, admireAt, layout, hitsFigure, sceneSlots],
     )
 
     /* The same pet for a screen reader's double tap: it has no point to
