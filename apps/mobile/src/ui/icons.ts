@@ -51,6 +51,7 @@ import { InfoIcon as PhosphorInfo } from 'phosphor-react-native/src/icons/Info'
 import { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo'
 import { KeyIcon as PhosphorKey } from 'phosphor-react-native/src/icons/Key'
 import { LightningSlashIcon } from 'phosphor-react-native/src/icons/LightningSlash'
+import { ListChecksIcon } from 'phosphor-react-native/src/icons/ListChecks'
 import { LockKeyOpenIcon } from 'phosphor-react-native/src/icons/LockKeyOpen'
 import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass'
 import { MapPinIcon } from 'phosphor-react-native/src/icons/MapPin'
@@ -175,6 +176,8 @@ export const JoyIcon = HeartIcon
 export const AcornsIcon = AcornIcon
 export const DustIcon = ShootingStarIcon
 export const StreakIcon = CalendarCheckIcon
+/* The day's quests, in the HUD's ledger and on the "today" sheet. */
+export const QuestIcon = ListChecksIcon
 /* The cottage's decor edit mode. */
 export const DecorIcon = ArmchairIcon
 
@@ -189,7 +192,7 @@ export const ICON_VOCABULARY = {
   CameraIcon, ProfileIcon, SignOutIcon, OfflineIcon, SyncIcon, DownloadIcon, WarningIcon, LanguageIcon,
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
   CoffeeIcon, WatchAdIcon,
-  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon,
+  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon, QuestIcon,
   DecorIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 

@@ -107,9 +107,10 @@ export type ElfDaily = {
   quests: ElfQuest[]
   /* The star dust for the full set of quests was granted. */
   bonusGranted: boolean
-  /* The day's reward to pick from, one of them, once. */
+  /* The day's reward to pick from, one of them, once: the index picked,
+     or null while the pick is still open. */
   rewardOptions: ElfReward[]
-  rewardClaimed: boolean
+  rewardPicked: number | null
   feed: number
   play: number
   bath: number
@@ -338,7 +339,7 @@ function dealRewards(day: string, name: string): ElfReward[] {
 }
 
 function freshDaily(day: string, name: string, hatched: boolean): ElfDaily {
-  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardClaimed: false, feed: 0, play: 0, bath: 0 }
+  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, feed: 0, play: 0, bath: 0 }
 }
 
 /* ---------- A new elf and a stored one ---------- */
@@ -394,7 +395,7 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
     quests: quests.length === QUESTS_PER_DAY ? quests : fresh.quests,
     bonusGranted: raw.bonusGranted === true,
     rewardOptions: rewards.length === 3 ? rewards : fresh.rewardOptions,
-    rewardClaimed: raw.rewardClaimed === true,
+    rewardPicked: typeof raw.rewardPicked === 'number' && raw.rewardPicked >= 0 && raw.rewardPicked < 3 ? Math.floor(raw.rewardPicked) : null,
     feed: count(raw.feed),
     play: count(raw.play),
     bath: count(raw.bath),
@@ -614,13 +615,24 @@ export function visit(state: ElfState, now: number): VisitOutcome {
   }
 }
 
-/* The day's reward, picked once. */
+/* The day's reward, picked once: the option at the index goes to the
+   purse and the pick is remembered, so the sheet can show the card turned. */
 export function claimDailyReward(state: ElfState, index: number, now: number): ElfState {
   const settled = ensureDay(applyElapsed(state, now), now).state
   const option = settled.daily.rewardOptions[index]
-  if (settled.daily.rewardClaimed || !option) return settled
+  if (settled.daily.rewardPicked !== null || !option) return settled
   const wallet = { ...settled.wallet, [option.kind]: settled.wallet[option.kind] + option.amount }
-  return { ...settled, daily: { ...settled.daily, rewardClaimed: true }, wallet }
+  return { ...settled, daily: { ...settled.daily, rewardPicked: index }, wallet }
+}
+
+/* The next streak milestone above a streak, with the dust it pays; null
+   past the last one. */
+export function nextStreakMilestone(streak: number): { days: number; dust: number } | null {
+  const days = Object.keys(STREAK_MILESTONES)
+    .map(Number)
+    .filter((day) => day > streak)
+    .sort((a, b) => a - b)[0]
+  return days === undefined ? null : { days, dust: STREAK_MILESTONES[days] ?? 0 }
 }
 
 /* ---------- Care ---------- */

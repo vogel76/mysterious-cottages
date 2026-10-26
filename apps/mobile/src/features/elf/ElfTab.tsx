@@ -44,10 +44,11 @@ import { useReturnGreeting } from './useReturnGreeting'
    action earned (a quest done and its acorns, the full set, a streak
    milestone) and what was lost (a streak that ended with a missed day)
    comes back as news and is said in the bubble line by line, the set and
-   the milestone with a cheer in the scene. The purse and the streak stand in
-   the HUD's ledger, and a tap on it opens the sheet that says what they
-   are (/elf-ledger); a sheet to read the day's quests and pick its reward
-   comes in a later step.
+   the milestone with a cheer in the scene; a new day is announced too.
+   The purse, the streak and the day's quests stand in the HUD's ledger,
+   and a tap on it opens the day's sheet (/elf-today): the quests with
+   their progress, the reward to pick, the streak and what the figures
+   mean.
 
    The room is the rendered art (the Blender plate, the furniture sprites
    and the elf's atlases, see apps/mobile/art/README.md). There is no
@@ -172,13 +173,15 @@ export function ElfTab() {
   const awake = hatched && !state?.sleeping
 
   /* The news of the last action or visit, said line by line: a streak
-     lost first (it is the one that stings), then what was earned. The
-     full set of quests and a streak milestone get a cheer in the scene. */
+     lost first (it is the one that stings), the new day with its quests
+     and reward, then what was earned. The full set of quests and a streak
+     milestone get a cheer in the scene. */
   useEffect(() => {
     if (!news) return
     const lines: string[] = []
     if (news.streakLost !== null) lines.push(t('mobile:elf.streakLost', { count: news.streakLost }))
     if (news.milestoneDust) lines.push(t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }))
+    if (news.newDay) lines.push(t('mobile:elf.newDayLine'))
     if (news.completed.length) lines.push(t('mobile:elf.questDone', { count: news.acorns }))
     if (news.setBonus) lines.push(t('mobile:elf.questSet'))
     queueSpeech(lines)
@@ -212,8 +215,9 @@ export function ElfTab() {
 
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
   const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
-  /* What the ledger's figures mean: a sheet over the tab. */
-  const onLedger = useCallback(() => router.push('/elf-ledger'), [router])
+  /* The day's quests, the reward to pick and what the ledger's figures
+     mean: a sheet over the tab. */
+  const onLedger = useCallback(() => router.push('/elf-today'), [router])
   const closePanel = useCallback(() => setPanel('none'), [])
 
   /* A slot tapped in the room while decorating picks the panel's tab; a
@@ -444,7 +448,7 @@ export function ElfTab() {
           of the room is never covered; the bottom holds the action bar or
           the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none">
-        <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
+        <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
             <ElfMoodPill name={state.name} stage={stage} mood={mood} hatchAt={hatchTime} wantedNeed={wanted} />

@@ -53,8 +53,9 @@ import { useProgress } from './ProgressProvider'
    action at once. A form reached (by the hatch, by the cottages found, by
    time) waits in `pendingEvolution` until the Elf tab has shown its card.
    What the day's rules said about an action or a visit (a quest completed
-   and its acorns, the full set, a streak milestone or a streak lost) is
-   published as `news`, one record the tab turns into hints.
+   and its acorns, the full set, a new day, a streak milestone or a streak
+   lost) is published as `news`, one record the tab turns into the elf's
+   lines.
 
    The cottages found come from the progress provider, which this one
    mounts under: they decide the form, and the first find counts as the
@@ -73,8 +74,10 @@ export type ElfNews = {
   acorns: number
   /* The full set of the day's quests, paid in dust. */
   setBonus: boolean
-  /* A visit on a new day: the streak that ended with a missed day, and the
-     dust a milestone paid; the streak as it stands now. */
+  /* A visit on a new day (fresh quests and a reward to pick): the streak
+     that ended with a missed day, and the dust a milestone paid; the
+     streak as it stands now. */
+  newDay: boolean
   streakLost: number | null
   milestoneDust: number
   streak: number
@@ -142,7 +145,7 @@ function resolveDecor(stored: Record<string, string> | undefined): Decor {
 
 /* What the quests said about an action, as the rules return it. */
 type QuestReport = { state: ElfState; completed: ElfQuestId[]; setBonus: boolean }
-type DayReport = Pick<VisitOutcome, 'streakLost' | 'milestoneDust'>
+type DayReport = Pick<VisitOutcome, 'newDay' | 'streakLost' | 'milestoneDust'>
 
 export function ElfProvider({ children }: { children: ReactNode }) {
   const { foundCount } = useProgress()
@@ -227,15 +230,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
      are the purse's growth from before the action. Nothing to tell stays
      quiet. */
   const report = useCallback((before: ElfState, quests: QuestReport, day?: DayReport) => {
+    const newDay = day?.newDay ?? false
     const streakLost = day?.streakLost ?? null
     const milestoneDust = day?.milestoneDust ?? 0
-    if (!quests.completed.length && !quests.setBonus && streakLost === null && !milestoneDust) return
+    if (!quests.completed.length && !quests.setBonus && !newDay && streakLost === null && !milestoneDust) return
     newsSeq.current += 1
     setNews({
       seq: newsSeq.current,
       completed: quests.completed,
       acorns: Math.max(0, quests.state.wallet.acorns - before.wallet.acorns),
       setBonus: quests.setBonus,
+      newDay,
       streakLost,
       milestoneDust,
       streak: quests.state.streak,

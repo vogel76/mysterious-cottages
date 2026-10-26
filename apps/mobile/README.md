@@ -215,7 +215,8 @@ app/                     expo-router routes
                          through the store) or a rewarded ad watched instead
   nickname.tsx           the nickname editor, a sheet from the account screen and the Ranking's "Change nickname" item
   elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a new form is reached
-  elf-ledger.tsx         what the acorns, the star dust and the streak are, a sheet opened from the Elf tab's ledger
+  elf-today.tsx          the elf's day: the quests with their progress, the reward to pick, the streak and what the
+                         ledger's figures mean, a sheet opened from the Elf tab's ledger
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
@@ -583,11 +584,12 @@ rocks it. It touches nothing of the expedition flow: no cottage, code,
 story or reward knows about it, but the cottages found decide the elf's
 form and the first find hatches the egg early. The day's quests, the purse
 (acorns and star dust) and the streak are counted by the rules and stand
-in the HUD's ledger, and a tap on it opens the sheet (`/elf-ledger`)
-that says what they are and what they earn; what an action earned the
-elf says in its bubble. A
-sheet to read the quests and pick the day's reward comes in a later step,
-and the shop the dust is for later still.
+in the HUD's ledger with the quests done out of three, and a tap on it
+opens the day's sheet (`/elf-today`): the quests with their progress and
+pay, the reward to pick (three cards face down, one turned a day), the
+streak with its next milestone, and what the figures are and earn; what
+an action earned the elf says in its bubble. The shop the dust is for
+comes later.
 
 The rules (`packages/core`, `elf.ts`: pure functions over an immutable
 state with the moment injected, so a simulation can run a year in a

@@ -245,9 +245,10 @@ function RootStack() {
       />
       <Stack.Screen name="reward/[id]" options={sheetRoute} />
       <Stack.Screen name="rules" options={sheetRoute} />
-      {/* The elf's ledger (src/features/elf): what the acorns, the dust
-          and the streak are, a sheet from the Elf tab's HUD. */}
-      <Stack.Screen name="elf-ledger" options={sheetRoute} />
+      {/* The elf's day (src/features/elf): the quests, the reward to pick,
+          the streak and what the ledger's figures mean, a sheet from the
+          Elf tab's HUD. */}
+      <Stack.Screen name="elf-today" options={sheetRoute} />
       {/* Supporting Chatynkowo (src/features/support): a sheet from the
           profile, the Kronika, a tale's end and the celebration card. */}
       <Stack.Screen name="support" options={sheetRoute} />

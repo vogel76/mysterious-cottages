@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { ELF_NEEDS, type ElfMood, type ElfNeedId, type ElfNeeds, type ElfStage, type ElfWallet } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, InfoIcon, PressableScale, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, PressableScale, QuestIcon, ReduceMotion, ResetViewIcon, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
@@ -16,9 +16,9 @@ import { NEED_ICONS, elfKey } from './labels'
    before the hatch, one chip with the egg and how long until it hatches
    (the warmth the player gives it shows in the scene's glow, not here: it
    does not decide the hatch); and under them the ledger: the acorns and
-   the star dust in the purse and the streak of days, one pressable row
-   that opens the sheet saying what they are and what they earn
-   (/elf-ledger), with an info glyph at its end so it reads as a way in.
+   the star dust in the purse, the streak of days and the day's quests
+   done out of three (with a dot while the day's reward waits to be
+   picked), one pressable row that opens the day's sheet (/elf-today).
    Under it the mood pill: what the elf is doing (or when the egg hatches)
    and under that the need the elf wants seen to, when one is under the
    mark; the line keeps its height so the pill never jumps. What the elf
@@ -42,6 +42,10 @@ export type ElfHudProps = {
   wallet: ElfWallet
   /* Days visited in a row. */
   streak: number
+  /* The day's quests done, out of three, and whether its reward still
+     waits to be picked. */
+  questsDone: number
+  rewardWaiting: boolean
   panel: ElfPanel
   onDecorate: () => void
   /* The ledger was tapped: the sheet that explains its figures. */
@@ -49,7 +53,7 @@ export type ElfHudProps = {
   onReset: () => void
 }
 
-export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, panel, onDecorate, onLedger, onReset }: ElfHudProps) {
+export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, questsDone, rewardWaiting, panel, onDecorate, onLedger, onReset }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -78,7 +82,7 @@ export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, panel, onD
           fill or a ripple would paint the gaps between the pills. */}
       <PressableScale
         onPress={onLedger}
-        accessibilityLabel={t('mobile:elf.ledgerAria', { acorns: wallet.acorns, dust: wallet.dust, streak })}
+        accessibilityLabel={`${t('mobile:elf.ledgerAria', { acorns: wallet.acorns, dust: wallet.dust, streak, done: questsDone, total: QUESTS_TOTAL })}${rewardWaiting ? ` ${t('mobile:elf.rewardWaitingAria')}` : ''}`}
         pressedFill="transparent"
         ripple={false}
         style={styles.ledger}
@@ -87,12 +91,17 @@ export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, panel, onD
         <LedgerChip Glyph={DustIcon} value={wallet.dust} />
         <LedgerChip Glyph={StreakIcon} value={streak} />
         <View style={[styles.chrome, styles.ledgerChip]}>
-          <InfoIcon size={iconSize.sm} color={mapPalette.chromeIcon} />
+          <QuestIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
+          <CrossfadeText value={t('mobile:elf.questsChip', { done: questsDone, total: QUESTS_TOTAL })} variant="small" weight="bold" style={styles.chromeInk} />
+          {rewardWaiting ? <View style={styles.rewardDot} /> : null}
         </View>
       </PressableScale>
     </View>
   )
 }
+
+/* The quests a day deals, as the chip counts them. */
+const QUESTS_TOTAL = 3
 
 /* The bar turns gold where the rules name a want (under 60). There is no
    danger tint: the needs never fall under the floor of 35, and an elf
@@ -360,6 +369,18 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: radius.pill,
+  },
+  /* The reward waiting: a gold dot on the quests chip's corner. */
+  rewardDot: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 10,
+    height: 10,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.accentInk,
+    backgroundColor: colors.accentStrong,
   },
   mood: {
     alignSelf: 'center',

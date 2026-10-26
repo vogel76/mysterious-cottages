@@ -83,6 +83,7 @@ export const MOBILE_ICON_ROLES = [
   'AcornsIcon',
   'DustIcon',
   'StreakIcon',
+  'QuestIcon',
   /* The cottage's decor edit mode. */
   'DecorIcon',
 ] as const
