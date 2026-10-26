@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useIsFocused } from 'expo-router'
+import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { useElf, useForeground } from '../../providers'
@@ -43,7 +43,8 @@ import { useReturnGreeting } from './useReturnGreeting'
    milestone) and what was lost (a streak that ended with a missed day)
    comes back as news and is shown as hints in turn, the set and the
    milestone with a cheer in the scene. The purse and the streak stand in
-   the HUD's ledger; a sheet to read the day's quests and pick its reward
+   the HUD's ledger, and a tap on it opens the sheet that says what they
+   are (/elf-ledger); a sheet to read the day's quests and pick its reward
    comes in a later step.
 
    The room is the rendered art (the Blender plate, the furniture sprites
@@ -81,6 +82,7 @@ export function ElfTab() {
   const elf = useElf()
   const { state, loaded, stage, mood, decor, lastInteraction, news, visit } = elf
   useEvolutionPresenter()
+  const router = useRouter()
   const focused = useIsFocused()
 
   const sceneRef = useRef<CottageSceneHandle>(null)
@@ -205,6 +207,8 @@ export function ElfTab() {
 
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
   const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
+  /* What the ledger's figures mean: a sheet over the tab. */
+  const onLedger = useCallback(() => router.push('/elf-ledger'), [router])
   const closePanel = useCallback(() => setPanel('none'), [])
 
   /* A slot tapped in the room while decorating picks the panel's tab; a
@@ -431,7 +435,7 @@ export function ElfTab() {
           of the room is never covered; the bottom holds the action bar or
           the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none">
-        <ElfHud name={state.name} stage={stage} needs={state.needs} warmth={state.warmth} wallet={state.wallet} streak={state.streak} panel={panel} onDecorate={onDecorate} onReset={confirmReset} />
+        <ElfHud name={state.name} stage={stage} needs={state.needs} warmth={state.warmth} wallet={state.wallet} streak={state.streak} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
             <ElfMoodPill name={state.name} stage={stage} mood={mood} wantedNeed={wanted} flash={flash} />
