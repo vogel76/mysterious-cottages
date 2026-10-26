@@ -39,3 +39,4 @@ apps/web/src/ui/tokens.css
 apps/mobile/art/out/
 apps/mobile/art/**/*.blend
 apps/mobile/art/**/__pycache__/
+apps/mobile/tools/__pycache__/
