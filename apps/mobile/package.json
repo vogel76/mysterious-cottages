@@ -22,9 +22,10 @@
     "build:android:preview": "pnpm dlx eas-cli@24.11.0 build --platform android --profile preview",
     "submit:android": "pnpm dlx eas-cli@24.11.0 submit --platform android --profile production --latest",
     "art:smoke": "blender --background --python art/blender/smoke.py -- art/out/smoke",
-    "art:elf": "blender --background --python art/blender/elf.py -- art/out/elf",
+    "art:elf": "blender --background --python art/blender/elf.py -- art/out/elf --stages still,allanims",
     "art:room": "blender --background --python art/blender/room.py -- art/out/room",
-    "art:pack": "python3 art/blender/pack.py pack-layers art/out/elf --out assets/elf/sprites/elf --scale 0.5"
+    "art:pack": "python3 art/blender/pack.py pack-layers art/out/elf/layers --out assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave",
+    "art:check": "python3 art/blender/check.py pack-layers art/out/elf/layers --against assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave"
   },
   "dependencies": {
     "@chatynkowo/api": "workspace:*",
