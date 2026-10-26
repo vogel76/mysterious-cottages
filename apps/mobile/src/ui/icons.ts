@@ -52,6 +52,7 @@ import { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo
 import { KeyIcon as PhosphorKey } from 'phosphor-react-native/src/icons/Key'
 import { JarIcon as PhosphorJar } from 'phosphor-react-native/src/icons/Jar'
 import { LightningSlashIcon } from 'phosphor-react-native/src/icons/LightningSlash'
+import { LockSimpleIcon } from 'phosphor-react-native/src/icons/LockSimple'
 import { ListChecksIcon } from 'phosphor-react-native/src/icons/ListChecks'
 import { LockKeyOpenIcon } from 'phosphor-react-native/src/icons/LockKeyOpen'
 import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass'
@@ -181,6 +182,8 @@ export const StreakIcon = CalendarCheckIcon
 export const QuestIcon = ListChecksIcon
 /* The jars on the shelf: one per cottage found. */
 export const JarIcon = PhosphorJar
+/* A piece of furniture the finds have not unlocked yet. */
+export const LockIcon = LockSimpleIcon
 /* The cottage's decor edit mode. */
 export const DecorIcon = ArmchairIcon
 
@@ -195,7 +198,7 @@ export const ICON_VOCABULARY = {
   CameraIcon, ProfileIcon, SignOutIcon, OfflineIcon, SyncIcon, DownloadIcon, WarningIcon, LanguageIcon,
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
   CoffeeIcon, WatchAdIcon,
-  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon, QuestIcon, JarIcon,
+  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon, QuestIcon, JarIcon, LockIcon,
   DecorIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 

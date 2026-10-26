@@ -295,10 +295,11 @@ export const mobilePl = {
     tapHint: 'Dotknij elfa, aby go pogłaskać.',
     tapHintEgg: 'Dotknij jajka, aby je pokołysać.',
     cottageAria: 'Twój elf w swojej chatynce',
-    /* Starting over */
-    startOver: 'Zacznij od nowa',
+    /* Starting over, from the profile */
+    startOver: 'Zacznij elfa od nowa',
+    resetFooter: 'Elf mieszka tylko na tym telefonie. Zaczęcie od nowa usuwa go razem z żołędziami, pyłem i serią; odkryte Chatynki zostają.',
     resetTitle: 'Zacząć od nowa?',
-    resetBody: 'Twój obecny elf i cały postęp zostaną utracone. Tej magii nie da się cofnąć.',
+    resetBody: 'Twój obecny elf, żołędzie, pył i seria zostaną utracone. Tej magii nie da się cofnąć.',
     resetConfirm: 'Tak, od nowa',
     /* The evolution card */
     evoKicker: 'Coś się dzieje...',
@@ -392,6 +393,16 @@ export const mobilePl = {
     decorate: 'Urządź',
     done: 'Gotowe',
     decorateHint: 'Dotknij mebla, aby go wymienić.',
+    /* A piece the cottages found have not unlocked yet: under its
+       thumbnail, and what the elf says to a tap on it */
+    lockedLabel_one: 'Odkryj jeszcze {{count}} Chatynkę',
+    lockedLabel_few: 'Odkryj jeszcze {{count}} Chatynki',
+    lockedLabel_many: 'Odkryj jeszcze {{count}} Chatynek',
+    lockedLabel_other: 'Odkryj jeszcze {{count}} Chatynek',
+    lockedLine_one: 'Jeszcze {{count}} Chatynka i będzie nasze!',
+    lockedLine_few: 'Jeszcze {{count}} Chatynki i będzie nasze!',
+    lockedLine_many: 'Jeszcze {{count}} Chatynek i będzie nasze!',
+    lockedLine_other: 'Jeszcze {{count}} Chatynek i będzie nasze!',
     none: 'Bez',
     removeHint: 'Dotknij ponownie, aby zdjąć.',
     /* The wearable slots */

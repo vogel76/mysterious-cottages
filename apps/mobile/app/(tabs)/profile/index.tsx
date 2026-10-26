@@ -1,22 +1,24 @@
 import type { ReactElement } from 'react'
-import { Linking, Platform, SectionList, StyleSheet } from 'react-native'
+import { Alert, Linking, Platform, SectionList, StyleSheet } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { SITE_ORIGIN, SOCIAL_LINKS } from '@chatynkowo/core'
 import { AccountSection } from '../../../src/features/profile/AccountSection'
+import { useElf } from '../../../src/providers'
 import { SupportCard } from '../../../src/features/support/SupportCard'
 import { LANGUAGES, setLanguage, toLanguage } from '../../../src/i18n'
-import { FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, SettingsRow, SettingsSection, ShieldIcon, colors, iconSize, readable, space, useTabBarClearance } from '../../../src/ui'
+import { ElfIcon, FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, SettingsRow, SettingsSection, ShieldIcon, colors, iconSize, readable, space, useTabBarClearance } from '../../../src/ui'
 
 /* The Profile tab: grouped settings in the system idiom. The account block
    (who is signed in, the way to the account screen, or the sign-in), the
    support card (a coffee for the elf, right under the account so it is
    seen), the language, the preferences (the consent to ads, here for a
-   signed-out seeker too; the account screen repeats the row), the lore
-   (how to play, about), the legal pages in an in-app browser and the
-   social profiles. Sign-out and account deletion live on the account
-   screen. */
+   signed-out seeker too; the account screen repeats the row), the elf
+   (the way to start it over, here rather than in its tab, out of the way
+   of a child's thumb), the lore (how to play, about), the legal pages in
+   an in-app browser and the social profiles. Sign-out and account
+   deletion live on the account screen. */
 
 type Block = { key: string; node: ReactElement }
 
@@ -34,6 +36,12 @@ export default function ProfileScreen() {
     })
 
   const external = t('mobile:profile.openExternal')
+  const elf = useElf()
+  const confirmElfReset = () =>
+    Alert.alert(t('mobile:elf.resetTitle'), t('mobile:elf.resetBody'), [
+      { text: t('mobile:common.cancel'), style: 'cancel' },
+      { text: t('mobile:elf.resetConfirm'), style: 'destructive', onPress: elf.reset },
+    ])
 
   const blocks: Block[] = [
     { key: 'account', node: <AccountSection /> },
@@ -63,6 +71,14 @@ export default function ProfileScreen() {
             trailing="chevron"
             onPress={() => router.push('/profile/preferences')}
           />
+        </SettingsSection>
+      ),
+    },
+    {
+      key: 'elf',
+      node: (
+        <SettingsSection title={t('mobile:elf.title')} footer={t('mobile:elf.resetFooter')}>
+          <SettingsRow icon={<ElfIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />} label={t('mobile:elf.startOver')} tone="danger" disabled={!elf.state} onPress={confirmElfReset} />
         </SettingsSection>
       ),
     },

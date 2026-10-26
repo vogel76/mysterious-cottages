@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { CheckIcon, CloseIcon, IconButton, PressableScale, Text, colors, enterUp, fade, iconSize, leaveDown, mapPalette, radius, space, typeScale, useReducedMotion } from '../../ui'
+import { decorFindsNeeded } from '@chatynkowo/core'
+import { CheckIcon, CloseIcon, IconButton, LockIcon, PressableScale, Text, colors, enterUp, fade, iconSize, leaveDown, mapPalette, radius, space, typeScale, useReducedMotion } from '../../ui'
 import { PHOTO_ID, type Decor, type SlotId } from './cottage/catalogue'
 import { SLOTS } from './cottage/room'
 import { RENDERED_VARIANTS, renderedVariantFor, roomSpriteFor } from './cottage/roomAssets'
@@ -26,7 +27,11 @@ import { elfKey } from './labels'
    moss rug is drawn as the green one) wears the check of the look it has,
    so tapping it does not place what is already there. The names under the
    thumbnails have two lines of fixed height, since most of the
-   catalogue's names are longer than a thumbnail is wide. The chip strip
+   catalogue's names are longer than a thumbnail is wide. A piece the
+   cottages found have not unlocked yet (the rules' DECOR_UNLOCKS) stays
+   in the strip dimmed, with a lock and how many more cottages it takes
+   in place of its name; a tap on it lets the elf say so instead of
+   placing it. The chip strip
    scrolls to the active slot whenever it changes, because a slot is as
    often picked by a tap in the room as by a chip. Only the active slot's
    strip is mounted, so a handful of thumbnail canvases exist at a time.
@@ -37,6 +42,8 @@ export type ElfPickerProps = {
   decor: Decor
   /* The latest cottage's picture; without one the frame offers no photo. */
   photo: string | null
+  /* The cottages found, which unlock some of the pieces. */
+  foundCount: number
   activeSlot: SlotId
   onSelectSlot: (slot: SlotId) => void
   onPick: (slot: SlotId, id: string) => void
@@ -47,7 +54,7 @@ export type ElfPickerProps = {
    a choice of rendered variants. */
 export const DECOR_SLOTS: readonly SlotId[] = SLOTS.map((slot) => slot.id).filter((id) => id !== 'fireplace' && RENDERED_VARIANTS[id].length > 1)
 
-export function ElfPicker({ decor, photo, activeSlot, onSelectSlot, onPick, onDone }: ElfPickerProps) {
+export function ElfPicker({ decor, photo, foundCount, activeSlot, onSelectSlot, onPick, onDone }: ElfPickerProps) {
   const { t } = useTranslation()
   const slots = DECOR_SLOTS.filter((slot) => slot !== 'picture' || photo)
   const ids = RENDERED_VARIANTS[activeSlot].filter((id) => id !== PHOTO_ID || photo)
@@ -109,7 +116,9 @@ export function ElfPicker({ decor, photo, activeSlot, onSelectSlot, onPick, onDo
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} keyboardShouldPersistTaps="handled">
           {ids.map((id) => {
             const selected = id === current
-            const label = itemLabel(id)
+            const needed = decorFindsNeeded(activeSlot, id, foundCount)
+            const name = itemLabel(id)
+            const label = needed > 0 ? t('mobile:elf.lockedLabel', { count: needed }) : name
             return (
               <View key={id} style={styles.item}>
                 <PressableScale
@@ -117,9 +126,9 @@ export function ElfPicker({ decor, photo, activeSlot, onSelectSlot, onPick, onDo
                     if (id !== current) onPick(activeSlot, id)
                   }}
                   scaleTo={0.92}
-                  accessibilityLabel={label}
+                  accessibilityLabel={needed > 0 ? `${name}. ${label}` : name}
                   accessibilityState={{ selected }}
-                  style={[styles.thumb, selected && styles.thumbSelected]}
+                  style={[styles.thumb, selected && styles.thumbSelected, needed > 0 && styles.thumbLocked]}
                 >
                   <ElfThumb slot={activeSlot} id={id} photo={photo} />
                   {selected ? (
@@ -127,8 +136,13 @@ export function ElfPicker({ decor, photo, activeSlot, onSelectSlot, onPick, onDo
                       <CheckIcon size={iconSize.sm} weight="bold" color={colors.accentInk} />
                     </View>
                   ) : null}
+                  {needed > 0 ? (
+                    <View style={styles.lock} pointerEvents="none">
+                      <LockIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeInk} />
+                    </View>
+                  ) : null}
                 </PressableScale>
-                <Text variant="label" align="center" numberOfLines={2} style={styles.itemLabel}>
+                <Text variant="label" align="center" numberOfLines={2} style={[styles.itemLabel, needed > 0 && styles.itemLocked]}>
                   {label}
                 </Text>
               </View>
@@ -206,6 +220,24 @@ const styles = StyleSheet.create({
   thumbSelected: {
     borderColor: colors.accentBorder,
     backgroundColor: colors.accentWash,
+  },
+  /* A locked piece is still seen, so there is something to want. */
+  thumbLocked: {
+    opacity: 0.55,
+  },
+  itemLocked: {
+    opacity: 0.8,
+  },
+  lock: {
+    position: 'absolute',
+    top: 3,
+    left: 3,
+    width: CHECK,
+    height: CHECK,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.pill,
+    backgroundColor: mapPalette.chrome,
   },
   check: {
     position: 'absolute',

@@ -593,7 +593,12 @@ on the wall shows the latest cottage's photo (from the expedition's
 picture cache, so offline too; a tap opens its story) unless the player
 picked another picture, and the day's sheet lists the cottages found as
 jars on the shelf, with their dates, each opening its story; the jars in
-the room itself wait for the art (stage 3). The day's quests, the purse
+the room itself wait for the art (stage 3). Three of the rendered pieces
+are unlocked by the finds (the woven rug at 1, the round window at 3, the
+hammock at 5; `DECOR_UNLOCKS` in the rules): a locked piece stays in the
+decorating panel dimmed, with a lock and how many more cottages it takes,
+and a tap on it lets the elf say so; what a player placed before stays.
+Starting the elf over lives in the Profile tab, not in the HUD. The day's quests, the purse
 (acorns and star dust) and the streak are counted by the rules and stand
 in the HUD's ledger with the quests done out of three, and a tap on it
 opens the day's sheet (`/elf-today`): the quests with their progress and

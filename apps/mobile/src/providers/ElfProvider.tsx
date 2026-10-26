@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   applyElapsed,
   claimDailyReward as claimElfReward,
+  decorFindsNeeded,
   equip as equipElf,
   hatch,
   hatchDue,
@@ -115,7 +116,8 @@ export type ElfValue = {
   pet: () => boolean
   /* Puts a wearable on (the slot's 'none' takes it off); unknown ids are ignored. */
   equip: (slot: WearableSlot, id: string) => void
-  /* Swaps the furniture in a slot of the room; unknown ids are ignored. */
+  /* Swaps the furniture in a slot of the room; unknown ids and pieces the
+     finds have not unlocked yet are ignored (the tab says why first). */
   placeDecor: (slot: SlotId, id: string) => void
   /* Picks one of the day's reward options, once a day. */
   claimDailyReward: (index: number) => void
@@ -409,7 +411,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const placeDecor = useCallback(
     (slot: SlotId, id: string) => {
       const current = stateRef.current
-      if (!current || !DECOR_IDS[slot]?.includes(id)) return
+      if (!current || !DECOR_IDS[slot]?.includes(id) || decorFindsNeeded(slot, id, findsRef.current.length) > 0) return
       const now = Date.now()
       const { state: settled, day } = settle(current, now)
       const outcome = placeElfDecor(settled, slot, id, now)
