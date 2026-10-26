@@ -4,7 +4,7 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { useElf, useForeground } from '../../providers'
 import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
@@ -395,6 +395,7 @@ export function ElfTab() {
   }
 
   const isEgg = stage === 'egg'
+  const hatchTime = hatchAt(state)
   const editing = panel === 'decor'
   /* Bedtime, before the elf is tucked in: heavy lids and yawns say it is
      time. Read at render: the drift re-renders the tab every few seconds. */
@@ -435,10 +436,10 @@ export function ElfTab() {
           of the room is never covered; the bottom holds the action bar or
           the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none">
-        <ElfHud name={state.name} stage={stage} needs={state.needs} warmth={state.warmth} wallet={state.wallet} streak={state.streak} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
+        <ElfHud name={state.name} stage={stage} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} panel={panel} onDecorate={onDecorate} onLedger={onLedger} onReset={confirmReset} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
-            <ElfMoodPill name={state.name} stage={stage} mood={mood} wantedNeed={wanted} flash={flash} />
+            <ElfMoodPill name={state.name} stage={stage} mood={mood} hatchAt={hatchTime} wantedNeed={wanted} flash={flash} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (

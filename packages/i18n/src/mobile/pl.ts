@@ -246,8 +246,13 @@ export const mobilePl = {
     stageYoung: 'Elfik',
     stageAdult: 'Elf',
     stageElder: 'Arcyelf',
+    /* The egg's countdown in the HUD */
     hatching: 'Wykluwanie',
-    percent: '{{value}}%',
+    hatchIn: 'za {{time}}',
+    hatchSoon: 'lada chwila',
+    hatchAria: 'Wykluwanie {{when}}',
+    durationHours: '{{hours}} h {{minutes}} min',
+    durationMinutes: '{{minutes}} min',
     /* The needs and the hatching in the HUD */
     needFullness: 'Sytość',
     needJoy: 'Radość',
@@ -273,7 +278,8 @@ export const mobilePl = {
     wantsJoy: '{{name}} ma ochotę na zabawę.',
     wantsClean: '{{name}} marzy o kąpieli.',
     /* The mood pill over the scene, and the first-time tap hint */
-    moodEgg: 'Jajko czeka na wyklucie. Ogrzewaj je i kołysz.',
+    moodEgg: '{{name}} wykluje się {{when}} albo od razu, gdy odkryjesz pierwszą Chatynkę. Ogrzewaj i kołysz, zadania dnia liczą się już teraz.',
+    moodEggDue: '{{name}} zaraz się wykluje!',
     moodBeaming: '{{name}} promienieje radością!',
     moodContent: '{{name}} rozgląda się ciekawie.',
     moodWants: '{{name}} czegoś by chciał...',
