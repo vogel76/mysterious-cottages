@@ -682,6 +682,11 @@ export function tendEgg(state: ElfState, id: ElfEggAction, now: number): EggOutc
 
 /* The egg hatches at the first opening six hours after it appeared, or
    the moment the first cottage story is read. */
+/* When the egg hatches on its own, for a countdown; null once hatched. */
+export function hatchAt(state: ElfState): number | null {
+  return state.hatched ? null : state.eggAppearedAt + HATCH_AFTER_MS
+}
+
 export function hatchDue(state: ElfState, now: number, storyRead: boolean): boolean {
   return !state.hatched && (storyRead || now - state.eggAppearedAt >= HATCH_AFTER_MS)
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +13,9 @@ import { NEED_ICONS, elfKey } from './labels'
    of small chips (the glyph and a short bar whose colour says how the need
    stands: green while comfortable, gold when the elf would like it seen
    to), or, before the hatch, one chip with
-   the egg and how far the hatching has come; and under them the ledger:
+   the egg and how long until it hatches (the warmth the player gives it
+   shows in the scene's glow, not here: it does not decide the hatch); and
+   under them the ledger:
    the acorns and the star dust in the purse and the streak of days, one
    pressable row that opens the sheet saying what they are and what they
    earn (/elf-ledger), with an info glyph at its end so it reads as a way
@@ -35,8 +37,8 @@ export type ElfHudProps = {
   name: string
   stage: ElfStage
   needs: ElfNeeds
-  /* Warmth of the egg, 0 to 100. */
-  warmth: number
+  /* When the egg hatches on its own; null once hatched. */
+  hatchAt: number | null
   wallet: ElfWallet
   /* Days visited in a row. */
   streak: number
@@ -47,7 +49,7 @@ export type ElfHudProps = {
   onReset: () => void
 }
 
-export function ElfHud({ name, stage, needs, warmth, wallet, streak, panel, onDecorate, onLedger, onReset }: ElfHudProps) {
+export function ElfHud({ name, stage, needs, hatchAt, wallet, streak, panel, onDecorate, onLedger, onReset }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -70,7 +72,7 @@ export function ElfHud({ name, stage, needs, warmth, wallet, streak, panel, onDe
         </View>
       </View>
       <View style={styles.chips} pointerEvents="none">
-        {hatched ? ELF_NEEDS.map((id) => <NeedChip key={id} id={id} value={needs[id]} />) : <EggChip warmth={warmth} />}
+        {hatched || hatchAt === null ? ELF_NEEDS.map((id) => <NeedChip key={id} id={id} value={needs[id]} />) : <EggChip hatchAt={hatchAt} />}
       </View>
       {/* The row hugs its chips and gives only the scale as feedback: a
           fill or a ripple would paint the gaps between the pills. */}
@@ -132,23 +134,40 @@ function NeedChip({ id, value }: { id: ElfNeedId; value: number }) {
   )
 }
 
-/* Before the hatch: the egg and how far the hatching has come. */
-function EggChip({ warmth }: { warmth: number }) {
+/* The clock to the minute, for the egg's countdown: an egg's state does
+   not change on the drift, so nothing else would re-render it. Idle
+   without an egg. */
+const MINUTE_TICK_MS = 20000
+function useHatchWhen(hatchAt: number | null): { when: string; due: boolean } | null {
   const { t } = useTranslation()
-  const percent = Math.round(warmth)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (hatchAt === null) return
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), MINUTE_TICK_MS)
+    return () => clearInterval(timer)
+  }, [hatchAt])
+  if (hatchAt === null) return null
+  const left = hatchAt - now
+  if (left <= 0) return { when: t('mobile:elf.hatchSoon'), due: true }
+  const minutes = Math.ceil(left / 60000)
+  const hours = Math.floor(minutes / 60)
+  const time = hours > 0 ? t('mobile:elf.durationHours', { hours, minutes: minutes % 60 }) : t('mobile:elf.durationMinutes', { minutes })
+  return { when: t('mobile:elf.hatchIn', { time }), due: false }
+}
+
+/* Before the hatch: the egg and how long until it hatches. */
+function EggChip({ hatchAt }: { hatchAt: number }) {
+  const { t } = useTranslation()
+  const hatch = useHatchWhen(hatchAt)
+  const when = hatch?.when ?? ''
   return (
-    <View
-      style={[styles.chrome, styles.chip]}
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityValue={{ min: 0, max: 100, now: percent }}
-      accessibilityLabel={t('mobile:elf.needAria', { need: t('mobile:elf.hatching'), value: percent })}
-    >
+    <View style={[styles.chrome, styles.chip]} accessible accessibilityLabel={t('mobile:elf.hatchAria', { when })}>
       <EggIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
       <Text variant="caption" style={styles.chromeInk}>
         {t('mobile:elf.hatching')}
       </Text>
-      <CrossfadeText value={t('mobile:elf.percent', { value: percent })} variant="small" weight="bold" style={styles.chromeInk} />
+      <CrossfadeText value={when} variant="small" weight="bold" style={styles.chromeInk} />
     </View>
   )
 }
@@ -175,6 +194,10 @@ export type ElfMoodPillProps = {
   name: string
   stage: ElfStage
   mood: ElfMood
+  /* When the egg hatches on its own; null once hatched. The egg's
+     sentence counts the hours down and names the other way out: the
+     first cottage found. */
+  hatchAt: number | null
   /* The need the elf would like seen to, when one is under the mark. */
   wantedNeed: ElfNeedId | null
   /* A passing message that outranks the want while it lasts. */
@@ -187,9 +210,10 @@ const hintColor: Record<ElfHint['tone'], string> = {
   danger: colors.danger,
 }
 
-export function ElfMoodPill({ name, stage, mood, wantedNeed, flash }: ElfMoodPillProps) {
+export function ElfMoodPill({ name, stage, mood, hatchAt, wantedNeed, flash }: ElfMoodPillProps) {
   const { t } = useTranslation()
-  const sentence = stage === 'egg' ? t('mobile:elf.moodEgg') : t(elfKey('mood', mood), { name })
+  const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
+  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue', { name }) : t('mobile:elf.moodEgg', { name, when: hatch.when })) : t(elfKey('mood', mood), { name })
   const hint: ElfHint | null = flash ?? (wantedNeed && stage !== 'egg' ? { text: t(elfKey('wants', wantedNeed), { name }), tone: 'accent' } : null)
 
   return (
