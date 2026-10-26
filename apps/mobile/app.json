@@ -79,7 +79,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Chatynkowo uses the camera to read the QR code on a cottage plaque and to show the elf in your surroundings.",
+          "cameraPermission": "Chatynkowo reads the QR code on a cottage plaque.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
@@ -114,12 +114,6 @@
       "expo-web-browser",
       "expo-iap",
       "expo-asset",
-      [
-        "expo-sensors",
-        {
-          "motionPermission": "Chatynkowo reads the phone's motion so the elf stays in place while you look around for it."
-        }
-      ],
       [
         "expo-build-properties",
         {

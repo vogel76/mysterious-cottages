@@ -71,7 +71,6 @@ import { SignOutIcon as PhosphorSignOut } from 'phosphor-react-native/src/icons/
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
 import { SpeakerHighIcon } from 'phosphor-react-native/src/icons/SpeakerHigh'
 import { SpeakerSlashIcon } from 'phosphor-react-native/src/icons/SpeakerSlash'
-import { SphereIcon } from 'phosphor-react-native/src/icons/Sphere'
 import { SunIcon } from 'phosphor-react-native/src/icons/Sun'
 import { TranslateIcon } from 'phosphor-react-native/src/icons/Translate'
 import { TShirtIcon } from 'phosphor-react-native/src/icons/TShirt'
@@ -174,8 +173,6 @@ export const SleepIcon = MoonStarsIcon
 export const WakeIcon = SunIcon
 export const JoyIcon = HeartIcon
 export const EnergyIcon = LightningIcon
-/* The magic orb thrown to catch the elf. */
-export const OrbIcon = SphereIcon
 /* The elf's wardrobe (swappable clothes) and the cottage's decor edit mode. */
 export const WardrobeIcon = TShirtIcon
 export const DecorIcon = ArmchairIcon
@@ -191,7 +188,7 @@ export const ICON_VOCABULARY = {
   CameraIcon, ProfileIcon, SignOutIcon, OfflineIcon, SyncIcon, DownloadIcon, WarningIcon, LanguageIcon,
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
   CoffeeIcon, WatchAdIcon,
-  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, MagicIcon, SleepIcon, WakeIcon, JoyIcon, EnergyIcon, OrbIcon,
+  EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, MagicIcon, SleepIcon, WakeIcon, JoyIcon, EnergyIcon,
   WardrobeIcon, DecorIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 

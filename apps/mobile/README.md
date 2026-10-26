@@ -171,10 +171,7 @@ group. `emulator -accel-check` tells you which of these is missing.
 Metro is configured in `metro.config.js` to watch the repository root and
 to resolve from both `node_modules` directories, which is enough for pnpm's
 isolated layout; `node-linker=hoisted` in the root `.npmrc` stays commented
-out unless a future native module needs it. The same file resolves the bare
-`three` specifier to the package's ES module: three is ESM-only from 0.186
-and its "require" entry, the one Metro would pick, is a deprecation shim
-calling `process.emitWarning`, which Hermes does not have.
+out unless a future native module needs it.
 
 Watching the whole monorepo needs more inotify watches than Linux grants
 by default; when edits stop reaching the app (Metro logs no "Bundled"
@@ -217,7 +214,6 @@ app/                     expo-router routes
   support.tsx            supporting Chatynkowo, a sheet opened by the support invitations: a coffee for the elf (a purchase
                          through the store) or a rewarded ad watched instead
   nickname.tsx           the nickname editor, a sheet from the account screen and the Ranking's "Change nickname" item
-  elf-catch.tsx          the elf in the camera view (the first prototype's remain, nothing navigates to it any more)
   elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a new form is reached
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
@@ -255,9 +251,7 @@ src/
                          wardrobe catalogue, ElfPuppet with puppet/geometry.ts; shared by both: Lighting, clock.ts
                          with the day phase, motion, EggNest, Particles, SlotMarkers for the edit mode), the screen
                          components (ElfTab, ElfHud, ElfActionBar with drag-to-feed, ElfPicker and ElfThumb for the
-                         wardrobe and the decorating panel, useReturnGreeting, the adoption form, the evolution card),
-                         and the first prototype's remains, unused by the tab and kept until removed: scene/ (the
-                         three.js figure and the scene view) and catch/ (the camera view)
+                         wardrobe and the decorating panel, useReturnGreeting, the adoption form, the evolution card);
                          sprites/ plays the atlases the art pipeline packs (manifest and registry, the decoded
                          sheets, a UI-thread frame clock, SpritePlayer and LayeredSprite on Skia's Atlas, SpriteDemo)
 art/                     the Blender art pipeline (art/README.md): common.py with the shared scene, camera, light
@@ -266,12 +260,9 @@ art/                     the Blender art pipeline (art/README.md): common.py wit
                          renders go to art/out, only the packed result is committed under assets/elf
 assets/elf/              room/ (manifest.json, plate.webp: the empty room at the room units, 1000 by 1600, and one
                          transparent crop per furniture variant with its place in the plate), sprites/<character>/
-                         (the packed atlases and manifests the sprite player draws; elf/ today), background.webp
-                         (the Chatynkowo painting, seen through the vector cottage's window) and elf.glb (the first
-                         prototype's animated model, CC BY, see assets/elf/README.md; unused by the tab)
-scripts/                 prepare-elf-model.mjs: transcodes the prototype's WebP-textured model into assets/elf/elf.glb
-metro.config.js          the monorepo watch and resolve settings, .glb added to the asset extensions for the model, and
-                         `three` pointed at its ES module (its CommonJS entry is a shim that throws on Hermes)
+                         (the packed atlases and manifests the sprite player draws; elf/ today) and background.webp
+                         (the Chatynkowo painting, seen through the vector cottage's window)
+metro.config.js          the monorepo watch and resolve settings
 app.config.ts            the configuration that depends on the environment: the AdMob app ids of the support sheet's rewarded
                          plugin, unless EXPO_PUBLIC_APPLE_SIGN_IN is 0), the Google sign-in plugin with the iOS URL scheme
                          derived from EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, the app's Apple team (signing, and the Sign in
@@ -295,9 +286,7 @@ a sheet (`/support`) opened by the invitation card wherever it is mounted
 (see "Supporting Chatynkowo"); so is changing the nickname, a sheet
 (`/nickname`) opened from the account screen and from the Ranking. The
 Elf tab follows the same split: the tab is the destination, the evolution
-card (`/elf-evolve`) is a modal over it (the catch in the camera view,
-`/elf-catch`, is still registered but no longer reachable from the tab).
-Motion goes through the tokens in
+card (`/elf-evolve`) is a modal over it. Motion goes through the tokens in
 `src/ui/motion` (reanimated 4, system reduce-motion respected) and haptics
 through `src/lib/haptics.ts`.
 
@@ -399,9 +388,6 @@ through `src/lib/haptics.ts`.
 | Recordings offline | `expo-file-system` | "Save on this device" downloads the mp3 into the document directory, one folder per language; a saved file plays from disk |
 | QR | `expo-camera` | `CameraView` scanning `qr` only, torch from the header; the code is resolved on the scanner itself through the same `useCodeEntry` as manual entry |
 | Cottage scene | `@shopify/react-native-skia` | the elf's cottage (`src/features/elf/cottage`): one full-screen `Canvas` whose transforms, opacities and control values are Reanimated shared values, so every loop and reaction runs on the UI thread with no React state per frame; in sprite mode the room is the Blender plate as an `Image`, the furniture its rendered crops and the elf an `Atlas` node fed one cell per frame from the packed sheets (`src/features/elf/sprites`), in the vector fallback a 2D scene graph of paths, gradients, blur and shadow effects with the painting through the window; the room is designed in room units (1000 by 1600) and scaled to cover the screen; the canvas is `opaque` (the room covers it anyway), which backs it with a SurfaceView on Android, the cheapest path and the only one that draws on the emulator |
-| Camera | `expo-camera` | next to the QR scanner, the elf catch (`app/elf-catch.tsx`, the first prototype's remain, unreachable from the tab) shows the camera preview with the 3D figure over it, the permission asked on entry as the scanner does |
-| 3D scene | `expo-gl` + `three` + `@react-three/fiber` | the first prototype's scene (`src/features/elf/scene`), no longer used by the Elf tab and kept until removed: a `GLView` at the device's native resolution, three's loaders fed through the native polyfills (the model is read from the bundled asset, textures decoded on the device), the painting as a React Native image behind a transparent canvas, and the skinned mesh fitted to the stage's height with `Box3` precise bounds computed from the animated pose (the rest pose of this rig is folded up) |
-| Motion sensor | `expo-sensors` | `DeviceMotion` drives the parallax of the catch view (the first prototype's remain), so the figure seems anchored in the room as the phone turns |
 | Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `transparentModal` routes carrying the shared sheet (src/ui/Sheet.tsx) for the code, reward and rules, `modal` page sheets for the story and the cottage list |
 | Sheets | `@gorhom/bottom-sheet` | one base for every sheet: the in-screen parchment panel over the map (three snaps, the map stays pannable, the camera keeps room for it) and the sheet routes (the code gate, a reward, the rules), which open at their own height or part-way and can be pulled to the top; a scroll inside moves the content first |
 | Motion | `react-native-reanimated` 4 + `react-native-gesture-handler` | springs, entrances, the progress ring, the scrub bar, the toast gesture; every animation passes `ReduceMotion.System` |
@@ -738,14 +724,3 @@ The rules stay in the app until the flow is designed (how the egg is found,
 what a cottage visit gives it, whether it reaches the account); then they
 move to `@chatynkowo/core` next to the progress rules, as every other
 domain rule did.
-
-The first prototype's remains, unused by the tab and kept until the owner
-removes them: the 3D scene (`src/features/elf/scene`, `expo-gl`, `three`,
-`@react-three/fiber`; its tuning constants in `scene/model.ts`, its frame
-meter in `scene/FpsMeter.tsx`), the catch in the camera view
-(`src/features/elf/catch`, `app/elf-catch.tsx`, `expo-sensors`), the
-model `assets/elf/elf.glb` (the character from "Animated Elf & Venus
-Flytrap on Floating Island" by LasquetiSpice on Sketchfab, CC BY 4.0,
-transcoded by `scripts/prepare-elf-model.mjs`; `assets/elf/README.md`
-carries the attribution) and the `.glb` asset extension with the `three`
-alias in `metro.config.js`. Nothing in the tab reaches them any more.

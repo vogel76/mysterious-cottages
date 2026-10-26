@@ -14,7 +14,6 @@ import {
   pet as petElf,
   PET_COOLDOWN_MS,
   placeDecor as placeElfDecor,
-  rewardCatch,
   stageOf,
   tendEgg,
   toggleSleep as toggleElfSleep,
@@ -33,7 +32,7 @@ import {
 import { readJson, writeJson } from '../lib/storage'
 
 /* The elf companion's state for the whole app: the Elf tab reads and acts
-   on it, the catch route (a modal over the tabs) rewards it. The state is
+   on it. The state is
    read from the device when the provider mounts (the elf is not on the
    first screen, so it stays out of the bootstrap), brought up to date every
    second while the app is in the foreground, and saved after every action
@@ -78,8 +77,6 @@ export type ElfValue = {
   equip: (slot: WearableSlot, id: string) => void
   /* Swaps the furniture in a slot of the room; unknown ids are ignored. */
   placeDecor: (slot: SlotId, id: string) => void
-  /* The catch in the camera view succeeded. */
-  catchReward: () => void
   pendingEvolution: Exclude<Stage, 'egg'> | null
   acknowledgeEvolution: () => void
   /* Subscribe to one-shot reactions; returns the unsubscribe function. */
@@ -293,15 +290,6 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
-  const catchReward = useCallback(() => {
-    const current = stateRef.current
-    if (!current) return
-    const now = Date.now()
-    const outcome = rewardCatch(applyElapsed(current, now), now)
-    commit(touch(outcome.state, now), true)
-    growth(outcome.growth)
-  }, [commit, growth])
-
   const acknowledgeEvolution = useCallback(() => setPendingEvolution(null), [])
 
   /* The stored records keep their reference through the drift (applyElapsed
@@ -329,12 +317,11 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       pet,
       equip,
       placeDecor,
-      catchReward,
       pendingEvolution,
       acknowledgeEvolution,
       onReaction,
     }),
-    [state, loaded, outfit, decor, adopt, reset, care, tend, toggleSleep, pet, equip, placeDecor, catchReward, pendingEvolution, acknowledgeEvolution, onReaction],
+    [state, loaded, outfit, decor, adopt, reset, care, tend, toggleSleep, pet, equip, placeDecor, pendingEvolution, acknowledgeEvolution, onReaction],
   )
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>

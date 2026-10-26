@@ -7,8 +7,3 @@ declare module '*.webp' {
   const source: number
   export default source
 }
-/* The elf's glTF model (metro.config.js adds the extension to the assets). */
-declare module '*.glb' {
-  const source: number
-  export default source
-}

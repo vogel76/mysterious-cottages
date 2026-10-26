@@ -222,8 +222,7 @@ export const mobilePl = {
     thanksLead: 'Elfy pamiętają każdą kawę. Jeśli masz ochotę na kolejną, wiesz, gdzie nas znaleźć.',
   },
   /* The elf companion prototype: the egg, the care loop, the full-screen
-     cottage and its HUD, the evolution card; the last keys belong to the
-     first prototype's 3D scene and the catch view, unused by the tab. */
+     cottage and its HUD, the evolution card. */
   elf: {
     title: 'Twój Elf',
     prototypeNote: 'Prototyp: ta zakładka służy do prób z elfem i jest osobna od wyprawy.',
@@ -283,10 +282,6 @@ export const mobilePl = {
     tapHint: 'Dotknij elfa, aby go pogłaskać.',
     tapHintEgg: 'Dotknij jajka, aby je pokołysać.',
     cottageAria: 'Twój elf w swojej chatynce',
-    /* The first prototype's 3D scene (src/features/elf/scene, unused by the tab) */
-    sceneAria: 'Twój elf w trzech wymiarach',
-    orbitHint: 'Przeciągnij, aby obejść elfa. Dotknij, aby pogłaskać.',
-    orbitHintEgg: 'Przeciągnij, aby obejrzeć jajko.',
     /* Starting over */
     startOver: 'Zacznij od nowa',
     resetTitle: 'Zacząć od nowa?',
@@ -302,19 +297,6 @@ export const mobilePl = {
     evoElder: '{{name}} osiągnął najwyższą formę, Arcyelfa! Jego magia rozświetla Chatynkowo.',
     evoOk: 'Wspaniale!',
     levelUp: 'Nowy poziom!',
-    /* The catch in the camera view */
-    catchTitle: 'Złap elfa',
-    catchSearching: 'Rozglądaj się i wyśrodkuj elfa, potem rzuć kulą.',
-    catchCameraRequest: 'Aparat pokaże elfa w Twoim otoczeniu. Bez niego złapiesz go w magicznej mgle.',
-    catchCameraAllow: 'Zezwól na aparat',
-    catchWithoutCamera: 'Łap w magicznej mgle',
-    catchNoCamera: 'Brak dostępu do aparatu. Łapiesz w magicznej mgle. Wyśrodkuj elfa!',
-    catchMissed: 'Elf uskoczył w bok! Wyśrodkuj go i rzuć znów.',
-    catchCaught: 'Hurra! {{name}} wpadł w magiczną kulę!',
-    catchRetry: 'Spróbuj znów',
-    catchThrow: 'Rzuć magiczną kulą',
-    catchNoModel: 'Brak modelu elfa. Nie ma kogo łapać.',
-    catchNoElf: 'Nie ma jeszcze kogo łapać. Najpierw wykluj elfa w zakładce Elf.',
     /* The wardrobe and the decor edit mode: the panels inside the tab */
     wardrobe: 'Szafa',
     decorate: 'Urządź',

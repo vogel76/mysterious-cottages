@@ -251,24 +251,8 @@ function RootStack() {
       {/* The nickname editor (src/features/profile): a sheet from the
           account screen and the Ranking. */}
       <Stack.Screen name="nickname" options={sheetRoute} />
-      {/* The elf companion prototype (src/features/elf): the catch in the
-          camera view, full screen like the scanner, and the evolution card,
-          a transparent modal like the celebration. */}
-      <Stack.Screen
-        name="elf-catch"
-        options={{
-          presentation: 'fullScreenModal',
-          animation: 'fade',
-          headerShown: true,
-          headerTransparent: true,
-          headerTitle: t('mobile:elf.catchTitle'),
-          headerTitleStyle: { fontFamily: fonts.display, color: colors.ink },
-          headerTintColor: colors.ink,
-          headerBackVisible: false,
-          gestureEnabled: false,
-          ...headerRightItems([{ role: 'close', label: t('mobile:common.close'), onPress: closeModal }]),
-        }}
-      />
+      {/* The elf companion prototype (src/features/elf): the evolution
+          card, a transparent modal like the celebration. */}
       <Stack.Screen
         name="elf-evolve"
         options={{
