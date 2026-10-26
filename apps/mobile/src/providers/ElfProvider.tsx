@@ -38,7 +38,7 @@ import {
   type WearableSlot,
 } from '@chatynkowo/core'
 import { STORAGE_KEYS } from '../config'
-import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
+import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, PHOTO_ID, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
 import { readJsonStrict, writeJson } from '../lib/storage'
 import { useProgress } from './ProgressProvider'
 
@@ -143,8 +143,10 @@ function resolveOutfit(stored: Partial<ElfOutfit> | undefined): ElfOutfit {
   return outfit
 }
 
-function resolveDecor(stored: Record<string, string> | undefined): Decor {
-  const decor: Decor = { ...DEFAULT_DECOR }
+/* The frame shows the latest cottage's photo once there is one, unless the
+   player chose another picture. */
+function resolveDecor(stored: Record<string, string> | undefined, found: boolean): Decor {
+  const decor: Decor = { ...DEFAULT_DECOR, ...(found ? { picture: PHOTO_ID } : {}) }
   for (const slot of Object.keys(DECOR_IDS) as SlotId[]) {
     const id = stored?.[slot]
     if (id && DECOR_IDS[slot].includes(id)) decor[slot] = id
@@ -442,8 +444,9 @@ export function ElfProvider({ children }: { children: ReactNode }) {
      after a swap or a reload. */
   const storedOutfit = state?.outfit
   const storedDecor = state?.decor
+  const hasFinds = finds.length > 0
   const outfit = useMemo(() => resolveOutfit(storedOutfit), [storedOutfit])
-  const decor = useMemo(() => resolveDecor(storedDecor), [storedDecor])
+  const decor = useMemo(() => resolveDecor(storedDecor, hasFinds), [storedDecor, hasFinds])
 
   const value = useMemo<ElfValue>(() => {
     const now = Date.now()

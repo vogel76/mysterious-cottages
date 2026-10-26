@@ -1,10 +1,12 @@
+import { useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated from 'react-native-reanimated'
+import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { nextStreakMilestone, type ElfQuest, type ElfReward } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
-import { useElf } from '../../providers'
-import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
+import { useContent, useElf, useProgress } from '../../providers'
+import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
 import { QUEST_ICONS, elfKey } from './labels'
 
 /* The elf's day, as a sheet over the tab, opened from the HUD's ledger:
@@ -13,13 +15,33 @@ import { QUEST_ICONS, elfKey } from './labels'
    reward as three cards face down, one of which the player turns (the
    rules hold what each card hides and remember the pick, so the sheet
    shows the turned card and the two missed ones until tomorrow); the
-   streak with its longest and the next milestone; and at the end what
-   the ledger's figures are and earn, for whoever still wonders. The
-   content scrolls inside the sheet on a short screen. */
+   jars on the shelf, one per cottage found with its date, newest first,
+   each opening the cottage's story (the shelf in the room keeps its one
+   render until the art has the jars); the streak with its longest and
+   the next milestone; and at the end what the ledger's figures are and
+   earn, for whoever still wonders. The content scrolls inside the sheet
+   on a short screen. */
 
 export function ElfTodaySheet() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const router = useRouter()
   const { state, claimDailyReward } = useElf()
+  const { state: progress } = useProgress()
+  const { cottages, total } = useContent()
+  /* The cottages found as jars, newest first, named and dated. */
+  const jars = useMemo(
+    () =>
+      Object.entries(progress.found)
+        .map(([slug, find]) => ({
+          slug,
+          at: find.foundAt,
+          title: cottages.find((cottage) => cottage.slug === slug)?.title ?? slug,
+          date: new Date(find.foundAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' }),
+        }))
+        .sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)),
+    [progress.found, cottages, i18n.language],
+  )
+  const openStory = (slug: string) => router.push({ pathname: '/story/[slug]', params: { slug } })
   const quests = state?.daily.quests ?? []
   const rewards = state?.daily.rewardOptions ?? []
   const picked = state?.daily.rewardPicked ?? null
@@ -69,6 +91,26 @@ export function ElfTodaySheet() {
               <RewardCard key={index} index={index} reward={reward} picked={picked} onPick={pick} />
             ))}
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text weight="bold" accessibilityRole="header">
+            {t('mobile:elf.todayJars')}
+          </Text>
+          <Text variant="small" tone="faint">
+            {jars.length ? t('mobile:elf.jarsLine', { count: jars.length, total }) : t('mobile:elf.jarsEmpty')}
+          </Text>
+          {jars.map((jar) => (
+            <PressableScale key={jar.slug} onPress={() => openStory(jar.slug)} accessibilityLabel={t('mobile:elf.jarAria', { name: jar.title, date: jar.date })} pressedFill="transparent" ripple={false} style={styles.row}>
+              <JarIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
+              <View style={styles.column}>
+                <Text numberOfLines={2}>{jar.title}</Text>
+                <Text variant="small" tone="faint">
+                  {jar.date}
+                </Text>
+              </View>
+            </PressableScale>
+          ))}
         </View>
 
         <View style={styles.section}>

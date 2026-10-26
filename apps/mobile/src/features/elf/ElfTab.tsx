@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -6,10 +6,11 @@ import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { careLeft, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
+import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
-import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
+import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, cachedContentUri, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
-import type { SlotId } from './cottage/catalogue'
+import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfAdoption } from './ElfAdoption'
 import { ElfHud, ElfMoodPill, type ElfPanel } from './ElfHud'
@@ -57,7 +58,10 @@ import { useReturnGreeting } from './useReturnGreeting'
    no hat layer has been rendered, so there is nothing a wearable could
    change; the outfit the rules store waits for the art pipeline's layers.
    The decorating panel lists only the slots whose variants are rendered,
-   and its thumbnails are the sprites themselves.
+   and its thumbnails are the sprites themselves. The frame on the wall
+   shows the latest cottage found (its photo, from the expedition's cache,
+   drawn into the frame's render) once there is one, unless the player
+   picks another picture, and a tap on it opens that cottage's story.
 
    The decorating mode is a panel inside the tab, not a route: a route
    would unfocus the tab and pause the scene, and the point of the panel
@@ -85,10 +89,10 @@ export function ElfTab() {
   const tabBarHeight = useTabBarHeight()
   const elf = useElf()
   const { state, loaded, stage, mood, decor, lastInteraction, news, visit } = elf
-  /* The cottages, to name the one the elf cheers about; the count for a
-     cheer about several at once. */
+  /* The cottages, to name the one the elf cheers about and to find the
+     latest one's photo; the finds themselves and their count. */
   const { cottages } = useContent()
-  const { foundCount } = useProgress()
+  const { foundCount, state: progress } = useProgress()
   useEvolutionPresenter()
   const router = useRouter()
   const focused = useIsFocused()
@@ -227,6 +231,35 @@ export function ElfTab() {
     if (wasSleeping.current && !sleeping && hatched && focused) sceneRef.current?.react('wake')
     wasSleeping.current = sleeping
   }, [state?.sleeping, hatched, focused])
+
+  /* The latest cottage found: the frame on the wall shows its photo (from
+     the expedition's picture cache when it has it, so the frame fills
+     offline too) and a tap on the frame opens its story. */
+  const latestSlug = useMemo(() => {
+    let latest: { slug: string; at: string } | null = null
+    for (const [slug, find] of Object.entries(progress.found)) if (!latest || find.foundAt > latest.at) latest = { slug, at: find.foundAt }
+    return latest?.slug ?? null
+  }, [progress.found])
+  const [photo, setPhoto] = useState<string | null>(null)
+  useEffect(() => {
+    const cottage = latestSlug ? cottages.find((candidate) => candidate.slug === latestSlug) : undefined
+    const uri = cottage ? (content.storyPhotos(cottage)[0] ?? null) : null
+    if (!uri) {
+      setPhoto(null)
+      return
+    }
+    let current = true
+    void cachedContentUri(uri).then((resolved) => {
+      if (current) setPhoto(resolved)
+    })
+    return () => {
+      current = false
+    }
+  }, [latestSlug, cottages])
+  const onPictureTap = useCallback(() => {
+    if (decor.picture !== PHOTO_ID || !latestSlug) return
+    router.push({ pathname: '/story/[slug]', params: { slug: latestSlug } })
+  }, [decor.picture, latestSlug, router])
 
   /* ---------- The panels ---------- */
 
@@ -492,6 +525,8 @@ export function ElfTab() {
             onStrokeElf={onStrokeElf}
             onPetEgg={onPetEgg}
             onFigureTop={setFigureTop}
+            photo={photo}
+            onPictureTap={onPictureTap}
           />
         </View>
       ) : null}
@@ -537,7 +572,7 @@ export function ElfTab() {
           </Animated.View>
         ) : (
           <View onLayout={onPanelLayout}>
-            <ElfPicker decor={decor} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
+            <ElfPicker decor={decor} photo={photo} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
           </View>
         )}
       </View>

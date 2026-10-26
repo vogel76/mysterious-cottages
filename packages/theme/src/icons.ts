@@ -70,7 +70,8 @@ export const MOBILE_ICON_ROLES = [
   'CoffeeIcon',
   'WatchAdIcon',
   /* The elf companion (apps/mobile/src/features/elf): the egg, the needs,
-     the care actions, the purse, the streak and the day's quests. */
+     the care actions, the purse, the streak, the day's quests and the jars
+     of the cottages found. */
   'EggIcon',
   'WarmIcon',
   'LullabyIcon',
@@ -84,6 +85,7 @@ export const MOBILE_ICON_ROLES = [
   'DustIcon',
   'StreakIcon',
   'QuestIcon',
+  'JarIcon',
   /* The cottage's decor edit mode. */
   'DecorIcon',
 ] as const

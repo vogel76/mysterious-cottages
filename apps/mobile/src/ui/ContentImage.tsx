@@ -111,6 +111,18 @@ function RetryingImage({ uri, aspectRatio, radius = 0, policy = 'memory-disk', s
   )
 }
 
+/* The picture's file in the cache when it is there, else the picture's
+   own address: for a drawing that loads the picture itself (the elf's
+   frame) and should not go to the network for what the cache holds. */
+export async function cachedContentUri(uri: string): Promise<string> {
+  try {
+    const path = await Image.getCachePathAsync(uri)
+    return path ? `file://${path}` : uri
+  } catch {
+    return uri
+  }
+}
+
 /* Warms the cache for pictures a screen is about to show. */
 export async function prefetchContent(uris: string[]): Promise<void> {
   const list = uris.filter((uri): uri is string => Boolean(uri))

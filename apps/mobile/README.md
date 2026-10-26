@@ -588,7 +588,12 @@ they decide its form, the first find hatches the egg early, a find pays
 the weekend's find quest (credited to the day of the find even when the
 elf is visited later), and on the first visit of a later day the elf
 cheers for it by the cottage's title (several at once by their count),
-never on the find's own day, which belongs to the expedition. The day's quests, the purse
+never on the find's own day, which belongs to the expedition. The frame
+on the wall shows the latest cottage's photo (from the expedition's
+picture cache, so offline too; a tap opens its story) unless the player
+picked another picture, and the day's sheet lists the cottages found as
+jars on the shelf, with their dates, each opening its story; the jars in
+the room itself wait for the art (stage 3). The day's quests, the purse
 (acorns and star dust) and the streak are counted by the rules and stand
 in the HUD's ledger with the quests done out of three, and a tap on it
 opens the day's sheet (`/elf-today`): the quests with their progress and
