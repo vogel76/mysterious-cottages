@@ -8,7 +8,7 @@ import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wante
 import { announce } from '../../lib/announce'
 import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
-import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, cachedContentUri, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
+import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
@@ -183,6 +183,30 @@ export function ElfTab() {
     },
     [advanceSpeech],
   )
+  /* A line said right after the one on screen, not over it: the greeting
+     arrives half a second into a visit's news and must not cut it. */
+  const sayNext = useCallback(
+    (text: string) => {
+      if (speechTimer.current) speechQueue.current.unshift(text)
+      else say(text)
+    },
+    [say],
+  )
+  /* Out of focus (a sheet or a story over the tab) the lines wait: the
+     bubble is hidden, a line cut short returns to the front of the queue,
+     and the focus resumes them, so nothing is read out over another
+     screen. */
+  useEffect(() => {
+    if (focused) {
+      if (!speechTimer.current && speechQueue.current.length) advanceSpeech()
+      return
+    }
+    if (speechTimer.current) clearTimeout(speechTimer.current)
+    speechTimer.current = null
+    if (saying.current?.queued) speechQueue.current.unshift(saying.current.text)
+    saying.current = null
+    setSpeech(null)
+  }, [focused, advanceSpeech])
   useEffect(
     () => () => {
       if (speechTimer.current) clearTimeout(speechTimer.current)
@@ -216,7 +240,7 @@ export function ElfTab() {
     if (news.streakLost !== null) lines.push(t('mobile:elf.streakLost', { count: news.streakLost }))
     if (news.milestoneDust) lines.push(t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }))
     if (news.newDay) lines.push(t('mobile:elf.newDayLine'))
-    for (const quest of news.completed) lines.push(t('mobile:elf.questDone', { count: quest.acorns }))
+    for (const quest of news.completed) lines.push(quest.dust > 0 ? t('mobile:elf.questDoneDust', { count: quest.acorns, dust: quest.dust }) : t('mobile:elf.questDone', { count: quest.acorns }))
     if (news.setBonus) lines.push(t('mobile:elf.questSet'))
     queueSpeech(lines)
     if (news.setBonus || news.milestoneDust || news.celebrate.length) sceneRef.current?.react('cheer')
@@ -249,7 +273,7 @@ export function ElfTab() {
       return
     }
     let current = true
-    void cachedContentUri(uri).then((resolved) => {
+    void cachedContentFile(uri).then((resolved) => {
       if (current) setPhoto(resolved)
     })
     return () => {
@@ -277,6 +301,13 @@ export function ElfTab() {
     setPanelHeight((current) => (current === height ? current : height))
   }, [])
   const [decorSlot, setDecorSlot] = useState<SlotId>(DECOR_SLOTS[0] ?? 'rug')
+  /* The slots the panel offers right now: the frame only once there is a
+     photo to put in it. The scene's edit mode and the panel go by the
+     same list, and the active slot never points outside it. */
+  const editableSlots = useMemo(() => DECOR_SLOTS.filter((slot) => slot !== 'picture' || photo), [photo])
+  useEffect(() => {
+    if (!editableSlots.includes(decorSlot)) setDecorSlot(editableSlots[0] ?? 'rug')
+  }, [editableSlots, decorSlot])
   /* No elf: no panel, and nothing left to say (a new egg would otherwise
      be told the old elf's lines). */
   useEffect(() => {
@@ -300,9 +331,12 @@ export function ElfTab() {
   /* A slot tapped in the room while decorating picks the panel's tab; a
      slot the panel does not offer (the fireplace, or a slot with a single
      rendered variant) is left alone. */
-  const onSelectSlot = useCallback((slot: SlotId) => {
-    if (DECOR_SLOTS.includes(slot)) setDecorSlot(slot)
-  }, [])
+  const onSelectSlot = useCallback(
+    (slot: SlotId) => {
+      if (editableSlots.includes(slot)) setDecorSlot(slot)
+    },
+    [editableSlots],
+  )
 
   /* A piece the finds have not unlocked yet is not placed: the elf says
      how many cottages it still takes. */
@@ -328,7 +362,7 @@ export function ElfTab() {
     lastInteraction,
     onGreet: () => {
       sceneRef.current?.react('greet')
-      say(t('mobile:elf.greetHint'))
+      sayNext(t('mobile:elf.greetHint'))
     },
   })
 
@@ -518,6 +552,7 @@ export function ElfTab() {
             height={size.height}
             paused={!focused}
             editing={editing}
+            editable={editableSlots}
             bottomInset={bottomInset}
             selectedSlot={editing ? decorSlot : null}
             onSelectSlot={onSelectSlot}
@@ -573,7 +608,7 @@ export function ElfTab() {
           </Animated.View>
         ) : (
           <View onLayout={onPanelLayout}>
-            <ElfPicker decor={decor} photo={photo} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
+            <ElfPicker decor={decor} photo={photo} slots={editableSlots} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
           </View>
         )}
       </View>

@@ -215,8 +215,8 @@ app/                     expo-router routes
                          through the store) or a rewarded ad watched instead
   nickname.tsx           the nickname editor, a sheet from the account screen and the Ranking's "Change nickname" item
   elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a new form is reached
-  elf-today.tsx          the elf's day: the quests with their progress, the reward to pick, the streak and what the
-                         ledger's figures mean, a sheet opened from the Elf tab's ledger
+  elf-today.tsx          the elf's day: the quests with their progress, the reward to pick, the cottages found as jars,
+                         the streak and what the ledger's figures mean, a sheet opened from the Elf tab's ledger
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
@@ -245,7 +245,8 @@ src/
                          form again (the privacy options in the EEA), with the consent hook on top of src/lib/ads.ts
                          ad (Google's sample ids until EXPO_PUBLIC_ADMOB_*_APP_ID are set), Sign in with Apple (the capability and its
   features/elf/          the companion prototype, on the rules in packages/core (elf.ts: the needs, the day's quests,
-                         the purse and the streak, the stored outfit and decor), cottage/ (the full-screen Skia room:
+                         the purse and the streak, the cottages found credited and celebrated, the furniture the finds
+                         unlock, the stored outfit and decor), cottage/ (the full-screen Skia room:
                          room.ts with the room units and the slots,
                          catalogue.ts with the slot, decor and wardrobe ids, roomAssets.ts (the room manifest, which
                          variants are rendered) and RoomSprites.tsx drawing the plate and the furniture crops,
@@ -377,8 +378,9 @@ through `src/lib/haptics.ts`.
   foreground. A form reached (by the hatch, the cottages found or time)
   waits in `pendingEvolution` until the Elf tab has shown its card. What
   the day's rules said about an action or a visit (a new day, a quest
-  done and its acorns, the full set, a streak milestone, a streak lost)
-  is published as `news`, one record the tab turns into the elf's lines
+  done and its pay, the full set, a streak milestone, a streak lost, a
+  cottage found to cheer about) is published as `news`, one record the
+  tab turns into the elf's lines
   in its bubble; the day is settled on every path (the tick, the visit,
   each action) so its news is never lost, and the tab calls `visit()`
   when it comes into view. Nothing reaches the account yet.
@@ -405,6 +407,7 @@ through `src/lib/haptics.ts`.
 | Fonts | `expo-font` + `@expo-google-fonts/*` | Cormorant Garamond and Cinzel Decorative, imported per weight; the repository's woff2 files cannot be used natively |
 | Locale | `expo-localization` | the device language picks the dictionary and, through `detectCountry`, the map's home country (never geolocation) |
 | Country names | `@formatjs/intl-displaynames` | Hermes has no `Intl.DisplayNames`; the polyfill with Polish and English data names a cottage's country in the map panel, as the site does |
+| Plural forms | `@formatjs/intl-pluralrules` | Hermes has no `Intl.PluralRules`; the polyfill with Polish and English data lets i18next pick the Polish forms for two to four ("4 odkrycia", "2 Chatynki") instead of the many form |
 | Release size | `expo-build-properties` | R8 and resource shrinking in Android release builds (`enableMinifyInReleaseBuilds`, `enableShrinkResourcesInReleaseBuilds`): the Java/Kotlin code drops from 55 MB to about 21 MB before packaging; the native libraries ship their own keep rules, so no rules of ours |
 | Locale filter | `plugins/with-locale-filters.js` | config plugin that writes the Android Gradle plugin's `localeFilters` from `expo.locales` in app.json, so the libraries' strings in the other eighty languages stay out of the APK (Google Play does the same split from an app bundle) |
 | Scene life cycle | `plugins/with-scene-delegate.js` | config plugin for the iOS 27 SDK, which asserts at launch unless the app adopts UIScene: the generated `AppDelegate` conforms to `ExpoReactNativeFactoryProvider` and stops starting React Native itself, a `SceneDelegate` subclasses Expo's `ExpoAppSceneDelegate` (it creates the window and starts React Native from the scene), and `Info.plist` gets the `UIApplicationSceneManifest`; idempotent, skipped from SDK 58 on (the template adopts scenes itself), refuses an expo older than 57.0.25 |
@@ -678,7 +681,8 @@ with small catalogues and an instant live preview. The decor
 (`cottage/catalogue.ts`) has one variant list per furniture slot of the
 room, the fireplace excepted, and the decorating panel offers the slots
 with more than one rendered variant (`cottage/roomAssets.ts`: the rug,
-the bed and the window today) and only those variants. The wardrobe's
+the bed, the window, and the frame once a cottage has been found, with
+its photo as the second choice) and only those variants. The wardrobe's
 five slots (hat, outfit, neck, hand, face) and their ids are in the same
 catalogue and in the stored outfit, but there is no wardrobe panel until
 the art pipeline renders the wearables as layers: the rendered elf's face
@@ -688,9 +692,12 @@ route: a route would unfocus the tab and pause the scene, and the point
 of the panel is the live preview in the room behind it. It rises in place
 of the action bar in the Atlas's chrome, with a tab strip of slots and a
 strip of thumbnails (`ElfThumb.tsx`: a 72 pt Skia canvas that shows the
-piece's rendered sprite; only the active slot's strip is mounted). A tap
-places at once through the provider, which saves it, and the placed item
-wears a check. In the
+piece's rendered sprite, the frame's photo thumbnail drawn the way the
+room draws it; only the active slot's strip is mounted). A tap places at
+once through the provider, which saves it, and the placed item wears a
+check; a piece the finds have not unlocked yet (`DECOR_UNLOCKS`) is
+dimmed under a lock with how many more cottages it takes, and a tap on
+it places nothing: the elf says so. In the
 decorating mode the scene is in edit mode: the slots become tap targets
 that pick the panel's tab, the hint says so, and the elf admires each
 piece placed (`admireSlot`: it looks at it and sparkles).

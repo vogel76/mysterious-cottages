@@ -32,12 +32,19 @@
    - A daily life: each calendar day deals three small quests from a pool
      (feed, play, bathe, pet, swap a piece of furniture, tuck the elf in,
      look in during the evening), paid in acorns, with a grain of star dust
-     for the full set; a daily reward to pick from (acorns, now and then
-     dust); and a streak of consecutive days visited, which milestones
-     reward with dust and which a missed day resets (the loss is the
-     counter, never the elf). Acorns and dust are the two currencies the
-     cosmetics will be bought with; nothing here spends them yet, and
-     nothing about care, forms or finds ever depends on them.
+     for the full set; on Friday, Saturday and Sunday one of them is always
+     "discover a cottage", paid in acorns and dust; a daily reward to pick
+     from (acorns, now and then dust); and a streak of consecutive days
+     visited, which milestones reward with dust and which a missed day
+     resets (the loss is the counter, never the elf). Acorns and dust are
+     the two currencies the cosmetics will be bought with; a few pieces of
+     furniture take a number of finds instead (DECOR_UNLOCKS); nothing else
+     about care, forms or finds ever depends on them.
+   - The cottages found reach the rules as finds: each is credited once to
+     the find quest of its own day (a weekend find seen later still pays),
+     and a find from an earlier day is handed back once, on the next
+     visit, for the elf to celebrate; the find's own day belongs to the
+     expedition.
 
    The state also carries what the player chose for the elf and its room:
    the outfit (one id per wearable slot) and the decor (one id per
@@ -78,9 +85,6 @@ export const ELF_CARE_ACTIONS: readonly ElfCareAction[] = ['feed', 'play', 'bath
 export type ElfEggAction = 'warm' | 'rock'
 export const ELF_EGG_ACTIONS: readonly ElfEggAction[] = ['warm', 'rock']
 
-/* What the quests count: the care actions, a pet, a swapped piece of
-   furniture, the elf tucked in, the egg tended, a visit, a visit in the
-   evening. */
 /* What the quests count: the care, a pet, a swap, the tuck-in, the egg
    tended, a visit, an evening visit, and a cottage found in the field. */
 export type ElfEvent = ElfCareAction | 'pet' | 'decor' | 'sleep' | 'egg' | 'open' | 'evening' | 'find'
@@ -101,6 +105,9 @@ export type ElfQuest = {
 
 /* A cottage found in the field, as the app's progress records it. */
 export type ElfFind = { slug: string; at: number }
+
+/* A quest completed, with what it paid: the news the app tells. */
+export type ElfQuestPay = { id: ElfQuestId; acorns: number; dust: number }
 
 export type ElfReward = { kind: 'acorns' | 'dust'; amount: number }
 
@@ -612,7 +619,7 @@ export type VisitOutcome = {
   streakLost: number | null
   /* The dust a streak milestone paid, 0 when none. */
   milestoneDust: number
-  completed: ElfQuestId[]
+  completed: ElfQuestPay[]
   setBonus: boolean
   /* Cottages found on an earlier day and not celebrated yet: the elf's
      cheer on the first visit after a find (never on the find's own day,
@@ -637,7 +644,9 @@ function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boo
     lastVisitDay: day,
     streak,
     bestStreak: Math.max(state.bestStreak, streak),
-    daily: freshDaily(day, state.name, state.hatched),
+    /* A deal already made for this day (a fresh elf's, a find credited to
+       it before the first visit) is kept. */
+    daily: state.daily.day === day ? state.daily : freshDaily(day, state.name, state.hatched),
     wallet: milestoneDust ? { ...state.wallet, dust: state.wallet.dust + milestoneDust } : state.wallet,
   }
   return { state: next, newDay: true, streakLost, milestoneDust }
@@ -646,8 +655,8 @@ function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boo
 /* What happened goes to the day's quests: the ones that count the event
    advance, a quest reaching its target pays its acorns, and the full set
    pays its grain of dust once. */
-function recordEvent(state: ElfState, event: ElfEvent): { state: ElfState; completed: ElfQuestId[]; setBonus: boolean } {
-  const completed: ElfQuestId[] = []
+function recordEvent(state: ElfState, event: ElfEvent): { state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } {
+  const completed: ElfQuestPay[] = []
   let acorns = 0
   let dust = 0
   let changed = false
@@ -657,7 +666,7 @@ function recordEvent(state: ElfState, event: ElfEvent): { state: ElfState; compl
     const progress = Math.min(quest.target, quest.progress + 1)
     const done = progress >= quest.target
     if (done) {
-      completed.push(quest.id)
+      completed.push({ id: quest.id, acorns: quest.acorns, dust: quest.dust })
       acorns += quest.acorns
       dust += quest.dust
     }
@@ -671,22 +680,31 @@ function recordEvent(state: ElfState, event: ElfEvent): { state: ElfState; compl
 
 /* The cottages found go to the day's quests: a find on the day the state
    still lives in counts for that day's find quest (a Saturday find seen on
-   Sunday pays Saturday's quest, since the day only turns after this), an
-   older one is simply noted, a newer one waits for its day. */
-function creditFinds(state: ElfState, finds: readonly ElfFind[]): { state: ElfState; completed: ElfQuestId[]; setBonus: boolean } {
+   Sunday pays Saturday's quest, since the day only turns after this); a
+   find on a weekend day the elf was never opened on, between that day and
+   today, is paid the find quest's own reward outright, since the day it
+   belongs to was never dealt; an older find is simply noted; one dated
+   today, before the day has turned, or ahead of the clock waits. */
+function creditFinds(state: ElfState, finds: readonly ElfFind[], today: string): { state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } {
   let current = state
-  const completed: ElfQuestId[] = []
+  const completed: ElfQuestPay[] = []
   let setBonus = false
   for (const find of finds) {
     if (current.findsCredited.includes(find.slug)) continue
     const day = dayKey(find.at)
-    if (day > current.daily.day) continue
+    if (day > current.daily.day && day >= today) continue
     current = { ...current, findsCredited: [...current.findsCredited, find.slug] }
-    if (day !== current.daily.day) continue
-    const recorded = recordEvent(current, 'find')
-    current = recorded.state
-    completed.push(...recorded.completed)
-    setBonus = setBonus || recorded.setBonus
+    if (day === current.daily.day) {
+      const recorded = recordEvent(current, 'find')
+      current = recorded.state
+      completed.push(...recorded.completed)
+      setBonus = setBonus || recorded.setBonus
+    } else if (day > current.daily.day && isWeekend(day)) {
+      const spec = QUEST_POOL.find((entry) => entry.id === 'findOne')!
+      const pay = { id: spec.id, acorns: spec.acorns, dust: spec.dust ?? 0 }
+      current = { ...current, wallet: { acorns: current.wallet.acorns + pay.acorns, dust: current.wallet.dust + pay.dust } }
+      completed.push(pay)
+    }
   }
   return { state: current, completed, setBonus }
 }
@@ -719,9 +737,10 @@ export function visit(state: ElfState, now: number, finds: readonly ElfFind[] = 
    lost, a milestone), and the cottages found are credited to the day
    they belong to, before and after the turn. */
 export function settleDay(state: ElfState, now: number, finds: readonly ElfFind[] = []): VisitOutcome {
-  const before = creditFinds(applyElapsed(state, now), finds)
+  const today = dayKey(now)
+  const before = creditFinds(applyElapsed(state, now), finds, today)
   const day = ensureDay(before.state, now)
-  const after = creditFinds(day.state, finds)
+  const after = creditFinds(day.state, finds, today)
   return {
     state: after.state,
     newDay: day.newDay,
@@ -760,7 +779,7 @@ export function nextStreakMilestone(streak: number): { days: number; dust: numbe
 export type CareRefusal = 'cap' | 'full'
 
 export type CareOutcome =
-  | { kind: 'done'; state: ElfState; completed: ElfQuestId[]; setBonus: boolean }
+  | { kind: 'done'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean }
   | { kind: 'refused'; reason: CareRefusal }
   | { kind: 'asleep' }
   | { kind: 'egg' }
@@ -786,7 +805,7 @@ export function careLeft(state: ElfState, id: ElfCareAction, now: number): numbe
   return Math.max(0, CARE[id].cap - current.daily[id])
 }
 
-export type PetOutcome = { kind: 'petted'; state: ElfState; completed: ElfQuestId[]; setBonus: boolean } | { kind: 'asleep' } | { kind: 'egg' }
+export type PetOutcome = { kind: 'petted'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } | { kind: 'asleep' } | { kind: 'egg' }
 
 /* A tap on the elf: a little joy, always welcome while it is awake. The
    cooldown between taps is the caller's (PET_COOLDOWN_MS). */
@@ -801,7 +820,7 @@ export function pet(state: ElfState, now: number): PetOutcome {
 
 /* ---------- The egg ---------- */
 
-export type EggOutcome = { state: ElfState; completed: ElfQuestId[]; setBonus: boolean }
+export type EggOutcome = { state: ElfState; completed: ElfQuestPay[]; setBonus: boolean }
 
 /* Warming or rocking the egg: care it remembers, and play the quests
    count; it hatches on its own time (hatchDue). */
@@ -842,7 +861,7 @@ export function hatch(state: ElfState, now: number): ElfState {
 
 /* ---------- Sleep ---------- */
 
-export type SleepOutcome = { kind: 'slept' | 'woke'; state: ElfState; completed: ElfQuestId[]; setBonus: boolean } | { kind: 'tooEarly' } | { kind: 'egg' }
+export type SleepOutcome = { kind: 'slept' | 'woke'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } | { kind: 'tooEarly' } | { kind: 'egg' }
 
 /* The sleep button: tucks the elf in from 19:00 (asleep until the
    morning), or wakes it (up for a few minutes, then dozing off again while
@@ -869,7 +888,7 @@ export function equip(state: ElfState, slot: WearableSlot, id: string, now: numb
 }
 
 /* A piece of furniture swapped in a slot of the room; the quests count it. */
-export function placeDecor(state: ElfState, slotId: string, id: string, now: number): { state: ElfState; completed: ElfQuestId[]; setBonus: boolean } {
+export function placeDecor(state: ElfState, slotId: string, id: string, now: number): { state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } {
   if (state.decor?.[slotId] === id) return { state, completed: [], setBonus: false }
   const current = ensureDay(state, now).state
   return recordEvent({ ...current, decor: { ...current.decor, [slotId]: id }, lastInteraction: now }, 'decor')

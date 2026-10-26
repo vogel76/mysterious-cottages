@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '../../../ui'
 import { PET_COOLDOWN_MS, type ElfMood, type ElfStage, type ElfStarter } from '@chatynkowo/core'
 import { SPRITE_CHARACTERS, useSpriteImages, type SpriteSource } from '../sprites'
-import type { Decor, SlotId } from './catalogue'
+import { PHOTO_ID, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
 import { EGG_HIT_BOX, EggNest } from './EggNest'
 import { useFireMotion } from './fire'
@@ -15,7 +15,7 @@ import { PlateLighting } from './Lighting'
 import { useCottageMotion, type ReactionKind } from './motion'
 import { Particles } from './Particles'
 import { ROOM, fitRoom, inBounds, slotAtIn, slotById, toRoom, type Slot } from './room'
-import { isRenderedEditableSlot, spriteSlotsFor } from './roomAssets'
+import { spriteSlotsFor } from './roomAssets'
 import { RoomSprites } from './RoomSprites'
 import { SlotMarkers } from './SlotMarkers'
 import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf } from './SpriteElf'
@@ -117,6 +117,8 @@ export type CottageSceneProps = {
   bottomInset?: number
   /* Edit mode: taps pick slots, the frames show, the elf is left alone. */
   editing?: boolean
+  /* The slots edit mode frames and picks: what the panel offers right now. */
+  editable: readonly SlotId[]
   selectedSlot?: SlotId | null
   onSelectSlot?: (slot: SlotId) => void
   onPetElf?: () => void
@@ -155,9 +157,6 @@ function elfSprites(): SpriteSource {
   if (!source) throw new Error('the elf character is not registered in SPRITE_CHARACTERS: render and pack it first (art/README.md)')
   return source
 }
-/* The slots edit mode frames, picks and the panel offers: those with a
-   choice of renders. */
-const acceptsEdit = isRenderedEditableSlot
 
 /* The one-shot clip a reaction plays over the mood's loop; a kind missing
    here (a poke, a fidget, the egg's rock) leaves the baked animation
@@ -211,7 +210,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap },
+    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, editable },
     ref,
   ) {
     const { t } = useTranslation()
@@ -259,6 +258,8 @@ export const CottageScene = memo(
        rebuilt when the tab's handler changes. */
     const onPictureTapRef = useRef(onPictureTap)
     onPictureTapRef.current = onPictureTap
+    /* Edit mode frames and picks only what the panel offers. */
+    const acceptsEdit = useCallback((id: SlotId) => editable.includes(id), [editable])
 
     /* The elf stands on the rendered rug; the egg keeps the room's anchor
        in its nest. */
@@ -368,12 +369,20 @@ export const CottageScene = memo(
        convert, so it always lands on the elf (or the egg). */
     const onAccessibilityAction = useCallback(
       (event: AccessibilityActionEvent) => {
-        if (event.nativeEvent.actionName !== 'activate' || editing) return
+        if (editing) return
+        if (event.nativeEvent.actionName === 'openStory') {
+          onPictureTapRef.current?.()
+          return
+        }
+        if (event.nativeEvent.actionName !== 'activate') return
         if (stage === 'egg') onPetEgg?.()
         else onPetElf?.()
       },
       [stage, editing, onPetElf, onPetEgg],
     )
+    /* The frame's photo opens its cottage: a second action for a screen
+       reader, which cannot tap a spot of the canvas. */
+    const framePhoto = Boolean(photo) && decor.picture === PHOTO_ID
 
     const gesture = useMemo(() => {
       const pan = Gesture.Pan()
@@ -424,7 +433,7 @@ export const CottageScene = memo(
         })
 
       return Gesture.Exclusive(pan, tap)
-    }, [layout, stage, editing, sleeping, headLine, hitsFigure, sceneSlots, lookAt, lookRelease, reactScene, glanceAt, shootStar, fire, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg])
+    }, [layout, stage, editing, sleeping, headLine, hitsFigure, sceneSlots, lookAt, lookRelease, reactScene, glanceAt, shootStar, fire, acceptsEdit, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg])
 
     const roomTransform = useDerivedValue(() => [{ translateX: layout.offsetX }, { translateY: drawnOffsetY.value }, { scale: layout.scale }])
 
@@ -436,7 +445,7 @@ export const CottageScene = memo(
           accessibilityRole="button"
           accessibilityLabel={t('mobile:elf.cottageAria')}
           accessibilityHint={t(editing ? 'mobile:elf.decorateHint' : stage === 'egg' ? 'mobile:elf.tapHintEgg' : 'mobile:elf.tapHint')}
-          accessibilityActions={[{ name: 'activate' }]}
+          accessibilityActions={framePhoto ? [{ name: 'activate' }, { name: 'openStory', label: t('mobile:elf.frameAction') }] : [{ name: 'activate' }]}
           onAccessibilityAction={onAccessibilityAction}
         >
           {/* The room covers the whole canvas, so it can be opaque: Android

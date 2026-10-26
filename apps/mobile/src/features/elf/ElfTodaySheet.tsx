@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { nextStreakMilestone, type ElfQuest, type ElfReward } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { useContent, useElf, useProgress } from '../../providers'
-import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
 import { QUEST_ICONS, elfKey } from './labels'
 
 /* The elf's day, as a sheet over the tab, opened from the HUD's ledger:
@@ -101,7 +101,7 @@ export function ElfTodaySheet() {
             {jars.length ? t('mobile:elf.jarsLine', { count: jars.length, total }) : t('mobile:elf.jarsEmpty')}
           </Text>
           {jars.map((jar) => (
-            <PressableScale key={jar.slug} onPress={() => openStory(jar.slug)} accessibilityLabel={t('mobile:elf.jarAria', { name: jar.title, date: jar.date })} pressedFill="transparent" ripple={false} style={styles.row}>
+            <PressableScale key={jar.slug} onPress={() => openStory(jar.slug)} accessibilityLabel={`${jar.title}, ${jar.date}`} accessibilityHint={t('mobile:elf.jarHint')} style={[styles.row, styles.jar]}>
               <JarIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
               <View style={styles.column}>
                 <Text numberOfLines={2}>{jar.title}</Text>
@@ -109,6 +109,7 @@ export function ElfTodaySheet() {
                   {jar.date}
                 </Text>
               </View>
+              <NextIcon size={iconSize.sm} color={colors.inkFaint} />
             </PressableScale>
           ))}
         </View>
@@ -171,14 +172,14 @@ function QuestRow({ quest }: { quest: ElfQuest }) {
       <View style={styles.pay}>
         <AcornsIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
         <Text variant="small" weight="semibold">
-          {t('mobile:elf.questAcorns', { count: quest.acorns })}
+          {t('mobile:elf.questPay', { count: quest.acorns })}
         </Text>
       </View>
       {quest.dust > 0 ? (
         <View style={styles.pay}>
           <DustIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
           <Text variant="small" weight="semibold">
-            {t('mobile:elf.questAcorns', { count: quest.dust })}
+            {t('mobile:elf.questPay', { count: quest.dust })}
           </Text>
         </View>
       ) : null}
@@ -254,6 +255,11 @@ const styles = StyleSheet.create({
   },
   rowDone: {
     opacity: 0.7,
+  },
+  /* A jar is a way to its story: a row with the press feel of a list. */
+  jar: {
+    paddingVertical: space.xs,
+    borderRadius: radius.control,
   },
   grow: {
     flex: 1,

@@ -30,7 +30,7 @@ import {
   type ElfForm,
   type ElfMood,
   type ElfOutfit,
-  type ElfQuestId,
+  type ElfQuestPay,
   type ElfStage,
   type ElfStarter,
   type ElfState,
@@ -59,9 +59,9 @@ import { useProgress } from './ProgressProvider'
    consumed in silence. A form reached (by the hatch, by the cottages found, by
    time) waits in `pendingEvolution` until the Elf tab has shown its card.
    What the day's rules said about an action or a visit (a quest completed
-   and its acorns, the full set, a new day, a streak milestone or a streak
-   lost) is published as `news`, one record the tab turns into the elf's
-   lines.
+   and its pay, the full set, a new day, a streak milestone or a streak
+   lost, a cottage found to cheer about) is published as `news`, one
+   record the tab turns into the elf's lines.
 
    The cottages found come from the progress provider, which this one
    mounts under: they decide the form, the first find counts as the first
@@ -78,8 +78,8 @@ import { useProgress } from './ProgressProvider'
 /* What the day's rules reported on the last action or visit. */
 export type ElfNews = {
   seq: number
-  /* The quests completed by the action, each with the acorns it paid. */
-  completed: Array<{ id: ElfQuestId; acorns: number }>
+  /* The quests completed by the action, each with what it paid. */
+  completed: ElfQuestPay[]
   /* The full set of the day's quests, paid in dust. */
   setBonus: boolean
   /* A visit on a new day (fresh quests and a reward to pick): the streak
@@ -158,7 +158,7 @@ function resolveDecor(stored: Record<string, string> | undefined, found: boolean
 
 /* What the quests said about an action, as the rules return it, and what
    the day said as it was settled (its quests credited from the finds). */
-type QuestReport = { state: ElfState; completed: ElfQuestId[]; setBonus: boolean; celebrate?: string[] }
+type QuestReport = { state: ElfState; completed: ElfQuestPay[]; setBonus: boolean; celebrate?: string[] }
 type DayReport = VisitOutcome
 
 export function ElfProvider({ children }: { children: ReactNode }) {
@@ -267,7 +267,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     newsSeq.current += 1
     setNews({
       seq: newsSeq.current,
-      completed: completed.map((id) => ({ id, acorns: quests.state.daily.quests.find((quest) => quest.id === id)?.acorns ?? 0 })),
+      completed,
       setBonus,
       newDay,
       streakLost,
@@ -324,7 +324,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const fresh = newElf(name, starter, now)
       const outcome = visitElf(fresh, now, findsRef.current)
       commit(outcome.state, true)
-      report(fresh, outcome, outcome)
+      /* The visit is the day's report too; the quests go in once. */
+      report(fresh, { state: outcome.state, completed: [], setBonus: false, celebrate: outcome.celebrate }, outcome)
     },
     [commit, report],
   )
