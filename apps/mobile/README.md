@@ -253,6 +253,8 @@ src/
                          useReturnGreeting, the adoption form, the evolution card); sprites/ plays the atlases the art
                          pipeline packs (manifest and registry, the decoded sheets, a UI-thread frame clock,
                          SpritePlayer and LayeredSprite on Skia's Atlas)
+tools/                   the measuring tools, system Python and adb (see "Measuring the elf"): ui.py drives the app by the
+                         words on screen, memtable.py samples the app's memory, sftable.py reads the frames the cottage presents
 art/                     the Blender art pipeline (art/README.md): common.py with the shared scene, camera, light
                          and materials, elf.py (the character, its rig and clips) and room.py (the room plate and
                          the furniture), pack.py (frames to WebP atlases and a manifest), the contact sheets;
@@ -714,3 +716,53 @@ The rules stay in the app until the flow is designed (how the egg is found,
 what a cottage visit gives it, whether it reaches the account); then they
 move to `@chatynkowo/core` next to the progress rules, as every other
 domain rule did.
+
+### Measuring the elf
+
+The elf is judged on a release build, never on the development client:
+the client alone sits near 800 MB on the Atlas (its bundle is 22 MB of
+unminified JavaScript and it carries the dev tools), so every ratio read
+from it is wrong. The build is the repo's own release variant, signed
+with the debug key like the client (`./gradlew :app:assembleRelease
+-PreactNativeArchitectures=arm64-v8a` in `android/` after a prebuild),
+which installs over the client and never over the store's app: the
+store build is the EAS production profile with the upload keystore
+(`pnpm build:android:local`, `credentialsSource: local` in `eas.json`),
+same code, same bundle, a different signature.
+
+The tools under `tools/` run with the system Python and adb against the
+one device attached (or `--serial`): `ui.py` presses controls by the words
+on screen and takes screenshots, `memtable.py` prints one row of memory
+figures per sample (PSS, the native heap where Skia's decoded sheets
+live, the graphics total with its GL and EGL parts, which the GPU keeps
+until Skia's budget is hit), `sftable.py` reads the frames the cottage's
+SurfaceView presented over a window (`dumpsys gfxinfo` does not see that
+surface). The series, after a fresh install and a wiped state, on the
+Galaxy Note 10+:
+
+| Point | What | How |
+|---|---|---|
+| A | the Atlas alone, one minute after launch | `memtable.py --label A` |
+| B1 | the Elf tab just entered, egg or elf | `memtable.py --label B1`, `sftable.py --label B1` |
+| B | after every clip has played and ten minutes on the tab | `memtable.py --label B --every 60 --count 10` |
+| C | back on the Atlas for three minutes | `memtable.py --label C --every 60 --count 3` |
+
+Baseline, release build of 2026-10-26 (the sprite scene, the vector
+cottage gone, the atlas of nine sheets at 180 pixels to the metre):
+
+| Point | PSS | native heap | graphics (GL + EGL) | Dalvik | unknown | RSS | frames |
+|---|---|---|---|---|---|---|---|
+| A, the Atlas alone after a minute | 263 MB | 91 MB | 54 MB (19 + 19) | 17 MB | 23 MB | 406 MB | |
+| B1, the Elf tab with the egg | 339 MB | 113 MB | 86 MB (19 + 19) | 19 MB | 27 MB | 499 MB | 62.3 fps, 0 dropped of 491 in 8 s |
+| B1, the elf just hatched | 493 MB | 144 MB | 212 MB (19 + 19) | 15 MB | 30 MB | 653 MB | 62.2 fps, 0 dropped of 483 |
+| B, after every clip and ten minutes on the tab | 572 MB | 179 MB | 212 MB (19 + 19) | 18 MB | 69 MB | 730 MB | 62.4 fps, 0 dropped of 481; the sleep loop 62.3 fps |
+| C, back on the Atlas for three minutes | 562 MB | 179 MB | 201 MB (31 + 31) | 18 MB | 69 MB | 720 MB | |
+
+Read: the elf costs about 230 MB on hatching (the nine decoded sheets
+in the native heap and their copies in graphics memory, which stays at
+212 MB whatever happens afterwards) and creeps up by another 80 MB over
+ten minutes (the native heap and Hermes's 'unknown'), then levels off;
+leaving the tab gives none of the graphics memory back, as expected of
+Skia's texture cache. The frame rate is the display's at every point. The
+development client measured the same series at 787 MB on the Atlas and
+1.3 GB on the tab, which is why it is not quoted anywhere.
