@@ -125,8 +125,6 @@ const PET_JOY = 4
 const PET_XP = 1
 export const PET_COOLDOWN_MS = 1400
 
-const CATCH_JOY = 12
-const CATCH_XP = 6
 
 /* Needs below this are called out under the scene. */
 export const LOW_NEED = 20
@@ -357,11 +355,4 @@ export function pet(state: ElfState, now: number): PetOutcome {
   const needs = { ...state.needs, joy: clamp(state.needs.joy + PET_JOY) }
   const granted = grantXp({ ...state, needs, last: now }, PET_XP)
   return { kind: 'petted', ...granted }
-}
-
-/* The elf caught in the camera view: joy and experience, unless asleep. */
-export function rewardCatch(state: ElfState, now: number): { state: ElfState; growth: Growth } {
-  if (!state.hatched || state.sleeping) return { state, growth: { evolvedTo: null, leveled: false } }
-  const needs = { ...state.needs, joy: clamp(state.needs.joy + CATCH_JOY) }
-  return grantXp({ ...state, needs, last: now }, CATCH_XP)
 }

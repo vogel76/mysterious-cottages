@@ -73,7 +73,7 @@ export const MOBILE_ICON_ROLES = [
   'CoffeeIcon',
   'WatchAdIcon',
   /* The elf companion (apps/mobile/src/features/elf): the egg, the needs
-     and the care actions, the magic orb of the catch. */
+     and the care actions. */
   'EggIcon',
   'WarmIcon',
   'LullabyIcon',
@@ -85,7 +85,6 @@ export const MOBILE_ICON_ROLES = [
   'WakeIcon',
   'JoyIcon',
   'EnergyIcon',
-  'OrbIcon',
   /* The elf's wardrobe and the cottage's decor edit mode. */
   'WardrobeIcon',
   'DecorIcon',

@@ -13,8 +13,7 @@ headless and rebuilds its scene from scratch, so the repository holds
 code, not .blend files.
 
 All of this art is the project's own, made in Blender from primitives and
-scripts; no third-party models or textures are used (the CC BY model of
-the first prototype, `assets/elf/elf.glb`, is not part of this pipeline).
+scripts; no third-party models or textures are used.
 
 ## Installing
 
