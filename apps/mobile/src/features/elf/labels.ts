@@ -1,5 +1,5 @@
 import type { ElfEvent, ElfMood, ElfNeedId, ElfStage, ElfStarter } from '@chatynkowo/core'
-import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, JoyIcon, LoreIcon, SleepIcon, ToyIcon, WarmIcon, type Icon } from '../../ui'
+import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, FoundIcon, JoyIcon, LoreIcon, SleepIcon, ToyIcon, WarmIcon, type Icon } from '../../ui'
 
 /* How the elf's ids (a form, an element, a need, a mood, a quest, a
    wearable or decor slot, an item of either catalogue) map to the copy in the "elf"
@@ -40,7 +40,8 @@ export const NEED_ICONS: Record<ElfNeedId, Icon> = {
 
 /* The day's quests by what they count: the care's own glyphs, the heart
    for a pet, the armchair for a swap, the moon for the tuck-in, the egg,
-   the cottage for a visit and the hearth for an evening one. */
+   the cottage for a visit, the hearth for an evening one and the
+   expedition's own tick for a cottage found. */
 export const QUEST_ICONS: Record<ElfEvent, Icon> = {
   feed: FeedIcon,
   play: ToyIcon,
@@ -51,4 +52,5 @@ export const QUEST_ICONS: Record<ElfEvent, Icon> = {
   egg: EggIcon,
   open: CottageIcon,
   evening: WarmIcon,
+  find: FoundIcon,
 }

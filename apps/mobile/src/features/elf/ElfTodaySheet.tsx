@@ -112,8 +112,9 @@ function QuestRow({ quest }: { quest: ElfQuest }) {
   const { t } = useTranslation()
   const Glyph = QUEST_ICONS[quest.event]
   const state = quest.done ? t('mobile:elf.questDoneAria') : t('mobile:elf.questProgressAria', { progress: quest.progress, target: quest.target })
+  const pay = quest.dust > 0 ? `${t('mobile:elf.rewardAcornsAria', { count: quest.acorns })}, ${t('mobile:elf.rewardDustAria', { count: quest.dust })}` : t('mobile:elf.rewardAcornsAria', { count: quest.acorns })
   return (
-    <View style={[styles.row, quest.done && styles.rowDone]} accessible accessibilityLabel={`${t(elfKey('quest', quest.id))}. ${state}. ${t('mobile:elf.rewardAcornsAria', { count: quest.acorns })}`}>
+    <View style={[styles.row, quest.done && styles.rowDone]} accessible accessibilityLabel={`${t(elfKey('quest', quest.id))}. ${state}. ${pay}`}>
       <Glyph size={iconSize.md} weight="fill" color={quest.done ? colors.success : colors.accentStrong} />
       <Text style={styles.grow} numberOfLines={2}>
         {t(elfKey('quest', quest.id))}
@@ -131,6 +132,14 @@ function QuestRow({ quest }: { quest: ElfQuest }) {
           {t('mobile:elf.questAcorns', { count: quest.acorns })}
         </Text>
       </View>
+      {quest.dust > 0 ? (
+        <View style={styles.pay}>
+          <DustIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
+          <Text variant="small" weight="semibold">
+            {t('mobile:elf.questAcorns', { count: quest.dust })}
+          </Text>
+        </View>
+      ) : null}
     </View>
   )
 }
