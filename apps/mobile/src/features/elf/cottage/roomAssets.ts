@@ -1,4 +1,4 @@
-import { DECOR_IDS, SLOT_IDS, isSlotId, type Decor, type SlotId } from './items'
+import { DECOR_IDS, SLOT_IDS, isSlotId, type Decor, type SlotId } from './catalogue'
 import { SLOTS, type Bounds, type Slot } from './room'
 
 /* The rendered room, as art/blender/room.py and its packer leave it in
@@ -9,21 +9,21 @@ import { SLOTS, type Bounds, type Slot } from './room'
    bundles what a static require names, so every file of the folder is
    listed here by hand next to the manifest.
 
-   The renders do not cover every variant the vector catalogue (./items)
-   offers: a slot with three code-drawn pieces may have one or two
-   renders. roomSpriteFor maps the app's decor ids onto what exists (two
-   ids may share a render, the way the woven and the moss rug both come
-   out as the green one), so a stored decor never leaves a hole in the
-   room, and RENDERED_VARIANTS lists, per slot, the ids that look
-   different on screen, which is what the decorating panel offers in
-   sprite mode. The fireplace is baked into the plate and has no sprite.
+   The renders do not cover every variant the catalogue (./catalogue)
+   names: a slot with three ids may have one or two renders. roomSpriteFor
+   maps the app's decor ids onto what exists (two ids may share a render,
+   the way the woven and the moss rug both come out as the green one), so
+   a stored decor never leaves a hole in the room, and RENDERED_VARIANTS
+   lists, per slot, the ids that look different on screen, which is what
+   the decorating panel offers. The fireplace is baked into the plate and
+   has no sprite.
 
-   The hit boxes of ./room were laid out around the code-drawn furniture,
-   and the Blender room hangs its pieces elsewhere (the lantern in the
-   top right corner, the shelf on the left wall), so in sprite mode the
-   scene takes its slot table from spriteSlotsFor: the same slots with
-   the hit box of the piece actually drawn for the decor, with a little
-   slack, and the vector box only where nothing was rendered. */
+   The hit boxes of ./room were laid out before the Blender room, which
+   hangs its pieces elsewhere (the lantern in the top right corner, the
+   shelf on the left wall), so the scene takes its slot table from
+   spriteSlotsFor: the same slots with the hit box of the piece actually
+   drawn for the decor, with a little slack, and the room's own box only
+   where nothing was rendered. */
 
 /* One sprite of the manifest, as the packer writes it. */
 export type RoomSpriteEntry = {
@@ -102,9 +102,9 @@ const SPRITES_BY_SLOT: ReadonlyMap<SlotId, readonly RoomSprite[]> = (() => {
 
 /* The rendered sprite that stands for a decor id in a slot: the mapped
    variant where the slot has several renders, the slot's one sprite
-   otherwise, the first render for an id nobody mapped (as decorItem falls
-   back to the default), and null for the fireplace or a slot nothing was
-   rendered for. */
+   otherwise, the first render for an id nobody mapped (as the provider
+   falls back to the default), and null for the fireplace or a slot
+   nothing was rendered for. */
 export function roomSpriteFor(slot: SlotId, variantId: string): RoomSprite | null {
   const sprites = SPRITES_BY_SLOT.get(slot)
   if (!sprites || sprites.length === 0) return null
@@ -140,7 +140,7 @@ export const RENDERED_VARIANTS: Record<SlotId, readonly string[]> = (() => {
   return variants
 })()
 
-/* Whether the slot offers a choice of renders in sprite mode. */
+/* Whether the slot offers a choice of renders. */
 export function isRenderedEditableSlot(slot: SlotId): boolean {
   return RENDERED_VARIANTS[slot].length > 1
 }
@@ -169,7 +169,7 @@ export function spriteSlotBounds(slot: Slot, variantId: string): Bounds | null {
 /* The slot table of the rendered room for a decor: ./room's slots with
    their hit boxes replaced by the drawn pieces' boxes, so the taps, the
    glances and the frames of edit mode land on the picture. A slot without
-   a render (the fireplace, baked into the plate) keeps the vector box. */
+   a render (the fireplace, baked into the plate) keeps ./room's box. */
 export function spriteSlotsFor(decor: Decor): readonly Slot[] {
   return SLOTS.map((slot) => {
     const hit = spriteSlotBounds(slot, decor[slot.id])

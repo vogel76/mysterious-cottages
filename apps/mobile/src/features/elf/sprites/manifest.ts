@@ -12,8 +12,8 @@
 
    Metro only bundles files it sees in a static require, so the characters
    are registered here by hand: the manifest and each sheet file. The
-   cottage scene draws the rendered room and the sprite elf whenever the
-   elf is registered here, and the code-drawn vectors when it is not. */
+   cottage scene draws the elf registered here and has no other way to
+   draw it, so a missing registration is an error at load. */
 
 export type SpriteSheet = {
   file: string

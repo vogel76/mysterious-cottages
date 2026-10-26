@@ -18,15 +18,16 @@
    around the anchor, that a finger has to land in to pick the slot in edit
    mode or to poke the item out of it; it is the union of the slot's
    variants with a little slack, so a swapped item never falls out of it.
-   The variants themselves live in ./items; this module only names them by
-   their slot (a type-only import, so there is no cycle at runtime).
+   The variants themselves are named in ./catalogue and drawn from
+   ./roomAssets; this module only knows the slots (a type-only import, so
+   there is no cycle at runtime).
 
    The floor and the light overlays run on below the room's bottom edge by
    the overrun: the scene lifts the room while a panel is open at the
    bottom of the tab, so the elf and the furniture stay in view above it,
    and what comes up from under the edge must still be floor. */
 
-import type { SlotId } from './items'
+import type { SlotId } from './catalogue'
 
 /* The elf stands on the upper half of the rug, so the action bar at the
    bottom of the screen clears its feet. */
@@ -107,8 +108,8 @@ export function slotById(id: SlotId): Slot {
    first, then the middle, then the wall, and within a layer the item
    drawn last (which lies on top of its neighbours). Slots the filter
    refuses are skipped, so the caller can leave out the fireplace in edit
-   mode or the rug under the elf. The table is SLOTS for the vector room,
-   or the rendered room's table (roomAssets.spriteSlotsFor). */
+   mode or the rug under the elf. The table is the rendered room's
+   (roomAssets.spriteSlotsFor), or SLOTS itself. */
 export function slotAtIn(slots: readonly Slot[], point: { x: number; y: number }, accept: (slot: Slot) => boolean = () => true): Slot | null {
   for (const z of ['front', 'mid', 'back'] as const) {
     const layer = slots.filter((slot) => slot.z === z)

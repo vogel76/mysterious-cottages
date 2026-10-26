@@ -2,8 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { STORAGE_KEYS } from '../config'
-import { DECOR_IDS, DEFAULT_DECOR, type Decor, type SlotId } from '../features/elf/cottage/items'
-import { DEFAULT_OUTFIT, WEARABLE_IDS, WEARABLE_SLOTS } from '../features/elf/cottage/wearables'
+import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
 import {
   applyElapsed,
   equip as equipElf,
@@ -18,6 +17,7 @@ import {
   tendEgg,
   toggleSleep as toggleElfSleep,
   touch,
+  WEARABLE_SLOT_IDS,
   type CareActionId,
   type CareOutcome,
   type EggActionId,
@@ -93,7 +93,7 @@ const DRIFT_SAVE_MS = 10000
    changed, or changed to an id the catalogue no longer has, shows its default. */
 function resolveOutfit(stored: Partial<Outfit> | undefined): Outfit {
   const outfit: Outfit = { ...DEFAULT_OUTFIT }
-  for (const slot of WEARABLE_SLOTS as readonly WearableSlot[]) {
+  for (const slot of WEARABLE_SLOT_IDS) {
     const id = stored?.[slot]
     if (id && WEARABLE_IDS[slot].includes(id)) outfit[slot] = id
   }

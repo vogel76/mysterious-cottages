@@ -3,13 +3,13 @@ import { ReduceMotion, cancelAnimation, useFrameCallback, useSharedValue, withDe
 import { EASING, SPRINGS } from '../../../ui'
 import type { Mood, Stage } from '../rules'
 import { EGG_HIT_BOX } from './EggNest'
-import { PUPPET_HEIGHT } from './puppet/geometry'
+import { ELF_HEIGHT_UNITS } from './SpriteElf'
 import { ROOM } from './room'
 
-/* The life of the cottage puppet as shared values: a set of control
+/* The life of the elf figure as shared values: a set of control
    numbers (breath, bob, squash, tilt, blink, look, lookY, mouth, glow,
    headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin, browLift)
-   that the puppet and the egg bind to their Skia transforms, and a small
+   that the sprite elf and the egg bind to their Skia transforms, and a small
    pool of particles (hearts, sparkles, bubbles, zzz, crumbs) that the
    reactions borrow. Everything moves on the UI thread through reanimated
    loops; the JS thread only starts and cancels them. The idle loops follow
@@ -241,7 +241,7 @@ type Spawn = {
 }
 
 function figureHeight(stage: Stage): number {
-  return stage === 'egg' ? EGG_HIT_BOX.height : PUPPET_HEIGHT[stage]
+  return stage === 'egg' ? EGG_HIT_BOX.height : ELF_HEIGHT_UNITS
 }
 
 function clamp(value: number, min: number, max: number): number {

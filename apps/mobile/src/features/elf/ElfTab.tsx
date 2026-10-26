@@ -7,14 +7,13 @@ import { useTranslation } from 'react-i18next'
 import { useElf } from '../../providers'
 import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
-import type { SlotId } from './cottage/items'
+import type { SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfAdoption } from './ElfAdoption'
 import { ElfHud, ElfMoodPill, type ElfHint, type ElfPanel } from './ElfHud'
-import { ElfPicker, decorSlotsFor, type PickerSlot } from './ElfPicker'
+import { DECOR_SLOTS, ElfPicker } from './ElfPicker'
 import { elfKey } from './labels'
-import { lowestNeed, type CareActionId, type EggActionId, type NeedId, type WearableSlot } from './rules'
-import { SPRITE_CHARACTERS } from './sprites'
+import { lowestNeed, type CareActionId, type EggActionId, type NeedId } from './rules'
 import { useEvolutionPresenter } from './useEvolutionPresenter'
 import { useReturnGreeting } from './useReturnGreeting'
 
@@ -22,7 +21,7 @@ import { useReturnGreeting } from './useReturnGreeting'
    the cottage. The elf (or its egg in the nest) lives in a full-screen
    painted room (src/features/elf/cottage) that fills the whole tab, under
    the status bar and the floating tab bar as the Atlas does, and a light
-   HUD floats over it: the name, the form, the wardrobe and decorating
+   HUD floats over it: the name, the form, the decorating
    buttons and the needs at the top with the mood pill under them, the
    round care buttons at the bottom. A tap on the elf pets it (and when the
    rules are still in their cooldown the elf is poked instead, so it always
@@ -37,25 +36,22 @@ import { useReturnGreeting } from './useReturnGreeting'
    the low mark makes it wave for attention once per episode, and a return
    after half an hour away is greeted.
 
-   The room is drawn in one of two ways, and the scene picks: the rendered
-   art (the Blender plate, the furniture sprites and the elf's atlases, see
-   apps/mobile/art/README.md) once the elf character is registered in
-   SPRITE_CHARACTERS, otherwise the code-drawn vectors it started with.
-   The tab follows that choice where it shows: in sprite mode the wardrobe
-   is hidden (the elf's face and hood are baked into the body frames and no
-   hat layer has been rendered yet, so there is nothing a wearable could
-   change), the decorating panel lists only the slots whose variants are
-   rendered, and the picker's thumbnails are the sprites themselves.
+   The room is the rendered art (the Blender plate, the furniture sprites
+   and the elf's atlases, see apps/mobile/art/README.md). There is no
+   wardrobe yet: the elf's face and hood are baked into the body frames and
+   no hat layer has been rendered, so there is nothing a wearable could
+   change; the outfit the rules store waits for the art pipeline's layers.
+   The decorating panel lists only the slots whose variants are rendered,
+   and its thumbnails are the sprites themselves.
 
-   The wardrobe and the decorating mode are panels inside the tab, not
-   routes: a route would unfocus the tab and pause the scene, and the point
-   of both is the live preview in the room. A panel rises in place of the
-   action bar and hides the mood pill, and the room is lifted behind it
-   (the panel's measured height goes to the scene as its bottom inset) so
-   the elf and the low furniture slots stay in view and in reach; the
-   wardrobe equips at once and the elf twirls, the decorating mode puts
-   the scene in edit mode (its slots become tap targets that pick the
-   panel's tab) and the elf admires each piece placed. A stroke over the
+   The decorating mode is a panel inside the tab, not a route: a route
+   would unfocus the tab and pause the scene, and the point of the panel
+   is the live preview in the room. It rises in place of the action bar
+   and hides the mood pill, and the room is lifted behind it (the panel's
+   measured height goes to the scene as its bottom inset) so the elf and
+   the low furniture slots stay in view and in reach; the mode puts the
+   scene in edit mode (its slots become tap targets that pick the panel's
+   tab) and the elf admires each piece placed. A stroke over the
    elf's body counts as a pet for the rules without a reaction of its own:
    the scene plays the stroke. The scene is paused while another tab is on top: the tabs
    keep this screen mounted, and its loops would otherwise run under the
@@ -69,12 +65,6 @@ const HINT_MS = 3500
 const TIRED_ENERGY = 30
 /* The acorn under the finger. */
 const ACORN = 44
-/* Whether the scene draws the rendered art: the elf's atlases are
-   registered. The vector cottage stays as the fallback until the sprites
-   cover everything. */
-const SPRITE_MODE = 'elf' in SPRITE_CHARACTERS
-/* The furniture the decorating panel offers in this mode. */
-const DECOR_SLOTS = decorSlotsFor(SPRITE_MODE)
 
 export function ElfTab() {
   const { t } = useTranslation()
@@ -83,7 +73,7 @@ export function ElfTab() {
      gets no automatic content inset. */
   const tabBarHeight = useTabBarHeight()
   const elf = useElf()
-  const { state, loaded, stage, mood, outfit, decor, lastInteraction, onReaction } = elf
+  const { state, loaded, stage, mood, decor, lastInteraction, onReaction } = elf
   useEvolutionPresenter()
   const focused = useIsFocused()
 
@@ -158,50 +148,30 @@ export function ElfTab() {
     const { height } = event.nativeEvent.layout
     setPanelHeight((current) => (current === height ? current : height))
   }, [])
-  const [wardrobeSlot, setWardrobeSlot] = useState<WearableSlot>('hat')
   const [decorSlot, setDecorSlot] = useState<SlotId>(DECOR_SLOTS[0] ?? 'rug')
-  /* The wardrobe is offered to a hatched elf, and only while the vector
-     puppet is drawn: the rendered elf has no hat layers yet (its face and
-     hood are baked into the body), so a wearable would change nothing. */
-  const wardrobe = hatched && !SPRITE_MODE
-  /* No elf, no panel; no wardrobe, no wardrobe panel. */
+  /* No elf, no panel. */
   useEffect(() => {
     if (!state) setPanel('none')
-    else if (!wardrobe && panel === 'wardrobe') setPanel('none')
-  }, [state, wardrobe, panel])
+  }, [state])
 
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
-  const onWardrobe = useCallback(() => togglePanel('wardrobe'), [togglePanel])
   const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
   const closePanel = useCallback(() => setPanel('none'), [])
 
-  const onPickerSlot = useCallback(
-    (slot: PickerSlot) => {
-      if (panel === 'wardrobe') setWardrobeSlot(slot as WearableSlot)
-      else setDecorSlot(slot as SlotId)
-    },
-    [panel],
-  )
-
   /* A slot tapped in the room while decorating picks the panel's tab; a
-     slot the panel does not offer (the fireplace, and in sprite mode a slot
-     with a single rendered variant) is left alone. */
+     slot the panel does not offer (the fireplace, or a slot with a single
+     rendered variant) is left alone. */
   const onSelectSlot = useCallback((slot: SlotId) => {
     if (DECOR_SLOTS.includes(slot)) setDecorSlot(slot)
   }, [])
 
-  const { equip, placeDecor } = elf
+  const { placeDecor } = elf
   const onPick = useCallback(
-    (slot: PickerSlot, id: string) => {
-      if (panel === 'wardrobe') {
-        equip(slot as WearableSlot, id)
-        sceneRef.current?.react('twirl')
-      } else {
-        placeDecor(slot as SlotId, id)
-        sceneRef.current?.admireSlot(slot as SlotId)
-      }
+    (slot: SlotId, id: string) => {
+      placeDecor(slot, id)
+      sceneRef.current?.admireSlot(slot)
     },
-    [panel, equip, placeDecor],
+    [placeDecor],
   )
 
   /* ---------- The elf's own voice ---------- */
@@ -389,7 +359,6 @@ export function ElfTab() {
             sleeping={state.sleeping}
             tired={hatched && state.needs.energy < TIRED_ENERGY}
             warmth={state.warmth}
-            outfit={outfit}
             decor={decor}
             width={size.width}
             height={size.height}
@@ -410,7 +379,7 @@ export function ElfTab() {
           of the room is never covered; the bottom holds the action bar or
           the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none">
-        <ElfHud name={state.name} stage={stage} needs={state.needs} warmth={state.warmth} panel={panel} wardrobe={wardrobe} onWardrobe={onWardrobe} onDecorate={onDecorate} onReset={confirmReset} />
+        <ElfHud name={state.name} stage={stage} needs={state.needs} warmth={state.warmth} panel={panel} onDecorate={onDecorate} onReset={confirmReset} />
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none">
             <ElfMoodPill name={state.name} stage={stage} mood={mood} lowNeed={lowNeed} flash={flash} />
@@ -444,17 +413,7 @@ export function ElfTab() {
           </Animated.View>
         ) : (
           <View onLayout={onPanelLayout}>
-            <ElfPicker
-              mode={panel}
-              sprites={SPRITE_MODE}
-              starter={state.starter}
-              outfit={outfit}
-              decor={decor}
-              activeSlot={panel === 'wardrobe' ? wardrobeSlot : decorSlot}
-              onSelectSlot={onPickerSlot}
-              onPick={onPick}
-              onDone={closePanel}
-            />
+            <ElfPicker decor={decor} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
           </View>
         )}
       </View>
