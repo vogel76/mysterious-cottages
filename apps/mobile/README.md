@@ -700,7 +700,7 @@ its photo as the second choice) and only those variants. The wardrobe's
 five slots (hat, outfit, neck, hand, face) and their ids are in the same
 catalogue and in the stored outfit, but there is no wardrobe panel until
 the art pipeline renders the wearables as layers: the rendered elf's face
-and hood are baked into its frames, so a wearable would change nothing.
+and hair are baked into its frames, so a wearable would change nothing.
 The panel opens from the HUD inside the tab (`ElfPicker.tsx`), not as a
 route: a route would unfocus the tab and pause the scene, and the point
 of the panel is the live preview in the room behind it. It rises in place
@@ -738,7 +738,7 @@ exactly the room units) with the furniture laid over it as transparent
 crops (`assets/elf/room/manifest.json` says where each variant sits in
 the plate, `cottage/RoomSprites.tsx` draws them, the rug under the elf
 and the rest in their depth), and the elf is an atlas
-(`assets/elf/sprites/elf/`: a cell of 293 by 427 pixels per frame at 180
+(`assets/elf/sprites/elf/`: a cell of 256 by 387 pixels per frame at 180
 pixels to the metre, the feet as the anchor, 24 fps; the clips idle,
 happy, sad, sleep, pet, feed and wave) played by `cottage/SpriteElf.tsx` on the sprite player's
 UI-thread frame clock, with the figure's procedural motion (the bob, the
@@ -746,7 +746,7 @@ squash, the tilt of the reactions) layered on top as a transform of the
 frame, so a pet or a feed still moves the whole figure. The egg is still
 the vector `EggNest`, drawn over the rendered rug, until the pipeline
 renders it. What is baked into the body frames today: the face (neutral,
-with blinks in the idle clip) and the hood. What comes next: the face and
+with blinks in the idle clip) and the hair. What comes next: the face and
 the hat as layers of their own on the same frame grid (then the wardrobe
 returns), the egg, the four forms, and more furniture variants.
 
@@ -803,7 +803,9 @@ Galaxy Note 10+:
 | C | back on the Atlas for three minutes | `memtable.py --label C --every 60 --count 3` |
 
 Baseline, release build of 2026-10-26 (the sprite scene, the vector
-cottage gone, the atlas of nine sheets at 180 pixels to the metre):
+cottage gone, the first elf's atlas of nine sheets at 180 pixels to the
+metre; the redesigned elf of 2026-10-27 packs into six sheets of the
+same scale, 3.6 MB, not yet re-measured):
 
 | Point | PSS | native heap | graphics (GL + EGL) | Dalvik | unknown | RSS | frames |
 |---|---|---|---|---|---|---|---|
@@ -813,7 +815,7 @@ cottage gone, the atlas of nine sheets at 180 pixels to the metre):
 | B, after every clip and ten minutes on the tab | 572 MB | 179 MB | 212 MB (19 + 19) | 18 MB | 69 MB | 730 MB | 62.4 fps, 0 dropped of 481; the sleep loop 62.3 fps |
 | C, back on the Atlas for three minutes | 562 MB | 179 MB | 201 MB (31 + 31) | 18 MB | 69 MB | 720 MB | |
 
-Read: the elf costs about 230 MB on hatching (the nine decoded sheets
+Read: the elf costs about 230 MB on hatching (the decoded sheets
 in the native heap and their copies in graphics memory, which stays at
 212 MB whatever happens afterwards) and creeps up by another 80 MB over
 ten minutes (the native heap and Hermes's 'unknown'), then levels off;

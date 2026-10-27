@@ -7,7 +7,7 @@ import type { Bounds } from './room'
 
 /* The elf as the rendered sprite (art/blender/elf.py, packed into the
    atlases of assets/elf/sprites/elf): the body layer alone for now, the
-   face and the hood baked in, played by the clip the scene names. The
+   face and the hair baked in, played by the clip the scene names. The
    figure's feet land on the origin, in room units, and the cell is scaled
    so the figure stands ELF_HEIGHT_UNITS tall. The baked animation is the
    elf's own acting (the idle sway and blinks, the pat, the meal, the
@@ -44,8 +44,8 @@ const SHADOW = { rx: 150, ry: 32, opacity: 0.3 } as const
 /* The tap target, room units around the feet: the figure itself, not the
    atlas cell, whose transparent margins would otherwise swallow the
    basket, the bed's edge and the window's corner next to the elf. The
-   figure is about 0.6 of its height wide at the arms; the box reaches a
-   little under the feet and just over the hood's tip. */
+   figure is about 0.6 of its height wide at the ears; the box reaches a
+   little under the feet and just over the hair. */
 export const SPRITE_ELF_HIT_BOX: Bounds = { x: -0.3 * ELF_HEIGHT_UNITS, y: -1.04 * ELF_HEIGHT_UNITS, width: 0.6 * ELF_HEIGHT_UNITS, height: 1.08 * ELF_HEIGHT_UNITS }
 
 export type SpriteElfProps = {

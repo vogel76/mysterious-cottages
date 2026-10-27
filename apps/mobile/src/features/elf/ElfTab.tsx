@@ -61,7 +61,7 @@ import { useReturnGreeting } from './useReturnGreeting'
 
    The room is the rendered art (the Blender plate, the furniture sprites
    and the elf's atlases, see apps/mobile/art/README.md). There is no
-   wardrobe yet: the elf's face and hood are baked into the body frames and
+   wardrobe yet: the elf's face and hair are baked into the body frames and
    no hat layer has been rendered, so there is nothing a wearable could
    change; the outfit the rules store waits for the art pipeline's layers.
    The decorating panel lists only the slots whose variants are rendered,
