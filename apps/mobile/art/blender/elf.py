@@ -80,11 +80,12 @@ PALETTE = {
 LOOK = {"ramp": 0.4, "ink": True, "hull": False, "grain": 0.06, "ink_radius": 0.0045, "quality": True}
 
 
-def material(name, color, roughness=0.6, subsurface=0.0, emission=None, emission_strength=1.0, grain=None):
+def material(name, color, roughness=0.6, subsurface=0.0, emission=None, emission_strength=1.0, grain=None,
+             shadow_tint=_common.SHADOW_TINT):
     """A palette material in the current look."""
     return _common.painterly_material(name, PALETTE[color], ramp=LOOK["ramp"], roughness=roughness,
                                       subsurface=subsurface, emission=emission, emission_strength=emission_strength,
-                                      grain=LOOK["grain"] if grain is None else grain)
+                                      grain=LOOK["grain"] if grain is None else grain, shadow_tint=shadow_tint)
 
 
 # ---------------------------------------------------------------------------
@@ -281,12 +282,12 @@ class Form:
 
 
 FORMS = {
-    # The young elf: about three heads tall, the form of the first months.
-    "young": Form(head_c=1.27, head_r=0.36, shoulder_z=0.95, hem_z=0.43, chest_r=0.20, hem_r=0.30,
-                  hip_z=0.47, knee_z=0.28, ear=1.0, arm=1.0),
+    # The young elf: about three and a half heads tall, the form of the first months.
+    "young": Form(head_c=1.36, head_r=0.33, shoulder_z=1.03, hem_z=0.52, chest_r=0.20, hem_r=0.255,
+                  hip_z=0.58, knee_z=0.34, ear=1.0, arm=1.0),
     # The hatchling: a bigger head on a shorter body, shorter ears and arms.
-    "baby": Form(head_c=1.08, head_r=0.37, shoulder_z=0.77, hem_z=0.35, chest_r=0.21, hem_r=0.29,
-                 hip_z=0.40, knee_z=0.24, ear=0.78, arm=0.8),
+    "baby": Form(head_c=1.12, head_r=0.36, shoulder_z=0.78, hem_z=0.40, chest_r=0.21, hem_r=0.27,
+                 hip_z=0.44, knee_z=0.26, ear=0.8, arm=0.85),
 }
 
 F = FORMS["young"]
@@ -314,33 +315,72 @@ def hp(x, y, z):
 
 
 def arm_points(s):
-    """Shoulder, elbow, hand centre of one arm (s = +1 left, -1 right)."""
-    shoulder = Vector((0.19 * s, -0.01, F.shoulder_z - 0.07))
-    elbow = shoulder + Vector((0.13 * s, -0.04, -0.20)) * F.arm
-    hand = elbow + Vector((0.06 * s, -0.08, -0.16)) * F.arm
+    """Shoulder, elbow, hand centre of one arm (s = +1 left, -1 right); the
+    arm hangs close to the body with a slight bend forward at the elbow."""
+    shoulder = Vector((0.215 * s, -0.01, F.shoulder_z - 0.04))
+    elbow = shoulder + Vector((0.07 * s, -0.03, -0.24)) * F.arm
+    hand = elbow + Vector((0.035 * s, -0.09, -0.20)) * F.arm
     return shoulder, elbow, hand
 
 
 def leg_points(s):
     hip = Vector((0.12 * s, 0.0, F.hip_z))
-    knee = Vector((0.12 * s, -0.005, F.knee_z))
+    knee = Vector((0.12 * s, -0.02, F.knee_z))
     ankle = Vector((0.125 * s, -0.01, 0.12))
     return hip, knee, ankle
 
 
 def ear_points(s):
-    base = hp(0.31 * s, 0.02, 0.01)
-    reach = Vector((0.30 * s, -0.04, 0.30)) * F.ear
+    base = hp(0.30 * s, 0.02, 0.0)
+    reach = Vector((0.28 * s, -0.04, 0.26)) * F.ear
     return [base, base + reach * 0.37, base + reach * 0.72, base + reach]
 
 
-EYE_C = (0.145, -0.296, 0.0)
+EYE_C = (0.14, -0.30, 0.0)
+
+
+def fuse(name, pieces, mat, voxel=0.01, smooth=6):
+    """Join the pieces into one organic mesh: their modifiers applied, the
+    union remeshed on a voxel grid and smoothed, so a sleeve grows out of a
+    shoulder and a nose out of a face instead of one primitive sitting in
+    another. The first piece's collection keeps the result; the pieces are
+    gone. `voxel` is the grid step in metres: finer keeps smaller features."""
+    deps = bpy.context.evaluated_depsgraph_get()
+    for piece in pieces:
+        mesh = bpy.data.meshes.new_from_object(piece.evaluated_get(deps))
+        old = piece.data
+        piece.modifiers.clear()
+        piece.data = mesh
+        bpy.data.meshes.remove(old)
+    target = pieces[0]
+    with bpy.context.temp_override(active_object=target, selected_objects=list(pieces),
+                                   selected_editable_objects=list(pieces), view_layer=bpy.context.view_layer):
+        bpy.ops.object.join()
+    target.name = name
+    target.data.name = name
+    target.data.remesh_voxel_size = voxel
+    target.data.remesh_voxel_adaptivity = 0.0
+    target.data.use_remesh_fix_poles = True
+    target.data.use_remesh_preserve_volume = True
+    with bpy.context.temp_override(object=target, active_object=target, selected_objects=[target],
+                                   selected_editable_objects=[target], view_layer=bpy.context.view_layer):
+        bpy.ops.object.voxel_remesh()
+    target.data.materials.clear()
+    target.data.materials.append(mat)
+    target.data.shade_smooth()
+    mod = target.modifiers.new("Smooth", "SMOOTH")
+    mod.factor = 0.6
+    mod.iterations = smooth
+    sub = target.modifiers.new("Subdivision", "SUBSURF")
+    sub.levels = sub.render_levels = 1
+    return target
 
 
 def build_model():
     """Build every mesh of the elf and return a dict of the objects by name."""
     mats = {
-        "skin": material("Skin", "skin", roughness=0.65, subsurface=0.06, grain=0.0),
+        # Skin shades warm, towards a rosy brown, not the cloth's forest green.
+        "skin": material("Skin", "skin", roughness=0.65, subsurface=0.06, grain=0.0, shadow_tint="#9c5f55"),
         "cheek": material("Cheek", "cheek", roughness=0.7, grain=0.0),
         "eye_white": material("EyeWhite", "eye_white", roughness=0.3, grain=0.0),
         "iris": material("Iris", "iris", roughness=0.3, grain=0.0),
@@ -367,156 +407,185 @@ def build_model():
     hc = head_c()
     k = F.head_r / 0.36
 
-    # --- Head: an egg, fuller above the eyes and tapering to the chin ------
-    head = sphere("Head", hc, F.head_r, "Body", mats["skin"], scale=HEAD_SCALE, segments=40, rings=24,
-                  subsurf=1, outline=OUTLINE)
+    # --- Head: an egg fuller above the eyes and tapering to the chin, the
+    # neck, the nose and the ears fused into one skin.
+    head = sphere("Head", hc, F.head_r, "Body", mats["skin"], scale=HEAD_SCALE, segments=48, rings=32, subsurf=1)
     half = F.head_r * HEAD_SCALE[2]
     for v in head.data.vertices:
         rel = v.co - hc
         if rel.z < 0:
             t = min(1.0, -rel.z / half)
-            taper = 1.0 - 0.24 * t ** 1.6
+            taper = 1.0 - 0.26 * t ** 1.6
             v.co = hc + Vector((rel.x * taper, rel.y * taper, rel.z))
-    objs["Head"] = head
-    objs["Neck"] = tube("Neck", [(0, 0.01, F.shoulder_z - 0.06), (0, 0.01, F.shoulder_z + 0.06)], [0.085, 0.08],
-                        "Body", mats["skin"], subsurf=1)
+    neck = tube("Neck", [(0, 0.01, F.shoulder_z - 0.08), (0, 0.01, F.shoulder_z + 0.10)], [0.08, 0.075], "Body",
+                mats["skin"], segments=24, subsurf=1)
+    nose = tube("Nose", [hp(0, -0.338, 0.03), hp(0, -0.362, -0.03), hp(0, -0.37, -0.06)],
+                [0.009 * k, 0.016 * k, 0.021 * k], "Body", mats["skin"], segments=12, samples=8, subsurf=1)
+    ears = []
+    for side, suffix in ((1, "L"), (-1, "R")):
+        ears.append(tube(f"Ear.{suffix}", ear_points(side), [0.1 * k, 0.085 * k, 0.05 * k, 0.006], "Body",
+                         mats["skin"], flatten=(1.0, 0.55), ref=(0, 1, 0), segments=20, subsurf=1))
+    objs["Head"] = fuse("Head", [head, neck, nose] + ears, mats["skin"], voxel=0.008)
+    for side, suffix in ((1, "L"), (-1, "R")):
+        s = side
+        ear_pts = ear_points(s)
+        inner_pts = [p + Vector((0, -0.04 * k, 0)) for p in ear_pts]
+        inner_pts[0] = inner_pts[0] + Vector((0.05 * k * s, 0, 0))
+        objs[f"EarInner.{suffix}"] = tube(f"EarInner.{suffix}", inner_pts, [0.055 * k, 0.046 * k, 0.027 * k, 0.003],
+                                          "Body", mats["ear_inner"], flatten=(1.0, 0.45), ref=(0, 1, 0), subsurf=1)
 
-    # --- Torso: an A-line tunic, belted, with a dark hem band and leaf collar
-    body = tube("Body", [(0, 0.0, F.shoulder_z), (0, 0.0, (F.shoulder_z + F.hem_z) / 2), (0, 0.0, F.hem_z)],
-                [F.chest_r, F.chest_r * 1.12, F.hem_r], "Body", mats["tunic"], segments=24, samples=10,
-                flatten=(1.0, 0.82), subsurf=1, outline=OUTLINE)
+    # --- Torso: an A-line tunic with a waist, round shoulders and sleeves,
+    # fused into one cloth; the belt and the hem band ride on it.
+    waist_z = F.hem_z + (F.shoulder_z - F.hem_z) * 0.35
+    torso = tube("Body", [(0, 0.0, F.shoulder_z), (0, 0.0, waist_z), (0, 0.0, F.hem_z)],
+                 [F.chest_r, F.chest_r * 0.93, F.hem_r], "Body", mats["tunic"], segments=32, samples=12,
+                 flatten=(1.0, 0.8), subsurf=1)
+    pieces = [torso]
+    for side, suffix in ((1, "L"), (-1, "R")):
+        s = side
+        shoulder, elbow, hand = arm_points(s)
+        pieces.append(sphere(f"Shoulder.{suffix}", shoulder + Vector((-0.02 * s, 0, 0.01)), 0.085, "Body",
+                             mats["tunic"], scale=(1.0, 0.9, 1.0), subsurf=1))
+        pieces.append(tube(f"Arm.{suffix}", [shoulder, elbow, hand - (hand - elbow) * 0.2],
+                           [0.072, 0.062, 0.056], "Body", mats["tunic"], ref=(0, 1, 0), segments=20, subsurf=1))
+    body = fuse("Body", pieces, mats["tunic"], voxel=0.01)
     objs["Body"] = body
+
     def girth(z):
         """The tunic's half-widths (x, y) at height z, read off its mesh."""
-        ring = [v.co for v in body.data.vertices if abs(v.co.z - z) < 0.03]
+        ring = [v.co for v in body.data.vertices if abs(v.co.z - z) < 0.03 and abs(v.co.x) < F.hem_r + 0.02]
         return max(abs(v.x) for v in ring), max(abs(v.y) for v in ring)
 
-    hem_x, hem_y = girth(F.hem_z)
-    objs["Hem"] = torus("Hem", (0, 0, F.hem_z + 0.01), (hem_x - 0.012, hem_y - 0.012), 0.024, "Body",
-                        mats["tunic_dark"], subsurf=1, outline=OUTLINE)
-    belt_z = F.hem_z + (F.shoulder_z - F.hem_z) * 0.27
+    hem_x, hem_y = girth(F.hem_z + 0.015)
+    objs["Hem"] = torus("Hem", (0, 0, F.hem_z + 0.015), (hem_x - 0.012, hem_y - 0.012), 0.024, "Body",
+                        mats["tunic_dark"], subsurf=1)
+    belt_z = waist_z - 0.02
     belt_x, belt_y = girth(belt_z)
     objs["Belt"] = torus("Belt", (0, 0, belt_z), (belt_x - 0.008, belt_y - 0.008), 0.022, "Body",
-                         mats["belt"], subsurf=1, outline=0.0)
+                         mats["belt"], subsurf=1)
     objs["Buckle"] = rounded_box("Buckle", (0, -(belt_y + 0.012), belt_z), (0.09, 0.03, 0.08), "Body",
                                  mats["acorn"], subsurf=2)
     objs["BucklePin"] = rounded_box("BucklePin", (0, -(belt_y + 0.03), belt_z), (0.014, 0.014, 0.05),
                                     "Body", mats["acorn_dark"], subsurf=2)
     for i in range(7):
         a = math.radians(-120 + 40 * i)
-        base = Vector((math.sin(a) * F.chest_r * 0.72, -math.cos(a) * F.chest_r * 0.62, F.shoulder_z - 0.005))
+        base = Vector((math.sin(a) * F.chest_r * 0.72, -math.cos(a) * F.chest_r * 0.6, F.shoulder_z + 0.015))
         direction = Vector((math.sin(a), -math.cos(a) * 0.8, -0.55))
-        objs[f"Collar{i}"] = leaf(f"Collar{i}", base, direction, 0.17, 0.085, "Body", mats["leaf"])
+        objs[f"Collar{i}"] = leaf(f"Collar{i}", base, direction, 0.16, 0.08, "Body", mats["leaf"])
 
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
         shoulder, elbow, hand = arm_points(s)
-        objs[f"Arm.{suffix}"] = tube(f"Arm.{suffix}", [shoulder, elbow, hand - (hand - elbow) * 0.25],
-                                     [0.068, 0.06, 0.055], "Body", mats["tunic"], ref=(0, 1, 0), subsurf=1,
-                                     outline=OUTLINE)
-        objs[f"Cuff.{suffix}"] = torus(f"Cuff.{suffix}", hand - (hand - elbow) * 0.22, 0.058, 0.018, "Body",
-                                       mats["tunic_dark"], axis=(hand - elbow), subsurf=1)
-        objs[f"Hand.{suffix}"] = sphere(f"Hand.{suffix}", hand, 0.072, "Body", mats["skin"],
-                                        scale=(1.0, 0.8, 1.15), subsurf=1, outline=OUTLINE)
-        objs[f"Thumb.{suffix}"] = sphere(f"Thumb.{suffix}", hand + Vector((-0.045 * s, -0.035, 0.03)), 0.032,
-                                         "Body", mats["skin"], scale=(1.0, 0.9, 1.2), segments=16, rings=8,
-                                         subsurf=1)
+        along = (hand - elbow).normalized()
+        objs[f"Cuff.{suffix}"] = torus(f"Cuff.{suffix}", hand - along * 0.1, 0.06, 0.017, "Body",
+                                       mats["tunic_dark"], axis=along, subsurf=1)
+        # Hands: a mitten with a thumb and three fingers fused into one.
+        palm = sphere(f"Hand.{suffix}", hand, 0.062, "Body", mats["skin"], scale=(1.0, 0.7, 1.15), subsurf=1)
+        fingers = [palm, sphere(f"Thumb.{suffix}", hand + Vector((-0.045 * s, -0.03, 0.02)), 0.026, "Body",
+                                mats["skin"], scale=(1.0, 0.9, 1.3), segments=16, rings=8, subsurf=1)]
+        for j, (dx, dz) in enumerate(((0.03, -0.055), (0.0, -0.062), (-0.03, -0.055))):
+            fingers.append(sphere(f"Finger{j}.{suffix}", hand + Vector((dx * s, -0.01, dz)), 0.022, "Body",
+                                  mats["skin"], scale=(1.0, 0.9, 1.5), segments=16, rings=8, subsurf=1))
+        objs[f"Hand.{suffix}"] = fuse(f"Hand.{suffix}", fingers, mats["skin"], voxel=0.0045, smooth=3)
         hip, knee, ankle = leg_points(s)
-        objs[f"Leg.{suffix}"] = tube(f"Leg.{suffix}", [hip, knee, ankle], [0.078, 0.068, 0.062], "Body",
-                                     mats["legging"], ref=(0, 1, 0), subsurf=1, outline=OUTLINE)
-        objs[f"Boot.{suffix}"] = sphere(f"Boot.{suffix}", (0.125 * s, -0.05, 0.085), 1.0, "Body", mats["boot"],
-                                        scale=(0.105, 0.16, 0.085), subsurf=1, outline=OUTLINE)
-        objs[f"BootCuff.{suffix}"] = torus(f"BootCuff.{suffix}", (0.125 * s, -0.02, 0.165), (0.078, 0.085), 0.02,
+        objs[f"Leg.{suffix}"] = tube(f"Leg.{suffix}", [hip, knee, ankle], [0.08, 0.064, 0.056], "Body",
+                                     mats["legging"], ref=(0, 1, 0), segments=20, subsurf=1)
+        boot = sphere(f"Boot.{suffix}", (0.125 * s, -0.05, 0.085), 1.0, "Body", mats["boot"],
+                      scale=(0.1, 0.155, 0.085), subsurf=1)
+        shaft = tube(f"BootShaft.{suffix}", [(0.125 * s, -0.015, 0.06), (0.125 * s, -0.012, 0.19)], [0.075, 0.07],
+                     "Body", mats["boot"], segments=20, subsurf=1)
+        toe = tube(f"BootToe.{suffix}", [(0.125 * s, -0.16, 0.06), (0.125 * s, -0.24, 0.07), (0.125 * s, -0.27, 0.13)],
+                   [0.058, 0.038, 0.012], "Body", mats["boot"], ref=(1, 0, 0), subsurf=1)
+        objs[f"Boot.{suffix}"] = fuse(f"Boot.{suffix}", [boot, shaft, toe], mats["boot"], voxel=0.006, smooth=3)
+        objs[f"BootCuff.{suffix}"] = torus(f"BootCuff.{suffix}", (0.125 * s, -0.012, 0.19), (0.078, 0.078), 0.018,
                                            "Body", mats["sole"], subsurf=1)
-        objs[f"BootToe.{suffix}"] = tube(f"BootToe.{suffix}",
-                                         [(0.125 * s, -0.16, 0.06), (0.125 * s, -0.24, 0.07), (0.125 * s, -0.275, 0.13)],
-                                         [0.06, 0.04, 0.012], "Body", mats["boot"], ref=(1, 0, 0), subsurf=1,
-                                         outline=OUTLINE)
-        objs[f"Sole.{suffix}"] = sphere(f"Sole.{suffix}", (0.125 * s, -0.06, 0.028), 1.0, "Body", mats["sole"],
-                                        scale=(0.11, 0.18, 0.03), subsurf=1, outline=0.0)
-        # Ears: long, thick, pointing out and up, with a shaded inner side.
-        ear_pts = ear_points(s)
-        objs[f"Ear.{suffix}"] = tube(f"Ear.{suffix}", ear_pts, [0.1 * k, 0.085 * k, 0.05 * k, 0.004], "Body",
-                                     mats["skin"], flatten=(1.0, 0.55), ref=(0, 1, 0), subsurf=1, outline=OUTLINE)
-        inner_pts = [p + Vector((0, -0.038 * k, 0)) for p in ear_pts]
-        inner_pts[0] = inner_pts[0] + Vector((0.05 * k * s, 0, 0))
-        objs[f"EarInner.{suffix}"] = tube(f"EarInner.{suffix}", inner_pts, [0.058 * k, 0.048 * k, 0.028 * k, 0.003],
-                                          "Body", mats["ear_inner"], flatten=(1.0, 0.45), ref=(0, 1, 0), subsurf=1)
+        objs[f"Sole.{suffix}"] = sphere(f"Sole.{suffix}", (0.125 * s, -0.07, 0.026), 1.0, "Body", mats["sole"],
+                                        scale=(0.105, 0.18, 0.028), subsurf=1)
 
     # --- Face --------------------------------------------------------------
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
         c = hp(EYE_C[0] * s, EYE_C[1], EYE_C[2])
-        tilt = Matrix.Rotation(math.radians(-9 * s), 3, "Y")
-        objs[f"EyeWhite.{suffix}"] = sphere(f"EyeWhite.{suffix}", c, 0.085 * k, "Face", mats["eye_white"],
-                                            scale=(1.0, 0.55, 1.18), subsurf=1, rotation=tilt)
-        objs[f"Iris.{suffix}"] = sphere(f"Iris.{suffix}", c + Vector((0.004 * s, -0.040, -0.004)) * k, 0.054 * k,
-                                        "Face", mats["iris"], scale=(1.0, 0.4, 1.1), subsurf=1)
-        objs[f"Pupil.{suffix}"] = sphere(f"Pupil.{suffix}", c + Vector((0.004 * s, -0.056, -0.004)) * k, 0.03 * k,
-                                         "Face", mats["pupil"], scale=(1.0, 0.4, 1.15), subsurf=1)
-        objs[f"Highlight.{suffix}"] = sphere(f"Highlight.{suffix}", c + Vector((0.026, -0.072, 0.034)) * k, 0.024 * k,
+        tilt = Matrix.Rotation(math.radians(-8 * s), 3, "Y")
+        objs[f"EyeWhite.{suffix}"] = sphere(f"EyeWhite.{suffix}", c, 0.074 * k, "Face", mats["eye_white"],
+                                            scale=(1.0, 0.55, 1.12), subsurf=1, rotation=tilt)
+        objs[f"Iris.{suffix}"] = sphere(f"Iris.{suffix}", c + Vector((0.003 * s, -0.036, -0.004)) * k, 0.047 * k,
+                                        "Face", mats["iris"], scale=(1.0, 0.4, 1.08), subsurf=1)
+        objs[f"Pupil.{suffix}"] = sphere(f"Pupil.{suffix}", c + Vector((0.003 * s, -0.05, -0.004)) * k, 0.025 * k,
+                                         "Face", mats["pupil"], scale=(1.0, 0.4, 1.12), subsurf=1)
+        objs[f"Highlight.{suffix}"] = sphere(f"Highlight.{suffix}", c + Vector((0.022, -0.064, 0.03)) * k, 0.02 * k,
                                              "Face", mats["highlight"], scale=(1.0, 0.5, 1.0), segments=16,
                                              rings=8, subsurf=0)
-        objs[f"HighlightSmall.{suffix}"] = sphere(f"HighlightSmall.{suffix}", c + Vector((-0.024, -0.07, -0.034)) * k,
-                                                  0.012 * k, "Face", mats["highlight"], scale=(1.0, 0.5, 1.0),
+        objs[f"HighlightSmall.{suffix}"] = sphere(f"HighlightSmall.{suffix}", c + Vector((-0.02, -0.062, -0.03)) * k,
+                                                  0.01 * k, "Face", mats["highlight"], scale=(1.0, 0.5, 1.0),
                                                   segments=12, rings=6, subsurf=0)
         # Eyelid: the back hemisphere of a slightly larger sphere; a bone rotates it over the eye.
-        objs[f"Eyelid.{suffix}"] = sphere(f"Eyelid.{suffix}", c, 0.091 * k, "Face", mats["skin"],
-                                          scale=(1.0, 0.6, 1.2), subsurf=1, keep=lambda p: p.y > -0.005,
+        objs[f"Eyelid.{suffix}"] = sphere(f"Eyelid.{suffix}", c, 0.08 * k, "Face", mats["skin"],
+                                          scale=(1.0, 0.6, 1.16), subsurf=1, keep=lambda p: p.y > -0.005,
                                           rotation=tilt)
         # Lash line for the closed eye: rides on the eyelid bone, hidden inside the head at rest.
-        objs[f"Lash.{suffix}"] = tube(f"Lash.{suffix}", [c + Vector((-0.064, 0.058, 0.03)) * k, c + Vector((0, 0.066, -0.002)) * k,
-                                                          c + Vector((0.064, 0.058, 0.03)) * k],
-                                      [0.009 * k, 0.012 * k, 0.009 * k], "Face", mats["pupil"], ref=(0, 1, 0),
+        objs[f"Lash.{suffix}"] = tube(f"Lash.{suffix}", [c + Vector((-0.056, 0.05, 0.026)) * k, c + Vector((0, 0.058, -0.002)) * k,
+                                                          c + Vector((0.056, 0.05, 0.026)) * k],
+                                      [0.008 * k, 0.011 * k, 0.008 * k], "Face", mats["pupil"], ref=(0, 1, 0),
                                       segments=8, samples=8, subsurf=1)
-        objs[f"Cheek.{suffix}"] = sphere(f"Cheek.{suffix}", hp(0.225 * s, -0.245, -0.09), 0.06 * k, "Face",
-                                         mats["cheek"], scale=(1.0, 0.4, 0.7), subsurf=1)
-        brow = tube(f"Brow.{suffix}", [hp(0.06 * s, -0.345, 0.125), hp(0.15 * s, -0.33, 0.152), hp(0.235 * s, -0.292, 0.128)],
-                    [0.010 * k, 0.014 * k, 0.007 * k], "Face", mats["hair_dark"], ref=(0, 1, 0), segments=8,
+        # The upper lash: a thin dark arc along the top of the open eye, heavier at the outer corner.
+        top = [c + Vector((-0.07 * s, -0.052, 0.045)) * k, c + Vector((0.0, -0.066, 0.075)) * k,
+               c + Vector((0.07 * s, -0.056, 0.058)) * k]
+        objs[f"LashTop.{suffix}"] = tube(f"LashTop.{suffix}", top, [0.004 * k, 0.009 * k, 0.012 * k], "Face",
+                                         mats["pupil"], ref=(0, 1, 0), segments=8, samples=10, subsurf=1)
+        objs[f"Cheek.{suffix}"] = sphere(f"Cheek.{suffix}", hp(0.21 * s, -0.25, -0.1), 0.05 * k, "Face",
+                                         mats["cheek"], scale=(1.0, 0.35, 0.6), subsurf=1)
+        brow = tube(f"Brow.{suffix}", [hp(0.05 * s, -0.342, 0.12), hp(0.14 * s, -0.33, 0.15), hp(0.23 * s, -0.292, 0.125)],
+                    [0.009 * k, 0.014 * k, 0.006 * k], "Face", mats["hair_dark"], ref=(0, 1, 0), segments=8,
                     samples=8, subsurf=1)
         add_shape_key(brow, "sad", lambda p, s=s: Vector((p.x, p.y, p.z + 0.035 * k * (1 - abs(p.x) / (0.235 * k)) - 0.015 * k)))
         objs[f"Brow.{suffix}"] = brow
-    objs["Nose"] = sphere("Nose", hp(0, -0.345, -0.05), 0.02 * k, "Face", mats["skin"], scale=(1.0, 0.8, 0.85),
-                          segments=16, rings=8, subsurf=0)
-    mc = hp(0, -0.318, -0.13)
-    mouth = sphere("Mouth", (0, 0, 0), 1.0, "Face", mats["pupil"], scale=(0.064 * k, 0.014 * k, 0.018 * k),
+    mc = hp(0, -0.322, -0.145)
+    mouth = sphere("Mouth", (0, 0, 0), 1.0, "Face", mats["pupil"], scale=(0.058 * k, 0.014 * k, 0.016 * k),
                    segments=24, rings=12, subsurf=1)
     # Rest shape: a thin gentle smile line sitting on the face surface.
     for v in mouth.data.vertices:
-        t = v.co.x / (0.058 * k)
+        t = v.co.x / (0.052 * k)
         v.co.z += 0.012 * k * (t * t - 0.5)
         v.co += mc
     add_shape_key(mouth, "open", lambda p: mc + Vector(((p.x - mc.x) * 0.85, (p.y - mc.y) * 1.2 + 0.012 * k,
                                                         (p.z - mc.z) * 3.4 - 0.018 * k)))
     add_shape_key(mouth, "smile", lambda p: mc + Vector(((p.x - mc.x) * 1.25, p.y - mc.y,
-                                                         (p.z - mc.z) + 0.03 * k * (((p.x - mc.x) / (0.058 * k)) ** 2 - 0.5))))
+                                                         (p.z - mc.z) + 0.03 * k * (((p.x - mc.x) / (0.052 * k)) ** 2 - 0.5))))
     add_shape_key(mouth, "frown", lambda p: mc + Vector(((p.x - mc.x) * 0.8, p.y - mc.y,
-                                                         (p.z - mc.z) - 0.032 * k * (((p.x - mc.x) / (0.058 * k)) ** 2 - 0.5))))
+                                                         (p.z - mc.z) - 0.032 * k * (((p.x - mc.x) / (0.052 * k)) ** 2 - 0.5))))
     objs["Mouth"] = mouth
 
     # --- Hair: a cap over the skull, a fringe swept to the character's left,
-    # locks in front of the ears and a tuft at the crown (on the tuft bone).
-    hair = sphere("Hair", hc + Vector((0, 0.012, 0.015)), F.head_r + 0.028, "Hair", mats["hair"], scale=HEAD_SCALE,
-                  segments=40, rings=24, subsurf=1, outline=OUTLINE,
-                  keep=lambda p: p.z > 0.17 or (p.y > 0.04 and p.z > -0.20) or (abs(p.x) > 0.27 and p.y > -0.12 and p.z > -0.02))
-    objs["Hair"] = hair
-    fringe = [(-0.26, -0.20, -0.09, 0.04, 0.062), (-0.12, -0.02, 0.06, 0.01, 0.07), (0.02, 0.14, 0.24, 0.0, 0.072),
-              (0.14, 0.26, 0.33, -0.02, 0.06), (-0.30, -0.33, -0.31, 0.02, 0.045)]
+    # locks in front of the ears and tufts at the crown, fused into one mass
+    # (the tufts follow the hood_tip bone through automatic weights).
+    cap = sphere("Hair", hc + Vector((0, 0.012, 0.015)), F.head_r + 0.035, "Hair", mats["hair"], scale=HEAD_SCALE,
+                 segments=48, rings=32, subsurf=1,
+                 keep=lambda p: p.z > 0.17 or (p.y > 0.04 and p.z > -0.20) or (abs(p.x) > 0.27 and p.y > -0.12 and p.z > -0.02))
+    # The cut sphere is an open surface; the remesh needs a closed volume,
+    # so the cap gets a thickness, grown inwards into the skull.
+    shell = cap.modifiers.new("Shell", "SOLIDIFY")
+    shell.thickness = 0.06
+    shell.offset = -1.0
+    strands = [cap]
+    fringe = [(-0.26, -0.20, -0.09, 0.04, 0.07), (-0.12, -0.02, 0.06, 0.01, 0.078), (0.02, 0.14, 0.24, 0.0, 0.08),
+              (0.14, 0.26, 0.33, -0.02, 0.068), (-0.30, -0.33, -0.31, 0.02, 0.05)]
     for i, (x0, x1, x2, dz, r) in enumerate(fringe):
-        pts = [hp(x0, -0.21, 0.37), hp(x1, -0.325, 0.29), hp(x2, -0.345, 0.195 + dz)]
-        objs[f"Fringe{i}"] = tube(f"Fringe{i}", pts, [r * k, r * k * 0.72, 0.004], "Hair", mats["hair"],
-                                  flatten=(1.0, 0.55), ref=(0, 1, 0), samples=8, subsurf=1, outline=OUTLINE)
+        pts = [hp(x0, -0.19, 0.38), hp(x1, -0.315, 0.29), hp(x2, -0.34, 0.195 + dz)]
+        strands.append(tube(f"Fringe{i}", pts, [r * k, r * k * 0.75, 0.01], "Hair", mats["hair"],
+                            flatten=(1.0, 0.6), ref=(0, 1, 0), samples=8, segments=16, subsurf=1))
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
-        pts = [hp(0.30 * s, -0.12, 0.20), hp(0.36 * s, -0.17, 0.02), hp(0.37 * s, -0.19, -0.16)]
-        objs[f"Lock.{suffix}"] = tube(f"Lock.{suffix}", pts, [0.07 * k, 0.05 * k, 0.004], "Hair", mats["hair"],
-                                      flatten=(0.7, 1.0), ref=(0, 1, 0), samples=8, subsurf=1, outline=OUTLINE)
-    tuft = [hp(0.0, 0.10, 0.36), hp(0.05, 0.16, 0.52), hp(0.15, 0.19, 0.60)]
-    objs["Tuft"] = tube("Tuft", tuft, [0.09 * k, 0.06 * k, 0.004], "Hair", mats["hair"], ref=(0, 1, 0), samples=8,
-                        subsurf=1, outline=OUTLINE)
-    tuft2 = [hp(-0.06, 0.08, 0.36), hp(-0.12, 0.12, 0.49), hp(-0.20, 0.13, 0.52)]
-    objs["Tuft2"] = tube("Tuft2", tuft2, [0.07 * k, 0.045 * k, 0.004], "Hair", mats["hair"], ref=(0, 1, 0), samples=8,
-                         subsurf=1, outline=OUTLINE)
+        pts = [hp(0.29 * s, -0.12, 0.22), hp(0.355 * s, -0.17, 0.02), hp(0.365 * s, -0.19, -0.16)]
+        strands.append(tube(f"Lock.{suffix}", pts, [0.075 * k, 0.055 * k, 0.01], "Hair", mats["hair"],
+                            flatten=(0.7, 1.0), ref=(0, 1, 0), samples=8, segments=16, subsurf=1))
+    strands.append(tube("Tuft", [hp(0.0, 0.10, 0.34), hp(0.05, 0.16, 0.52), hp(0.15, 0.19, 0.60)],
+                        [0.1 * k, 0.065 * k, 0.01], "Hair", mats["hair"], ref=(0, 1, 0), samples=8, segments=16,
+                        subsurf=1))
+    strands.append(tube("Tuft2", [hp(-0.06, 0.08, 0.34), hp(-0.12, 0.12, 0.49), hp(-0.20, 0.13, 0.52)],
+                        [0.08 * k, 0.05 * k, 0.01], "Hair", mats["hair"], ref=(0, 1, 0), samples=8, segments=16,
+                        subsurf=1))
+    objs["Hair"] = fuse("Hair", strands, mats["hair"], voxel=0.008, smooth=4)
     # A leaf tucked into the hair above the right ear: the forest elf's mark.
     objs["HairLeaf"] = leaf("HairLeaf", hp(-0.27, -0.14, 0.22), (-0.55, -0.45, 0.7), 0.19, 0.085, "Hair", mats["leaf"])
     objs["HairLeafStem"] = tube("HairLeafStem", [hp(-0.24, -0.11, 0.17), hp(-0.30, -0.16, 0.25)], [0.008, 0.006],
@@ -560,7 +629,7 @@ def build_model():
     # without drawing (the lash line draws the closed eye).
     for name, obj in objs.items():
         base = name.partition(".")[0]
-        if base in ("Highlight", "HighlightSmall", "Cheek", "Iris", "Pupil", "Nose") or base.startswith("Dot"):
+        if base in ("Highlight", "HighlightSmall", "Cheek", "Iris", "Pupil", "LashTop") or base.startswith("Dot"):
             obj.lineart.usage = "EXCLUDE"
         elif base == "Eyelid":
             obj.lineart.usage = "OCCLUSION_ONLY"
@@ -575,15 +644,14 @@ def bones_for(form):
     """The bone table (name, head, tail, parent, deform) for a form."""
     global F
     previous, F = F, form
-    hc = head_c()
     crown = F.head_c + F.head_r * HEAD_SCALE[2]
     bones = [
         ("root", (0, 0, 0), (0, 0, 0.25), None, False),
         ("hips", (0, 0, F.hem_z), (0, 0, F.hem_z + 0.13), "root", True),
         ("spine", (0, 0, F.hem_z + 0.13), (0, 0, F.hem_z + 0.28), "hips", True),
         ("chest", (0, 0, F.hem_z + 0.28), (0, 0, F.shoulder_z - 0.05), "spine", True),
-        ("neck", (0, 0, F.shoulder_z - 0.05), (0, 0, F.shoulder_z + 0.03), "chest", True),
-        ("head", (0, 0, F.shoulder_z + 0.03), (0, 0, crown), "neck", True),
+        ("neck", (0, 0, F.shoulder_z - 0.05), (0, 0, F.shoulder_z + 0.10), "chest", True),
+        ("head", (0, 0, F.shoulder_z + 0.10), (0, 0, crown), "neck", True),
         ("hood_tip", tuple(hp(0.0, 0.10, 0.36)), tuple(hp(0.15, 0.19, 0.60)), "head", True),
     ]
     for s, sfx in ((1, "L"), (-1, "R")):
@@ -596,7 +664,7 @@ def bones_for(form):
             (f"eyelid.{sfx}", tuple(eye), tuple(eye + Vector((0.1, 0, 0))), "head", True),
             (f"upper_arm.{sfx}", tuple(shoulder), tuple(elbow), "chest", True),
             (f"forearm.{sfx}", tuple(elbow), tuple(hand), f"upper_arm.{sfx}", True),
-            (f"hand.{sfx}", tuple(hand), tuple(hand + Vector((0.04 * s, -0.08, -0.12))), f"forearm.{sfx}", True),
+            (f"hand.{sfx}", tuple(hand), tuple(hand + Vector((0.02 * s, -0.06, -0.12))), f"forearm.{sfx}", True),
             (f"thigh.{sfx}", tuple(hip), tuple(knee), "hips", True),
             (f"shin.{sfx}", tuple(knee), tuple(ankle), f"thigh.{sfx}", True),
             (f"foot.{sfx}", tuple(ankle), (0.13 * s, -0.22, 0.05), f"shin.{sfx}", True),
@@ -630,8 +698,9 @@ def build_armature():
     return arm
 
 
-def bind_auto(arm, obj, bones):
-    """Parent with automatic weights, limited to the given bones."""
+def bind_auto(arm, obj, bones, corrective=False):
+    """Parent with automatic weights, limited to the given bones; a fused
+    mesh also gets a Corrective Smooth after the armature against pinching."""
     for b in arm.data.bones:
         b.use_deform = b.name in bones
     with bpy.context.temp_override(object=arm, active_object=arm, selected_objects=[obj, arm],
@@ -643,6 +712,28 @@ def bind_auto(arm, obj, bones):
         print(f"[elf] automatic weights failed for {obj.name}, falling back to rigid bind")
         bind_rigid(arm, obj, bones[0])
     _armature_modifier_first(obj)
+    if corrective:
+        mod = obj.modifiers.new("Corrective", "CORRECTIVE_SMOOTH")
+        mod.iterations = 5
+        obj.modifiers.move(len(obj.modifiers) - 1, 1)
+
+
+def bind_tuft(arm, obj):
+    """The hair rides the head, and the tufts at the crown blend over to the
+    hood_tip bone with their height, so the clips' tuft keys still move them
+    (heat weights fail on the fused hair mass, so the weights are set by region)."""
+    bind_rigid(arm, obj, "head")
+    head_group = obj.vertex_groups["head"]
+    tip_group = obj.vertex_groups.new(name="hood_tip")
+    base = hp(0.0, 0.09, 0.30)
+    for v in obj.data.vertices:
+        rel = v.co - base
+        if rel.y < 0 or rel.z < 0:
+            continue
+        w = min(1.0, rel.z / (0.22 * F.head_r / 0.36))
+        if w > 0:
+            tip_group.add([v.index], w, "REPLACE")
+            head_group.add([v.index], 1.0 - w, "REPLACE")
 
 
 def bind_rigid(arm, obj, bone):
@@ -666,8 +757,7 @@ def _armature_modifier_first(obj):
 
 # Parts that ride one bone; everything on the head not listed here rides "head".
 RIGID_BINDS = {
-    "Hem": "hips", "Belt": "hips", "Buckle": "hips", "BucklePin": "hips", "Neck": "neck",
-    "Tuft": "hood_tip", "Tuft2": "hood_tip",
+    "Hem": "hips", "Belt": "hips", "Buckle": "hips", "BucklePin": "hips",
 }
 
 
@@ -680,17 +770,20 @@ def bind_all(arm, objs):
             bind_rigid(arm, obj, "chest")
         elif base in ("Eyelid", "Lash"):
             bind_rigid(arm, obj, f"eyelid.{side}")
-        elif base in ("Hand", "Thumb", "Cuff"):
+        elif base in ("Hand", "Cuff"):
             bind_rigid(arm, obj, f"hand.{side}")
-        elif base in ("Boot", "BootCuff", "BootToe", "Sole"):
+        elif base in ("Boot", "BootCuff", "Sole"):
             bind_rigid(arm, obj, f"foot.{side}")
         elif base == "Body":
-            bind_auto(arm, obj, ["hips", "spine", "chest"])
-        elif base == "Arm":
-            bind_auto(arm, obj, [f"upper_arm.{side}", f"forearm.{side}", f"hand.{side}"])
+            bind_auto(arm, obj, ["hips", "spine", "chest", "upper_arm.L", "forearm.L", "upper_arm.R", "forearm.R"],
+                      corrective=True)
+        elif base == "Head":
+            bind_auto(arm, obj, ["head", "neck", "ear.L", "ear.R"], corrective=True)
+        elif base == "Hair":
+            bind_tuft(arm, obj)
         elif base == "Leg":
             bind_auto(arm, obj, [f"thigh.{side}", f"shin.{side}"])
-        elif base in ("Ear", "EarInner"):
+        elif base == "EarInner":
             bind_auto(arm, obj, [f"ear.{side}", "head"])
         else:
             bind_rigid(arm, obj, "head")
