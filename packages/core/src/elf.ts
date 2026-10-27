@@ -844,10 +844,10 @@ export function hatchDue(state: ElfState, now: number, storyRead: boolean): bool
   return !state.hatched && (storyRead || now - state.eggAppearedAt >= HATCH_AFTER_MS)
 }
 
-/* The hatched elf named and given its element by the player; a blank
-   name is the plain one. */
+/* The hatched elf named and given its element by the player; the app
+   supplies the name a blank one falls back to, in the player's language. */
 export function christen(state: ElfState, name: string, starter: ElfStarter): ElfState {
-  return { ...state, name: name.trim().slice(0, NAME_MAX_LENGTH) || 'Elf', starter }
+  return { ...state, name: name.trim().slice(0, NAME_MAX_LENGTH), starter }
 }
 
 export function hatch(state: ElfState, now: number): ElfState {

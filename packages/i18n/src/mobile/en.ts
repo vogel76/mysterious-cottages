@@ -253,7 +253,7 @@ export const mobileEn: typeof mobilePl = {
     wantsJoy: '{{name}} feels like playing.',
     wantsClean: '{{name}} is dreaming of a bath.',
     moodEgg: 'Hatches after the countdown, or at your first Cottage found.',
-    moodEggDue: '{{name}} is about to hatch!',
+    moodEggDue: 'About to hatch!',
     moodBeaming: '{{name}} is beaming with joy!',
     moodContent: '{{name}} looks around curiously.',
     moodWants: '{{name}} would like something...',

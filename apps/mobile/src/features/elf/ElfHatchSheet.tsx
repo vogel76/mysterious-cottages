@@ -26,19 +26,24 @@ export function ElfHatchSheet() {
   const [name, setName] = useState('')
   const done = useRef(false)
 
-  /* Presented with nothing to name (a stale push): gone at once. Judged
-     once, on mount: the naming itself changes the state and closes the
-     sheet on its own, and a second close would pop the tab beneath. */
+  /* Presented with nothing to name (a stale push): the form it may still
+     carry is marked seen and the sheet is gone at once. Judged once, on
+     mount, and through the same guard as the naming, so the sheet closes
+     once whatever re-renders: a second close would pop the tab beneath. */
   const stale = useRef(Boolean(state && state.hatched && state.starter !== null))
   useEffect(() => {
-    if (stale.current) close()
-  }, [close])
+    if (!stale.current || done.current) return
+    done.current = true
+    acknowledgeEvolution()
+    close()
+  }, [close, acknowledgeEvolution])
 
   const title = t('mobile:elf.hatchTitle')
   useEffect(() => {
     announce(title)
   }, [title])
 
+  /* Naming marks whatever form the hatch landed on as seen too. */
   const submit = () => {
     if (done.current) return
     done.current = true

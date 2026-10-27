@@ -225,7 +225,6 @@ export const mobilePl = {
      cottage and its HUD, the evolution card. */
   elf: {
     title: 'Twój Elf',
-    /* Adoption */
     /* The hatch sheet: the elf is named and given its element here */
     hatchTitle: 'Kto się wykluł?',
     hatchLead: 'Z jajka wyszła malutka Iskierka pełna magicznej energii. Nadaj jej imię i wybierz żywioł.',
@@ -286,7 +285,7 @@ export const mobilePl = {
     wantsClean: '{{name}} marzy o kąpieli.',
     /* The mood line in the HUD, and the hints a screen reader gets for the room */
     moodEgg: 'Wykluje się po odliczaniu albo przy pierwszej odkrytej Chatynce.',
-    moodEggDue: '{{name}} zaraz się wykluje!',
+    moodEggDue: 'Zaraz się wykluje!',
     moodBeaming: '{{name}} promienieje radością!',
     moodContent: '{{name}} rozgląda się ciekawie.',
     moodWants: '{{name}} czegoś by chciał...',
