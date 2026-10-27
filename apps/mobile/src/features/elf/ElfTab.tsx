@@ -252,15 +252,16 @@ export function ElfTab() {
     if (news.setBonus || news.milestoneDust || news.celebrate.length) sceneRef.current?.react('cheer')
   }, [news, focused, queueSpeech, t, cottages, foundCount])
 
-  /* The elf's first word to a new player: how to pet it (and the acorn to
-     drag), once for the egg and once for the hatched elf, after whatever
-     news the visit brings. */
+  /* The elf's first words to a new player, a short guide said once for the
+     egg (how to rock it, where the day's quests and reward are) and once
+     for the hatched elf (how to pet it, the care and its caps, what a
+     cottage found brings), after whatever news the visit brings. */
   useEffect(() => {
     if (!state || !focused) return
     const form = stage === 'egg' ? 'egg' : 'elf'
     if (introduced.current === form) return
     introduced.current = form
-    queueSpeech([t(form === 'egg' ? 'mobile:elf.firstLineEgg' : 'mobile:elf.firstLine')])
+    queueSpeech(form === 'egg' ? [t('mobile:elf.firstLineEgg'), t('mobile:elf.guideLedger')] : [t('mobile:elf.firstLine'), t('mobile:elf.guideCare'), t('mobile:elf.guideFind')])
   }, [state, focused, stage, queueSpeech, t])
 
   /* The elf waking, by the button or by the morning: the scene plays the
