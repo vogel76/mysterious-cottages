@@ -15,6 +15,8 @@ import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfHud, type ElfPanel } from './ElfHud'
 import { DECOR_SLOTS, ElfPicker } from './ElfPicker'
 import { ElfSpeech } from './ElfSpeech'
+import { ElfTutorial } from './ElfTutorial'
+import { useElfTutorial } from './useElfTutorial'
 import { elfKey } from './labels'
 import { useEvolutionPresenter } from './useEvolutionPresenter'
 import { useReturnGreeting } from './useReturnGreeting'
@@ -40,10 +42,11 @@ import { useReturnGreeting } from './useReturnGreeting'
    bubble over its head (ElfSpeech); the care buttons show the day's caps
    as dots, so a refusal is rarely a surprise. The evolution card is
    presented by the hook while the tab is focused. The elf also speaks
-   first: its first words to a new player say how to pet it (once for the
-   egg, once for the hatched elf), a need it wants seen to makes it wave
-   for attention once per episode, and a return after half an hour away
-   is greeted.
+   first: a need it wants seen to makes it wave for attention once per
+   episode, and a return after half an hour away is greeted. A new player
+   is shown the way by the tutorial (useElfTutorial, ElfTutorial): a few
+   cards above the care band, once for the egg and once for the named
+   elf, some waiting for the move they ask for.
 
    Coming into view is a visit for the rules (packages/core, elf.ts): the
    day is settled, the streak counted, the quests dealt. What a visit or an
@@ -121,13 +124,6 @@ export function ElfTab() {
       windowOffset.current = { x, y }
     })
   }
-
-  /* Whom the elf has introduced itself to: the egg's word and the hatched
-     elf's are each said once; a new egg starts over. */
-  const introduced = useRef<'egg' | 'elf' | null>(null)
-  useEffect(() => {
-    if (!state) introduced.current = null
-  }, [state])
 
   /* The tab in view, or the app back in front with the tab on top, is a
      visit: the day is settled and counted. */
@@ -252,17 +248,6 @@ export function ElfTab() {
     if (news.setBonus || news.milestoneDust || news.celebrate.length) sceneRef.current?.react('cheer')
   }, [news, focused, queueSpeech, t, cottages, foundCount])
 
-  /* The elf's first words to a new player, a short guide said once for the
-     egg (how to rock it, where the day's quests and reward are) and once
-     for the hatched elf (how to pet it, the care and its caps, what a
-     cottage found brings), after whatever news the visit brings. */
-  useEffect(() => {
-    if (!state || !focused) return
-    const form = stage === 'egg' ? 'egg' : 'elf'
-    if (introduced.current === form) return
-    introduced.current = form
-    queueSpeech(form === 'egg' ? [t('mobile:elf.firstLineEgg'), t('mobile:elf.guideLedger')] : [t('mobile:elf.firstLine'), t('mobile:elf.guideCare'), t('mobile:elf.guideFind')])
-  }, [state, focused, stage, queueSpeech, t])
 
   /* The elf waking, by the button or by the morning: the scene plays the
      wake when the tab can see it (a wake while away is played on the
@@ -312,6 +297,18 @@ export function ElfTab() {
     const { height } = event.nativeEvent.layout
     setHudHeight((current) => (current === height ? current : height))
   }, [])
+  /* The tutorial: the egg's flow while the egg waits (not once it is ready
+     to hatch, which has its own ritual), the elf's once it has its name. */
+  const tutorial = useElfTutorial({
+    flow: !state ? null : stage === 'egg' ? (hatchReady ? null : 'egg') : state.starter !== null ? 'elf' : null,
+    ready: loaded && focused && panel === 'none',
+  })
+  const [tutorialHeight, setTutorialHeight] = useState(0)
+  const onTutorialLayout = useCallback((event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout
+    setTutorialHeight((current) => (current === height ? current : height))
+  }, [])
+
   /* The care band's height, measured, so the room is lifted above it. */
   const [bandHeight, setBandHeight] = useState(0)
   const onBandLayout = useCallback((event: LayoutChangeEvent) => {
@@ -349,7 +346,10 @@ export function ElfTab() {
   const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
   /* The day's quests, the reward to pick and what the ledger's figures
      mean: a sheet over the tab. */
-  const onLedger = useCallback(() => router.push('/elf-today'), [router])
+  const onLedger = useCallback(() => {
+    tutorial.note('ledger')
+    router.push('/elf-today')
+  }, [router, tutorial])
   const closePanel = useCallback(() => setPanel('none'), [])
 
   /* A slot tapped in the room while decorating picks the panel's tab; a
@@ -415,7 +415,8 @@ export function ElfTab() {
   const onPetElf = useCallback(() => {
     /* Within the cooldown the rules give nothing, but the elf still answers. */
     sceneRef.current?.react(pet() ? 'pet' : 'poke')
-  }, [pet])
+    tutorial.note('pet')
+  }, [pet, tutorial])
 
   const onPokeElf = useCallback(() => {
     sceneRef.current?.react('poke')
@@ -423,7 +424,11 @@ export function ElfTab() {
 
   /* The finger moving over the body: the rules count a pet, the scene
      already plays the stroke and its hearts. */
-  const onStrokeElf = useCallback(() => pet(), [pet])
+  const onStrokeElf = useCallback(() => {
+    const counted = pet()
+    if (counted) tutorial.note('pet')
+    return counted
+  }, [pet, tutorial])
 
   /* The hatch is the player's: once the egg is ready it rocks on its own
      every few seconds and the name block says to tap it; the first tap
@@ -451,7 +456,8 @@ export function ElfTab() {
     }
     tendEgg('rock')
     sceneRef.current?.react('egg')
-  }, [hatchReady, hatchNow, tendEgg, say, t])
+    tutorial.note('egg')
+  }, [hatchReady, hatchNow, tendEgg, say, t, tutorial])
 
   /* Returns how the rules took it, so the drag-to-feed can tell an eaten
      acorn from a refused one. */
@@ -462,6 +468,7 @@ export function ElfTab() {
       else if (outcome.kind === 'asleep') say(t('mobile:elf.asleepHint'))
       else if (outcome.kind === 'done') {
         sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
+        if (id === 'feed') tutorial.note('feed')
         /* The scene and the "+N" over the chip show it; a screen reader
            is told the need and its gain. */
         const need = ELF_CARE_NEEDS[id]
@@ -470,15 +477,16 @@ export function ElfTab() {
       }
       return outcome.kind
     },
-    [elf, say, t],
+    [elf, say, t, tutorial],
   )
 
   const onTendEgg = useCallback(
     (id: ElfEggAction) => {
       tendEgg(id)
       sceneRef.current?.react('egg')
+      tutorial.note(id === 'warm' ? 'warm' : 'egg')
     },
-    [tendEgg],
+    [tendEgg, tutorial],
   )
 
   /* The wake itself is played by the sleeping edge above. */
@@ -564,7 +572,7 @@ export function ElfTab() {
   /* Where the panels stand above the floating tab bar; the care band sits
      on the bar itself. What covers the view's bottom, for the room's lift. */
   const bottomOffset = tabBarHeight + TAB_BAR_OVERHANG + space.md
-  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight : bottomOffset + panelHeight
+  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step ? tutorialHeight + space.md : 0) : bottomOffset + panelHeight
 
   return (
     <View ref={rootRef} style={styles.screen} onLayout={onLayout}>
@@ -622,6 +630,12 @@ export function ElfTab() {
       {/* The elf's line, over its head where the scene says it is. */}
       {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={insets.top + space.md + hudHeight + space.sm} /> : null}
 
+      {tutorial.step && panel === 'none' ? (
+        <View style={[styles.tutorial, { bottom: tabBarHeight + bandHeight + space.md }]} pointerEvents="box-none">
+          <ElfTutorial step={tutorial.step} onNext={tutorial.next} onSkip={tutorial.skip} onLayout={onTutorialLayout} />
+        </View>
+      ) : null}
+
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
           <ElfActionBar stage={stage} sleeping={state.sleeping} careLeft={left} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
@@ -652,6 +666,12 @@ const styles = StyleSheet.create({
     gap: space.sm,
   },
   bottom: {
+    position: 'absolute',
+    left: space.lg,
+    right: space.lg,
+  },
+  /* The tutorial's card floats above the care band. */
+  tutorial: {
     position: 'absolute',
     left: space.lg,
     right: space.lg,

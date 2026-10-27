@@ -293,12 +293,22 @@ export const mobilePl = {
     moodAsleep: '{{name}} śpi słodko.',
     tapHint: 'Dotknij elfa, aby go pogłaskać.',
     tapHintEgg: 'Dotknij jajka, aby je pokołysać.',
-    /* The elf's first words to a new player, said once in its bubble */
-    firstLine: 'Pogłaszcz mnie! Możesz też przeciągnąć do mnie żołądź z guzika.',
-    firstLineEgg: 'Dotknij jajka, żeby je pokołysać. Ogrzewanie też się liczy!',
-    guideLedger: 'Zadania dnia i nagroda czekają w księdze pod paskami. Zajrzyj tam!',
-    guideCare: 'Karm mnie, baw się ze mną i kąp mnie. Każde ma dzienny limit, widać go w kropkach.',
-    guideFind: 'Gdy odkryjesz Chatynkę, dostanę za nią zadanie, a jej zdjęcie trafi w ramkę.',
+    /* The tutorial: cards the player clicks through, once for the egg and
+       once for the named elf; some steps wait for the move they ask for */
+    tutorialTitle: 'Samouczek',
+    tutorialStep: '{{step}} z {{total}}',
+    tutorialNext: 'Dalej',
+    tutorialDone: 'Gotowe',
+    tutorialSkip: 'Pomiń',
+    tutorialEgg1: 'To Twoje jajko elfa. Dotknij je, a się pokołysze.',
+    tutorialEgg2: 'Ogrzej je przyciskiem na półce. Ciepło widać w poświacie, a wyklucie przyjdzie z czasem albo z najbliższą odkrytą Chatynką: odliczanie masz nad paskami.',
+    tutorialEgg3: 'Pod paskami jest księga: żołędzie, gwiezdny pył, seria dni i zadania dnia. Otwórz ją strzałką.',
+    tutorialEgg4: 'Gdy jajko będzie gotowe, zakładka Elf dostanie kropkę. Wtedy dotknij je dwa razy. Do zobaczenia!',
+    tutorialElf1: 'Pogłaszcz mnie: dotknij mnie albo przesuń po mnie palcem.',
+    tutorialElf2: 'Nakarm mnie przyciskiem z żołędziem na półce albo przeciągnij żołądź prosto na mnie.',
+    tutorialElf3: 'Każda opieka ma dzienny limit, widać go w kropkach pod przyciskami. Gdy czegoś mi brakuje, napiszę to pod moim imieniem.',
+    tutorialElf4: 'Przycisk z fotelem urządza chatynkę. Część mebli odblokujesz odkryciami Chatynek.',
+    tutorialElf5: 'Za odkrytą Chatynkę dostanę zadanie, a jej zdjęcie trafi w ramkę. Wracaj codziennie po zadania i nagrodę dnia!',
     /* The egg getting ready while another screen is in front */
     eggReadyToast: 'Jajko w chatynce pęka! Dotknij je, żeby wykluć elfa.',
     eggReadyAction: 'Zobacz',

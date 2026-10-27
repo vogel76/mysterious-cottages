@@ -656,6 +656,12 @@ Talking Tom, Neko Atsume, Finch) says, applied in the tab:
   the head toward a point on the screen (the sprite elf, with no separate
   head, leans towards it); a stroke over the body is the most alive input
   (eyes close, the head leans in, hearts trickle).
+- **The tutorial** (`useElfTutorial.ts`, `ElfTutorial.tsx`): cards above
+  the care band that a new player clicks through at their own pace, once
+  for the egg (rock it, warm it, open the ledger, what hatches it) and
+  once for the named elf (pet it, feed it, the caps, the decorating, what
+  a cottage found brings); a step that asks for a move waits for it, skip
+  ends the flow, and each flow is remembered per device.
 - **Reduced motion** keeps a slow, shallow breath as the elf's only loop,
   so it is alive and not a statue; reactions are a blip of particles.
 - **Idle fidgets** every 8 to 15 seconds (an ear twitch, a yawn, a glance
