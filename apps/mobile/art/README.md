@@ -90,14 +90,18 @@ in `common.py` and `elf.py`'s `LOOK`; a change there changes every render.
 
 The figure's parts are not left as primitives sitting in one another:
 `fuse` in `elf.py` joins a group (the torso with its shoulders and
-sleeves; the head with the neck, the nose and the ears; the hair cap with
-its locks and tufts; a hand with its thumb and fingers; a boot with its
-shaft and toe), applies their modifiers, remeshes the union on a voxel
-grid (0.0045 to 0.01 m) and smooths it, so a sleeve grows out of a
-shoulder. A fused mesh binds with automatic weights plus a Corrective
-Smooth; the hair rides the head rigidly with its tufts weighted to the
-`hood_tip` bone by height (heat weights fail on that mass). An open
-surface cannot be remeshed, hence the Solidify on the hair cap.
+sleeves; the head with the neck, the chin, the nose and the ears; the
+hair, a sphere shell cut to the hairstyle with sideburns and mounds of
+volume; a hand with its palm, fingers and thumb; a boot with its shaft
+and toe), applies their modifiers, remeshes the union on a voxel grid
+(0.0035 to 0.01 m) and smooths it, so a sleeve grows out of a shoulder.
+A fused mesh binds with automatic weights plus a Corrective Smooth (the
+arm bones' weights are kept out of the torso column, or a raised arm
+narrows the waist); the hair rides the head rigidly with its crown
+weighted to the `hood_tip` bone by height (heat weights fail on that
+mass). An open surface cannot be remeshed, hence the Solidify on the
+hair cap. The belt and the hem band are measured on the torso tube
+before the sleeves join it.
 
 `elf.py` takes `--form young|baby`, `--ramp <0..1>` (0 plain Principled,
 1 cel), `--no-ink`, `--hull`, `--no-quality` and `--quick`, and its
