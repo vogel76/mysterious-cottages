@@ -738,7 +738,7 @@ exactly the room units) with the furniture laid over it as transparent
 crops (`assets/elf/room/manifest.json` says where each variant sits in
 the plate, `cottage/RoomSprites.tsx` draws them, the rug under the elf
 and the rest in their depth), and the elf is an atlas
-(`assets/elf/sprites/elf/`: a cell of 256 by 387 pixels per frame at 180
+(`assets/elf/sprites/elf/`: a cell of 268 by 386 pixels per frame at 180
 pixels to the metre, the feet as the anchor, 24 fps; the clips idle,
 happy, sad, sleep, pet, feed and wave) played by `cottage/SpriteElf.tsx` on the sprite player's
 UI-thread frame clock, with the figure's procedural motion (the bob, the
@@ -804,8 +804,8 @@ Galaxy Note 10+:
 
 Baseline, release build of 2026-10-26 (the sprite scene, the vector
 cottage gone, the first elf's atlas of nine sheets at 180 pixels to the
-metre; the redesigned elf of 2026-10-27 packs into six sheets of the
-same scale, 3.6 MB, not yet re-measured):
+metre; the redesigned elf of 2026-10-27 with its new clips packs into
+eight sheets of the same scale, 4.2 MB, not yet re-measured):
 
 | Point | PSS | native heap | graphics (GL + EGL) | Dalvik | unknown | RSS | frames |
 |---|---|---|---|---|---|---|---|

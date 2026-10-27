@@ -1,84 +1,96 @@
 {
   "version": 2,
-  "frameWidth": 256,
-  "frameHeight": 387,
+  "frameWidth": 268,
+  "frameHeight": 386,
   "anchor": {
-    "x": 130.2,
-    "y": 372.74
+    "x": 126.0,
+    "y": 371.54
   },
   "fps": 24,
   "sheets": [
     {
       "file": "body-1.webp",
-      "columns": 8,
+      "columns": 7,
       "rows": 5,
-      "frames": 40
+      "frames": 35
     },
     {
       "file": "body-2.webp",
-      "columns": 8,
+      "columns": 7,
       "rows": 5,
-      "frames": 40
+      "frames": 35
     },
     {
       "file": "body-3.webp",
-      "columns": 8,
+      "columns": 7,
       "rows": 5,
-      "frames": 40
+      "frames": 35
     },
     {
       "file": "body-4.webp",
-      "columns": 8,
+      "columns": 7,
       "rows": 5,
-      "frames": 40
+      "frames": 35
     },
     {
       "file": "body-5.webp",
-      "columns": 8,
+      "columns": 7,
       "rows": 5,
-      "frames": 40
+      "frames": 35
     },
     {
       "file": "body-6.webp",
-      "columns": 8,
-      "rows": 2,
-      "frames": 16
+      "columns": 7,
+      "rows": 5,
+      "frames": 35
+    },
+    {
+      "file": "body-7.webp",
+      "columns": 7,
+      "rows": 5,
+      "frames": 35
+    },
+    {
+      "file": "body-8.webp",
+      "columns": 7,
+      "rows": 1,
+      "frames": 7
     }
   ],
   "clips": {
     "feed": {
       "from": 0,
-      "to": 23,
+      "to": 35,
       "loop": false
     },
     "happy": {
-      "from": 24,
-      "to": 47,
+      "from": 36,
+      "to": 71,
       "loop": false
     },
     "idle": {
-      "from": 48,
-      "to": 95,
+      "from": 72,
+      "to": 119,
       "loop": true
     },
     "pet": {
-      "from": 96,
-      "to": 119,
+      "from": 120,
+      "to": 143,
       "loop": false
     },
     "sad": {
-      "from": 120,
-      "to": 143,
+      "from": 144,
+      "to": 167,
       "loop": true
     },
     "sleep": {
-      "from": 144,
-      "to": 191,
+      "from": 168,
+      "to": 215,
       "loop": true
     },
     "wave": {
-      "from": 192,
-      "to": 215,
+      "from": 216,
+      "to": 251,
       "loop": false
     }
   },
