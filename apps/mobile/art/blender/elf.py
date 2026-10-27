@@ -448,19 +448,21 @@ def build_model():
                              mats["tunic"], scale=(1.0, 0.9, 1.0), subsurf=1))
         pieces.append(tube(f"Arm.{suffix}", [shoulder, elbow, hand - (hand - elbow) * 0.2],
                            [0.072, 0.062, 0.056], "Body", mats["tunic"], ref=(0, 1, 0), segments=20, subsurf=1))
+    def girth(z):
+        """The tunic's half-widths (x, y) at height z, read off the torso
+        tube before the sleeves join it (they hang at belt height) and the
+        smoothing of the fuse shrinks it a little."""
+        ring = [v.co for v in torso.data.vertices if abs(v.co.z - z) < 0.03]
+        return max(abs(v.x) for v in ring) - 0.008, max(abs(v.y) for v in ring) - 0.008
+
+    waist_z_belt = waist_z - 0.02
+    hem_x, hem_y = girth(F.hem_z + 0.015)
+    belt_x, belt_y = girth(waist_z_belt)
     body = fuse("Body", pieces, mats["tunic"], voxel=0.01)
     objs["Body"] = body
-
-    def girth(z):
-        """The tunic's half-widths (x, y) at height z, read off its mesh."""
-        ring = [v.co for v in body.data.vertices if abs(v.co.z - z) < 0.03 and abs(v.co.x) < F.hem_r + 0.02]
-        return max(abs(v.x) for v in ring), max(abs(v.y) for v in ring)
-
-    hem_x, hem_y = girth(F.hem_z + 0.015)
     objs["Hem"] = torus("Hem", (0, 0, F.hem_z + 0.015), (hem_x - 0.012, hem_y - 0.012), 0.024, "Body",
                         mats["tunic_dark"], subsurf=1)
-    belt_z = waist_z - 0.02
-    belt_x, belt_y = girth(belt_z)
+    belt_z = waist_z_belt
     objs["Belt"] = torus("Belt", (0, 0, belt_z), (belt_x - 0.008, belt_y - 0.008), 0.022, "Body",
                          mats["belt"], subsurf=1)
     objs["Buckle"] = rounded_box("Buckle", (0, -(belt_y + 0.012), belt_z), (0.09, 0.03, 0.08), "Body",
@@ -718,6 +720,28 @@ def bind_auto(arm, obj, bones, corrective=False):
         obj.modifiers.move(len(obj.modifiers) - 1, 1)
 
 
+def keep_arms_off_torso(obj):
+    """Automatic weights spread the arm bones into the fused torso, which
+    then narrows at the waist when an arm rises; inside the torso column
+    the arm weights go to the chest instead."""
+    arm_groups = {g.index: g for g in obj.vertex_groups if g.name.startswith(("upper_arm", "forearm"))}
+    chest = obj.vertex_groups["chest"]
+    moved_total = 0.0
+    for v in obj.data.vertices:
+        if abs(v.co.x) > F.chest_r + 0.03 or v.co.z > F.shoulder_z - 0.02:
+            continue
+        weights = {e.group: e.weight for e in v.groups}
+        moved = sum(w for g, w in weights.items() if g in arm_groups)
+        if moved <= 0:
+            continue
+        for g in arm_groups:
+            if g in weights:
+                arm_groups[g].add([v.index], 0.0, "REPLACE")
+        chest.add([v.index], min(1.0, weights.get(chest.index, 0.0) + moved), "REPLACE")
+        moved_total += moved
+    print(f"[elf] arm weight moved off the torso: {moved_total:.1f}")
+
+
 def bind_tuft(arm, obj):
     """The hair rides the head, and the tufts at the crown blend over to the
     hood_tip bone with their height, so the clips' tuft keys still move them
@@ -777,6 +801,7 @@ def bind_all(arm, objs):
         elif base == "Body":
             bind_auto(arm, obj, ["hips", "spine", "chest", "upper_arm.L", "forearm.L", "upper_arm.R", "forearm.R"],
                       corrective=True)
+            keep_arms_off_torso(obj)
         elif base == "Head":
             bind_auto(arm, obj, ["head", "neck", "ear.L", "ear.R"], corrective=True)
         elif base == "Hair":
