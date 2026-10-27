@@ -12,7 +12,13 @@ sequences with an orthographic front camera.
 
 Run:
     blender --background --python elf.py -- <out_dir> [--stages still,turntable,moods,hats,anims,allanims,hero,lookdev]
-        [--clips wave,feed] [--form young|baby] [--ramp 0.4] [--no-ink] [--hull] [--no-quality] [--quick]
+        [--clips wave,feed] [--form young|baby] [--studio] [--ramp 0.4] [--no-ink] [--hull] [--no-quality] [--quick]
+
+By default the elf stands on the rug of the cottage of room.py, lit by
+its fire and moon, drawn by its ink, and the frames are the room's camera
+cropped to the figure; --studio renders it alone in the shared light rig
+with the orthographic camera instead (the look-dev sheets of the
+character were made that way).
 
 The look is set by LOOK below (the ramp of the painterly shading, the ink,
 the inverted hull) and overridden by the flags, which the lookdev stage
@@ -1270,6 +1276,14 @@ FRAME_W, FRAME_H = 640, 832
 FEET_MARGIN_PX = 30
 ORTHO_SCALE = FRAME_H / PX_PER_M
 CAMERA_CENTER = (0.0, 0.0, (FRAME_H / 2 - FEET_MARGIN_PX) / PX_PER_M)
+# The frame as rendered: where its top-left corner lies in the camera's
+# full image (a render border crops the room's frame to the figure) and
+# the world point of the feet; stage_anims writes the anchor from them.
+FRAME = {"origin": (0.0, 0.0), "feet": (0.0, 0.0, 0.0), "pixels_per_metre": float(PX_PER_M)}
+# The figure's height in plate pixels when it stands at the rug of the
+# room: the app's ELF_HEIGHT_UNITS, so the room render shows the elf
+# exactly as the app does.
+ROOM_FIGURE_PX = 540
 # Watts that put the lit front of the figure at the palette colours (the skin
 # is bright and clips first).
 LIGHT_WATTS = {"key": 540.0, "fill": 190.0, "top": 130.0}
@@ -1347,7 +1361,10 @@ def stage_anims(scene, rig, out, clips):
     layer_dir = os.path.join(out, "layers", "body")
     # The feet, the world origin, in frame pixels: the packer carries the
     # point through the trim and the scale, and the app places the sprite by it.
-    _common.write_anchor(scene, scene.camera, layer_dir)
+    os.makedirs(layer_dir, exist_ok=True)
+    x, y = _common.project_to_pixels(scene, scene.camera, FRAME["feet"])
+    with open(os.path.join(layer_dir, "anchor.json"), "w", encoding="utf-8") as handle:
+        json.dump({"x": round(x - FRAME["origin"][0], 2), "y": round(y - FRAME["origin"][1], 2)}, handle)
     for clip in clips:
         rig.apply(clip)
         start, end = rig.clips[clip]
@@ -1372,13 +1389,13 @@ def write_render_info(out, argv, model_height):
     and the atlas records how it was made)."""
     layers = os.path.join(out, "layers")
     os.makedirs(layers, exist_ok=True)
+    scene = bpy.context.scene
     info = {
         "script": "elf.py",
         "args": argv[1:],
-        "width": FRAME_W,
-        "height": FRAME_H,
-        "orthoScale": round(ORTHO_SCALE, 6),
-        "pixelsPerMetre": PX_PER_M,
+        "width": scene.render.resolution_x,
+        "height": scene.render.resolution_y,
+        "pixelsPerMetre": round(FRAME["pixels_per_metre"], 3),
         "modelHeight": round(model_height, 4),
     }
     with open(os.path.join(layers, "render.json"), "w", encoding="utf-8") as handle:
@@ -1399,6 +1416,53 @@ def report_dimensions(objs):
     print(f"[elf] bounds min={tuple(round(c, 3) for c in lo)} max={tuple(round(c, 3) for c in hi)} "
           f"size={tuple(round(c, 3) for c in (hi - lo))}")
     return lo, hi
+
+
+def room_scene(samples, quality=True):
+    """The cottage of room.py as the elf's scene: its camera, lights, ink
+    and look, the furniture hidden, the shell lighting and shadowing but
+    invisible to the camera and drawing no ink of its own, by night."""
+    import room
+    room.LOOK.update(ramp=LOOK["ramp"], ink=LOOK["ink"], hull=LOOK["hull"])
+    scene = room.setup_scene(1000, 1600, samples=samples, transparent=True)
+    cam, _tilt, rug_center, plug, slot_colls, lights = room.build_everything(scene, quality=quality)
+    room.show_slots(slot_colls, set())
+    plug.hide_render = True
+    room.set_shell_hidden_from_camera(True)
+    room.set_daylight(lights, False)
+    return scene, {"camera": cam, "rug": Vector(rug_center)}
+
+
+def place_in_room(scene, arm, room_rig, model_height):
+    """Stand the elf on the rug, sized so it is ROOM_FIGURE_PX tall in the
+    plate's pixels, and crop the render to the figure (with room for the
+    hops and the arms) so the frames hold the figure alone."""
+    cam, rug = room_rig["camera"], room_rig["rug"]
+    foot = _common.project_to_pixels(scene, cam, rug)
+    head = _common.project_to_pixels(scene, cam, rug + Vector((0, 0, 1.0)))
+    pixels_per_metre = foot[1] - head[1]
+    k = ROOM_FIGURE_PX / (pixels_per_metre * model_height)
+    arm.location = rug
+    arm.scale = (k, k, k)
+    FRAME["feet"] = tuple(rug)
+    FRAME["pixels_per_metre"] = pixels_per_metre * k
+    # the border: the figure's reach, in the room, projected and padded
+    corners = [rug + Vector((sx * 0.8 * k, -0.35 * k, z * k)) for sx in (-1, 1) for z in (-0.05, 2.2)]
+    pts = [_common.project_to_pixels(scene, cam, c) for c in corners]
+    width, height = scene.render.resolution_x, scene.render.resolution_y
+    pad = 24
+    x0 = max(0, int(min(p[0] for p in pts)) - pad)
+    x1 = min(width, int(max(p[0] for p in pts)) + pad)
+    y0 = max(0, int(min(p[1] for p in pts)) - pad)
+    y1 = min(height, int(max(p[1] for p in pts)) + pad)
+    render = scene.render
+    render.use_border = True
+    render.use_crop_to_border = True
+    render.border_min_x, render.border_max_x = x0 / width, x1 / width
+    render.border_min_y, render.border_max_y = 1.0 - y1 / height, 1.0 - y0 / height
+    FRAME["origin"] = (float(x0), float(y0))
+    print(f"[elf] in the room: {pixels_per_metre:.1f} px/m at the rug, figure scale {k:.3f}, "
+          f"frame {x1 - x0}x{y1 - y0} at ({x0}, {y0})")
 
 
 def read_flags(argv):
@@ -1424,20 +1488,28 @@ def main():
     os.makedirs(out, exist_ok=True)
     read_flags(argv)
 
-    scene = setup_scene(FRAME_W, FRAME_H, samples=16 if quick else 32)
+    studio = "--studio" in argv
+    samples = 16 if quick else 32
+    if studio:
+        scene = setup_scene(FRAME_W, FRAME_H, samples=samples)
+    else:
+        scene, room_rig = room_scene(samples, quality=LOOK["quality"] and not quick)
     objs, mats = build_model()
     arm = build_armature()
     bind_all(arm, objs)
     rig = Rig(arm, objs)
     clips = build_clips(rig)
-    add_light_rig(target=CAMERA_CENTER, key_strength=LIGHT_WATTS["key"], fill_strength=LIGHT_WATTS["fill"],
-                  top_strength=LIGHT_WATTS["top"])
-    add_ortho_camera(CAMERA_CENTER, ORTHO_SCALE)
-    if LOOK["ink"]:
-        _common.add_line_art(scene, radius=LOOK["ink_radius"])
-    if LOOK["quality"] and not quick:
-        _common.enable_quality(scene)
     _, top = report_dimensions(objs)
+    if studio:
+        add_light_rig(target=CAMERA_CENTER, key_strength=LIGHT_WATTS["key"], fill_strength=LIGHT_WATTS["fill"],
+                      top_strength=LIGHT_WATTS["top"])
+        add_ortho_camera(CAMERA_CENTER, ORTHO_SCALE)
+        if LOOK["ink"]:
+            _common.add_line_art(scene, radius=LOOK["ink_radius"])
+        if LOOK["quality"] and not quick:
+            _common.enable_quality(scene)
+    else:
+        place_in_room(scene, arm, room_rig, top.z)
     write_render_info(out, argv, top.z)
     print(f"[elf] form {F} look {LOOK}")
     for name, (start, end) in clips.items():

@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "frameWidth": 268,
-  "frameHeight": 386,
+  "frameWidth": 275,
+  "frameHeight": 391,
   "anchor": {
-    "x": 126.0,
-    "y": 371.54
+    "x": 132.0,
+    "y": 369.6
   },
   "fps": 24,
   "sheets": [
@@ -94,7 +94,7 @@
       "loop": false
     }
   },
-  "pixelsPerMetre": 180.0,
+  "pixelsPerMetre": 178.573,
   "modelHeight": 1.8144,
   "source": {
     "render": {
@@ -103,9 +103,8 @@
         "--stages",
         "still,allanims"
       ],
-      "width": 640,
-      "height": 832,
-      "orthoScale": 2.773333
+      "width": 1000,
+      "height": 1600
     },
     "pack": "pack-layers --base body --scale 0.6 --fps 24 --once feed,happy,pet,wave"
   }

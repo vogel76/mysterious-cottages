@@ -8,10 +8,15 @@ writes sprites.json, tiles all renders into one contact sheet for review and
 crops the plate to the band a 9:20 phone shows (the app fits the plate to the
 screen height and crops the sides) so the phone view can be judged directly.
 
-Usage: /usr/bin/python3 room_sheet.py OUT_DIR [sprite.png ...]
+Usage: /usr/bin/python3 room_sheet.py OUT_DIR [sprite.png ...] [--pack DEST]
 Reads OUT_DIR/plate.png, plate_empty.png and the given sprite files (default:
-every <slot>_<variant>.png in OUT_DIR); writes OUT_DIR/sprites.json,
-OUT_DIR/contact.png and OUT_DIR/phone_crop.png.
+every <slot>_<variant>.png in OUT_DIR; a <slot>_<variant>.day.png next to one
+is its daytime twin); writes OUT_DIR/sprites.json, OUT_DIR/contact.png and
+OUT_DIR/phone_crop.png. With --pack DEST it also writes the app's assets
+into DEST (assets/elf/room): the empty plates as plate.webp and
+plate_day.webp, every sprite cropped to its box as <slot>_<variant>.webp
+with its _day twin, and manifest.json with the boxes, the floor line and
+the rug centre from camera.json.
 """
 
 import json
@@ -21,7 +26,7 @@ import sys
 from PIL import Image, ImageDraw
 
 ALPHA_THRESHOLD = 12
-PLATES = ("plate.png", "plate_empty.png")
+PLATES = ("plate.png", "plate_empty.png", "plate_day.png", "plate_empty_day.png")
 # The band of the plate a 9:20 phone shows with the app's cover fit, as a
 # fraction of the plate width: 140..860 of 1000.
 PHONE_BAND = (0.14, 0.86)
@@ -30,28 +35,84 @@ PHONE_BAND = (0.14, 0.86)
 def sprite_files(out_dir):
     files = []
     for name in sorted(os.listdir(out_dir)):
-        if not name.endswith(".png") or name in PLATES or name in ("contact.png", "phone_crop.png"):
+        if not name.endswith(".png") or name.startswith("plate") or name in ("contact.png", "phone_crop.png"):
             continue
-        if "_" not in name:
+        if "_" not in name or name.endswith(".day.png"):
             continue
         files.append(name)
     return files
 
 
+def day_twin(out_dir, name):
+    """The daytime render of a sprite, if it was made."""
+    twin = name[:-4] + ".day.png"
+    return twin if os.path.exists(os.path.join(out_dir, twin)) else None
+
+
+def opaque_box(path):
+    img = Image.open(path).convert("RGBA")
+    alpha = img.getchannel("A").point(lambda a: 255 if a > ALPHA_THRESHOLD else 0)
+    return alpha.getbbox()
+
+
 def measure(out_dir, files):
+    """The box of each sprite: the union of its night and day renders, so
+    both crop to the same cell."""
     entries = []
     for name in files:
         slot, variant = name[:-4].split("_", 1)
-        img = Image.open(os.path.join(out_dir, name)).convert("RGBA")
-        alpha = img.getchannel("A").point(lambda a: 255 if a > ALPHA_THRESHOLD else 0)
-        bbox = alpha.getbbox()
+        bbox = opaque_box(os.path.join(out_dir, name))
+        twin = day_twin(out_dir, name)
+        if twin:
+            other = opaque_box(os.path.join(out_dir, twin))
+            if bbox and other:
+                bbox = (min(bbox[0], other[0]), min(bbox[1], other[1]), max(bbox[2], other[2]), max(bbox[3], other[3]))
+            bbox = bbox or other
         if bbox is None:
             print(f"[sheet] {name}: fully transparent, skipped")
             continue
         x0, y0, x1, y1 = bbox
-        entries.append({"slot": slot, "variant": variant, "file": name,
-                        "x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0})
+        entry = {"slot": slot, "variant": variant, "file": name,
+                 "x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}
+        if twin:
+            entry["fileDay"] = twin
+        entries.append(entry)
     return entries
+
+
+WEBP_QUALITY = 88
+
+
+def pack(out_dir, entries, dest):
+    """The app's assets: the empty plates and the cropped sprites as WebP,
+    and the manifest the scene reads (src/features/elf/cottage/roomAssets)."""
+    os.makedirs(dest, exist_ok=True)
+    with open(os.path.join(out_dir, "camera.json")) as f:
+        camera = json.load(f)
+    plate = Image.open(os.path.join(out_dir, "plate_empty.png")).convert("RGB")
+    plate.save(os.path.join(dest, "plate.webp"), quality=WEBP_QUALITY)
+    manifest = {"version": 2, "plate": "plate.webp", "width": plate.width, "height": plate.height,
+                "floorY": int(round(camera["floor_line_px"])),
+                "rug": {"x": int(round(camera["rug_center_px"][0])), "y": int(round(camera["rug_center_px"][1]))},
+                "sprites": []}
+    day_plate = os.path.join(out_dir, "plate_empty_day.png")
+    if os.path.exists(day_plate):
+        Image.open(day_plate).convert("RGB").save(os.path.join(dest, "plate_day.webp"), quality=WEBP_QUALITY)
+        manifest["plateDay"] = "plate_day.webp"
+    for e in entries:
+        box = (e["x"], e["y"], e["x"] + e["width"], e["y"] + e["height"])
+        base = f"{e['slot']}_{e['variant']}"
+        Image.open(os.path.join(out_dir, e["file"])).convert("RGBA").crop(box).save(os.path.join(dest, base + ".webp"), quality=WEBP_QUALITY)
+        packed = {k: v for k, v in e.items() if k != "fileDay"}
+        packed["file"] = base + ".webp"
+        if "fileDay" in e:
+            Image.open(os.path.join(out_dir, e["fileDay"])).convert("RGBA").crop(box).save(os.path.join(dest, base + "_day.webp"), quality=WEBP_QUALITY)
+            packed["fileDay"] = base + "_day.webp"
+        manifest["sprites"].append(packed)
+    with open(os.path.join(dest, "manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+    print(f"[sheet] packed {len(entries)} sprites and the plates into {dest}")
 
 
 def checker(size, cell=24):
@@ -117,8 +178,14 @@ def phone_crop(out_dir):
 
 
 def main():
-    out_dir = os.path.abspath(sys.argv[1])
-    files = sys.argv[2:] or sprite_files(out_dir)
+    args = sys.argv[1:]
+    dest = None
+    if "--pack" in args:
+        at = args.index("--pack")
+        dest = os.path.abspath(args[at + 1])
+        del args[at:at + 2]
+    out_dir = os.path.abspath(args[0])
+    files = args[1:] or sprite_files(out_dir)
     entries = measure(out_dir, files)
     with open(os.path.join(out_dir, "sprites.json"), "w") as f:
         json.dump(entries, f, indent=2)
@@ -126,6 +193,8 @@ def main():
         print(f"[sheet] {e['file']}: {e['width']}x{e['height']} at ({e['x']}, {e['y']})")
     contact_sheet(out_dir, entries)
     phone_crop(out_dir)
+    if dest:
+        pack(out_dir, entries, dest)
 
 
 if __name__ == "__main__":

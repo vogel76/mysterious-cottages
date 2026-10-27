@@ -12,8 +12,9 @@ import { ROOM } from './room'
    colour falling over everything, eased over 800 ms by the sleeping prop
    (with reduce motion on it switches at once). The tint reaches down by
    the room's overrun, so a room lifted behind an open panel is tinted to
-   its visible edge. The hour's light (the window's sky, a sun beam) comes
-   back once the pipeline renders a day and a night plate. */
+   its visible edge. The hour's light itself is in the renders: the room
+   sprites crossfade their night and day pictures by the clock, and the
+   hearth's glow here steps back in daylight. */
 
 const FULL_HEIGHT = ROOM.height + ROOM.overrun
 
@@ -36,8 +37,8 @@ export function PlateLighting({ sleeping, fire, reduceMotion }: LightingProps) {
     night.value = withTiming(sleeping ? 1 : 0, { duration: reduceMotion ? 0 : NIGHT_MS, easing: EASING.inOut })
   }, [sleeping, reduceMotion, night])
 
-  const { flicker } = fire
-  const glow = useDerivedValue(() => HEARTH_GLOW.strength * (0.45 + 0.55 * flicker.value) * (1 - 0.6 * night.value))
+  const { flicker, day } = fire
+  const glow = useDerivedValue(() => HEARTH_GLOW.strength * (0.45 + 0.55 * flicker.value) * (1 - 0.6 * night.value) * (1 - 0.5 * day.value))
   const tint = useDerivedValue(() => NIGHT_TINT * night.value)
 
   return (

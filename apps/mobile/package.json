@@ -24,6 +24,7 @@
     "art:smoke": "blender --background --python art/blender/smoke.py -- art/out/smoke",
     "art:elf": "blender --background --python art/blender/elf.py -- art/out/elf --stages still,allanims",
     "art:room": "blender --background --python art/blender/room.py -- art/out/room",
+    "art:room-pack": "python3 art/blender/room_sheet.py art/out/room --pack assets/elf/room",
     "art:pack": "python3 art/blender/pack.py pack-layers art/out/elf/layers --out assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave",
     "art:check": "python3 art/blender/check.py pack-layers art/out/elf/layers --against assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave"
   },

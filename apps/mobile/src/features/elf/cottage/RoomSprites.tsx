@@ -1,8 +1,9 @@
 import { Fragment, memo } from 'react'
 import { FilterMode, Group, Image, MipmapMode, Rect, rect, useImage } from '@shopify/react-native-skia'
+import type { SharedValue } from 'react-native-reanimated'
 import { PHOTO_ID, type Decor } from './catalogue'
 import { ROOM, slotsIn, type SlotZ } from './room'
-import { ROOM_PLATE, photoRect, roomSpriteFor, type RoomSprite } from './roomAssets'
+import { ROOM_PLATE, ROOM_PLATE_DAY, photoRect, roomSpriteFor, type RoomSprite } from './roomAssets'
 
 /* The rendered room inside the room group: the plate (the empty cottage,
    fireplace and all) covering the room exactly, and the furniture of the
@@ -20,6 +21,11 @@ import { ROOM_PLATE, photoRect, roomSpriteFor, type RoomSprite } from './roomAss
    picture inside it, and the render's own picture until the photo has
    decoded.
 
+   The plate and each sprite are rendered by night and by day, and the
+   daytime picture is drawn over the night one at the opacity of the
+   clock's daylight (0 at night, 1 in full day), so the room's light turns
+   with the hour on the UI thread, nothing re-rendered.
+
    Each image is decoded once by useImage when its node mounts and kept
    while the node lives; a sprite node is keyed by its slot, so swapping a
    variant reuses the node and keeps the old picture on screen until the
@@ -30,6 +36,8 @@ import { ROOM_PLATE, photoRect, roomSpriteFor, type RoomSprite } from './roomAss
 export type RoomSpritesProps = {
   decor: Decor
   layer: SlotZ
+  /* Daylight, 0 night .. 1 full day; the day renders fade in with it. */
+  day: SharedValue<number>
   /* The latest cottage found, as a picture URI, for the frame's photo id. */
   photo?: string | null
 }
@@ -42,8 +50,9 @@ const PLANK_COLOUR = '#55443f'
    pixels on most phones, and plain linear sampling would shimmer. */
 const SAMPLING = { filter: FilterMode.Linear, mipmap: MipmapMode.Linear }
 
-function Plate() {
+function Plate({ day }: { day: SharedValue<number> }) {
   const image = useImage(ROOM_PLATE)
+  const dayImage = useImage(ROOM_PLATE_DAY)
   return (
     <>
       {image ? (
@@ -51,15 +60,30 @@ function Plate() {
       ) : (
         <Rect x={0} y={0} width={ROOM.width} height={ROOM.height} color={WALL_COLOUR} />
       )}
+      {dayImage ? (
+        <Group opacity={day}>
+          <Image image={dayImage} x={0} y={0} width={ROOM.width} height={ROOM.height} fit="fill" sampling={SAMPLING} />
+        </Group>
+      ) : null}
       <Rect x={0} y={ROOM.height} width={ROOM.width} height={ROOM.overrun} color={PLANK_COLOUR} />
     </>
   )
 }
 
-function Sprite({ sprite }: { sprite: RoomSprite }) {
+function Sprite({ sprite, day }: { sprite: RoomSprite; day: SharedValue<number> }) {
   const image = useImage(sprite.module)
+  const dayImage = useImage(sprite.moduleDay)
   if (!image) return null
-  return <Image image={image} x={sprite.x} y={sprite.y} width={sprite.width} height={sprite.height} fit="fill" sampling={SAMPLING} />
+  return (
+    <>
+      <Image image={image} x={sprite.x} y={sprite.y} width={sprite.width} height={sprite.height} fit="fill" sampling={SAMPLING} />
+      {dayImage ? (
+        <Group opacity={day}>
+          <Image image={dayImage} x={sprite.x} y={sprite.y} width={sprite.width} height={sprite.height} fit="fill" sampling={SAMPLING} />
+        </Group>
+      ) : null}
+    </>
+  )
 }
 
 /* The expedition's photo inside the frame's render, clipped to the
@@ -76,17 +100,17 @@ export function FramedPhoto({ sprite, uri }: { sprite: RoomSprite; uri: string }
   )
 }
 
-export const RoomSprites = memo(function RoomSprites({ decor, layer, photo = null }: RoomSpritesProps) {
+export const RoomSprites = memo(function RoomSprites({ decor, layer, day, photo = null }: RoomSpritesProps) {
   return (
     <>
-      {layer === 'back' ? <Plate /> : null}
+      {layer === 'back' ? <Plate day={day} /> : null}
       {slotsIn(layer).map((slot) => {
         const sprite = roomSpriteFor(slot.id, decor[slot.id])
         if (!sprite) return null
         const framed = slot.id === 'picture' && decor.picture === PHOTO_ID ? photo : null
         return (
           <Fragment key={slot.id}>
-            <Sprite sprite={sprite} />
+            <Sprite sprite={sprite} day={day} />
             {framed ? <FramedPhoto sprite={sprite} uri={framed} /> : null}
           </Fragment>
         )

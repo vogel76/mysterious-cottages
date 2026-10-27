@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { Group, Oval, RadialGradient, vec } from '@shopify/react-native-skia'
-import { useDerivedValue } from 'react-native-reanimated'
+import { ColorMatrix, Group, Oval, Paint, RadialGradient, vec } from '@shopify/react-native-skia'
+import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
 import { LayeredSprite, type SpriteImages, type SpriteLayer, type SpriteManifest } from '../sprites'
 import type { PuppetMotion } from './motion'
 import type { Bounds } from './room'
@@ -16,7 +16,10 @@ import type { Bounds } from './room'
    whole figure, the lean (tilt, with a share of the head's tilt, so the
    elf still inclines towards a finger that strokes it) rotates it around
    the feet, and the squash scales it the way the puppet's body scaled.
-   A soft shadow pools under the feet and thins as the elf hops.
+   A soft shadow pools under the feet and thins as the elf hops. The
+   frames are lit by the room's night (the fire and the moon); by day the
+   figure is lifted by a colour matrix that follows the clock's daylight,
+   so it does not stand in the bright room as a night picture.
 
    The frame clock restarts when the clip name changes; to play the same
    one-shot clip twice in a row the scene changes clipKey, which remounts
@@ -40,6 +43,8 @@ const HEAD_LEAN = 0.3
 export const SPRITE_ELF_HEAD_LINE = 0.58 * ELF_HEIGHT_UNITS
 
 const SHADOW = { rx: 150, ry: 32, opacity: 0.3 } as const
+/* How much brighter the night-lit frames are drawn in full daylight. */
+const DAY_LIFT = 0.28
 
 /* The tap target, room units around the feet: the figure itself, not the
    atlas cell, whose transparent margins would otherwise swallow the
@@ -58,12 +63,14 @@ export type SpriteElfProps = {
   motion: PuppetMotion
   /* The feet, room units. */
   origin: { x: number; y: number }
+  /* Daylight, 0 night .. 1 full day, for the lift. */
+  day: SharedValue<number>
   images: SpriteImages
   manifest: SpriteManifest
   flipX?: boolean
 }
 
-export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origin, images, manifest, flipX }: SpriteElfProps) {
+export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origin, day, images, manifest, flipX }: SpriteElfProps) {
   const { bob, squash, tilt, headTilt } = motion
   const { x, y } = origin
   const transform = useDerivedValue(
@@ -79,6 +86,10 @@ export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origi
     [x, y],
   )
   const shadowOpacity = useDerivedValue(() => SHADOW.opacity * Math.max(0.3, 1 + bob.value / 200))
+  const daylight = useDerivedValue(() => {
+    const k = 1 + DAY_LIFT * day.value
+    return [k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, 1, 0]
+  })
   const layers = useMemo<SpriteLayer[]>(() => [{ sheets: images.body }], [images])
   const scale = useMemo(() => figureScale(manifest), [manifest])
 
@@ -87,7 +98,14 @@ export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origi
       <Oval x={x - SHADOW.rx} y={y - SHADOW.ry} width={SHADOW.rx * 2} height={SHADOW.ry * 2} opacity={shadowOpacity}>
         <RadialGradient c={vec(x, y)} r={SHADOW.rx} colors={['#000000', 'transparent']} />
       </Oval>
-      <Group transform={transform}>
+      <Group
+        transform={transform}
+        layer={
+          <Paint>
+            <ColorMatrix matrix={daylight} />
+          </Paint>
+        }
+      >
         <LayeredSprite key={clipKey} manifest={manifest} layers={layers} clip={clip} playing={playing} onEnd={onClipEnd} x={x} y={y} scale={scale} flipX={flipX} />
       </Group>
     </>
