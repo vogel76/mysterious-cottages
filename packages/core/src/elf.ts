@@ -132,8 +132,10 @@ export type ElfDaily = {
 
 export type ElfState = {
   version: typeof ELF_VERSION
+  /* Empty, and no element, until the hatch, when the player names the
+     elf and picks its element; the egg needs neither. */
   name: string
-  starter: ElfStarter
+  starter: ElfStarter | null
   hatched: boolean
   /* The egg's warmth, 0..100, a measure of the care it had, not a gate. */
   warmth: number
@@ -412,12 +414,12 @@ function freshDaily(day: string, name: string, hatched: boolean): ElfDaily {
 
 /* ---------- A new elf and a stored one ---------- */
 
-export function newElf(name: string, starter: ElfStarter, now: number): ElfState {
-  const trimmed = name.trim().slice(0, NAME_MAX_LENGTH) || 'Elf'
+/* A fresh egg in the nest: unnamed and of no element until it hatches. */
+export function newElf(now: number): ElfState {
   return {
     version: ELF_VERSION,
-    name: trimmed,
-    starter,
+    name: '',
+    starter: null,
     hatched: false,
     warmth: 0,
     eggAppearedAt: now,
@@ -431,7 +433,7 @@ export function newElf(name: string, starter: ElfStarter, now: number): ElfState
     lastVisitDay: null,
     streak: 0,
     bestStreak: 0,
-    daily: freshDaily(dayKey(now), trimmed, false),
+    daily: freshDaily(dayKey(now), '', false),
     wallet: { acorns: 0, dust: 0 },
     stageShown: null,
     findsCredited: [],
@@ -478,9 +480,9 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
    broken fields take sane values so a schema tweak never loses the elf. */
 export function normalizeElf(raw: unknown, now: number): ElfState | null {
   if (!isRecord(raw) || raw.version !== ELF_VERSION || typeof raw.name !== 'string' || !isRecord(raw.needs)) return null
-  const name = raw.name.slice(0, NAME_MAX_LENGTH) || 'Elf'
+  const name = raw.name.slice(0, NAME_MAX_LENGTH)
   const hatched = raw.hatched === true
-  const starter = ELF_STARTERS.includes(raw.starter as ElfStarter) ? (raw.starter as ElfStarter) : 'forest'
+  const starter = ELF_STARTERS.includes(raw.starter as ElfStarter) ? (raw.starter as ElfStarter) : null
   const needs = raw.needs
   const eggAppearedAt = number(raw.eggAppearedAt, now)
   const wallet = isRecord(raw.wallet) ? raw.wallet : {}
@@ -840,6 +842,12 @@ export function hatchAt(state: ElfState): number | null {
    the moment the first cottage story is read. */
 export function hatchDue(state: ElfState, now: number, storyRead: boolean): boolean {
   return !state.hatched && (storyRead || now - state.eggAppearedAt >= HATCH_AFTER_MS)
+}
+
+/* The hatched elf named and given its element by the player; a blank
+   name is the plain one. */
+export function christen(state: ElfState, name: string, starter: ElfStarter): ElfState {
+  return { ...state, name: name.trim().slice(0, NAME_MAX_LENGTH) || 'Elf', starter }
 }
 
 export function hatch(state: ElfState, now: number): ElfState {

@@ -225,14 +225,14 @@ export const mobilePl = {
      cottage and its HUD, the evolution card. */
   elf: {
     title: 'Twój Elf',
-    prototypeNote: 'Prototyp: ta zakładka służy do prób z elfem i jest osobna od wyprawy.',
     /* Adoption */
-    adoptTitle: 'Znalazłeś magiczne jajko',
-    adoptLead: 'W Chatynkowie zalęgło się jajko elfa. Wybierz jego żywioł i nadaj mu imię. Od teraz to Twój podopieczny.',
-    adoptElement: 'Żywioł',
-    adoptName: 'Imię elfa',
-    adoptNamePlaceholder: 'np. Listek',
-    adoptAction: 'Przygarnij jajko',
+    /* The hatch sheet: the elf is named and given its element here */
+    hatchTitle: 'Kto się wykluł?',
+    hatchLead: 'Z jajka wyszła malutka Iskierka pełna magicznej energii. Nadaj jej imię i wybierz żywioł.',
+    elementLabel: 'Żywioł',
+    nameLabel: 'Imię elfa',
+    namePlaceholder: 'np. Listek',
+    hatchAction: 'Nadaj imię',
     defaultName: 'Elfik',
     starterForest: 'Leśny',
     starterForestDesc: 'Elf lasu i mchu.',
@@ -302,13 +302,11 @@ export const mobilePl = {
     startOver: 'Zacznij elfa od nowa',
     resetFooter: 'Elf mieszka tylko na tym telefonie. Zaczęcie od nowa usuwa go z całym jego światem: żołędziami, pyłem, serią, zadaniami i urządzeniem chatynki. Odkryte Chatynki zostają.',
     resetTitle: 'Zacząć od nowa?',
-    resetBody: 'Twój obecny elf i cały jego świat (żołędzie, pył, seria, zadania, urządzenie chatynki) zostaną utracone. Odkryte Chatynki zostają. Tej magii nie da się cofnąć.',
+    resetBody: 'Twój obecny elf i cały jego świat (żołędzie, pył, seria, zadania, urządzenie chatynki) zostaną utracone, a w gnieździe pojawi się nowe jajko. Odkryte Chatynki zostają. Tej magii nie da się cofnąć.',
     resetConfirm: 'Tak, od nowa',
     /* The evolution card */
     evoKicker: 'Coś się dzieje...',
-    evoHatchTitle: 'Witaj, {{name}}!',
     evoTitle: '{{name}} ewoluuje!',
-    evoBaby: '{{name}} wykluł się z jajka! To malutka Iskierka pełna magicznej energii.',
     evoYoung: '{{name}} urósł w Elfika! Zaczyna poznawać sekrety lasu.',
     evoAdult: '{{name}} stał się prawdziwym Elfem i dzierży własną różdżkę.',
     evoElder: '{{name}} osiągnął najwyższą formę, Arcyelfa! Jego magia rozświetla Chatynkowo.',

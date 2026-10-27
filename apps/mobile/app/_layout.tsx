@@ -255,8 +255,10 @@ function RootStack() {
       {/* The nickname editor (src/features/profile): a sheet from the
           account screen and the Ranking. */}
       <Stack.Screen name="nickname" options={sheetRoute} />
-      {/* The elf companion prototype (src/features/elf): the evolution
-          card, a transparent modal like the celebration. */}
+      {/* The elf companion (src/features/elf): the hatch sheet, where the
+          elf is named, and the evolution card, a transparent modal like
+          the celebration. */}
+      <Stack.Screen name="elf-hatch" options={sheetRoute} />
       <Stack.Screen
         name="elf-evolve"
         options={{

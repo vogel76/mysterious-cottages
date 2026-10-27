@@ -66,9 +66,11 @@ export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, 
           {/* The name and the form share a line, so the block stays two lines
               tall next to the decorating button. */}
           <View style={styles.nameRow}>
-            <Text weight="bold" variant="compact" numberOfLines={1} style={styles.chromeInk}>
-              {name}
-            </Text>
+            {name ? (
+              <Text weight="bold" variant="compact" numberOfLines={1} style={styles.chromeInk}>
+                {name}
+              </Text>
+            ) : null}
             <CrossfadeText value={t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
           </View>
           <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
@@ -257,11 +259,13 @@ type MoodLineProps = {
    need the elf wants seen to, which says more. The egg's sentence stays
    the same until the hatch is due: the chip carries the countdown, and a
    line that changed every minute would be read out every minute. */
-function MoodLine({ name, stage, mood, hatchAt, wantedNeed }: MoodLineProps) {
+function MoodLine({ name: given, stage, mood, hatchAt, wantedNeed }: MoodLineProps) {
   const { t } = useTranslation()
+  /* An elf still to be named (the hatch sheet is up) goes by the plain name. */
+  const name = given || t('mobile:elf.defaultName')
   const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
   const want = wantedNeed && stage !== 'egg' ? t(elfKey('wants', wantedNeed), { name }) : null
-  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue', { name }) : t('mobile:elf.moodEgg', { name })) : t(elfKey('mood', mood), { name })
+  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue') : t('mobile:elf.moodEgg')) : t(elfKey('mood', mood), { name })
   return <CrossfadeText value={want ?? sentence} variant="small" numberOfLines={2} style={want ? styles.want : styles.chromeInk} />
 }
 

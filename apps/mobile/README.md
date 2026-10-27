@@ -214,7 +214,8 @@ app/                     expo-router routes
   support.tsx            supporting Chatynkowo, a sheet opened by the support invitations: a coffee for the elf (a purchase
                          through the store) or a rewarded ad watched instead
   nickname.tsx           the nickname editor, a sheet from the account screen and the Ranking's "Change nickname" item
-  elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a new form is reached
+  elf-hatch.tsx          the hatch sheet, where the elf that has just hatched is named and given its element
+  elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a later form is reached
   elf-today.tsx          the elf's day: the quests with their progress, the reward to pick, the cottages found as jars,
                          the streak and what the ledger's figures mean, a sheet opened from the Elf tab's ledger
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
@@ -254,7 +255,7 @@ src/
                          Lighting with the glow and the night tint over the plate, clock.ts with the day phase, motion,
                          EggNest, Particles, SlotMarkers for the edit mode), the screen components (ElfTab, ElfHud,
                          ElfActionBar with drag-to-feed, ElfPicker and ElfThumb for the decorating panel,
-                         useReturnGreeting, the adoption form, the evolution card); sprites/ plays the atlases the art
+                         useReturnGreeting, the hatch sheet, the evolution card); sprites/ plays the atlases the art
                          pipeline packs (manifest and registry, the decoded sheets, a UI-thread frame clock,
                          SpritePlayer and LayeredSprite on Skia's Atlas)
 tools/                   the measuring tools, system Python and adb (see "Measuring the elf"): ui.py drives the app by the
@@ -572,8 +573,10 @@ of it in the repository:
 
 ## The elf companion (prototype)
 
-A care loop like a virtual pet, in the spirit of Pou: the seeker adopts an
-egg, keeps it warm until it hatches, then feeds, plays with and bathes a
+A care loop like a virtual pet, in the spirit of Pou: an egg waits in the
+nest from the first visit (nothing to fill in), the seeker keeps it warm
+until it hatches, names the elf and picks its element in the hatch
+sheet, then feeds, plays with and bathes a
 small elf whose needs fall in real time, and watches it grow through four
 forms. The elf lives in its cottage, and the cottage is the whole tab: a
 painted room in Skia (`src/features/elf/cottage`) that fills the screen

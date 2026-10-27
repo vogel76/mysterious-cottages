@@ -8,8 +8,9 @@ import { useElf } from '../../providers'
 import { Button, ElfIcon, GlowPulse, SPRINGS, Text, colors, fade, iconSize, radius, space, useReducedMotion } from '../../ui'
 import { elfKey } from './labels'
 
-/* The card for a form reached: the egg hatching, or the elf growing into
-   its next form. A card rises over the Elf tab with the emblem glowing, the
+/* The card for a form reached after the first: the elf growing into its
+   next form (the hatch has its own sheet, where the elf is named). A card
+   rises over the Elf tab with the emblem glowing, the
    kicker, the title and a few lines of lore, and leaves only through its
    button, which marks the form as seen. Modelled on the Kronika's reward
    reveal, without the haptic: the phone stirs for a discovery and a seal,
@@ -65,7 +66,7 @@ export function EvolutionReveal() {
     transform: [{ translateY: rise.value * RISE }, { scale: 1 - rise.value * SHRINK }],
   }))
 
-  const title = stage === 'baby' ? t('mobile:elf.evoHatchTitle', { name }) : t('mobile:elf.evoTitle', { name })
+  const title = t('mobile:elf.evoTitle', { name })
 
   useEffect(() => {
     if (stage) announce(title)
