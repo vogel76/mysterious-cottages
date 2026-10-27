@@ -58,4 +58,6 @@ export const STORAGE_KEYS = {
      the egg or the elf, its needs, the day's quests, the purse and the
      streak. */
   elf: 'chatynkowo:elf:v2',
+  /* Which of the Elf tab's tutorials (the egg's, the elf's) were seen. */
+  elfTutorial: 'chatynkowo:elf-tutorial:v1',
 } as const
