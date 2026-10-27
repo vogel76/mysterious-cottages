@@ -584,7 +584,8 @@ under the status bar and the floating tab bar as the Atlas does, with the
 elf big in the middle, and a light HUD over it (`ElfHud.tsx`: the name,
 the form, the decorating button and the needs as small chips
 at the top, the elf's mood as a line of the name block; `ElfActionBar.tsx`: the round care
-buttons above the tab bar, with the dots of each care's daily cap;
+buttons on a band of the same chrome sitting on the tab bar, split around its discover
+key so neither covers the other, with the dots of each care's daily cap;
 `ElfSpeech.tsx`: the speech bubble over the elf's head for what it says,
 a refusal, a good night, a greeting, a quest done). A tap on the elf pets it (within the pet
 cooldown it is poked instead, so it always answers), a tap on the egg

@@ -2,12 +2,15 @@ import { useMemo } from 'react'
 import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
-import { BathIcon, FeedIcon, LullabyIcon, PressableScale, SleepIcon, Text, ToyIcon, WakeIcon, WarmIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
+import { BathIcon, FeedIcon, LullabyIcon, PressableScale, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
 import { ELF_CARE_CAPS, type ElfCareAction, type ElfEggAction, type ElfStage } from '@chatynkowo/core'
 
-/* The care actions as a row of round buttons floating over the cottage
-   scene, above the tab bar: for an egg the two ways to hatch it, for an
-   elf feeding, playing, bathing and sleep or wake. The care buttons take
+/* The care actions as round buttons on a band of the HUD's chrome that
+   sits on the tab bar, split around the tab bar's raised discover key
+   (two buttons on each side of it, one on each for the egg), so the key
+   and the buttons never cover one another and nothing floats over the
+   rug: for an egg the two ways to hatch it, for an elf feeding, playing,
+   bathing and sleep or wake. The care buttons take
    the gold face of a primary button, the sleep toggle the ghost face, each
    with a short label underneath, and under each care button the dots of
    its daily cap (three feeds, two plays, one bath), lit while they are
@@ -86,11 +89,15 @@ export function ElfActionBar({ stage, sleeping, careLeft, onCare, onTendEgg, onT
             : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', onPress: onToggleSleep },
         ]
 
+  /* The first half to the left of the key, the rest to its right. */
+  const split = Math.ceil(actions.length / 2)
+  const render = (action: Action) =>
+    action.key === 'feed' && onFeedDrag ? <DraggableActionButton key={action.key} action={action} onDrag={onFeedDrag} /> : <ActionButton key={action.key} action={action} />
   return (
-    <View style={styles.row} pointerEvents="box-none">
-      {actions.map((action) =>
-        action.key === 'feed' && onFeedDrag ? <DraggableActionButton key={action.key} action={action} onDrag={onFeedDrag} /> : <ActionButton key={action.key} action={action} />,
-      )}
+    <View style={styles.band}>
+      <View style={styles.side}>{actions.slice(0, split).map(render)}</View>
+      <View style={styles.keyGap} />
+      <View style={styles.side}>{actions.slice(split).map(render)}</View>
     </View>
   )
 }
@@ -187,12 +194,28 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
   )
 }
 
+/* The room the discover key takes in the middle of the band: its width
+   and a little air on each side. */
+const KEY_GAP = TAB_BAR_OVERHANG * 2 + space.lg
+
 const styles = StyleSheet.create({
-  row: {
+  band: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingTop: space.sm,
+    paddingBottom: space.xs,
+    borderTopWidth: 1,
+    borderTopColor: mapPalette.chromeBorder,
+    backgroundColor: mapPalette.chrome,
+  },
+  side: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'flex-start',
-    gap: space.md,
+    gap: space.sm,
+  },
+  keyGap: {
+    width: KEY_GAP,
   },
   item: {
     width: BUTTON + space.lg,

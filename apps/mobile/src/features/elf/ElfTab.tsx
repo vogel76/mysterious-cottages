@@ -27,7 +27,8 @@ import { useReturnGreeting } from './useReturnGreeting'
    the status bar and the floating tab bar as the Atlas does, and a light
    HUD floats over it: the name, the form and the elf's mood, the
    decorating button, the needs and the ledger at the top, the round care
-   buttons at the bottom; the room in between stays clear. A tap on the elf pets it
+   buttons on a band over the tab bar, split around its discover key; the
+   room in between stays clear, lifted so the rug stays above the band. A tap on the elf pets it
    (and when the rules are still in their cooldown the elf is poked
    instead, so it always answers), a tap on the egg rocks it. The acorn of
    the feed button can also be dragged to the elf: it floats under the
@@ -303,6 +304,12 @@ export function ElfTab() {
     const { height } = event.nativeEvent.layout
     setHudHeight((current) => (current === height ? current : height))
   }, [])
+  /* The care band's height, measured, so the room is lifted above it. */
+  const [bandHeight, setBandHeight] = useState(0)
+  const onBandLayout = useCallback((event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout
+    setBandHeight((current) => (current === height ? current : height))
+  }, [])
   /* The open panel's height, measured, so the scene can lift the room. */
   const [panelHeight, setPanelHeight] = useState(0)
   const onPanelLayout = useCallback((event: LayoutChangeEvent) => {
@@ -523,9 +530,10 @@ export function ElfTab() {
   /* Bedtime, before the elf is tucked in: heavy lids and yawns say it is
      time. Read at render: the drift re-renders the tab every few seconds. */
   const sleepy = awake && isBedtimeAt(now)
-  /* Where the action bar and the panels stand above the floating tab bar. */
+  /* Where the panels stand above the floating tab bar; the care band sits
+     on the bar itself. What covers the view's bottom, for the room's lift. */
   const bottomOffset = tabBarHeight + TAB_BAR_OVERHANG + space.md
-  const bottomInset = panel === 'none' ? 0 : bottomOffset + panelHeight
+  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight : bottomOffset + panelHeight
 
   return (
     <View ref={rootRef} style={styles.screen} onLayout={onLayout}>
@@ -576,17 +584,15 @@ export function ElfTab() {
       {/* The elf's line, over its head where the scene says it is. */}
       {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={insets.top + space.md + hudHeight + space.sm} /> : null}
 
-      <View style={[styles.bottom, { bottom: bottomOffset }]} pointerEvents="box-none">
-        {panel === 'none' ? (
-          <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfActionBar stage={stage} sleeping={state.sleeping} careLeft={left} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
-          </Animated.View>
-        ) : (
-          <View onLayout={onPanelLayout}>
-            <ElfPicker decor={decor} photo={photo} slots={editableSlots} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
-          </View>
-        )}
-      </View>
+      {panel === 'none' ? (
+        <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
+          <ElfActionBar stage={stage} sleeping={state.sleeping} careLeft={left} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
+        </Animated.View>
+      ) : (
+        <View style={[styles.bottom, { bottom: bottomOffset }]} onLayout={onPanelLayout} pointerEvents="box-none">
+          <ElfPicker decor={decor} photo={photo} slots={editableSlots} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
+        </View>
+      )}
 
       {/* The acorn in flight, over everything; it never takes a touch. */}
       <Animated.View style={[styles.acorn, acornStyle]} pointerEvents="none">
@@ -611,6 +617,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: space.lg,
     right: space.lg,
+  },
+  /* The care band runs edge to edge on the tab bar. */
+  band: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
   },
   /* The decorating hint, in the HUD's chrome, under the ledger. */
   editHint: {
