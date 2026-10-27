@@ -1,30 +1,44 @@
 import type { ElfOutfit, WearableSlot } from '@chatynkowo/core'
 
-/* The catalogues of the cottage: the furniture slots of the room with the
-   variants that can stand in each (the first id is the default the room
-   starts with; the fireplace has one and is not editable), and the five
-   wardrobe slots with their ids. These are the ids the rules (packages/core,
-   elf.ts) store and the
-   dictionaries name (packages/i18n, the item* and slot* entries of the elf
-   group). Which of them have a rendered picture today is roomAssets'
-   business (RENDERED_VARIANTS lists them per slot); a wearable has none
-   yet, since the rendered elf's face and hood are baked into its frames,
-   so the wardrobe ids wait for the art pipeline's layers. The stored decor
+/* The catalogues of the cottage: the places of the room with the variants
+   that can stand in each (the first id is the default the room starts
+   with; the fireplace has one and is not editable): the wall and the
+   floor, which are the room's own surfaces (the plate is rendered for
+   every pair), and the furniture slots, each a piece drawn over the
+   plate; and the five wardrobe slots with their ids. These are the ids
+   the rules (packages/core, elf.ts) store, the renders are named after
+   (art/blender/room.py) and the dictionaries name (packages/i18n, the
+   item* and slot* entries of the elf group). Which of them have a
+   rendered picture is roomAssets' business (RENDERED_VARIANTS lists them
+   per slot); a wearable has none yet, since the rendered elf's face and
+   hair are baked into its frames, so the wardrobe ids wait for the art
+   pipeline's layers. The stored decor
    and outfit of an elf are plain maps of slot id to variant id, kept by
    the rules without knowing the slots; the provider resolves them against
    these catalogues and falls back to the slot's default for an unknown id,
    so a renamed variant never leaves a hole in the wall. The slots' anchors
    and hit boxes live in ./room. */
 
-export type SlotId = 'window' | 'herbs' | 'shelf' | 'lantern' | 'picture' | 'fireplace' | 'rug' | 'bed' | 'basket' | 'fern' | 'candle'
+export type SlotId = 'wall' | 'floor' | 'window' | 'herbs' | 'shelf' | 'lantern' | 'picture' | 'fireplace' | 'rug' | 'bed' | 'basket' | 'fern' | 'candle'
 
-export const SLOT_IDS: readonly SlotId[] = ['window', 'herbs', 'shelf', 'lantern', 'picture', 'fireplace', 'rug', 'bed', 'basket', 'fern', 'candle']
+export const SLOT_IDS: readonly SlotId[] = ['wall', 'floor', 'window', 'herbs', 'shelf', 'lantern', 'picture', 'fireplace', 'rug', 'bed', 'basket', 'fern', 'candle']
+
+/* The places that are the room's own surfaces: no piece is drawn for
+   them, the plate of the pair is. */
+export const SURFACE_SLOTS: readonly SlotId[] = ['wall', 'floor']
+
+/* Whether a place is a surface of the room rather than a piece in it. */
+export function isSurface(slot: SlotId): boolean {
+  return slot === 'wall' || slot === 'floor'
+}
 
 /* The picture slot's id for the latest cottage found: the frame's render
    with the expedition's photo inside (roomAssets, RoomSprites). */
 export const PHOTO_ID = 'photo'
 
 export const DECOR_IDS: Record<SlotId, readonly string[]> = {
+  wall: ['plaster', 'boards', 'logs'],
+  floor: ['planks', 'flagstones', 'terracotta'],
   window: ['arched', 'round', 'shuttered'],
   picture: ['cottage', PHOTO_ID, 'map', 'antlers'],
   herbs: ['herbs', 'garlic', 'dreamcatcher'],
@@ -42,6 +56,8 @@ export const DECOR_IDS: Record<SlotId, readonly string[]> = {
 export type Decor = Record<SlotId, string>
 
 export const DEFAULT_DECOR: Decor = {
+  wall: 'plaster',
+  floor: 'planks',
   window: 'arched',
   picture: 'cottage',
   herbs: 'herbs',

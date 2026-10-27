@@ -1,120 +1,85 @@
-import { DECOR_IDS, PHOTO_ID, SLOT_IDS, isSlotId, type Decor, type SlotId } from './catalogue'
+import { DECOR_IDS, DEFAULT_DECOR, PHOTO_ID, SLOT_IDS, isSlotId, isSurface, type Decor, type SlotId } from './catalogue'
 import { SLOTS, type Bounds, type Slot } from './room'
+import { ROOM_FILES } from './roomFiles'
 
 /* The rendered room, as art/blender/room.py and its packer leave it in
-   assets/elf/room: the plate (the empty room with its walls, floor, beams
+   assets/elf/room: the plates (the empty room with its walls, floor, beams
    and the fireplace with its fire, rendered at exactly the room units of
-   ./room, 1000 by 1600) and one transparent crop per piece of furniture,
-   each with the box, in plate pixels, where it is drawn. The plate and
-   every sprite come by night and by day (the same camera, the moon
-   turned into the sun), and the scene crossfades the two by the
-   cottage's clock. Metro only bundles what a static require names, so
-   every file of the folder is listed here by hand next to the manifest.
+   ./room, one for every pair of wall and floor the catalogue offers) and
+   one transparent crop per piece of furniture, each with the box, in
+   plate pixels, where it is drawn. Every plate and every piece comes by
+   night and by day (the same camera, the moon turned into the sun), and
+   the scene crossfades the two by the cottage's clock; every piece, wall
+   and floor also has a close-up picture for the decorating catalogue.
+   Metro only bundles what a static require names, so the packer
+   generates ./roomFiles with every file of the folder, and the files are
+   looked up here by the names the manifest gives.
 
-   The renders do not cover every variant the catalogue (./catalogue)
-   names: a slot with three ids may have one or two renders. roomSpriteFor
-   maps the app's decor ids onto what exists (two ids may share a render,
-   the way the woven and the moss rug both come out as the green one), so
-   a stored decor never leaves a hole in the room, and RENDERED_VARIANTS
-   lists, per slot, the ids that look different on screen, which is what
-   the decorating panel offers. The fireplace is baked into the plate and
-   has no sprite.
+   The renders are named after the catalogue's ids (./catalogue), so a
+   decor id is its render; an id the renders do not have (a stored id from
+   an older catalogue) draws the slot's default, so a stored decor never
+   leaves a hole in the room. RENDERED_VARIANTS lists, per slot, the ids
+   that have a render, which is what the decorating catalogue offers. The
+   fireplace is baked into the plates and has no sprite.
 
-   The hit boxes of ./room were laid out before the Blender room, which
-   hangs its pieces elsewhere (the lantern in the top right corner, the
-   shelf on the left wall), so the scene takes its slot table from
-   spriteSlotsFor: the same slots with the hit box of the piece actually
-   drawn for the decor, with a little slack, and the room's own box only
-   where nothing was rendered. */
+   The scene takes its slot table from spriteSlotsFor: ./room's slots with
+   the hit box of the piece actually drawn for the decor, with a little
+   slack. */
+
+type Box = { x: number; y: number; width: number; height: number }
 
 /* One sprite of the manifest, as the packer writes it. */
-export type RoomSpriteEntry = {
+export type RoomSpriteEntry = Box & {
   slot: string
   variant: string
+  /* The render the room starts with in its slot. */
+  default: boolean
   file: string
   /* The daytime render of the same piece, cropped to the same box. */
   fileDay?: string
-  /* The box in plate pixels, which are room units. */
-  x: number
-  y: number
-  width: number
-  height: number
+  /* The piece rendered close up and by day for the decorating catalogue. */
+  fileThumb?: string
 }
+
+/* A wall or a floor on offer, with its catalogue picture. */
+type SurfaceEntry = { id: string; thumb?: string }
 
 export type RoomManifest = {
   version: number
-  plate: string
-  /* The empty room by day, for the crossfade. */
-  plateDay?: string
   width: number
   height: number
   /* Where the floor meets the wall, plate pixels. */
   floorY: number
   /* The centre of the rug, plate pixels. */
   rug: { x: number; y: number }
+  walls: SurfaceEntry[]
+  floors: SurfaceEntry[]
+  /* The empty room for each "wall/floor" pair, by night and by day. */
+  plates: Record<string, { night: string; day?: string }>
   sprites: RoomSpriteEntry[]
 }
 
 export const ROOM_MANIFEST: RoomManifest = require('../../../../assets/elf/room/manifest.json')
 
-/* The plates' modules, as Metro's require gives them. */
-export const ROOM_PLATE: number = require('../../../../assets/elf/room/plate.webp')
-export const ROOM_PLATE_DAY: number = require('../../../../assets/elf/room/plate_day.webp')
-
-/* Every sprite file of the folder by name. */
-export const ROOM_FILES: Record<string, number> = {
-  'basket_acorns.webp': require('../../../../assets/elf/room/basket_acorns.webp'),
-  'basket_acorns_day.webp': require('../../../../assets/elf/room/basket_acorns_day.webp'),
-  'bed_hammock.webp': require('../../../../assets/elf/room/bed_hammock.webp'),
-  'bed_hammock_day.webp': require('../../../../assets/elf/room/bed_hammock_day.webp'),
-  'bed_wooden.webp': require('../../../../assets/elf/room/bed_wooden.webp'),
-  'bed_wooden_day.webp': require('../../../../assets/elf/room/bed_wooden_day.webp'),
-  'candle_stool.webp': require('../../../../assets/elf/room/candle_stool.webp'),
-  'candle_stool_day.webp': require('../../../../assets/elf/room/candle_stool_day.webp'),
-  'fern_potted.webp': require('../../../../assets/elf/room/fern_potted.webp'),
-  'fern_potted_day.webp': require('../../../../assets/elf/room/fern_potted_day.webp'),
-  'herbs_dried.webp': require('../../../../assets/elf/room/herbs_dried.webp'),
-  'herbs_dried_day.webp': require('../../../../assets/elf/room/herbs_dried_day.webp'),
-  'lantern_iron.webp': require('../../../../assets/elf/room/lantern_iron.webp'),
-  'lantern_iron_day.webp': require('../../../../assets/elf/room/lantern_iron_day.webp'),
-  'picture_framed.webp': require('../../../../assets/elf/room/picture_framed.webp'),
-  'picture_framed_day.webp': require('../../../../assets/elf/room/picture_framed_day.webp'),
-  'rug_braided.webp': require('../../../../assets/elf/room/rug_braided.webp'),
-  'rug_braided_day.webp': require('../../../../assets/elf/room/rug_braided_day.webp'),
-  'rug_green.webp': require('../../../../assets/elf/room/rug_green.webp'),
-  'rug_green_day.webp': require('../../../../assets/elf/room/rug_green_day.webp'),
-  'shelf_books.webp': require('../../../../assets/elf/room/shelf_books.webp'),
-  'shelf_books_day.webp': require('../../../../assets/elf/room/shelf_books_day.webp'),
-  'window_round.webp': require('../../../../assets/elf/room/window_round.webp'),
-  'window_round_day.webp': require('../../../../assets/elf/room/window_round_day.webp'),
-  'window_square.webp': require('../../../../assets/elf/room/window_square.webp'),
-  'window_square_day.webp': require('../../../../assets/elf/room/window_square_day.webp'),
-}
-
 /* A sprite the scene can draw: the manifest's entry with its bundled
-   modules, the daytime one null where no day render exists. */
-export type RoomSprite = RoomSpriteEntry & { slot: SlotId; module: number; moduleDay: number | null }
+   modules, the daytime one and the catalogue's close-up null where no such
+   render exists. */
+export type RoomSprite = RoomSpriteEntry & { slot: SlotId; module: number; moduleDay: number | null; moduleThumb: number | null }
 
-/* The app's decor id to the manifest's variant, for the slots with more
-   than one render. A slot missing here draws its one sprite whatever the
-   id says. */
-const VARIANT_RENDERS: Partial<Record<SlotId, Record<string, string>>> = {
-  rug: { braided: 'braided', woven: 'green', moss: 'green' },
-  bed: { oak: 'wooden', hammock: 'hammock', nest: 'hammock' },
-  window: { arched: 'square', round: 'round', shuttered: 'square' },
+function fileModule(name: string | undefined): number | null {
+  if (!name) return null
+  const module = ROOM_FILES[name]
+  if (module === undefined && __DEV__) console.warn(`room manifest names "${name}", which roomFiles does not register`)
+  return module ?? null
 }
 
 /* The manifest's sprites grouped by slot, with their modules, built once. */
 const SPRITES_BY_SLOT: ReadonlyMap<SlotId, readonly RoomSprite[]> = (() => {
   const map = new Map<SlotId, RoomSprite[]>()
   for (const entry of ROOM_MANIFEST.sprites) {
-    const module = ROOM_FILES[entry.file]
-    if (!isSlotId(entry.slot) || module === undefined) {
-      if (__DEV__) console.warn(`room manifest names "${entry.file}" for slot "${entry.slot}", which is not registered in roomAssets`)
-      continue
-    }
-    const moduleDay = entry.fileDay ? (ROOM_FILES[entry.fileDay] ?? null) : null
-    const sprite: RoomSprite = { ...entry, slot: entry.slot, module, moduleDay }
+    const module = fileModule(entry.file)
+    if (!isSlotId(entry.slot) || module === null) continue
+    const sprite: RoomSprite = { ...entry, slot: entry.slot, module, moduleDay: fileModule(entry.fileDay), moduleThumb: fileModule(entry.fileThumb) }
     const list = map.get(entry.slot)
     if (list) list.push(sprite)
     else map.set(entry.slot, [sprite])
@@ -122,68 +87,65 @@ const SPRITES_BY_SLOT: ReadonlyMap<SlotId, readonly RoomSprite[]> = (() => {
   return map
 })()
 
-/* The rendered sprite that stands for a decor id in a slot: the mapped
-   variant where the slot has several renders, the slot's one sprite
-   otherwise, the first render for an id nobody mapped (as the provider
-   falls back to the default), and null for the fireplace or a slot
-   nothing was rendered for. */
+/* The rendered sprite that stands for a decor id in a slot: the render of
+   that id, the slot's default for an id without one, and null for a
+   place nothing is drawn for (the fireplace, the wall, the floor). */
 export function roomSpriteFor(slot: SlotId, variantId: string): RoomSprite | null {
   const sprites = SPRITES_BY_SLOT.get(slot)
   if (!sprites || sprites.length === 0) return null
-  const wanted = VARIANT_RENDERS[slot]?.[variantId]
-  if (wanted) {
-    const match = sprites.find((sprite) => sprite.variant === wanted)
-    if (match) return match
-  }
-  return sprites[0] ?? null
+  return sprites.find((sprite) => sprite.variant === variantId) ?? sprites.find((sprite) => sprite.default) ?? sprites[0] ?? null
 }
 
-/* The picture inside the frame's render: the frame is a thin dark border
-   around it, a little thicker at the bottom. Plate pixels. */
-const PHOTO_INSET = { side: 3, top: 3, bottom: 4 } as const
-export function photoRect(sprite: RoomSpriteEntry): Bounds {
-  return { x: sprite.x + PHOTO_INSET.side, y: sprite.y + PHOTO_INSET.top, width: sprite.width - 2 * PHOTO_INSET.side, height: sprite.height - PHOTO_INSET.top - PHOTO_INSET.bottom }
+/* The plates of the decor's wall and floor, by night and by day; the
+   default pair's where that pair was not rendered. */
+export function roomPlateFor(decor: Decor): { night: number | null; day: number | null } {
+  const plate = ROOM_MANIFEST.plates[`${decor.wall}/${decor.floor}`] ?? ROOM_MANIFEST.plates[`${DEFAULT_DECOR.wall}/${DEFAULT_DECOR.floor}`]
+  return { night: fileModule(plate?.night), day: fileModule(plate?.day) }
+}
+
+/* The catalogue picture of a wall or a floor. */
+export function surfaceThumbFor(slot: SlotId, id: string): number | null {
+  const list = slot === 'wall' ? ROOM_MANIFEST.walls : slot === 'floor' ? ROOM_MANIFEST.floors : []
+  return fileModule(list.find((entry) => entry.id === id)?.thumb)
+}
+
+/* The picture inside the frame's render, as shares of the render's box:
+   the frame around it is a little thicker at the bottom. */
+const PHOTO_INSET = { side: 0.11, top: 0.09, bottom: 0.1 } as const
+export function photoRect(sprite: Box): Bounds {
+  const side = sprite.width * PHOTO_INSET.side
+  const top = sprite.height * PHOTO_INSET.top
+  return { x: sprite.x + side, y: sprite.y + top, width: sprite.width - 2 * side, height: sprite.height - top - sprite.height * PHOTO_INSET.bottom }
 }
 
 /* Per slot, the decor ids that have a render of their own, in the
-   catalogue's order: the first id of every distinct render, so two ids
-   that share a sprite are offered once. A slot with one render keeps its
-   default id only; the fireplace keeps its single id too. The frame also
-   offers the photo of the latest cottage found, drawn into its render by
-   the scene; the panel shows it only once there is a find. */
+   catalogue's order: for a piece the ids with a sprite, for the wall and
+   the floor the ids with a plate. The fireplace keeps its single id. The
+   frame also offers the photo of the latest cottage found, drawn into its
+   default render by the scene; the catalogue shows it only once there is
+   a find. */
 export const RENDERED_VARIANTS: Record<SlotId, readonly string[]> = (() => {
   const variants = {} as Record<SlotId, readonly string[]>
   for (const slot of SLOT_IDS) {
-    const renders = VARIANT_RENDERS[slot]
     const ids = DECOR_IDS[slot]
-    if (!renders) {
-      variants[slot] = ids.slice(0, 1)
+    if (isSurface(slot)) {
+      const rendered = new Set((slot === 'wall' ? ROOM_MANIFEST.walls : ROOM_MANIFEST.floors).map((entry) => entry.id))
+      variants[slot] = ids.filter((id) => rendered.has(id))
       continue
     }
-    const seen = new Set<string>()
-    variants[slot] = ids.filter((id) => {
-      const render = renders[id]
-      if (!render || seen.has(render)) return false
-      seen.add(render)
-      return true
-    })
+    const sprites = SPRITES_BY_SLOT.get(slot) ?? []
+    const rendered = ids.filter((id) => sprites.some((sprite) => sprite.variant === id))
+    variants[slot] = rendered.length > 0 ? rendered : ids.slice(0, 1)
   }
   variants.picture = [...variants.picture, PHOTO_ID]
   return variants
 })()
 
-/* Whether the slot offers a choice of renders. */
-export function isRenderedEditableSlot(slot: SlotId): boolean {
-  return RENDERED_VARIANTS[slot].length > 1
-}
-
-/* The id RENDERED_VARIANTS offers for a decor id: the first id with the
-   same render, so a stored 'moss' rug is recognised as the green one the
-   room shows. An id without a render mapping is returned as it is. */
+/* The id the catalogue shows as placed for a decor id: the id itself
+   where it is on offer, the slot's default otherwise (the room draws the
+   default for it). */
 export function renderedVariantFor(slot: SlotId, id: string): string {
-  const render = VARIANT_RENDERS[slot]?.[id]
-  if (!render) return id
-  return RENDERED_VARIANTS[slot].find((candidate) => VARIANT_RENDERS[slot]?.[candidate] === render) ?? id
+  return RENDERED_VARIANTS[slot].includes(id) ? id : DEFAULT_DECOR[slot]
 }
 
 /* Slack around a rendered piece, room units, so a finger a little off
@@ -191,7 +153,7 @@ export function renderedVariantFor(slot: SlotId, id: string): string {
 const SLOT_SLACK = 15
 
 /* The box of the sprite drawn for a decor id, relative to the slot's
-   anchor and widened by the slack; null for a slot with no render. */
+   anchor and widened by the slack; null for a place with no sprite. */
 export function spriteSlotBounds(slot: Slot, variantId: string): Bounds | null {
   const sprite = roomSpriteFor(slot.id, variantId)
   if (!sprite) return null
@@ -200,8 +162,9 @@ export function spriteSlotBounds(slot: Slot, variantId: string): Bounds | null {
 
 /* The slot table of the rendered room for a decor: ./room's slots with
    their hit boxes replaced by the drawn pieces' boxes, so the taps, the
-   glances and the frames of edit mode land on the picture. A slot without
-   a render (the fireplace, baked into the plate) keeps ./room's box. */
+   glances and the light of the decorating mode land on the picture. A
+   place without a sprite (the fireplace, the wall, the floor) keeps
+   ./room's box. */
 export function spriteSlotsFor(decor: Decor): readonly Slot[] {
   return SLOTS.map((slot) => {
     const hit = spriteSlotBounds(slot, decor[slot.id])

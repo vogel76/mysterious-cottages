@@ -18,12 +18,14 @@ Usage (no GUI, everything is rebuilt from scratch on each run):
 
 Conventions: metres, Z up, the camera looks towards +Y at the back wall which
 stands at y = 1.5. The elf faces -Y, towards the camera. The plate is
-1000 x 1600 and the app shows it with a cover fit, so the layout is framed for
-the central 720 px band a phone shows; see the "Layout constants" section.
-Output: OUT_DIR/plate.png, plate_empty.png, plate_day.png, plate_empty_day.png,
-<slot>_<variant>.png and <slot>_<variant>.day.png, sprites.json, contact.png,
-phone_crop.png and camera.json with the numbers the app needs; room_sheet.py
-then packs the committed assets.
+1000 x 1300, the aspect of the band a phone leaves free of its interface, and
+the app shows it there with a cover fit; see the "Layout constants" section.
+Output: OUT_DIR/plate.png and plate_day.png (the room with its default
+furniture, for review), plate_<wall>_<floor>.png and its _day twin for every
+wall and floor (the empty rooms the app draws), <slot>_<variant>.png with its
+.day twin and its .thumb close-up, wall_<id>.thumb.png and floor_<id>.thumb.png,
+sprites.json, contact.png and camera.json with the numbers the app needs;
+room_sheet.py then packs the committed assets.
 """
 
 import json
@@ -320,8 +322,15 @@ def _nodes(mat):
     return nt, nt.nodes, nt.links, nt.nodes["Principled BSDF"]
 
 
-def _object_coords(nodes):
+def _object_coords(nodes, world=False):
+    """The texture coordinates of a pattern: the object's own, or, for a
+    surface made of several pieces (the wall around the window), the
+    world's, through an empty at the origin, so the pattern runs on across
+    the pieces."""
     tc = nodes.new("ShaderNodeTexCoord")
+    if world:
+        frame = bpy.data.objects.get("WorldFrame") or bpy.data.objects.new("WorldFrame", None)
+        tc.object = frame
     return tc.outputs["Object"]
 
 
@@ -349,12 +358,13 @@ def noisy_material(name, base, dark, scale=6.0, strength=0.3, roughness=0.75, de
     return painted(mat)
 
 
-def plank_material(name, plank_width=0.16, along="x"):
-    """Floor planks: dark seams every plank_width, a per-plank tint and a
-    stretched grain noise. Planks run along the given axis."""
-    mat = toon_material(name, PAL["wood_light"], roughness=0.7, paint=False)
+def plank_material(name, plank_width=0.16, along="x", tint=(PAL["wood"], PAL["wood_pale"]), seam_color="#2a1a0e", world=False):
+    """Planks: dark seams every plank_width, a per-plank tint between the
+    two colours and a stretched grain noise. Planks run along the given
+    axis ('x' or 'y' on a floor, 'z' for upright boards on a wall)."""
+    mat = toon_material(name, tint[1], roughness=0.7, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
-    coords = _object_coords(nodes)
+    coords = _object_coords(nodes, world)
     sep = nodes.new("ShaderNodeSeparateXYZ")
     links.new(coords, sep.inputs[0])
     across = sep.outputs["Y" if along == "x" else "X"]
@@ -369,13 +379,13 @@ def plank_material(name, plank_width=0.16, along="x"):
     white = nodes.new("ShaderNodeTexWhiteNoise")
     white.noise_dimensions = "1D"
     links.new(flo.outputs[0], white.inputs["W"])
-    tint = nodes.new("ShaderNodeValToRGB")
-    tint.color_ramp.elements[0].color = rgba(PAL["wood"])
-    tint.color_ramp.elements[1].color = rgba(PAL["wood_pale"])
-    links.new(white.outputs["Value"], tint.inputs["Fac"])
+    tint_ramp = nodes.new("ShaderNodeValToRGB")
+    tint_ramp.color_ramp.elements[0].color = rgba(tint[0])
+    tint_ramp.color_ramp.elements[1].color = rgba(tint[1])
+    links.new(white.outputs["Value"], tint_ramp.inputs["Fac"])
     # grain
     mapping = nodes.new("ShaderNodeMapping")
-    mapping.inputs["Scale"].default_value = (2.0, 40.0, 1.0) if along == "x" else (40.0, 2.0, 1.0)
+    mapping.inputs["Scale"].default_value = {"x": (2.0, 40.0, 1.0), "y": (40.0, 2.0, 1.0), "z": (40.0, 1.0, 2.0)}[along]
     links.new(coords, mapping.inputs["Vector"])
     grain = nodes.new("ShaderNodeTexNoise")
     grain.inputs["Scale"].default_value = 3.0
@@ -384,11 +394,11 @@ def plank_material(name, plank_width=0.16, along="x"):
     grain_mix = nodes.new("ShaderNodeMix")
     grain_mix.data_type = "RGBA"
     grain_mix.inputs["Factor"].default_value = 0.35
-    links.new(tint.outputs["Color"], grain_mix.inputs[6])
+    links.new(tint_ramp.outputs["Color"], grain_mix.inputs[6])
     darker = nodes.new("ShaderNodeMix")
     darker.data_type = "RGBA"
     darker.inputs["Factor"].default_value = 0.5
-    links.new(tint.outputs["Color"], darker.inputs[6])
+    links.new(tint_ramp.outputs["Color"], darker.inputs[6])
     darker.inputs[7].default_value = rgba(PAL["boots"])
     links.new(darker.outputs[2], grain_mix.inputs[7])
     links.new(grain.outputs["Fac"], grain_mix.inputs["Factor"])
@@ -404,32 +414,141 @@ def plank_material(name, plank_width=0.16, along="x"):
     seam_mix.data_type = "RGBA"
     links.new(seam.outputs[0], seam_mix.inputs["Factor"])
     links.new(grain_mix.outputs[2], seam_mix.inputs[6])
-    seam_mix.inputs[7].default_value = rgba("#2a1a0e")
+    seam_mix.inputs[7].default_value = rgba(seam_color)
     links.new(seam_mix.outputs[2], bsdf.inputs["Base Color"])
     return painted(mat)
 
 
-def stone_material(name):
-    """Fieldstone: Voronoi cells with per-cell shade and dark mortar lines."""
+def band_material(name, axis, width, stops, seam_color=None, seam=0.05, wobble=0.0, roughness=0.8, world=False):
+    """Bands across an object axis, each band shaded by a colour ramp from
+    its one edge to the other (`stops`: (position, colour) pairs): round
+    logs on a wall (dark edges, a lit middle), zigzag stripes on a kilim
+    (`wobble` bends the bands into a zigzag along the other axis), with a
+    seam colour at the band's start if given."""
+    mat = toon_material(name, stops[0][1], roughness=roughness, paint=False)
+    nt, nodes, links, bsdf = _nodes(mat)
+    sep = nodes.new("ShaderNodeSeparateXYZ")
+    links.new(_object_coords(nodes, world), sep.inputs[0])
+    value = sep.outputs[axis.upper()]
+    if wobble:
+        other = sep.outputs["X" if axis.upper() != "X" else "Y"]
+        zig = nodes.new("ShaderNodeMath")
+        zig.operation = "PINGPONG"
+        zig.inputs[1].default_value = 0.08
+        links.new(other, zig.inputs[0])
+        amp = nodes.new("ShaderNodeMath")
+        amp.operation = "MULTIPLY"
+        amp.inputs[1].default_value = wobble
+        links.new(zig.outputs[0], amp.inputs[0])
+        add = nodes.new("ShaderNodeMath")
+        add.operation = "ADD"
+        links.new(value, add.inputs[0])
+        links.new(amp.outputs[0], add.inputs[1])
+        value = add.outputs[0]
+    div = nodes.new("ShaderNodeMath")
+    div.operation = "DIVIDE"
+    div.inputs[1].default_value = width
+    links.new(value, div.inputs[0])
+    frac = nodes.new("ShaderNodeMath")
+    frac.operation = "FRACT"
+    links.new(div.outputs[0], frac.inputs[0])
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.interpolation = "CONSTANT" if wobble else "EASE"
+    ramp.color_ramp.elements[0].position = stops[0][0]
+    ramp.color_ramp.elements[0].color = rgba(stops[0][1])
+    ramp.color_ramp.elements[1].position = stops[-1][0]
+    ramp.color_ramp.elements[1].color = rgba(stops[-1][1])
+    for pos, col in stops[1:-1]:
+        ramp.color_ramp.elements.new(pos).color = rgba(col)
+    links.new(frac.outputs[0], ramp.inputs["Fac"])
+    out = ramp.outputs["Color"]
+    if seam_color:
+        less = nodes.new("ShaderNodeMath")
+        less.operation = "LESS_THAN"
+        less.inputs[1].default_value = seam
+        links.new(frac.outputs[0], less.inputs[0])
+        mix = nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        links.new(less.outputs[0], mix.inputs["Factor"])
+        links.new(out, mix.inputs[6])
+        mix.inputs[7].default_value = rgba(seam_color)
+        out = mix.outputs[2]
+    links.new(out, bsdf.inputs["Base Color"])
+    return painted(mat)
+
+
+def tile_material(name, size, tint, grout_color, grout=0.05, world=False):
+    """Square tiles of `size` on a floor: a per-tile tint between the two
+    colours and grout lines between them."""
+    mat = toon_material(name, tint[1], roughness=0.8, paint=False)
+    nt, nodes, links, bsdf = _nodes(mat)
+    sep = nodes.new("ShaderNodeSeparateXYZ")
+    links.new(_object_coords(nodes, world), sep.inputs[0])
+    cells, edges = [], []
+    for axis in ("X", "Y"):
+        div = nodes.new("ShaderNodeMath")
+        div.operation = "DIVIDE"
+        div.inputs[1].default_value = size
+        links.new(sep.outputs[axis], div.inputs[0])
+        flo = nodes.new("ShaderNodeMath")
+        flo.operation = "FLOOR"
+        links.new(div.outputs[0], flo.inputs[0])
+        cells.append(flo.outputs[0])
+        frac = nodes.new("ShaderNodeMath")
+        frac.operation = "FRACT"
+        links.new(div.outputs[0], frac.inputs[0])
+        less = nodes.new("ShaderNodeMath")
+        less.operation = "LESS_THAN"
+        less.inputs[1].default_value = grout
+        links.new(frac.outputs[0], less.inputs[0])
+        edges.append(less.outputs[0])
+    key = nodes.new("ShaderNodeMath")
+    key.operation = "MULTIPLY_ADD"
+    key.inputs[1].default_value = 17.0
+    links.new(cells[1], key.inputs[0])
+    links.new(cells[0], key.inputs[2])
+    white = nodes.new("ShaderNodeTexWhiteNoise")
+    white.noise_dimensions = "1D"
+    links.new(key.outputs[0], white.inputs["W"])
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].color = rgba(tint[0])
+    ramp.color_ramp.elements[1].color = rgba(tint[1])
+    links.new(white.outputs["Value"], ramp.inputs["Fac"])
+    either = nodes.new("ShaderNodeMath")
+    either.operation = "MAXIMUM"
+    links.new(edges[0], either.inputs[0])
+    links.new(edges[1], either.inputs[1])
+    mix = nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    links.new(either.outputs[0], mix.inputs["Factor"])
+    links.new(ramp.outputs["Color"], mix.inputs[6])
+    mix.inputs[7].default_value = rgba(grout_color)
+    links.new(mix.outputs[2], bsdf.inputs["Base Color"])
+    return painted(mat)
+
+
+def stone_material(name, scale=7.0, stretch=1.6, shades=("#5a564f", PAL["stone_light"]), mortar=PAL["mortar"], world=False):
+    """Fieldstone: Voronoi cells with per-cell shade and dark mortar lines;
+    `scale` cells to the metre, stretched along Z by `stretch`."""
     mat = toon_material(name, PAL["stone"], roughness=0.9, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
-    coords = _object_coords(nodes)
+    coords = _object_coords(nodes, world)
     mapping = nodes.new("ShaderNodeMapping")
-    mapping.inputs["Scale"].default_value = (1.0, 1.0, 1.6)
+    mapping.inputs["Scale"].default_value = (1.0, 1.0, stretch)
     links.new(coords, mapping.inputs["Vector"])
     vor = nodes.new("ShaderNodeTexVoronoi")
     vor.feature = "F1"
-    vor.inputs["Scale"].default_value = 7.0
+    vor.inputs["Scale"].default_value = scale
     vor.inputs["Randomness"].default_value = 0.9
     links.new(mapping.outputs[0], vor.inputs["Vector"])
     edge = nodes.new("ShaderNodeTexVoronoi")
     edge.feature = "DISTANCE_TO_EDGE"
-    edge.inputs["Scale"].default_value = 7.0
+    edge.inputs["Scale"].default_value = scale
     edge.inputs["Randomness"].default_value = 0.9
     links.new(mapping.outputs[0], edge.inputs["Vector"])
     shade = nodes.new("ShaderNodeValToRGB")
-    shade.color_ramp.elements[0].color = rgba("#5a564f")
-    shade.color_ramp.elements[1].color = rgba(PAL["stone_light"])
+    shade.color_ramp.elements[0].color = rgba(shades[0])
+    shade.color_ramp.elements[1].color = rgba(shades[1])
     # Voronoi colour output has 3 channels; use its red channel as a per-cell random value
     sep = nodes.new("ShaderNodeSeparateColor")
     links.new(vor.outputs["Color"], sep.inputs[0])
@@ -441,7 +560,7 @@ def stone_material(name):
     mix = nodes.new("ShaderNodeMix")
     mix.data_type = "RGBA"
     links.new(mortar_ramp.outputs[0], mix.inputs["Factor"])
-    mix.inputs[6].default_value = rgba(PAL["mortar"])
+    mix.inputs[6].default_value = rgba(mortar)
     links.new(shade.outputs["Color"], mix.inputs[7])
     links.new(mix.outputs[2], bsdf.inputs["Base Color"])
     return painted(mat)
@@ -636,48 +755,51 @@ def contact_shadow(coll, center, rx, ry, strength=0.6):
 # Layout constants
 # ----------------------------------------------------------------------------
 
-# Framing. The app shows the 1000 x 1600 plate with a cover fit: it scales
-# the plate to the phone's height and crops the sides, so on a 9:20 phone
-# only x = 140..860 of the plate is visible (a 720 px band, the "phone
-# crop"). Everything that matters therefore lives inside x = 150..850: the
-# room is 2.2 m wide and the camera frame meets the back wall at
-# x = +-1.5 m (333 px per metre there), which puts the room's corners at
-# x = 133 and 867, just outside the phone crop, and shows a sliver of each
-# side wall only on wide screens. The floor line (floor meets the back
-# wall) is at 72 percent of the height (y = 1152) and the rug centre at 80
-# percent (y = 1280); the app relies on both. With the ceiling at the top
-# of the frame that fixes the room height at about 3.45 m.
-ROOM_W = 2.2            # inner width (x from -1.1 to 1.1)
+# Framing. The app shows the plate in the band of the screen its interface
+# leaves free (nothing of the interface lies over the room), with a cover
+# fit: the plate is scaled to fill that band and a sliver of its sides or
+# of its top and bottom is cropped, depending on the phone. The plate is
+# 1000 x 1300, the aspect of that band on a 9:20 phone, so almost all of
+# it is on view; everything that matters lives inside x = 60..940 and
+# y = 40..1260. The room is 3 m wide and the camera frame meets the back
+# wall at x = +-1.65 m (303 px per metre there), which puts the room's
+# corners at x = 45 and 955 and shows a sliver of each side wall. The
+# floor line (floor meets the back wall) is at 64 percent of the height
+# and the rug centre at 78 percent; the app reads both from the manifest.
+# With the ceiling at the top of the frame that fixes the room height at
+# about 2.75 m: a cottage room, not a hall.
+PLATE_W, PLATE_H = 1000, 1300
+ROOM_W = 3.0            # inner width (x from -1.5 to 1.5)
 WALL_Y = 1.5            # the back wall's front face
-CEIL_Z = 3.45
-FRAME_HALF_W = 1.5      # the camera frame meets the back wall at x = +-1.5
+CEIL_Z = 2.75
+FRAME_HALF_W = 1.65     # the camera frame meets the back wall at x = +-1.65
 BEAM = 0.12
-TOP_BEAM_Z = CEIL_Z - 0.26
-UPRIGHT_X = (-1.04, 0.28)         # a corner post on the left, a post abutting the fireplace
+TOP_BEAM_Z = CEIL_Z - 0.22
+UPRIGHT_X = (-1.44, 0.55)         # a corner post on the left, a post abutting the fireplace
 DADO_Z = 0.95
 
-WIN_CX, WIN_CZ = -0.52, 2.0       # small and high: up and left of the elf, never behind it
-WIN_W, WIN_H = 0.52, 0.66         # outer frame of the square window
-WIN_HOLE = 0.4                    # square hole in the wall, centred on the window
-ROUND_R = 0.34                    # outer radius of the round window
-RUG_R = 0.58                      # radius of both rug variants
+WIN_CX, WIN_CZ = -0.62, 1.8       # over the bed's head, up and left of the elf, never behind it
+WIN_W, WIN_H = 0.6, 0.72          # outer frame of the square window
+WIN_HOLE = 0.46                   # square hole in the wall, centred on the window
+ROUND_R = 0.36                    # outer radius of the round window
+RUG_R = 0.6                       # radius of the rugs
+FERN_X, CANDLE_X = -0.68, 0.68    # the corner pieces in front, kept inside the phone's band
 
-FIRE_X0, FIRE_X1 = 0.34, 0.98     # the whole fireplace, mantel included, sits at x = 610..860 of the plate
+FIRE_X0, FIRE_X1 = 0.62, 1.32     # the whole fireplace, mantel included, on the right
 FIRE_D = 0.3                      # how far the stone body protrudes from the wall
-FIRE_H = 1.22
+FIRE_H = 1.15
 FIRE_CX = (FIRE_X0 + FIRE_X1) / 2
-OPEN_W, OPEN_H = 0.44, 0.54
+OPEN_W, OPEN_H = 0.46, 0.56
 
-# Camera: 40 mm on a 36 mm (vertical) sensor, eye height 1.3 m, 5.33 m in
-# front of the back wall (so that the frame's half width there is
-# FRAME_HALF_W: 11.25 mm is half the sensor width at this aspect). A longer
-# lens from further back than the first version (35 mm at 2.5 m) keeps the
-# perspective mild while the narrower room fills the phone crop.
-CAM_HEIGHT = 1.3
-CAM_LENS = 40.0
-CAM_Y = WALL_Y - FRAME_HALF_W * CAM_LENS / 11.25
-FLOOR_LINE_V = 0.28     # Blender v (from the bottom): floor line at 72 percent from the top
-RUG_V = 0.20            # rug centre at 80 percent from the top
+# Camera: 35 mm on a 36 mm (vertical) sensor, eye height 1.25 m, about
+# 4.2 m in front of the back wall (so that the frame's half width there is
+# FRAME_HALF_W; the sensor's half width at this aspect is 18 mm times the
+# plate's width over its height).
+CAM_HEIGHT = 1.25
+CAM_LENS = 35.0
+CAM_Y = WALL_Y - FRAME_HALF_W * CAM_LENS / (18.0 * PLATE_W / PLATE_H)
+FLOOR_LINE_V = 0.36     # Blender v (from the bottom): floor line at 64 percent from the top
+RUG_V = 0.22            # rug centre at 78 percent from the top
 
 RNG = random.Random(7)
 
@@ -736,6 +858,35 @@ def build_materials():
     MATS["dried"] = toon_material("Dried", PAL["dried"], roughness=0.9)
     MATS["twine"] = toon_material("Twine", "#c9b48c", roughness=0.9)
     MATS["pillow"] = toon_material("Pillow", "#f3e9d2", roughness=0.9)
+    # the variants' materials
+    MATS["shutter"] = plank_material("Shutter", plank_width=0.07, along="z", tint=("#3f6b47", "#55875c"), seam_color="#22382a")
+    MATS["flower_red"] = toon_material("FlowerRed", "#d9473a", roughness=0.8)
+    MATS["flower_yellow"] = toon_material("FlowerYellow", "#f2c641", roughness=0.8)
+    MATS["red"] = toon_material("Red", PAL["red"], roughness=0.8)
+    MATS["kilim"] = band_material("Kilim", "y", 0.34, [(0.0, PAL["red"]), (0.35, PAL["cream"]), (0.5, "#2f4a6e"), (0.72, "#c68a3a"), (1.0, PAL["red"])], wobble=1.2, roughness=0.95)
+    MATS["moss"] = noisy_material("Moss", "#5c8a3e", "#2f5226", scale=30.0, strength=0.6, roughness=1.0)
+    MATS["straw"] = noisy_material("Straw", "#b08a4a", "#6e5228", scale=40.0, strength=0.5, roughness=0.95)
+    MATS["parchment"] = noisy_material("Parchment", "#e8d3a2", "#b9965b", scale=9.0, strength=0.45, roughness=0.95)
+    MATS["ink"] = toon_material("Ink", "#3a2a1a", roughness=0.9)
+    MATS["antler"] = toon_material("Antler", "#e4d6b8", roughness=0.7)
+    MATS["garlic"] = toon_material("Garlic", "#f4e6cc", roughness=0.8)
+    MATS["feather"] = toon_material("Feather", "#e9e1d0", roughness=0.9)
+    MATS["feather_dark"] = toon_material("FeatherDark", "#8c6a4a", roughness=0.9)
+    MATS["paper_glow"] = toon_material("PaperGlow", "#f7d9a6", roughness=1.0, emission=("#ffcf8a", 2.2))
+    MATS["iron_light"] = toon_material("IronLight", "#6a7178", roughness=0.5)
+    MATS["jam"] = toon_material("Jam", "#9b2335", roughness=0.25)
+    MATS["honey"] = toon_material("Honey", "#e3a53a", roughness=0.25)
+    MATS["pickles"] = toon_material("Pickles", "#7e9a4a", roughness=0.3)
+    MATS["pumpkin"] = toon_material("Pumpkin", "#e07b2a", roughness=0.6)
+    MATS["brew"] = toon_material("Brew", "#6fbf4a", roughness=0.3, emission=("#7fdc52", 0.6))
+    MATS["ball"] = checker_material("Ball", "#d9473a", "#f3e4c0", scale=4.0, roughness=0.5)
+    MATS["mushroom"] = toon_material("Mushroom", "#c0392b", roughness=0.5)
+    MATS["stump_rings"] = ring_material("StumpRings", ["#c9a36a", "#a8814c"], ring_width=0.018)
+    # the walls and the floors on offer (the plates are rendered for every pair)
+    MATS["wall.boards"] = plank_material("WallBoards", plank_width=0.15, along="z", tint=("#8a6440", "#b08a5c"), seam_color="#3a2716", world=True)
+    MATS["wall.logs"] = band_material("WallLogs", "z", 0.22, [(0.0, "#3e2716"), (0.25, "#7a5030"), (0.55, "#a07246"), (0.85, "#6a4528"), (1.0, "#3e2716")], seam_color="#24160c", seam=0.04, world=True)
+    MATS["floor.flagstones"] = stone_material("FloorFlagstones", scale=2.8, stretch=1.0, shades=("#6b6258", "#a59a88"), mortar="#3f3a33", world=True)
+    MATS["floor.terracotta"] = tile_material("FloorTerracotta", 0.3, ("#a2532f", "#c77a4c"), "#6b5a48", world=True)
 
 
 # ----------------------------------------------------------------------------
@@ -859,11 +1010,11 @@ def add_room_lights(rug_center):
 # sun, the cool fill a neutral daylight, the fire steps back, the ambient
 # brightens; the window planes swap their sky and lose the moon and stars.
 DAYLIGHT = {
-    "moon": {"night": ("#9fc4ff", 750.0), "day": ("#fff1d6", 2600.0)},
-    "moon.fill": {"night": ("#9fc4ff", 18.0), "day": ("#eef3ff", 150.0)},
+    "moon": {"night": ("#9fc4ff", 750.0), "day": ("#fff1d6", 1500.0)},
+    "moon.fill": {"night": ("#9fc4ff", 18.0), "day": ("#eef3ff", 90.0)},
     "fire": {"night": ("#ff9a3c", 200.0), "day": ("#ff9a3c", 110.0)},
     "fire.glow": {"night": (PAL["fire"], 12.0), "day": (PAL["fire"], 8.0)},
-    "world": {"night": ((0.09, 0.065, 0.05), 1.0), "day": ((0.40, 0.38, 0.34), 1.0)},
+    "world": {"night": ((0.09, 0.065, 0.05), 1.0), "day": ((0.30, 0.285, 0.26), 1.0)},
 }
 SKY_PLANES = []   # the window planes that show the night or the day sky
 NIGHT_ONLY = []   # the moon and the stars
@@ -942,17 +1093,8 @@ def build_rug_braided(coll, c):
     cylinder("rug.centre", coll, 0.11, 0.026, (c[0], c[1], 0.013), MATS["rug_rings"], outline=0.004)
 
 
-def build_rug_green(coll, c):
-    cylinder("rug.disc", coll, RUG_R, 0.025, (c[0], c[1], 0.0125), MATS["rug_green"], outline=0.005, segments=48)
-    torus("rug.border", coll, RUG_R, 0.022, (c[0], c[1], 0.014), MATS["rug_green_trim"], outline=0.004, scale=(1, 1, 0.6), segments=48, rings=8)
-    for i in range(36):
-        a = 2 * math.pi * i / 36
-        cylinder(f"rug.tassel{i}", coll, 0.008, 0.07, (c[0] + (RUG_R + 0.05) * math.cos(a), c[1] + (RUG_R + 0.05) * math.sin(a), 0.008),
-                 MATS["rug_green_trim"], rotation=(math.pi / 2, 0, a + math.pi / 2), segments=6)
-
-
-def build_bed(coll):
-    x0, x1, y0, y1 = -0.97, -0.37, 1.02, WALL_Y
+def build_bed_oak(coll):
+    x0, x1, y0, y1 = -1.42, -0.7, 1.02, WALL_Y
     wd = MATS["wood_light"]
     box_bounds("bed.frame", coll, x0, x1, y0, y1, 0.14, 0.3, wd, outline=0.006)
     for i, (x, y) in enumerate(((x0 + 0.04, y0 + 0.04), (x1 - 0.04, y0 + 0.04), (x0 + 0.04, y1 - 0.04), (x1 - 0.04, y1 - 0.04))):
@@ -972,9 +1114,9 @@ def build_bed(coll):
     contact_shadow(coll, ((x0 + x1) / 2, (y0 + y1) / 2 - 0.05, 0), (x1 - x0) / 2 + 0.12, (y1 - y0) / 2 + 0.12)
 
 
-def build_hammock(coll):
-    a = Vector((-0.95, 1.36, 1.2))
-    b = Vector((-0.37, 1.02, 1.1))
+def build_bed_hammock(coll):
+    a = Vector((-1.38, 1.36, 1.2))
+    b = Vector((-0.7, 1.02, 1.1))
     wd = MATS["wood_light"]
     for i, p in enumerate((a, b)):
         cylinder(f"hammock.post{i}", coll, 0.035, p.z + 0.1, (p.x, p.y, (p.z + 0.1) / 2), wd, outline=0.006, segments=12)
@@ -1018,28 +1160,6 @@ def window_common(coll, night_shape):
         torus(f"window.tie{i}", coll, 0.075, 0.028, (x_hang, WALL_Y - 0.09, z_tie), MATS["trim"], outline=0.004, scale=(1.0, 0.6, 1.0), segments=24, rings=8)
 
 
-def build_window_square(coll):
-    fr = MATS["wood_light"]
-    x0, x1 = WIN_CX - WIN_W / 2, WIN_CX + WIN_W / 2
-    z0, z1 = WIN_CZ - WIN_H / 2, WIN_CZ + WIN_H / 2
-    t, d = 0.055, 0.07
-    y0, y1 = WALL_Y - d, WALL_Y + 0.01
-    box_bounds("window.frame.l", coll, x0, x0 + t, y0, y1, z0, z1, fr, outline=0.005)
-    box_bounds("window.frame.r", coll, x1 - t, x1, y0, y1, z0, z1, fr, outline=0.005)
-    box_bounds("window.frame.b", coll, x0, x1, y0, y1, z0, z0 + t, fr, outline=0.005)
-    box_bounds("window.frame.t", coll, x0, x1, y0, y1, z1 - t, z1, fr, outline=0.005)
-    box_bounds("window.mullion", coll, WIN_CX - 0.018, WIN_CX + 0.018, y0 + 0.02, y1, z0, z1, fr, outline=0.004)
-    box_bounds("window.transom", coll, x0, x1, y0 + 0.02, y1, WIN_CZ - 0.018, WIN_CZ + 0.018, fr, outline=0.004)
-    box_bounds("window.sill", coll, x0 - 0.06, x1 + 0.06, WALL_Y - 0.13, WALL_Y, z0 - 0.045, z0, fr, outline=0.005)
-    glass = box_bounds("window.glass", coll, x0 + t, x1 - t, WALL_Y - 0.03, WALL_Y - 0.025, z0 + t, z1 - t, MATS["glass"])
-    no_ink(no_shadow(glass))
-    night = box_bounds("window.night", coll, x0 + t * 0.5, x1 - t * 0.5, WALL_Y - 0.012, WALL_Y - 0.008, z0 + t * 0.5, z1 - t * 0.5, MATS["night"])
-    night.location = (WIN_CX, WALL_Y - 0.01, WIN_CZ)
-    SKY_PLANES.append(no_ink(no_shadow(night)))
-    build_night_sky(coll, WIN_CX, WIN_CZ, (WIN_W - 2 * t) / 2, (WIN_H - 2 * t) / 2)
-    window_common(coll, "square")
-
-
 def build_window_round(coll):
     fr = MATS["wood_light"]
     r_out, r_in = ROUND_R, ROUND_R - 0.065
@@ -1071,13 +1191,9 @@ def build_night_sky(coll, cx, cz, half_w, half_h):
         NIGHT_ONLY.append(no_ink(no_shadow(s)))
 
 
-def build_shelf(coll):
-    x0, x1 = -0.97, -0.55
-    z = 2.58
-    wd = MATS["wood_light"]
-    box_bounds("shelf.board", coll, x0, x1, WALL_Y - 0.2, WALL_Y, z, z + 0.035, wd, outline=0.005)
-    for i, x in enumerate((x0 + 0.05, x1 - 0.05)):
-        box(f"shelf.bracket{i}", coll, (0.03, 0.14, 0.1), (x, WALL_Y - 0.08, z - 0.05), wd, outline=0.004)
+def build_shelf_books(coll):
+    x0, x1, z = SHELF
+    shelf_board(coll, x0, x1, z)
     # books: a leaning row, then one lying flat with the potion on it
     x = x0 + 0.03
     heights = (0.2, 0.17, 0.22, 0.16, 0.19)
@@ -1093,14 +1209,9 @@ def build_shelf(coll):
     cylinder("shelf.cork", coll, 0.018, 0.03, (px, WALL_Y - 0.11, z + 0.07 + 0.18), MATS["cork"], outline=0.003, segments=12)
 
 
-def build_lantern(coll):
+def build_lantern_iron(coll):
     x, y = FIRE_CX + 0.03, WALL_Y - 0.5
-    top = TOP_BEAM_Z
-    hook_z = top - 0.02
-    links = 9
-    for i in range(links):
-        torus(f"lantern.chain{i}", coll, 0.018, 0.005, (x, y, hook_z - 0.03 - i * 0.034), MATS["iron"], rotation=(0, math.pi / 2 * (i % 2), 0), segments=12, rings=6)
-    lz = hook_z - 0.03 - links * 0.034
+    lz = lantern_chain(coll, x, y)
     cylinder("lantern.cap", coll, 0.11, 0.07, (x, y, lz - 0.035), MATS["iron"], outline=0.004, radius2=0.025, segments=16)
     cylinder("lantern.ring", coll, 0.1, 0.02, (x, y, lz - 0.08), MATS["iron"], outline=0.004, segments=16)
     body_z0, body_z1 = lz - 0.33, lz - 0.08
@@ -1117,8 +1228,8 @@ def build_lantern(coll):
     return light
 
 
-def build_picture(coll):
-    x, z = 0.08, 1.9
+def build_picture_cottage(coll):
+    x, z = 0.15, 1.72
     w, h = 0.24, 0.3
     fr = MATS["trim"]
     t = 0.025
@@ -1133,7 +1244,7 @@ def build_picture(coll):
     cylinder("picture.moon", coll, 0.017, 0.006, (x - 0.06, WALL_Y - 0.02, z + 0.08), MATS["moon"], rotation=(math.pi / 2, 0, 0), segments=16)
 
 
-def build_basket(coll):
+def build_basket_acorns(coll):
     # at the hearth's front left corner, right of the elf's spot; k scales the
     # basket down so it hides as little of the fire as possible
     cx, cy, k = FIRE_X0 + 0.02, WALL_Y - FIRE_D - 0.4, 0.8
@@ -1152,8 +1263,8 @@ def build_basket(coll):
         cylinder(f"basket.cap{i}", coll, 0.027, 0.018, (p[0], p[1], z + 0.025), MATS["acorn_cap"], radius2=0.018, segments=12)
 
 
-def build_fern(coll, rug_center):
-    cx, cy = -0.55, rug_center[1] - 0.6
+def build_fern_fern(coll, rug_center):
+    cx, cy = FERN_X, rug_center[1] - 0.5
     lathe("fern.pot", coll, [(0.0, 0.0), (0.1, 0.0), (0.12, 0.2), (0.145, 0.22), (0.145, 0.27), (0.13, 0.27), (0.11, 0.25), (0.0, 0.25)],
           (cx, cy, 0.0), MATS["terracotta"], outline=0.005, segments=24)
     contact_shadow(coll, (cx, cy, 0), 0.26, 0.22)
@@ -1176,8 +1287,8 @@ def build_fern(coll, rug_center):
         grid_sheet(f"fern.frond{i}", coll, frond, 12, 2, (0, 0, 0), MATS["fern"], outline=0.004)
 
 
-def build_candle(coll, rug_center):
-    cx, cy = 0.5, rug_center[1] - 0.62
+def build_candle_candle(coll, rug_center):
+    cx, cy = CANDLE_X, rug_center[1] - 0.55
     wd = MATS["wood_light"]
     top_z = 0.3
     cylinder("candle.stool.top", coll, 0.15, 0.035, (cx, cy, top_z - 0.0175), wd, outline=0.005, segments=24)
@@ -1195,11 +1306,11 @@ def build_candle(coll, rug_center):
     return _light("candle.light", "POINT", (cx, cy, top_z + 0.19), PAL["ember_light"], 5.0, coll, radius=0.03)
 
 
-def build_herbs(coll):
+def build_herbs_herbs(coll):
     bundles = (
-        (-0.25, "sage", 0.26),
-        (-0.05, "lavender", 0.3),
-        (0.15, "dried", 0.24),
+        (-0.2, "sage", 0.26),
+        (0.0, "lavender", 0.3),
+        (0.2, "dried", 0.24),
     )
     y = WALL_Y - 0.2
     rng = random.Random(9)
@@ -1219,25 +1330,453 @@ def build_herbs(coll):
 
 
 # ----------------------------------------------------------------------------
+# More helpers for the variants
+# ----------------------------------------------------------------------------
+
+def stick(name, coll, p0, p1, r0, r1, mat, outline=0.0, segments=10):
+    """A tapered rod from p0 (radius r0) to p1 (radius r1)."""
+    a, b = Vector(p0), Vector(p1)
+    d = b - a
+    return cylinder(name, coll, r0, d.length, (a + b) / 2, mat, outline=outline,
+                    rotation=d.to_track_quat("Z", "Y").to_euler(), radius2=r1, segments=segments)
+
+
+def prism_xz(name, coll, outline_pts, y0, y1, mat, outline=0.0):
+    """A convex polygon in the XZ plane, extruded along Y from y0 to y1."""
+    n = len(outline_pts)
+    verts = [(x, y0, z) for x, z in outline_pts] + [(x, y1, z) for x, z in outline_pts]
+    faces = [tuple(range(n)), tuple(range(2 * n - 1, n - 1, -1))]
+    faces += [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+    me = finish_mesh(name, verts, faces, smooth=False)
+    return make_object(name, me, coll, (0, 0, 0), (0, 0, 0), mat, outline)
+
+
+def arch_band(name, coll, cx, cz, r_in, r_out, y0, y1, mat, segments=24, outline=0.0):
+    """A semicircular band (an arch) in the XZ plane, from y0 to y1."""
+    verts, faces = [], []
+    for i in range(segments + 1):
+        a = math.pi * i / segments
+        c, s = math.cos(a), math.sin(a)
+        for r in (r_in, r_out):
+            for y in (y0, y1):
+                verts.append((cx + r * c, y, cz + r * s))
+    for i in range(segments):
+        b0, b1 = 4 * i, 4 * (i + 1)
+        # inner, outer, front, back faces of the segment
+        faces += [(b0, b1, b1 + 1, b0 + 1), (b0 + 2, b0 + 3, b1 + 3, b1 + 2),
+                  (b0, b0 + 2, b1 + 2, b1), (b0 + 1, b1 + 1, b1 + 3, b0 + 3)]
+    me = finish_mesh(name, verts, faces, smooth=False)
+    return make_object(name, me, coll, (0, 0, 0), (0, 0, 0), mat, outline)
+
+
+def arched_outline(cx, cz_bottom, half_w, spring_z, segments=20):
+    """A window's arched shape in XZ: straight sides up to spring_z, a
+    semicircle over them."""
+    pts = [(cx - half_w, cz_bottom), (cx + half_w, cz_bottom)]
+    for i in range(segments + 1):
+        a = math.pi * i / segments
+        pts.append((cx + half_w * math.cos(a), spring_z + half_w * math.sin(a)))
+    return pts
+
+
+def shelf_board(coll, x0, x1, z):
+    wd = MATS["wood_light"]
+    box_bounds("shelf.board", coll, x0, x1, WALL_Y - 0.2, WALL_Y, z, z + 0.035, wd, outline=0.005)
+    for i, x in enumerate((x0 + 0.05, x1 - 0.05)):
+        box(f"shelf.bracket{i}", coll, (0.03, 0.14, 0.1), (x, WALL_Y - 0.08, z - 0.05), wd, outline=0.004)
+
+
+SHELF = (-1.42, -0.98, 2.08)
+
+
+# ----------------------------------------------------------------------------
+# The variants added to the defaults (the catalogue's ids, cottage/catalogue.ts)
+# ----------------------------------------------------------------------------
+
+def build_window_arched(coll):
+    """A tall window with a round top, its sky arched to match."""
+    fr = MATS["wood_light"]
+    half = WIN_W / 2 - 0.02
+    z0 = WIN_CZ - WIN_H / 2
+    spring = WIN_CZ + WIN_H / 2 - half
+    t, d = 0.05, 0.07
+    y0, y1 = WALL_Y - d, WALL_Y + 0.01
+    box_bounds("window.frame.l", coll, WIN_CX - half, WIN_CX - half + t, y0, y1, z0, spring, fr)
+    box_bounds("window.frame.r", coll, WIN_CX + half - t, WIN_CX + half, y0, y1, z0, spring, fr)
+    box_bounds("window.frame.b", coll, WIN_CX - half, WIN_CX + half, y0, y1, z0, z0 + t, fr)
+    arch_band("window.frame.arch", coll, WIN_CX, spring, half - t, half, y0, y1, fr)
+    box_bounds("window.mullion", coll, WIN_CX - 0.016, WIN_CX + 0.016, y0 + 0.02, y1, z0, spring + half - t, fr)
+    box_bounds("window.transom", coll, WIN_CX - half, WIN_CX + half, y0 + 0.02, y1, spring - 0.016, spring + 0.016, fr)
+    box_bounds("window.sill", coll, WIN_CX - half - 0.06, WIN_CX + half + 0.06, WALL_Y - 0.13, WALL_Y, z0 - 0.045, z0, fr)
+    glass = prism_xz("window.glass", coll, arched_outline(WIN_CX, z0 + t, half - t, spring), WALL_Y - 0.03, WALL_Y - 0.025, MATS["glass"])
+    no_ink(no_shadow(glass))
+    night = prism_xz("window.night", coll, arched_outline(WIN_CX, z0 + t * 0.5, half - t * 0.5, spring), WALL_Y - 0.012, WALL_Y - 0.008, MATS["night"])
+    SKY_PLANES.append(no_ink(no_shadow(night)))
+    build_night_sky(coll, WIN_CX, (z0 + spring + half) / 2, half - t, (spring + half - z0) / 2 - t)
+    window_common(coll, "arched")
+
+
+def build_window_shuttered(coll):
+    """The square window with its shutters swung open against the wall and
+    a box of flowers on the sill, no curtains."""
+    fr = MATS["wood_light"]
+    x0, x1 = WIN_CX - WIN_W / 2, WIN_CX + WIN_W / 2
+    z0, z1 = WIN_CZ - WIN_H / 2, WIN_CZ + WIN_H / 2
+    t, d = 0.055, 0.07
+    y0, y1 = WALL_Y - d, WALL_Y + 0.01
+    box_bounds("window.frame.l", coll, x0, x0 + t, y0, y1, z0, z1, fr)
+    box_bounds("window.frame.r", coll, x1 - t, x1, y0, y1, z0, z1, fr)
+    box_bounds("window.frame.b", coll, x0, x1, y0, y1, z0, z0 + t, fr)
+    box_bounds("window.frame.t", coll, x0, x1, y0, y1, z1 - t, z1, fr)
+    box_bounds("window.mullion", coll, WIN_CX - 0.018, WIN_CX + 0.018, y0 + 0.02, y1, z0, z1, fr)
+    box_bounds("window.transom", coll, x0, x1, y0 + 0.02, y1, WIN_CZ - 0.018, WIN_CZ + 0.018, fr)
+    glass = box_bounds("window.glass", coll, x0 + t, x1 - t, WALL_Y - 0.03, WALL_Y - 0.025, z0 + t, z1 - t, MATS["glass"])
+    no_ink(no_shadow(glass))
+    night = box_bounds("window.night", coll, x0 + t * 0.5, x1 - t * 0.5, WALL_Y - 0.012, WALL_Y - 0.008, z0 + t * 0.5, z1 - t * 0.5, MATS["night"])
+    SKY_PLANES.append(no_ink(no_shadow(night)))
+    build_night_sky(coll, WIN_CX, WIN_CZ, (WIN_W - 2 * t) / 2, (WIN_H - 2 * t) / 2)
+    # the shutters: boards with a Z brace, hinged at the frame, swung out
+    sh = MATS["shutter"]
+    w = WIN_W / 2
+    for i, (sgn, hinge_x) in enumerate(((-1, x0), (1, x1))):
+        angle = math.radians(18) * sgn
+        pivot = Vector((hinge_x, WALL_Y - 0.03, WIN_CZ))
+        shutter = box(f"window.shutter{i}", coll, (w, 0.025, WIN_H), (hinge_x + sgn * w / 2, WALL_Y - 0.03, WIN_CZ), sh)
+        for k in range(3):
+            zz = WIN_CZ + (k - 1) * WIN_H * 0.36
+            box(f"window.shutter{i}.slat{k}", coll, (w - 0.04, 0.012, 0.035), (hinge_x + sgn * w / 2, WALL_Y - 0.047, zz), MATS["beam"])
+        for obj in [o for o in coll.objects if o.name.startswith(f"window.shutter{i}")]:
+            rot = Matrix.Rotation(angle, 4, "Z")
+            obj.matrix_basis = Matrix.Translation(pivot) @ rot @ Matrix.Translation(-pivot) @ obj.matrix_basis
+    # the flower box on the sill
+    box_bounds("window.planter", coll, x0 - 0.02, x1 + 0.02, WALL_Y - 0.16, WALL_Y - 0.02, z0 - 0.1, z0, MATS["terracotta"])
+    rng = random.Random(21)
+    for k in range(9):
+        fx = x0 + 0.04 + (x1 - x0 - 0.08) * k / 8
+        stem_top = Vector((fx + rng.uniform(-0.02, 0.02), WALL_Y - 0.09, z0 + 0.06 + rng.uniform(0, 0.05)))
+        stick(f"window.stem{k}", coll, (fx, WALL_Y - 0.09, z0), stem_top, 0.006, 0.004, MATS["fern"], segments=6)
+        petal = MATS["flower_red"] if k % 3 == 0 else MATS["flower_yellow"] if k % 3 == 1 else MATS["lavender"]
+        sphere(f"window.flower{k}", coll, 0.024, stem_top, petal, scale=(1, 1, 0.7), segments=10)
+
+
+def build_rug_woven(coll, c):
+    """An oval kilim with zigzag bands and a fringe at both ends."""
+    kilim = cylinder("rug.kilim", coll, RUG_R, 0.02, (c[0], c[1], 0.01), MATS["kilim"], segments=48)
+    kilim.scale = (1.15, 0.78, 1.0)
+    for end in (-1, 1):
+        for i in range(11):
+            y = c[1] + (i - 5) * 0.055
+            x = c[0] + end * RUG_R * 1.15 * math.sqrt(max(0.0, 1 - ((y - c[1]) / (RUG_R * 0.78)) ** 2))
+            stick(f"rug.fringe{end}{i}", coll, (x - end * 0.01, y, 0.012), (x + end * 0.07, y, 0.005), 0.007, 0.005, MATS["cream"], segments=6)
+
+
+def build_rug_moss(coll, c):
+    """A soft cushion of moss with a wavy edge, a few tiny flowers and
+    mushrooms in it."""
+    segments = 64
+    verts, faces = [(c[0], c[1], 0.03)], []
+    rng = random.Random(4)
+    wobble = [rng.uniform(-0.05, 0.05) for _ in range(8)]
+    for i in range(segments):
+        a = 2 * math.pi * i / segments
+        r = RUG_R * (1.0 + sum(w * math.sin((k + 2) * a + k) for k, w in enumerate(wobble)) * 0.6)
+        verts.append((c[0] + r * math.cos(a) * 1.05, c[1] + r * math.sin(a) * 0.85, 0.0))
+        verts.append((c[0] + r * 0.93 * math.cos(a) * 1.05, c[1] + r * 0.93 * math.sin(a) * 0.85, 0.028))
+    for i in range(segments):
+        o0, i0 = 1 + 2 * i, 2 + 2 * i
+        o1, i1 = 1 + 2 * ((i + 1) % segments), 2 + 2 * ((i + 1) % segments)
+        faces += [(o0, o1, i1, i0), (i0, i1, 0)]
+    me = finish_mesh("rug.moss", verts, faces, smooth=True)
+    moss = make_object("rug.moss", me, coll, (0, 0, 0), (0, 0, 0), MATS["moss"])
+    sub = moss.modifiers.new("Subdivision", "SUBSURF")
+    sub.levels = sub.render_levels = 2
+    for k in range(7):
+        a = 2 * math.pi * k / 7 + 0.4
+        r = RUG_R * 0.86
+        p = (c[0] + r * math.cos(a) * 1.05, c[1] + r * math.sin(a) * 0.85, 0.03)
+        if k % 3 == 0:
+            cylinder(f"rug.shroom{k}.stem", coll, 0.012, 0.05, (p[0], p[1], p[2] + 0.025), MATS["cream"], segments=8)
+            sphere(f"rug.shroom{k}.cap", coll, 0.03, (p[0], p[1], p[2] + 0.055), MATS["mushroom"], scale=(1, 1, 0.55), segments=12)
+        else:
+            sphere(f"rug.flower{k}", coll, 0.018, (p[0], p[1], p[2] + 0.012), MATS["cream"], scale=(1, 1, 0.5), segments=10)
+
+
+def build_bed_nest(coll):
+    """A round nest of twigs on the floor, a blanket of moss and a pillow in it."""
+    cx, cy = -1.05, 1.18
+    torus("bed.nest", coll, 0.36, 0.11, (cx, cy, 0.11), MATS["straw"], scale=(1, 0.8, 0.9), segments=40, rings=14)
+    rng = random.Random(8)
+    for i in range(26):
+        a = 2 * math.pi * i / 26 + rng.uniform(-0.1, 0.1)
+        r0, r1 = 0.36 + rng.uniform(-0.08, 0.04), 0.36 + rng.uniform(-0.04, 0.1)
+        z0, z1 = rng.uniform(0.04, 0.2), rng.uniform(0.04, 0.2)
+        a1 = a + rng.uniform(0.35, 0.6)
+        stick(f"bed.twig{i}", coll, (cx + r0 * math.cos(a), cy + r0 * math.sin(a) * 0.8, z0),
+              (cx + r1 * math.cos(a1), cy + r1 * math.sin(a1) * 0.8, z1), 0.009, 0.006, MATS["bark"], segments=6)
+    sphere("bed.nest.moss", coll, 0.3, (cx, cy, 0.1), MATS["moss"], scale=(1, 0.78, 0.35), segments=24)
+    sphere("bed.nest.pillow", coll, 0.11, (cx - 0.12, cy + 0.08, 0.2), MATS["pillow"], scale=(1.2, 0.8, 0.5), segments=16)
+    contact_shadow(coll, (cx, cy, 0), 0.55, 0.45)
+
+
+def build_picture_map(coll):
+    """An old map of the forest in a frame: a dotted path between trees to
+    a cross."""
+    x, z = 0.15, 1.72
+    w, h = 0.36, 0.26
+    t = 0.025
+    fr = MATS["trim"]
+    box_bounds("picture.frame.l", coll, x - w / 2, x - w / 2 + t, WALL_Y - 0.03, WALL_Y, z - h / 2, z + h / 2, fr)
+    box_bounds("picture.frame.r", coll, x + w / 2 - t, x + w / 2, WALL_Y - 0.03, WALL_Y, z - h / 2, z + h / 2, fr)
+    box_bounds("picture.frame.b", coll, x - w / 2, x + w / 2, WALL_Y - 0.03, WALL_Y, z - h / 2, z - h / 2 + t, fr)
+    box_bounds("picture.frame.t", coll, x - w / 2, x + w / 2, WALL_Y - 0.03, WALL_Y, z + h / 2 - t, z + h / 2, fr)
+    box("picture.parchment", coll, (w - 2 * t, 0.01, h - 2 * t), (x, WALL_Y - 0.012, z), MATS["parchment"])
+    yy = WALL_Y - 0.019
+    pts = [(-0.12, -0.07), (-0.07, -0.02), (-0.02, -0.05), (0.03, 0.0), (0.07, 0.04), (0.11, 0.06)]
+    for i, (px_, pz) in enumerate(pts):
+        box(f"picture.step{i}", coll, (0.012, 0.004, 0.012), (x + px_, yy, z + pz), MATS["ink"])
+    for i in (-1, 1):
+        stick(f"picture.cross{i}", coll, (x + 0.115 - 0.015 * i, yy, z + 0.045), (x + 0.115 + 0.015 * i, yy, z + 0.075), 0.004, 0.004, MATS["red"], segments=6)
+    for i, (tx, tz) in enumerate(((-0.1, 0.05), (-0.05, 0.07), (0.0, -0.06), (0.09, -0.04))):
+        cylinder(f"picture.tree{i}", coll, 0.018, 0.04, (x + tx, yy, z + tz), MATS["fern"], rotation=(math.pi / 2, 0, 0), radius2=0.0, segments=3)
+
+
+def build_picture_antlers(coll):
+    """A pair of small antlers on a carved wooden shield."""
+    x, z = 0.15, 1.72
+    sphere("picture.shield", coll, 0.11, (x, WALL_Y - 0.02, z - 0.02), MATS["wood_light"], scale=(0.8, 0.25, 1.0), segments=20)
+    bone = MATS["antler"]
+    for side in (-1, 1):
+        base = Vector((x + side * 0.03, WALL_Y - 0.05, z + 0.03))
+        p1 = base + Vector((side * 0.07, -0.02, 0.08))
+        p2 = p1 + Vector((side * 0.06, 0.0, 0.1))
+        p3 = p2 + Vector((side * 0.01, 0.01, 0.08))
+        stick(f"picture.beam{side}a", coll, base, p1, 0.016, 0.013, bone, segments=8)
+        stick(f"picture.beam{side}b", coll, p1, p2, 0.013, 0.01, bone, segments=8)
+        stick(f"picture.beam{side}c", coll, p2, p3, 0.01, 0.004, bone, segments=8)
+        stick(f"picture.tine{side}a", coll, p1, p1 + Vector((-side * 0.03, -0.01, 0.07)), 0.009, 0.003, bone, segments=8)
+        stick(f"picture.tine{side}b", coll, p2, p2 + Vector((side * 0.06, -0.01, 0.03)), 0.008, 0.003, bone, segments=8)
+
+
+def build_herbs_garlic(coll):
+    """Two braids of garlic bulbs hanging from the beam."""
+    y = WALL_Y - 0.2
+    for b, x in enumerate((-0.12, 0.14)):
+        top = TOP_BEAM_Z
+        length = 0.42 if b == 0 else 0.36
+        stick(f"herbs.braid{b}", coll, (x, y, top), (x, y, top - length), 0.012, 0.008, MATS["straw"], segments=8)
+        for k in range(8):
+            zz = top - 0.06 - k * (length - 0.06) / 8
+            side = 1 if k % 2 else -1
+            p = (x + side * 0.03, y - 0.02, zz)
+            lathe(f"herbs.bulb{b}{k}", coll, [(0.0, -0.04), (0.035, -0.032), (0.048, -0.005), (0.042, 0.02), (0.014, 0.045), (0.004, 0.065), (0.0, 0.066)],
+                  p, MATS["garlic"], segments=14, rotation=(0, side * 0.5, 0))
+
+
+def build_herbs_dreamcatcher(coll):
+    """A dreamcatcher hanging from the beam: a ring with a web, beads and feathers."""
+    x, y = 0.0, WALL_Y - 0.2
+    cz = TOP_BEAM_Z - 0.22
+    stick("herbs.string", coll, (x, y, TOP_BEAM_Z), (x, y, cz + 0.12), 0.004, 0.004, MATS["twine"], segments=6)
+    torus("herbs.ring", coll, 0.12, 0.01, (x, y, cz), MATS["wood_light"], rotation=(math.pi / 2, 0, 0), segments=32, rings=8)
+    for i in range(6):
+        a0, a1 = 2 * math.pi * i / 6, 2 * math.pi * (i + 2) / 6
+        stick(f"herbs.web{i}", coll, (x + 0.12 * math.cos(a0), y, cz + 0.12 * math.sin(a0)),
+              (x + 0.12 * math.cos(a1), y, cz + 0.12 * math.sin(a1)), 0.002, 0.002, MATS["cream"], segments=4)
+    sphere("herbs.bead", coll, 0.015, (x, y - 0.005, cz), MATS["potion"], segments=10)
+    for i, dx in enumerate((-0.08, 0.0, 0.08)):
+        top = Vector((x + dx, y, cz - 0.12 + abs(dx) * 0.5))
+        stick(f"herbs.thread{i}", coll, top, top + Vector((0, 0, -0.06)), 0.002, 0.002, MATS["twine"], segments=4)
+        sphere(f"herbs.feather{i}", coll, 0.06, top + Vector((0, 0, -0.12)), MATS["feather" if i != 1 else "feather_dark"], scale=(0.35, 0.1, 1.0), segments=12)
+
+
+def lantern_chain(coll, x, y, links=9):
+    hook_z = TOP_BEAM_Z - 0.02
+    for i in range(links):
+        torus(f"lantern.chain{i}", coll, 0.018, 0.005, (x, y, hook_z - 0.03 - i * 0.034), MATS["iron"], rotation=(0, math.pi / 2 * (i % 2), 0), segments=12, rings=6)
+    return hook_z - 0.03 - links * 0.034
+
+
+def build_lantern_paper(coll):
+    """A round paper lantern, glowing warm, with ribs and red caps."""
+    x, y = FIRE_CX + 0.03, WALL_Y - 0.5
+    lz = lantern_chain(coll, x, y, links=6)
+    cz = lz - 0.17
+    sphere("lantern.paper", coll, 0.15, (x, y, cz), MATS["paper_glow"], scale=(1, 1, 1.1), segments=28)
+    for k in range(5):
+        zz = cz + (k - 2) * 0.05
+        r = 0.15 * math.sqrt(max(0.0, 1 - ((zz - cz) / 0.165) ** 2))
+        torus(f"lantern.rib{k}", coll, r, 0.004, (x, y, zz), MATS["beam"], segments=28, rings=6)
+    cylinder("lantern.cap.top", coll, 0.06, 0.03, (x, y, cz + 0.165), MATS["red"], segments=16)
+    cylinder("lantern.cap.bottom", coll, 0.06, 0.03, (x, y, cz - 0.165), MATS["red"], segments=16)
+    stick("lantern.tassel", coll, (x, y, cz - 0.18), (x, y, cz - 0.28), 0.01, 0.003, MATS["red"], segments=8)
+    return _light("lantern.light", "POINT", (x, y, cz), PAL["ember_light"], 12.0, coll, radius=0.08)
+
+
+def build_lantern_bell(coll):
+    """A brass bell lamp on a chain with a glowing bulb under its rim."""
+    x, y = FIRE_CX + 0.03, WALL_Y - 0.5
+    lz = lantern_chain(coll, x, y, links=7)
+    lathe("lantern.bell", coll, [(0.0, 0.0), (0.035, -0.005), (0.06, -0.06), (0.075, -0.13), (0.11, -0.17), (0.105, -0.18), (0.0, -0.175)],
+          (x, y, lz), MATS["gold"], segments=28)
+    flame = sphere("lantern.flame", coll, 0.045, (x, y, lz - 0.17), MATS["lantern_glow"], segments=14)
+    no_ink(no_shadow(flame))
+    sphere("lantern.knob", coll, 0.02, (x, y, lz + 0.01), MATS["gold"], segments=12)
+    return _light("lantern.light", "POINT", (x, y, lz - 0.2), PAL["ember_light"], 10.0, coll, radius=0.05)
+
+
+def build_shelf_jars(coll):
+    """The shelf with jars of preserves under cloth lids."""
+    x0, x1, z = SHELF
+    shelf_board(coll, x0, x1, z)
+    fills = (("jam", 0.14), ("honey", 0.12), ("pickles", 0.15), ("jam", 0.1))
+    x = x0 + 0.06
+    for i, (fill, h) in enumerate(fills):
+        r = 0.04 if h > 0.11 else 0.035
+        lathe(f"shelf.jar{i}", coll, [(0.0, 0.0), (r, 0.0), (r, h * 0.9), (r * 0.75, h), (0.0, h)], (x, WALL_Y - 0.1, z + 0.035), MATS[fill], segments=20)
+        cylinder(f"shelf.lid{i}", coll, r + 0.012, 0.02, (x, WALL_Y - 0.1, z + 0.035 + h + 0.008), MATS["quilt"], segments=20)
+        x += 2 * r + 0.015
+
+
+def build_shelf_seedlings(coll):
+    """The shelf with seedlings in little pots and a watering can."""
+    x0, x1, z = SHELF
+    shelf_board(coll, x0, x1, z)
+    rng = random.Random(13)
+    for i in range(3):
+        px_ = x0 + 0.07 + i * 0.1
+        lathe(f"shelf.pot{i}", coll, [(0.0, 0.0), (0.03, 0.0), (0.04, 0.07), (0.045, 0.075), (0.0, 0.075)], (px_, WALL_Y - 0.1, z + 0.035), MATS["terracotta"], segments=16)
+        for k in range(3):
+            a = 2 * math.pi * k / 3 + rng.uniform(0, 1)
+            base = Vector((px_, WALL_Y - 0.1, z + 0.105))
+            tip = base + Vector((0.035 * math.cos(a), 0.035 * math.sin(a), 0.05 + 0.02 * k))
+            stick(f"shelf.sprout{i}{k}", coll, base, tip, 0.004, 0.003, MATS["fern"], segments=6)
+            sphere(f"shelf.leaf{i}{k}", coll, 0.018, tip, MATS["fern"], scale=(1, 0.5, 0.35), segments=10)
+    cx = x1 - 0.06
+    cylinder("shelf.can", coll, 0.045, 0.08, (cx, WALL_Y - 0.1, z + 0.075), MATS["iron_light"], segments=18)
+    stick("shelf.spout", coll, (cx - 0.04, WALL_Y - 0.1, z + 0.06), (cx - 0.1, WALL_Y - 0.1, z + 0.12), 0.01, 0.006, MATS["iron_light"], segments=8)
+    torus("shelf.handle", coll, 0.035, 0.007, (cx + 0.01, WALL_Y - 0.1, z + 0.125), MATS["iron_light"], rotation=(math.pi / 2, 0, 0), segments=20, rings=6)
+
+
+def build_basket_firewood(coll):
+    """A low wicker carrier with split logs stacked in it."""
+    cx, cy, k = FIRE_X0 + 0.02, WALL_Y - FIRE_D - 0.4, 0.8
+    prof = [(r * k, z * k) for r, z in ((0.0, 0.0), (0.15, 0.0), (0.18, 0.06), (0.185, 0.12), (0.17, 0.13), (0.16, 0.08), (0.13, 0.04))]
+    lathe("basket.body", coll, prof, (cx, cy, 0.0), MATS["wicker"], segments=24, scale_xy=(1.2, 0.9))
+    contact_shadow(coll, (cx, cy, 0), 0.28, 0.22)
+    for i, (dx, dz, rot) in enumerate(((-0.06, 0.1, 0.1), (0.05, 0.1, -0.15), (0.0, 0.16, 0.05), (-0.08, 0.17, -0.2), (0.07, 0.17, 0.2))):
+        cylinder(f"basket.log{i}", coll, 0.035, 0.3, (cx + dx, cy, dz), MATS["bark"], rotation=(0, math.pi / 2, rot), segments=12)
+        for end in (-1, 1):
+            d = Vector((math.cos(rot), math.sin(rot), 0)) * 0.15 * end
+            cylinder(f"basket.end{i}{end}", coll, 0.033, 0.004, (cx + dx + d.x, cy + d.y, dz), MATS["log_end"], rotation=(0, math.pi / 2, rot), segments=12)
+
+
+def build_basket_pumpkins(coll):
+    """Three pumpkins of the harvest on the floor by the hearth."""
+    cx, cy = FIRE_X0 + 0.02, WALL_Y - FIRE_D - 0.4
+    for i, (dx, dy, r) in enumerate(((-0.06, 0.03, 0.11), (0.09, -0.02, 0.085), (0.0, -0.1, 0.07))):
+        c = Vector((cx + dx, cy + dy, r * 0.75))
+        for k in range(8):
+            a = 2 * math.pi * k / 8
+            sphere(f"basket.pumpkin{i}.{k}", coll, r * 0.55, c + Vector((math.cos(a), math.sin(a), 0)) * r * 0.45, MATS["pumpkin"], scale=(1, 1, 1.25), segments=14)
+        stick(f"basket.stem{i}", coll, c + Vector((0, 0, r * 0.6)), c + Vector((0.02, 0, r * 0.95)), 0.014, 0.009, MATS["fern"], segments=8)
+        contact_shadow(coll, (c.x, c.y, 0), r * 1.6, r * 1.3)
+
+
+def build_fern_mushroom(coll, rug_center):
+    """A big toadstool, red with white dots, little ones at its foot."""
+    cx, cy = FERN_X, rug_center[1] - 0.5
+    lathe("fern.stem", coll, [(0.0, 0.0), (0.09, 0.0), (0.07, 0.05), (0.06, 0.3), (0.07, 0.42), (0.0, 0.42)], (cx, cy, 0.0), MATS["cream"], segments=20)
+    lathe("fern.cap", coll, [(0.0, 0.0), (0.26, 0.0), (0.27, 0.03), (0.22, 0.12), (0.12, 0.19), (0.0, 0.21)], (cx, cy, 0.4), MATS["mushroom"], segments=28)
+    rng = random.Random(17)
+    for i in range(8):
+        a, el = rng.uniform(0, 2 * math.pi), rng.uniform(0.15, 0.85)
+        r = 0.24 * (1 - el * 0.6)
+        sphere(f"fern.dot{i}", coll, 0.03, (cx + r * math.cos(a), cy + r * math.sin(a), 0.42 + 0.17 * el), MATS["cream"], scale=(1, 1, 0.35), segments=10)
+    for i, (dx, dy, s) in enumerate(((0.16, -0.08, 0.5), (-0.14, -0.1, 0.4))):
+        lathe(f"fern.small{i}.stem", coll, [(0.0, 0.0), (0.03 * s, 0.0), (0.025 * s, 0.2 * s), (0.0, 0.2 * s)], (cx + dx, cy + dy, 0.0), MATS["cream"], segments=12)
+        lathe(f"fern.small{i}.cap", coll, [(0.0, 0.0), (0.11 * s, 0.0), (0.09 * s, 0.05 * s), (0.0, 0.09 * s)], (cx + dx, cy + dy, 0.19 * s), MATS["mushroom"], segments=16)
+    contact_shadow(coll, (cx, cy, 0), 0.3, 0.25)
+
+
+def build_fern_stump(coll, rug_center):
+    """A tree stump with its rings on top, moss on one side and a sprout."""
+    cx, cy = FERN_X, rug_center[1] - 0.5
+    lathe("fern.stump", coll, [(0.0, 0.0), (0.24, 0.0), (0.19, 0.04), (0.16, 0.1), (0.155, 0.3), (0.0, 0.3)], (cx, cy, 0.0), MATS["bark"], segments=24)
+    cylinder("fern.rings", coll, 0.148, 0.01, (cx, cy, 0.302), MATS["stump_rings"], segments=28)
+    sphere("fern.moss", coll, 0.12, (cx - 0.1, cy - 0.05, 0.08), MATS["moss"], scale=(1, 0.8, 0.6), segments=16)
+    stick("fern.sprout", coll, (cx + 0.05, cy, 0.3), (cx + 0.07, cy - 0.02, 0.4), 0.006, 0.004, MATS["fern"], segments=6)
+    for k, a in enumerate((0.6, 2.4)):
+        sphere(f"fern.sproutleaf{k}", coll, 0.028, (cx + 0.07 + 0.03 * math.cos(a), cy - 0.02 + 0.03 * math.sin(a), 0.41), MATS["fern"], scale=(1, 0.5, 0.35), segments=10)
+    contact_shadow(coll, (cx, cy, 0), 0.32, 0.27)
+
+
+def build_candle_cauldron(coll, rug_center):
+    """A black cauldron on three legs with a green brew and a ladle."""
+    cx, cy = CANDLE_X, rug_center[1] - 0.55
+    lathe("candle.cauldron", coll, [(0.0, 0.06), (0.1, 0.07), (0.17, 0.14), (0.18, 0.22), (0.15, 0.3), (0.16, 0.31), (0.15, 0.32), (0.13, 0.3), (0.0, 0.29)],
+          (cx, cy, 0.0), MATS["iron"], segments=28)
+    cylinder("candle.brew", coll, 0.135, 0.01, (cx, cy, 0.29), MATS["brew"], segments=24)
+    for i in range(3):
+        a = 2 * math.pi * i / 3 + 0.5
+        stick(f"candle.leg{i}", coll, (cx + 0.1 * math.cos(a), cy + 0.1 * math.sin(a), 0.08), (cx + 0.13 * math.cos(a), cy + 0.13 * math.sin(a), 0.0), 0.016, 0.012, MATS["iron"], segments=8)
+    for i, (dx, dy) in enumerate(((0.03, 0.02), (-0.05, -0.03))):
+        sphere(f"candle.bubble{i}", coll, 0.02, (cx + dx, cy + dy, 0.3), MATS["brew"], scale=(1, 1, 0.6), segments=10)
+    stick("candle.ladle", coll, (cx - 0.03, cy, 0.25), (cx + 0.12, cy + 0.06, 0.48), 0.009, 0.007, MATS["wood_light"], segments=8)
+    contact_shadow(coll, (cx, cy, 0), 0.28, 0.23)
+
+
+def build_candle_toychest(coll, rug_center):
+    """A wooden chest with iron bands, its lid open on a ball and a toy sword."""
+    cx, cy = CANDLE_X, rug_center[1] - 0.55
+    w, d, h = 0.36, 0.24, 0.2
+    box("candle.chest", coll, (w, d, h), (cx, cy, h / 2), MATS["wood_light"])
+    for i, dx in enumerate((-w / 2 + 0.05, w / 2 - 0.05)):
+        box(f"candle.band{i}", coll, (0.025, d + 0.01, h + 0.005), (cx + dx, cy, h / 2), MATS["iron"])
+    lid = box("candle.lid", coll, (w, d, 0.04), (cx, cy, h + 0.02), MATS["wood_light"])
+    pivot = Vector((cx, cy + d / 2, h))
+    lid.matrix_basis = Matrix.Translation(pivot) @ Matrix.Rotation(math.radians(-65), 4, "X") @ Matrix.Translation(-pivot) @ lid.matrix_basis
+    sphere("candle.ball", coll, 0.07, (cx - 0.06, cy - 0.02, h + 0.02), MATS["ball"], segments=18)
+    stick("candle.sword", coll, (cx + 0.07, cy, h - 0.05), (cx + 0.12, cy - 0.04, h + 0.2), 0.012, 0.01, MATS["wood_pale"], segments=8)
+    box("candle.hilt", coll, (0.08, 0.02, 0.015), (cx + 0.085, cy - 0.012, h + 0.03), MATS["wood_light"])
+    contact_shadow(coll, (cx, cy, 0), 0.3, 0.22)
+
+
+# ----------------------------------------------------------------------------
 # Scene assembly and renders
 # ----------------------------------------------------------------------------
 
 SLOTS = [
-    # (slot, variant, default?)
-    ("rug", "braided", True),
-    ("rug", "green", False),
-    ("bed", "wooden", True),
-    ("bed", "hammock", False),
-    ("window", "square", True),
-    ("window", "round", False),
-    ("shelf", "books", True),
-    ("lantern", "iron", True),
-    ("picture", "framed", True),
-    ("basket", "acorns", True),
-    ("fern", "potted", True),
-    ("candle", "stool", True),
-    ("herbs", "dried", True),
+    # (slot, variant, default?): the ids of cottage/catalogue.ts
+    ("rug", "braided", True), ("rug", "woven", False), ("rug", "moss", False),
+    ("bed", "oak", True), ("bed", "hammock", False), ("bed", "nest", False),
+    ("window", "arched", True), ("window", "round", False), ("window", "shuttered", False),
+    ("shelf", "books", True), ("shelf", "jars", False), ("shelf", "seedlings", False),
+    ("lantern", "iron", True), ("lantern", "paper", False), ("lantern", "bell", False),
+    ("picture", "cottage", True), ("picture", "map", False), ("picture", "antlers", False),
+    ("basket", "acorns", True), ("basket", "firewood", False), ("basket", "pumpkins", False),
+    ("fern", "fern", True), ("fern", "mushroom", False), ("fern", "stump", False),
+    ("candle", "candle", True), ("candle", "cauldron", False), ("candle", "toyChest", False),
+    ("herbs", "herbs", True), ("herbs", "garlic", False), ("herbs", "dreamcatcher", False),
 ]
+
+# The walls and the floors on offer, the first of each the default: they
+# are not pieces but the room's own surfaces, so the plate is rendered for
+# every pair (plate_<wall>_<floor>.png) and the app draws the pair the
+# decor names.
+WALL_IDS = ("plaster", "boards", "logs")
+FLOOR_IDS = ("planks", "flagstones", "terracotta")
+WALL_OBJECTS = []
+FLOOR_OBJECTS = []
+
+
+def set_surfaces(wall, floor):
+    """Dress the room's walls and floor in a variant's material."""
+    wall_mat = MATS["plaster"] if wall == "plaster" else MATS[f"wall.{wall}"]
+    floor_mat = MATS["planks"] if floor == "planks" else MATS[f"floor.{floor}"]
+    for obj in WALL_OBJECTS:
+        obj.data.materials[0] = wall_mat
+    for obj in FLOOR_OBJECTS:
+        obj.data.materials[0] = floor_mat
 
 
 def build_everything(scene, quality=True):
@@ -1248,6 +1787,8 @@ def build_everything(scene, quality=True):
     build_materials()
     shell_coll = _collection("shell")
     plug = build_shell(shell_coll)
+    WALL_OBJECTS[:] = [bpy.data.objects[name] for name in ("wall.left", "wall.right", "wall.below", "wall.above", "wall.plug", "side.left", "side.right")]
+    FLOOR_OBJECTS[:] = [bpy.data.objects["floor"]]
     cam, tilt, rug_y = add_room_camera(scene)
     rug_center = (0.0, rug_y, 0.0)
     lights = add_room_lights(rug_center)
@@ -1257,19 +1798,18 @@ def build_everything(scene, quality=True):
         _common.enable_quality(scene)
     builders = {
         ("rug", "braided"): lambda c: build_rug_braided(c, rug_center),
-        ("rug", "green"): lambda c: build_rug_green(c, rug_center),
-        ("bed", "wooden"): build_bed,
-        ("bed", "hammock"): build_hammock,
-        ("window", "square"): build_window_square,
-        ("window", "round"): build_window_round,
-        ("shelf", "books"): build_shelf,
-        ("lantern", "iron"): build_lantern,
-        ("picture", "framed"): build_picture,
-        ("basket", "acorns"): build_basket,
-        ("fern", "potted"): lambda c: build_fern(c, rug_center),
-        ("candle", "stool"): lambda c: build_candle(c, rug_center),
-        ("herbs", "dried"): build_herbs,
+        ("rug", "woven"): lambda c: build_rug_woven(c, rug_center),
+        ("rug", "moss"): lambda c: build_rug_moss(c, rug_center),
+        ("fern", "fern"): lambda c: build_fern_fern(c, rug_center),
+        ("fern", "mushroom"): lambda c: build_fern_mushroom(c, rug_center),
+        ("fern", "stump"): lambda c: build_fern_stump(c, rug_center),
+        ("candle", "candle"): lambda c: build_candle_candle(c, rug_center),
+        ("candle", "cauldron"): lambda c: build_candle_cauldron(c, rug_center),
+        ("candle", "toyChest"): lambda c: build_candle_toychest(c, rug_center),
     }
+    for slot, variant, _default in SLOTS:
+        if (slot, variant) not in builders:
+            builders[(slot, variant)] = globals()[f"build_{slot}_{variant.lower()}"]
     slot_colls = {}
     for slot, variant, _default in SLOTS:
         coll = _collection(f"slot.{slot}.{variant}")
@@ -1301,6 +1841,13 @@ def camera_report(scene, cam, tilt, rug_center, out_dir):
         v = world_to_camera_view(scene, cam, Vector(point))
         return [round(v.x * w, 1), round((1 - v.y) * h, 1)]
 
+    def box_px(lo, hi):
+        """The screen box of a world box: its eight corners projected."""
+        corners = [px((x, y, z)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]
+        x0, y0 = min(c[0] for c in corners), min(c[1] for c in corners)
+        x1, y1 = max(c[0] for c in corners), max(c[1] for c in corners)
+        return {"x": round(x0), "y": round(y0), "width": round(x1 - x0), "height": round(y1 - y0)}
+
     fl = world_to_camera_view(scene, cam, Vector((0, WALL_Y, 0)))
     rc = world_to_camera_view(scene, cam, Vector(rug_center))
     edge = world_to_camera_view(scene, cam, Vector((RUG_R, rug_center[1], 0)))
@@ -1318,6 +1865,18 @@ def camera_report(scene, cam, tilt, rug_center, out_dir):
                            "half_height": round(abs(front.y - back.y) * h / 2, 1)},
         "rug_center_world": list(rug_center),
         "metres_per_px_at_rug": round(RUG_R / ((edge.x - rc.x) * w), 5),
+        # the fireplace baked into the plate: its box from the hearth slab to
+        # the mantel (the app's tap target) and the fire's centre (its glow)
+        "fireplace_px": box_px((FIRE_X0 - 0.03, WALL_Y - FIRE_D - 0.22, 0.0), (FIRE_X1 + 0.03, WALL_Y, FIRE_H + 0.08)),
+        "hearth_px": px((FIRE_CX, WALL_Y - FIRE_D, 0.3)),
+        # the room's surfaces, the app's tap targets for the wall and the floor
+        "wall_px": box_px((-ROOM_W / 2, WALL_Y, 0.0), (ROOM_W / 2, WALL_Y, CEIL_Z)),
+        "floor_px": {"x": 0, "y": round((1 - fl.y) * h), "width": w, "height": h - round((1 - fl.y) * h)},
+        # the catalogue as rendered: the pieces in slot order with their
+        # defaults, and the walls and floors, the default first
+        "variants": [[slot, variant, default] for slot, variant, default in SLOTS],
+        "walls": list(WALL_IDS),
+        "floors": list(FLOOR_IDS),
         # where the layout's key points land, to check the phone crop (x = 140..860)
         "landmarks_px": {name: px(point) for name, point in (
             ("wall_left_floor", (-ROOM_W / 2, WALL_Y, 0)),
@@ -1338,6 +1897,62 @@ def camera_report(scene, cam, tilt, rug_center, out_dir):
         json.dump(report, f, indent=2)
     print("[room] camera", json.dumps(report))
     return report
+
+
+# The catalogue's pictures: every piece once more, by day and close up (the
+# render cropped to the piece and scaled so its longer side comes out at
+# about THUMB_PX pixels), and a patch of every wall and floor.
+THUMB_PX = 360
+
+
+def collection_box_px(scene, cam, coll):
+    """The screen box, in the plate's pixels, of a collection's meshes."""
+    deps = bpy.context.evaluated_depsgraph_get()
+    w, h = scene.render.resolution_x, scene.render.resolution_y
+    xs, ys = [], []
+    for obj in coll.all_objects:
+        if obj.type != "MESH":
+            continue
+        evaluated = obj.evaluated_get(deps)
+        for corner in evaluated.bound_box:
+            v = world_to_camera_view(scene, cam, evaluated.matrix_world @ Vector(corner))
+            xs.append(v.x * w)
+            ys.append((1 - v.y) * h)
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def patch_box_px(scene, cam, centre, half, plane):
+    """The screen box of a square patch of a wall ('xz') or the floor ('xy')."""
+    w, h = scene.render.resolution_x, scene.render.resolution_y
+    cx, cy, cz = centre
+    corners = [(cx + dx, cy, cz + dz) for dx in (-half, half) for dz in (-half, half)] if plane == "xz" else \
+        [(cx + dx, cy + dy, cz) for dx in (-half, half) for dy in (-half, half)]
+    views = [world_to_camera_view(scene, cam, Vector(c)) for c in corners]
+    xs, ys = [v.x * w for v in views], [(1 - v.y) * h for v in views]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def render_thumb(scene, box, path, transparent):
+    """Render the camera's view cropped to a box (plate pixels), scaled so
+    the box's longer side is about THUMB_PX."""
+    w, h = scene.render.resolution_x, scene.render.resolution_y
+    x0, y0, x1, y1 = box
+    pad = 0.06 * max(x1 - x0, y1 - y0)
+    x0, y0, x1, y1 = max(0, x0 - pad), max(0, y0 - pad), min(w, x1 + pad), min(h, y1 + pad)
+    k = max(0.35, min(4.0, THUMB_PX / max(1.0, x1 - x0, y1 - y0)))
+    render = scene.render
+    render.resolution_percentage = int(round(100 * k))
+    render.use_border = True
+    render.use_crop_to_border = True
+    render.border_min_x, render.border_max_x = x0 / w, x1 / w
+    render.border_min_y, render.border_max_y = 1 - y1 / h, 1 - y0 / h
+    render.film_transparent = transparent
+    try:
+        return render_still(scene, path)
+    finally:
+        render.use_border = False
+        render.resolution_percentage = 100
+
 
 
 def read_flags(argv):
@@ -1379,7 +1994,7 @@ def main():
         i += 1
     read_flags(argv)
 
-    width, height = int(round(1000 * opts["scale"])), int(round(1600 * opts["scale"]))
+    width, height = int(round(PLATE_W * opts["scale"])), int(round(PLATE_H * opts["scale"]))
     scene = setup_scene(width, height, samples=opts["samples"], transparent=False)
     cam, tilt, rug_center, plug, slot_colls, lights = build_everything(scene)
     camera_report(scene, cam, tilt, rug_center, out_dir)
@@ -1401,7 +2016,8 @@ def main():
 
     for time in opts["times"]:
         set_daylight(lights, time == "day")
-        # (a) the full plate with the default furniture
+        set_surfaces(WALL_IDS[0], FLOOR_IDS[0])
+        # (a) the full plate with the default furniture, for review
         if wanted("plate"):
             set_shell_hidden_from_camera(False)
             show_slots(slot_colls, defaults)
@@ -1410,13 +2026,19 @@ def main():
             scene.eevee.taa_render_samples = opts["samples"]
             rendered.append(render_still(scene, os.path.join(out_dir, f"plate{suffix(time)}.png")))
 
-        # (b) the empty shell: no swappable furniture, the window hole plugged
+        # (b) the empty room for every pair of wall and floor: no furniture,
+        # the window hole plugged
         if wanted("plate_empty"):
             set_shell_hidden_from_camera(False)
             show_slots(slot_colls, set())
             plug.hide_render = False
             scene.render.film_transparent = False
-            rendered.append(render_still(scene, os.path.join(out_dir, f"plate_empty{suffix(time)}.png")))
+            scene.eevee.taa_render_samples = opts["samples"]
+            for wall in WALL_IDS:
+                for floor in FLOOR_IDS:
+                    set_surfaces(wall, floor)
+                    rendered.append(render_still(scene, os.path.join(out_dir, f"plate_{wall}_{floor}{suffix(time)}.png")))
+            set_surfaces(WALL_IDS[0], FLOOR_IDS[0])
 
         # (c) each slot variant alone, lit by the full room but with the shell
         # invisible to the camera; each piece carries its own contact shadow
@@ -1434,6 +2056,30 @@ def main():
             if time == "night":
                 sprite_files.append(file)
         set_shell_hidden_from_camera(False)
+
+    # (c') the catalogue's pictures, by day: every piece close up, and a
+    # patch of every wall and floor in the empty room
+    if wanted("thumbs"):
+        set_daylight(lights, True)
+        scene.eevee.taa_render_samples = opts["sprite_samples"]
+        set_shell_hidden_from_camera(True)
+        plug.hide_render = True
+        for slot, variant, _default in SLOTS:
+            show_slots(slot_colls, {(slot, variant)})
+            box = collection_box_px(scene, cam, slot_colls[(slot, variant)])
+            rendered.append(render_thumb(scene, box, os.path.join(out_dir, f"{slot}_{variant}.thumb.png"), True))
+        set_shell_hidden_from_camera(False)
+        show_slots(slot_colls, set())
+        plug.hide_render = False
+        wall_patch = patch_box_px(scene, cam, (0.05, WALL_Y, 1.3), 0.32, "xz")
+        floor_patch = patch_box_px(scene, cam, (0.0, rug_center[1] - 0.3, 0.0), 0.45, "xy")
+        for wall in WALL_IDS:
+            set_surfaces(wall, FLOOR_IDS[0])
+            rendered.append(render_thumb(scene, wall_patch, os.path.join(out_dir, f"wall_{wall}.thumb.png"), False))
+        for floor in FLOOR_IDS:
+            set_surfaces(WALL_IDS[0], floor)
+            rendered.append(render_thumb(scene, floor_patch, os.path.join(out_dir, f"floor_{floor}.thumb.png"), False))
+        set_surfaces(WALL_IDS[0], FLOOR_IDS[0])
 
     # (d) bounding boxes and the contact sheet, with the system python and Pillow
     if opts["sheet"]:

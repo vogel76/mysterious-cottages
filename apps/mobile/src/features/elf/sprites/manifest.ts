@@ -73,8 +73,6 @@ export const SPRITE_CHARACTERS: Record<string, SpriteSource> = {
       'body-4.webp': require('../../../../assets/elf/sprites/elf/body-4.webp'),
       'body-5.webp': require('../../../../assets/elf/sprites/elf/body-5.webp'),
       'body-6.webp': require('../../../../assets/elf/sprites/elf/body-6.webp'),
-      'body-7.webp': require('../../../../assets/elf/sprites/elf/body-7.webp'),
-      'body-8.webp': require('../../../../assets/elf/sprites/elf/body-8.webp'),
     },
   },
 }

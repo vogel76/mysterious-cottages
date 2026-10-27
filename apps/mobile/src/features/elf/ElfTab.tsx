@@ -8,12 +8,12 @@ import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wante
 import { announce } from '../../lib/announce'
 import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
-import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_BAR_OVERHANG, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
+import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfHud, type ElfPanel } from './ElfHud'
-import { DECOR_SLOTS, ElfPicker } from './ElfPicker'
+import { DECOR_SLOTS, ElfDecorPanel } from './ElfDecorPanel'
 import { ElfSpeech } from './ElfSpeech'
 import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
@@ -291,7 +291,8 @@ export function ElfTab() {
   /* ---------- The panels ---------- */
 
   const [panel, setPanel] = useState<ElfPanel>('none')
-  /* How far the HUD reaches down, measured, so the bubble stays under it. */
+  /* How far the strip at the top reaches down, measured: the room starts
+     there and the bubble stays under it. */
   const [hudHeight, setHudHeight] = useState(0)
   const onTopLayout = useCallback((event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout
@@ -569,10 +570,10 @@ export function ElfTab() {
   /* Bedtime, before the elf is tucked in: heavy lids and yawns say it is
      time. Read at render: the drift re-renders the tab every few seconds. */
   const sleepy = awake && isBedtimeAt(now)
-  /* Where the panels stand above the floating tab bar; the care band sits
-     on the bar itself. What covers the view's bottom, for the room's lift. */
-  const bottomOffset = tabBarHeight + TAB_BAR_OVERHANG + space.md
-  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step ? tutorialHeight + space.md : 0) : bottomOffset + panelHeight
+  /* What covers the view's bottom, for the room's band: the care band (and
+     the tutorial's card over it) or the decorating catalogue, both on the
+     tab bar. */
+  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step ? tutorialHeight + space.md : 0) : tabBarHeight + panelHeight
 
   return (
     <View ref={rootRef} style={styles.screen} onLayout={onLayout}>
@@ -592,6 +593,7 @@ export function ElfTab() {
             paused={!focused}
             editing={editing}
             editable={editableSlots}
+            topInset={hudHeight}
             bottomInset={bottomInset}
             selectedSlot={editing ? decorSlot : null}
             onSelectSlot={onSelectSlot}
@@ -606,29 +608,38 @@ export function ElfTab() {
         </View>
       ) : null}
 
-      {/* The words stay at the top with the needs, so the room and the elf
-          in the middle of it are never covered; the bottom holds the action
-          bar or the open panel alone. */}
-      <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none" onLayout={onTopLayout}>
+      {/* The strip at the top: the words and the ledger on solid chrome, and
+          the room starts under it (the scene is told its height), so
+          nothing of the room is ever behind it; the bottom holds the care
+          band or the open panel alone. */}
+      <View style={[styles.top, { paddingTop: insets.top + space.sm }]} pointerEvents="box-none" onLayout={onTopLayout}>
         {/* While decorating the HUD steps aside: the whole room is there to
             pick from, and no slot's frame hides under the name block. The
             panel has the way out. */}
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onLedger={onLedger} />
+            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onLedger={onLedger} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (
-          <Animated.View entering={fade()} exiting={leave()} pointerEvents="none" style={styles.editHint} accessibilityLiveRegion="polite">
-            <Text variant="small" align="center" style={styles.editHintInk}>
-              {t('mobile:elf.decorateHint')}
-            </Text>
+          <Animated.View entering={fade()} exiting={leave()} style={styles.decorHeader}>
+            <View style={styles.decorTitle}>
+              <Text weight="bold" variant="compact" accessibilityRole="header" style={styles.chromeInk}>
+                {t('mobile:elf.decorTitle')}
+              </Text>
+              <Text variant="small" numberOfLines={2} style={styles.chromeInk}>
+                {t('mobile:elf.decorateHint')}
+              </Text>
+            </View>
+            <Button variant="primary" onPress={closePanel}>
+              {t('mobile:elf.done')}
+            </Button>
           </Animated.View>
         ) : null}
       </View>
 
       {/* The elf's line, over its head where the scene says it is. */}
-      {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={insets.top + space.md + hudHeight + space.sm} /> : null}
+      {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={hudHeight + space.sm} /> : null}
 
       {tutorial.step && panel === 'none' ? (
         <View style={[styles.tutorial, { bottom: tabBarHeight + bandHeight + space.md }]} pointerEvents="box-none">
@@ -638,12 +649,12 @@ export function ElfTab() {
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} careLeft={left} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
         </Animated.View>
       ) : (
-        <View style={[styles.bottom, { bottom: bottomOffset }]} onLayout={onPanelLayout} pointerEvents="box-none">
-          <ElfPicker decor={decor} photo={photo} slots={editableSlots} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onDone={closePanel} />
-        </View>
+        <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>
+          <ElfDecorPanel decor={decor} photo={photo} slots={editableSlots} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onLayout={onPanelLayout} />
+        </Animated.View>
       )}
 
       {/* The acorn in flight, over everything; it never takes a touch. */}
@@ -659,16 +670,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.page,
   },
+  /* The strip: solid chrome edge to edge, the status bar's inset inside
+     it, a hairline of the chrome's gold at its foot. */
   top: {
     position: 'absolute',
-    left: space.lg,
-    right: space.lg,
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: space.lg,
+    paddingBottom: space.sm,
     gap: space.sm,
-  },
-  bottom: {
-    position: 'absolute',
-    left: space.lg,
-    right: space.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: mapPalette.chromeBorder,
+    backgroundColor: mapPalette.chromeSolid,
   },
   /* The tutorial's card floats above the care band. */
   tutorial: {
@@ -676,23 +690,24 @@ const styles = StyleSheet.create({
     left: space.lg,
     right: space.lg,
   },
-  /* The care band runs edge to edge on the tab bar. */
+  /* The care band and the decorating catalogue run edge to edge on the
+     tab bar. */
   band: {
     position: 'absolute',
     left: 0,
     right: 0,
   },
-  /* The decorating hint, in the HUD's chrome, under the ledger. */
-  editHint: {
-    alignSelf: 'center',
-    paddingVertical: space.sm,
-    paddingHorizontal: space.lg,
-    borderWidth: 1,
-    borderColor: mapPalette.chromeBorder,
-    borderRadius: radius.card,
-    backgroundColor: mapPalette.chrome,
+  /* The strip while decorating: the title and the hint, and the way back. */
+  decorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
   },
-  editHintInk: {
+  decorTitle: {
+    flex: 1,
+    gap: 2,
+  },
+  chromeInk: {
     color: mapPalette.chromeInk,
   },
   acorn: {

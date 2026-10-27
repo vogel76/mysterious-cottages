@@ -1,60 +1,48 @@
 {
   "version": 2,
-  "frameWidth": 275,
-  "frameHeight": 391,
+  "frameWidth": 245,
+  "frameHeight": 341,
   "anchor": {
-    "x": 132.0,
-    "y": 369.6
+    "x": 117.6,
+    "y": 318.0
   },
   "fps": 24,
   "sheets": [
     {
       "file": "body-1.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 8,
+      "rows": 6,
+      "frames": 48
     },
     {
       "file": "body-2.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 8,
+      "rows": 6,
+      "frames": 48
     },
     {
       "file": "body-3.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 8,
+      "rows": 6,
+      "frames": 48
     },
     {
       "file": "body-4.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 8,
+      "rows": 6,
+      "frames": 48
     },
     {
       "file": "body-5.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 8,
+      "rows": 6,
+      "frames": 48
     },
     {
       "file": "body-6.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
-    },
-    {
-      "file": "body-7.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
-    },
-    {
-      "file": "body-8.webp",
-      "columns": 7,
-      "rows": 1,
-      "frames": 7
+      "columns": 8,
+      "rows": 2,
+      "frames": 12
     }
   ],
   "clips": {
@@ -94,7 +82,7 @@
       "loop": false
     }
   },
-  "pixelsPerMetre": 178.573,
+  "pixelsPerMetre": 152.117,
   "modelHeight": 1.8144,
   "source": {
     "render": {
@@ -104,7 +92,7 @@
         "still,allanims"
       ],
       "width": 1000,
-      "height": 1600
+      "height": 1300
     },
     "pack": "pack-layers --base body --scale 0.6 --fps 24 --once feed,happy,pet,wave"
   }

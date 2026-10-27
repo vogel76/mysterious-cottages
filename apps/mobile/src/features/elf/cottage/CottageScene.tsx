@@ -8,7 +8,7 @@ import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '..
 import { PET_COOLDOWN_MS, type ElfMood, type ElfStage, type ElfStarter } from '@chatynkowo/core'
 import { SPRITE_CHARACTERS, useSpriteImages, type SpriteSource } from '../sprites'
 import { elfKey } from '../labels'
-import { PHOTO_ID, type Decor, type SlotId } from './catalogue'
+import { PHOTO_ID, isSurface, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
 import { EGG_HIT_BOX, EggNest } from './EggNest'
 import { useFireMotion } from './fire'
@@ -18,7 +18,7 @@ import { Particles } from './Particles'
 import { ROOM, fitRoom, inBounds, slotAtIn, slotById, toRoom, type Slot } from './room'
 import { spriteSlotsFor } from './roomAssets'
 import { RoomSprites } from './RoomSprites'
-import { SlotMarkers } from './SlotMarkers'
+import { SlotHighlight } from './SlotHighlight'
 import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf } from './SpriteElf'
 
 /* The elf's cottage as one full-screen Skia canvas: the rendered room
@@ -27,16 +27,15 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    on the rug as its sprite (or the egg in its nest before the hatch), the
    particles of its reactions and the light over everything, which follows
    the device clock. The room is designed in room units and scaled here to cover the
-   view it is given, so the component measures nothing: the tab passes the
-   size. One transform group carries the whole room, so every child draws
-   in room units. While a panel stands at the bottom of the tab (the tab
-   passes how much of the view it takes as bottomInset) the room is lifted
-   so the elf's feet and the furniture around it clear the panel: the live
-   preview of a wearable or a swapped piece is the whole point of the
-   panel, and the slots a finger has to reach in edit mode sit low in the
-   room. The lift is eased in the transform while the layout the gestures
-   convert through moves at once, and the floor runs on below the room's
-   edge (ROOM.overrun) so nothing bare comes up from under it.
+   band of the view the tab leaves free (the tab passes what its strip
+   takes at the top as topInset and what the care band or an open panel
+   covers at the bottom as bottomInset), so the component measures
+   nothing: the tab passes the size. One transform group carries the whole
+   room, so every child draws in room units. When a panel opens at the
+   bottom the band shortens and the room follows: the move is eased in
+   the transform while the layout the gestures convert through changes at
+   once, and the floor runs on below the room's edge (ROOM.overrun) so
+   nothing bare comes up from under it on a wide view.
 
    Every animation lives on the UI thread: the figure's motion comes from
    useCottageMotion, the fire's (with the daylight) from its own hook, and both are handed down as shared values; nothing
@@ -53,9 +52,11 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    the egg, or touches the room: the hearth flares, a shooting star
    crosses the window, and the elf glances (or leans) at whatever was
    touched; a tap on the picture frame is also reported to the tab, which
-   opens the cottage whose photo it shows. In edit mode the taps select
-   slots instead and the elf is not petted; the editable slots wear
-   dashed frames, the selected one in the accent colour. A screen reader reaches the pet through the activate
+   opens the cottage whose photo it shows; the wall and the floor are not
+   things to touch. In the decorating mode the taps pick the catalogue's
+   category instead and the elf is not petted; the room moves to bring
+   the place being chosen for to the middle of its band, and a piece is
+   lit there (SlotHighlight). A screen reader reaches the pet through the activate
    action of the view around the canvas. The reactions the tab wants to
    show (a care action, a cheer, a greeting), the elf's gaze while food is
    dragged over the room, and the look at a freshly placed piece all go
@@ -76,11 +77,11 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    refuses (asleep, paused, in the middle of the cheer) leaves the
    frames alone too, so body and frames never disagree. The egg is still
    the vector nest, drawn over the rendered rug, until the pipeline renders
-   it. The slot table (the tap targets, the glance centres and the frames
-   of edit mode) comes from the rendered pieces (roomAssets.spriteSlotsFor),
-   and the elf's tap target is the drawn figure, not its atlas cell. Only
-   the slots with a choice of renders are offered, framed and tappable in
-   edit mode. Over the plate, which is lit in Blender, only the fire's
+   it. The slot table (the tap targets, the glance centres and the light
+   of the decorating mode) comes from the rendered pieces
+   (roomAssets.spriteSlotsFor), and the elf's tap target is the drawn
+   figure, not its atlas cell. Only the places the catalogue offers are
+   tappable in the decorating mode. Over the plate, which is lit in Blender, only the fire's
    pulse and the night tint are painted (PlateLighting). The sheets decode
    once (useSpriteImages caches them for the app) from the moment the
    scene mounts, egg stage included, so they are in before the hatch; the
@@ -114,8 +115,10 @@ export type CottageSceneProps = {
   height: number
   /* True while the tab is out of focus: no loops, no reactions. */
   paused?: boolean
-  /* How much of the view's bottom a panel covers (0 for none): the room is
-     lifted so the elf and the low slots stay in view above it. */
+  /* How much of the view's top the HUD's strip takes and how much of its
+     bottom the care band or an open panel covers (0 for none): the room
+     fills the band between them. */
+  topInset?: number
   bottomInset?: number
   /* Edit mode: taps pick slots, the frames show, the elf is left alone. */
   editing?: boolean
@@ -143,12 +146,10 @@ export type CottageSceneProps = {
 
 /* How long the elf's glance at a touched item lasts. */
 const GLANCE_MS = 900
-/* The lift behind a panel: at least this share of the panel's height,
-   and enough to keep this much view (points) under the elf's feet. */
-const LIFT = { share: 0.6, margin: 32 } as const
-/* The shooting star's flight across the window. */
+/* The shooting star's flight across the window, as shares of the
+   window's box (the curtains included: the glass is its middle). */
 const STAR_MS = 750
-const STAR = { fromX: -72, fromY: -236, dx: 124, dy: 56 } as const
+const STAR = { fromX: 0.32, fromY: 0.22, dx: 0.32, dy: 0.14 } as const
 
 /* The rendered elf, as art/blender packed it. The scene has no other way
    to draw the figure, so a missing registration is an error at load, not
@@ -191,8 +192,14 @@ let decodeLogged = false
 
 /* A short streak with a bright head, flying across the window's opening
    while progress runs 0..1; invisible at rest. */
-function ShootingStar({ progress, origin }: { progress: SharedValue<number>; origin: Slot }) {
-  const transform = useDerivedValue(() => [{ translateX: origin.x + STAR.fromX + STAR.dx * progress.value }, { translateY: origin.y + STAR.fromY + STAR.dy * progress.value }])
+function ShootingStar({ progress, window }: { progress: SharedValue<number>; window: Slot }) {
+  const left = window.x + window.hit.x
+  const top = window.y + window.hit.y
+  const { width, height } = window.hit
+  const transform = useDerivedValue(() => [
+    { translateX: left + width * (STAR.fromX + STAR.dx * progress.value) },
+    { translateY: top + height * (STAR.fromY + STAR.dy * progress.value) },
+  ])
   const opacity = useDerivedValue(() => {
     const p = progress.value
     return p <= 0 || p >= 1 ? 0 : Math.sin(Math.PI * p)
@@ -212,28 +219,29 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, editable },
+    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, editable },
     ref,
   ) {
     const { t } = useTranslation()
     const reduceMotion = useReducedMotion()
-    /* The cover fit, raised by the lift while a panel is open; the lift
-       never exceeds the panel or the floor's overrun, so the room's edge
-       stays under the panel and on floor. */
-    const layout = useMemo(() => {
-      const fit = fitRoom(width, height)
-      if (bottomInset <= 0) return fit
-      const feetY = stage === 'egg' ? ROOM.elfAnchor.y : SPRITE_ELF_ORIGIN.y
-      const feet = fit.offsetY + feetY * fit.scale
-      const wanted = Math.max(bottomInset * LIFT.share, feet + LIFT.margin - (height - bottomInset))
-      const lift = Math.max(0, Math.min(wanted, bottomInset, ROOM.overrun * fit.scale))
-      return { ...fit, offsetY: fit.offsetY - lift }
-    }, [width, height, bottomInset, stage])
+    /* The slot table the taps, the glances and the light use: the
+       rendered pieces' boxes (they follow the decor, which arrives as a
+       stable reference). */
+    const sceneSlots = useMemo(() => spriteSlotsFor(decor), [decor])
+    /* While decorating, the place being chosen for: in focus, and lit
+       unless it is the wall or the floor, which are the whole room. */
+    const focusSlot = useMemo(() => (editing && selectedSlot ? (sceneSlots.find((slot) => slot.id === selectedSlot) ?? null) : null), [editing, selectedSlot, sceneSlots])
+    /* The cover fit into the band between the strip above and whatever
+       covers the bottom, moved towards the place being chosen for; an open
+       panel shortens the band and the room follows, eased. */
+    const layout = useMemo(() => fitRoom(width, height, topInset, bottomInset, focusSlot ? slotCentre(focusSlot) : null), [width, height, topInset, bottomInset, focusSlot])
     /* The drawn offset eases to the layout's; the gestures use the target at once. */
+    const drawnOffsetX = useSharedValue(layout.offsetX)
     const drawnOffsetY = useSharedValue(layout.offsetY)
     useEffect(() => {
+      drawnOffsetX.value = withTiming(layout.offsetX, { duration: DURATIONS.slow, easing: EASING.inOut, reduceMotion: ReduceMotion.System })
       drawnOffsetY.value = withTiming(layout.offsetY, { duration: DURATIONS.slow, easing: EASING.inOut, reduceMotion: ReduceMotion.System })
-    }, [layout.offsetY, drawnOffsetY])
+    }, [layout.offsetX, layout.offsetY, drawnOffsetX, drawnOffsetY])
 
     const { motion, particles, react, lookAt, lookRelease, admireAt } = useCottageMotion({ stage, mood, sleeping, sleepy, reduceMotion, paused })
     /* The elf's sheets, decoded from the first mount, so they are in
@@ -245,17 +253,13 @@ export const CottageScene = memo(
       const sizes = images.body.map((sheet) => `${sheet.width()}x${sheet.height()}`).join(', ')
       console.log(`[elf sprites] ${images.body.length} sheets decoded: ${sizes} px`)
     }, [images])
-    /* The slot table the taps, the glances and the frames use: the
-       rendered pieces' boxes (they follow the decor, which arrives as a
-       stable reference). */
-    const sceneSlots = useMemo(() => spriteSlotsFor(decor), [decor])
     /* The fire holds still both for reduce motion and while paused. */
     const fire = useFireMotion({ reduceMotion, paused })
     useDayClock(fire.day, { night: sleeping, reduceMotion })
 
     /* The shooting star's progress; 0 when there is none. */
     const star = useSharedValue(0)
-    const windowSlot = useMemo(() => slotById('window'), [])
+    const windowSlot = useMemo(() => sceneSlots.find((slot) => slot.id === 'window') ?? slotById('window'), [sceneSlots])
     /* The tap on the frame, read through a ref so the gesture is not
        rebuilt when the tab's handler changes. */
     const onPictureTapRef = useRef(onPictureTap)
@@ -434,7 +438,8 @@ export const CottageScene = memo(
             else onPetElf?.()
             return
           }
-          const slot = slotAtIn(sceneSlots, point)
+          /* The wall and the floor are not things to poke. */
+          const slot = slotAtIn(sceneSlots, point, (candidate) => !isSurface(candidate.id))
           if (!slot) return
           glanceAt(slot)
           if (slot.id === 'fireplace') fire.flare()
@@ -445,7 +450,7 @@ export const CottageScene = memo(
       return Gesture.Exclusive(pan, tap)
     }, [layout, stage, editing, sleeping, headLine, hitsFigure, sceneSlots, lookAt, lookRelease, reactScene, glanceAt, shootStar, fire, acceptsEdit, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg])
 
-    const roomTransform = useDerivedValue(() => [{ translateX: layout.offsetX }, { translateY: drawnOffsetY.value }, { scale: layout.scale }])
+    const roomTransform = useDerivedValue(() => [{ translateX: drawnOffsetX.value }, { translateY: drawnOffsetY.value }, { scale: layout.scale }])
 
     return (
       <GestureDetector gesture={gesture}>
@@ -474,10 +479,10 @@ export const CottageScene = memo(
                 <EggNest starter={starter} warmth={warmth} motion={motion} origin={ROOM.elfAnchor} />
               )}
               <RoomSprites decor={decor} layer="front" day={fire.day} />
-              <ShootingStar progress={star} origin={windowSlot} />
+              <ShootingStar progress={star} window={windowSlot} />
               <Particles particles={particles} />
               <PlateLighting sleeping={sleeping} fire={fire} reduceMotion={reduceMotion} />
-              {editing ? <SlotMarkers slots={sceneSlots} accept={acceptsEdit} selected={selectedSlot} reduceMotion={reduceMotion} /> : null}
+              {focusSlot && !isSurface(focusSlot.id) ? <SlotHighlight slot={focusSlot} reduceMotion={reduceMotion} /> : null}
             </Group>
           </Canvas>
         </View>
