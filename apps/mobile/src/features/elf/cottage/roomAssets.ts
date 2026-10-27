@@ -5,9 +5,11 @@ import { SLOTS, type Bounds, type Slot } from './room'
    assets/elf/room: the plate (the empty room with its walls, floor, beams
    and the fireplace with its fire, rendered at exactly the room units of
    ./room, 1000 by 1600) and one transparent crop per piece of furniture,
-   each with the box, in plate pixels, where it is drawn. Metro only
-   bundles what a static require names, so every file of the folder is
-   listed here by hand next to the manifest.
+   each with the box, in plate pixels, where it is drawn. The plate and
+   every sprite come by night and by day (the same camera, the moon
+   turned into the sun), and the scene crossfades the two by the
+   cottage's clock. Metro only bundles what a static require names, so
+   every file of the folder is listed here by hand next to the manifest.
 
    The renders do not cover every variant the catalogue (./catalogue)
    names: a slot with three ids may have one or two renders. roomSpriteFor
@@ -30,6 +32,8 @@ export type RoomSpriteEntry = {
   slot: string
   variant: string
   file: string
+  /* The daytime render of the same piece, cropped to the same box. */
+  fileDay?: string
   /* The box in plate pixels, which are room units. */
   x: number
   y: number
@@ -40,6 +44,8 @@ export type RoomSpriteEntry = {
 export type RoomManifest = {
   version: number
   plate: string
+  /* The empty room by day, for the crossfade. */
+  plateDay?: string
   width: number
   height: number
   /* Where the floor meets the wall, plate pixels. */
@@ -51,28 +57,43 @@ export type RoomManifest = {
 
 export const ROOM_MANIFEST: RoomManifest = require('../../../../assets/elf/room/manifest.json')
 
-/* The plate's module, as Metro's require gives it. */
+/* The plates' modules, as Metro's require gives them. */
 export const ROOM_PLATE: number = require('../../../../assets/elf/room/plate.webp')
+export const ROOM_PLATE_DAY: number = require('../../../../assets/elf/room/plate_day.webp')
 
 /* Every sprite file of the folder by name. */
 export const ROOM_FILES: Record<string, number> = {
   'basket_acorns.webp': require('../../../../assets/elf/room/basket_acorns.webp'),
+  'basket_acorns_day.webp': require('../../../../assets/elf/room/basket_acorns_day.webp'),
   'bed_hammock.webp': require('../../../../assets/elf/room/bed_hammock.webp'),
+  'bed_hammock_day.webp': require('../../../../assets/elf/room/bed_hammock_day.webp'),
   'bed_wooden.webp': require('../../../../assets/elf/room/bed_wooden.webp'),
+  'bed_wooden_day.webp': require('../../../../assets/elf/room/bed_wooden_day.webp'),
   'candle_stool.webp': require('../../../../assets/elf/room/candle_stool.webp'),
+  'candle_stool_day.webp': require('../../../../assets/elf/room/candle_stool_day.webp'),
   'fern_potted.webp': require('../../../../assets/elf/room/fern_potted.webp'),
+  'fern_potted_day.webp': require('../../../../assets/elf/room/fern_potted_day.webp'),
   'herbs_dried.webp': require('../../../../assets/elf/room/herbs_dried.webp'),
+  'herbs_dried_day.webp': require('../../../../assets/elf/room/herbs_dried_day.webp'),
   'lantern_iron.webp': require('../../../../assets/elf/room/lantern_iron.webp'),
+  'lantern_iron_day.webp': require('../../../../assets/elf/room/lantern_iron_day.webp'),
   'picture_framed.webp': require('../../../../assets/elf/room/picture_framed.webp'),
+  'picture_framed_day.webp': require('../../../../assets/elf/room/picture_framed_day.webp'),
   'rug_braided.webp': require('../../../../assets/elf/room/rug_braided.webp'),
+  'rug_braided_day.webp': require('../../../../assets/elf/room/rug_braided_day.webp'),
   'rug_green.webp': require('../../../../assets/elf/room/rug_green.webp'),
+  'rug_green_day.webp': require('../../../../assets/elf/room/rug_green_day.webp'),
   'shelf_books.webp': require('../../../../assets/elf/room/shelf_books.webp'),
+  'shelf_books_day.webp': require('../../../../assets/elf/room/shelf_books_day.webp'),
   'window_round.webp': require('../../../../assets/elf/room/window_round.webp'),
+  'window_round_day.webp': require('../../../../assets/elf/room/window_round_day.webp'),
   'window_square.webp': require('../../../../assets/elf/room/window_square.webp'),
+  'window_square_day.webp': require('../../../../assets/elf/room/window_square_day.webp'),
 }
 
-/* A sprite the scene can draw: the manifest's entry with its bundled module. */
-export type RoomSprite = RoomSpriteEntry & { slot: SlotId; module: number }
+/* A sprite the scene can draw: the manifest's entry with its bundled
+   modules, the daytime one null where no day render exists. */
+export type RoomSprite = RoomSpriteEntry & { slot: SlotId; module: number; moduleDay: number | null }
 
 /* The app's decor id to the manifest's variant, for the slots with more
    than one render. A slot missing here draws its one sprite whatever the
@@ -92,7 +113,8 @@ const SPRITES_BY_SLOT: ReadonlyMap<SlotId, readonly RoomSprite[]> = (() => {
       if (__DEV__) console.warn(`room manifest names "${entry.file}" for slot "${entry.slot}", which is not registered in roomAssets`)
       continue
     }
-    const sprite: RoomSprite = { ...entry, slot: entry.slot, module }
+    const moduleDay = entry.fileDay ? (ROOM_FILES[entry.fileDay] ?? null) : null
+    const sprite: RoomSprite = { ...entry, slot: entry.slot, module, moduleDay }
     const list = map.get(entry.slot)
     if (list) list.push(sprite)
     else map.set(entry.slot, [sprite])

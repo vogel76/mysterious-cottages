@@ -3,30 +3,27 @@ room.py - the Chatynkowo cottage interior, built and rendered headlessly in Blen
 
 Why: the Elf tab shows the pet in a cosy cottage. Instead of drawing the room with
 Skia code we model it here by script (walls, beams, window, fireplace, furniture),
-light it like a storybook night scene and render it to 2D: one full background
-plate, one empty shell plate and every swappable piece of furniture as its own
-transparent sprite rendered with the same camera and lights. The app composites
-the sprites over the shell plate and places the elf sprite on the rug.
+light it like a storybook scene and render it to 2D: one full background plate,
+one empty shell plate and every swappable piece of furniture as its own
+transparent sprite rendered with the same camera and lights, each by night and
+by day. The app composites the sprites over the shell plate, crossfades night
+and day by its clock and places the elf sprite on the rug. The elf's own frames
+are rendered inside this scene too (elf.py imports this module), so the figure
+and the room share one light, one painterly shading and one ink.
 
 Usage (no GUI, everything is rebuilt from scratch on each run):
-  /snap/bin/blender --background --python room.py -- OUT_DIR \
-      [--scale 0.4] [--samples 96] [--sprite-samples 64] \
-      [--engine CYCLES|BLENDER_EEVEE] [--only plate,plate_empty,rug_braided,...] \
-      [--no-sheet] [--save-blend]
+  blender --background --python room.py -- OUT_DIR \
+      [--scale 0.4] [--samples 64] [--sprite-samples 32] [--only plate,plate_empty,rug_braided,...] \
+      [--night-only] [--no-sheet] [--save-blend] [--ramp 0.4] [--no-ink] [--hull]
 
 Conventions: metres, Z up, the camera looks towards +Y at the back wall which
-stands at y = 1.5. The elf (rendered elsewhere) faces -Y, towards the camera.
-The plate is 1000 x 1600 and the app shows it with a cover fit, so the layout
-is framed for the central 720 px band a phone shows; see the "Layout
-constants" section for the numbers.
-Output: OUT_DIR/plate.png, plate_empty.png, <slot>_<variant>.png, sprites.json,
-contact.png, phone_crop.png (the plate's phone band) and camera.json with
-the numbers the app needs.
-
-The "pipeline helpers" section mirrors the API of common.py (setup_scene,
-add_light_rig, add_ortho_camera, render_still, render_frames, outline_modifier,
-toon_material). Once common.py exists in this directory, replace that section
-with `from common import ...`; every call site stays the same.
+stands at y = 1.5. The elf faces -Y, towards the camera. The plate is
+1000 x 1600 and the app shows it with a cover fit, so the layout is framed for
+the central 720 px band a phone shows; see the "Layout constants" section.
+Output: OUT_DIR/plate.png, plate_empty.png, plate_day.png, plate_empty_day.png,
+<slot>_<variant>.png and <slot>_<variant>.day.png, sprites.json, contact.png,
+phone_crop.png and camera.json with the numbers the app needs; room_sheet.py
+then packs the committed assets.
 """
 
 import json
@@ -35,7 +32,6 @@ import os
 import random
 import subprocess
 import sys
-import time
 
 import bmesh
 import bpy
@@ -43,6 +39,16 @@ from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Matrix, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import common as _common  # noqa: E402
+
+setup_scene = _common.setup_scene
+render_still = _common.render_still
+render_frames = _common.render_frames
+
+# The look, shared with the elf: the painterly ramp, the Line Art ink and
+# the inverted-hull outline as the fallback. The flags override these.
+LOOK = {"ramp": 0.4, "ink": True, "hull": False, "ink_radius": 0.0035}
 
 # ----------------------------------------------------------------------------
 # Palette (art direction) - sRGB hex, converted to linear for Blender
@@ -71,6 +77,8 @@ PAL = {
     "mystic_light": "#c39bff",
     "night": "#0b1430",
     "night_light": "#22386e",
+    "day": "#8fc3ea",
+    "day_light": "#dceefb",
     "moon": "#f6f1d8",
     "terracotta": "#b5603a",
     "sage": "#7e8f5e",
@@ -81,15 +89,10 @@ PAL = {
 }
 
 
-def srgb_to_linear(c):
-    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
-
-
 def rgb(hex_or_tuple):
     """Hex colour (or tuple) to linear RGB tuple, as Blender expects."""
     if isinstance(hex_or_tuple, str):
-        h = hex_or_tuple.lstrip("#")
-        return tuple(srgb_to_linear(int(h[i:i + 2], 16) / 255.0) for i in (0, 2, 4))
+        return _common.hex_to_linear(hex_or_tuple)[:3]
     return tuple(hex_or_tuple[:3])
 
 
@@ -98,165 +101,37 @@ def rgba(c, a=1.0):
 
 
 # ----------------------------------------------------------------------------
-# Pipeline helpers (same API as common.py; see the module docstring)
+# Materials: every matte surface takes the shared painterly look
 # ----------------------------------------------------------------------------
 
-def setup_scene(width, height, engine="BLENDER_EEVEE", samples=32, transparent=True):
-    """Reset to an empty scene with the given output size, Standard colour
-    management and film transparency; return the scene."""
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    scene = bpy.context.scene
-    scene.render.engine = engine
-    scene.render.resolution_x = width
-    scene.render.resolution_y = height
-    scene.render.resolution_percentage = 100
-    scene.render.film_transparent = transparent
-    scene.render.image_settings.file_format = "PNG"
-    scene.render.image_settings.color_mode = "RGBA"
-    scene.render.image_settings.color_depth = "8"
-    scene.view_settings.view_transform = "Standard"
-    scene.view_settings.look = "None"
-    scene.view_settings.exposure = 0.0
-    scene.view_settings.gamma = 1.0
-    if engine == "CYCLES":
-        scene.cycles.device = "CPU"
-        scene.cycles.samples = samples
-        scene.cycles.use_adaptive_sampling = True
-        scene.cycles.adaptive_threshold = 0.02
-        scene.cycles.use_denoising = True
-        scene.cycles.denoiser = "OPENIMAGEDENOISE"
-        scene.cycles.max_bounces = 6
-        scene.cycles.diffuse_bounces = 3
-        scene.cycles.glossy_bounces = 2
-        scene.cycles.transparent_max_bounces = 8
-        scene.cycles.caustics_reflective = False
-        scene.cycles.caustics_refractive = False
-        scene.cycles.blur_glossy = 1.0
-    else:
-        scene.eevee.taa_render_samples = samples
-        for attr, value in (("use_shadows", True), ("shadow_ray_count", 2),
-                            ("shadow_step_count", 4), ("use_raytracing", True),
-                            ("fast_gi_method", "GLOBAL_ILLUMINATION")):
-            if hasattr(scene.eevee, attr):
-                setattr(scene.eevee, attr, value)
-    return scene
-
-
-def toon_material(name, base_color, roughness=0.6, subsurface=0.0, emission=None):
-    """Soft matte Principled material; emission is (colour, strength) or None."""
-    mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Base Color"].default_value = rgba(base_color)
-    bsdf.inputs["Roughness"].default_value = roughness
-    bsdf.inputs["Specular IOR Level"].default_value = 0.25
-    if subsurface:
-        bsdf.inputs["Subsurface Weight"].default_value = subsurface
-        bsdf.inputs["Subsurface Radius"].default_value = (0.2, 0.1, 0.06)
-        bsdf.inputs["Subsurface Scale"].default_value = 0.1
-    if emission:
-        col, strength = emission
-        bsdf.inputs["Emission Color"].default_value = rgba(col)
-        bsdf.inputs["Emission Strength"].default_value = strength
+def toon_material(name, base_color, roughness=0.6, subsurface=0.0, emission=None, paint=True):
+    """A matte Principled material in the room's look; emission is (colour,
+    strength) or None, and a glowing thing (a flame, the moon) is not
+    painted, so it keeps its even light."""
+    color, strength = emission if emission else (None, 1.0)
+    mat = _common.toon_material(name, rgba(base_color), roughness=roughness, subsurface=subsurface,
+                                emission=rgba(color) if color else None, emission_strength=strength)
+    if paint and not emission:
+        _common.paint_material(mat, ramp=LOOK["ramp"])
     return mat
 
 
-def _outline_material():
-    """Black where the hull faces away from the camera (the far rim), fully
-    transparent where it faces the camera: the classic inverted-hull outline."""
-    mat = bpy.data.materials.get("Outline")
-    if mat:
-        return mat
-    mat = bpy.data.materials.new("Outline")
-    mat.use_nodes = True
-    nt = mat.node_tree
-    nt.nodes.clear()
-    out = nt.nodes.new("ShaderNodeOutputMaterial")
-    mix = nt.nodes.new("ShaderNodeMixShader")
-    geo = nt.nodes.new("ShaderNodeNewGeometry")
-    trans = nt.nodes.new("ShaderNodeBsdfTransparent")
-    emit = nt.nodes.new("ShaderNodeEmission")
-    emit.inputs["Color"].default_value = (0.0, 0.0, 0.0, 1.0)
-    emit.inputs["Strength"].default_value = 1.0
-    nt.links.new(geo.outputs["Backfacing"], mix.inputs["Fac"])
-    nt.links.new(trans.outputs[0], mix.inputs[1])
-    nt.links.new(emit.outputs[0], mix.inputs[2])
-    nt.links.new(mix.outputs[0], out.inputs["Surface"])
-    mat.surface_render_method = "DITHERED"
-    mat.use_backface_culling = False
-    return mat
+def painted(mat):
+    """The painterly look over a material whose base colour is a texture."""
+    return _common.paint_material(mat, ramp=LOOK["ramp"])
 
 
 def outline_modifier(obj, thickness=0.01):
-    """Inverted-hull outline: a copy of the mesh pushed out along its normals,
-    as a child object visible only to camera rays (no outline shadows)."""
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    bm.normal_update()
-    for v in bm.verts:
-        v.co += v.normal * thickness
-    me = bpy.data.meshes.new(obj.name + ".outline")
-    bm.to_mesh(me)
-    bm.free()
-    me.materials.append(_outline_material())
-    for p in me.polygons:
-        p.use_smooth = True
-    hull = bpy.data.objects.new(obj.name + ".outline", me)
-    hull.parent = obj
-    hull.matrix_parent_inverse = Matrix.Identity(4)
-    hull.visible_shadow = False
-    hull.visible_diffuse = False
-    hull.visible_glossy = False
-    hull.visible_transmission = False
-    hull.visible_volume_scatter = False
-    for coll in obj.users_collection:
-        coll.objects.link(hull)
-    return hull
+    """The inverted-hull outline, only in the hull look (the ink draws the
+    lines otherwise)."""
+    if LOOK["hull"]:
+        _common.outline_modifier(obj, thickness)
 
 
-def add_light_rig(target=(0, 0, 0.8), key_strength=400.0, fill_strength=120.0):
-    """Generic warm key (upper right) / cool fill (left) / soft top rig.
-    The room uses its own motivated lights (fire, moon, candles) instead, see
-    add_room_lights, but the helper is kept for API parity with common.py."""
-    coll = _collection("lights")
-    lights = {}
-    key = _light("key", "AREA", (2.5, -2.0, 3.0), "#ffb66b", key_strength, coll, size=1.5)
-    fill = _light("fill", "AREA", (-3.0, -1.5, 2.0), "#9fc4ff", fill_strength, coll, size=2.0)
-    top = _light("top", "AREA", (0.0, -0.5, 4.0), "#ffffff", key_strength * 0.3, coll, size=3.0)
-    for name, l in (("key", key), ("fill", fill), ("top", top)):
-        aim(l, target)
-        lights[name] = l
-    return lights
-
-
-def add_ortho_camera(center, ortho_scale, distance=10.0, tilt_deg=8.0, aspect=1.0):
-    """Orthographic camera at -Y looking towards +Y, tilted down by tilt_deg."""
-    cam_data = bpy.data.cameras.new("Camera")
-    cam_data.type = "ORTHO"
-    cam_data.ortho_scale = ortho_scale
-    cam = bpy.data.objects.new("Camera", cam_data)
-    bpy.context.scene.collection.objects.link(cam)
-    t = math.radians(tilt_deg)
-    cam.location = (center[0], center[1] - distance * math.cos(t), center[2] + distance * math.sin(t))
-    cam.rotation_euler = (math.radians(90.0) - t, 0.0, 0.0)
-    bpy.context.scene.camera = cam
-    return cam
-
-
-def render_still(scene, path):
-    scene.render.filepath = path
-    t0 = time.time()
-    bpy.ops.render.render(write_still=True)
-    print(f"[room] rendered {os.path.basename(path)} in {time.time() - t0:.1f}s")
-    return path
-
-
-def render_frames(scene, out_dir, name, frame_start, frame_end):
-    paths = []
-    for f in range(frame_start, frame_end + 1):
-        scene.frame_set(f)
-        paths.append(render_still(scene, os.path.join(out_dir, f"{name}_{f:04d}.png")))
-    return paths
+def no_ink(obj):
+    """The object draws no ink line of its own (a flame, glass, a shadow)."""
+    obj.lineart.usage = "EXCLUDE"
+    return obj
 
 
 # ----------------------------------------------------------------------------
@@ -452,7 +327,7 @@ def _object_coords(nodes):
 
 def noisy_material(name, base, dark, scale=6.0, strength=0.3, roughness=0.75, detail=3.0):
     """Matte material whose base colour is broken up by soft noise."""
-    mat = toon_material(name, base, roughness=roughness)
+    mat = toon_material(name, base, roughness=roughness, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
     noise = nodes.new("ShaderNodeTexNoise")
     noise.inputs["Scale"].default_value = scale
@@ -471,13 +346,13 @@ def noisy_material(name, base, dark, scale=6.0, strength=0.3, roughness=0.75, de
     mix.inputs[6].default_value = rgba(base)
     links.new(ramp.outputs["Color"], mix.inputs[7])
     links.new(mix.outputs[2], bsdf.inputs["Base Color"])
-    return mat
+    return painted(mat)
 
 
 def plank_material(name, plank_width=0.16, along="x"):
     """Floor planks: dark seams every plank_width, a per-plank tint and a
     stretched grain noise. Planks run along the given axis."""
-    mat = toon_material(name, PAL["wood_light"], roughness=0.7)
+    mat = toon_material(name, PAL["wood_light"], roughness=0.7, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
     coords = _object_coords(nodes)
     sep = nodes.new("ShaderNodeSeparateXYZ")
@@ -531,12 +406,12 @@ def plank_material(name, plank_width=0.16, along="x"):
     links.new(grain_mix.outputs[2], seam_mix.inputs[6])
     seam_mix.inputs[7].default_value = rgba("#2a1a0e")
     links.new(seam_mix.outputs[2], bsdf.inputs["Base Color"])
-    return mat
+    return painted(mat)
 
 
 def stone_material(name):
     """Fieldstone: Voronoi cells with per-cell shade and dark mortar lines."""
-    mat = toon_material(name, PAL["stone"], roughness=0.9)
+    mat = toon_material(name, PAL["stone"], roughness=0.9, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
     coords = _object_coords(nodes)
     mapping = nodes.new("ShaderNodeMapping")
@@ -569,12 +444,12 @@ def stone_material(name):
     mix.inputs[6].default_value = rgba(PAL["mortar"])
     links.new(shade.outputs["Color"], mix.inputs[7])
     links.new(mix.outputs[2], bsdf.inputs["Base Color"])
-    return mat
+    return painted(mat)
 
 
 def ring_material(name, colors, ring_width):
     """Concentric rings around the object origin (braided rug)."""
-    mat = toon_material(name, colors[0], roughness=0.95)
+    mat = toon_material(name, colors[0], roughness=0.95, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
     coords = _object_coords(nodes)
     length = nodes.new("ShaderNodeVectorMath")
@@ -608,11 +483,11 @@ def ring_material(name, colors, ring_width):
     links.new(ramp.outputs["Color"], mix.inputs[6])
     links.new(noise.outputs["Color"], mix.inputs[7])
     links.new(mix.outputs[2], bsdf.inputs["Base Color"])
-    return mat
+    return painted(mat)
 
 
 def checker_material(name, a, b, scale=12.0, roughness=0.9):
-    mat = toon_material(name, a, roughness=roughness)
+    mat = toon_material(name, a, roughness=roughness, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
     chk = nodes.new("ShaderNodeTexChecker")
     chk.inputs["Color1"].default_value = rgba(a)
@@ -620,11 +495,11 @@ def checker_material(name, a, b, scale=12.0, roughness=0.9):
     chk.inputs["Scale"].default_value = scale
     links.new(_object_coords(nodes), chk.inputs["Vector"])
     links.new(chk.outputs["Color"], bsdf.inputs["Base Color"])
-    return mat
+    return painted(mat)
 
 
 def stripe_material(name, a, b, axis="x", scale=20.0, roughness=0.9):
-    mat = toon_material(name, a, roughness=roughness)
+    mat = toon_material(name, a, roughness=roughness, paint=False)
     nt, nodes, links, bsdf = _nodes(mat)
     wave = nodes.new("ShaderNodeTexWave")
     wave.wave_type = "BANDS"
@@ -639,7 +514,7 @@ def stripe_material(name, a, b, axis="x", scale=20.0, roughness=0.9):
     ramp.color_ramp.elements[1].color = rgba(b)
     links.new(wave.outputs["Fac"], ramp.inputs["Fac"])
     links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
-    return mat
+    return painted(mat)
 
 
 def gradient_emission_material(name, stops, strength=1.0, axis="Z", span=(0.0, 1.0)):
@@ -754,7 +629,7 @@ def contact_shadow(coll, center, rx, ry, strength=0.6):
     obj.visible_transmission = False
     obj.visible_volume_scatter = False
     obj["shadow_strength"] = strength
-    return obj
+    return no_ink(obj)
 
 
 # ----------------------------------------------------------------------------
@@ -825,6 +700,8 @@ def build_materials():
     MATS["ember"] = toon_material("Ember", PAL["ember"], roughness=0.9, emission=(PAL["ember"], 3.0))
     MATS["night"] = gradient_emission_material(
         "Night", [(0.0, PAL["night_light"]), (0.55, "#14224a"), (1.0, PAL["night"])], strength=0.7, span=(-0.45, 0.45))
+    MATS["day"] = gradient_emission_material(
+        "Day", [(0.0, PAL["day_light"]), (0.5, PAL["day"]), (1.0, "#5f9fd6")], strength=1.3, span=(-0.45, 0.45))
     MATS["moon"] = toon_material("Moon", PAL["moon"], roughness=1.0, emission=(PAL["moon"], 3.5))
     MATS["star"] = toon_material("Star", "#ffffff", roughness=1.0, emission=("#fff6d8", 12.0))
     MATS["glass"] = glass_material("Glass")
@@ -919,21 +796,6 @@ def build_fireplace(coll):
         mod.operation = "DIFFERENCE"
         mod.object = cutter
         mod.solver = "EXACT"
-    # rebuild the outline hull after the boolean so the arch is outlined too
-    for child in list(body.children):
-        bpy.data.objects.remove(child)
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    eval_me = bpy.data.meshes.new_from_object(body.evaluated_get(depsgraph))
-    tmp = bpy.data.objects.new("fire.body.eval", eval_me)
-    outline_modifier(tmp, 0.007)
-    hull = tmp.children[0]
-    hull.parent = body
-    hull.matrix_parent_inverse = Matrix.Identity(4)
-    hull.location = (0, 0, 0)
-    coll.objects.link(hull)
-    for c in tmp.users_collection:
-        c.objects.unlink(tmp)
-    bpy.data.objects.remove(tmp)
     # chimney breast, mantel, hearth slab
     shell_obj(box_bounds("fire.breast", coll, FIRE_X0 + 0.1, FIRE_X1 - 0.1, WALL_Y - 0.26, WALL_Y, FIRE_H, CEIL_Z, st, outline=0.007))
     shell_obj(box_bounds("fire.mantel", coll, FIRE_X0 - 0.03, FIRE_X1 + 0.03, y0 - 0.06, WALL_Y, FIRE_H, FIRE_H + 0.08, MATS["wood_light"], outline=0.006))
@@ -948,11 +810,11 @@ def build_fireplace(coll):
         shell_obj(log)
     for i in range(6):
         e = sphere(f"fire.ember{i}", coll, 0.025, (FIRE_CX + RNG.uniform(-0.14, 0.14), ly + RNG.uniform(-0.08, 0.08), 0.075), MATS["ember"], scale=(1, 1, 0.6), segments=10)
-        shell_obj(no_shadow(e))
+        shell_obj(no_ink(no_shadow(e)))
     flame_profile = [(0.0, 0.0), (0.09, 0.03), (0.11, 0.12), (0.075, 0.24), (0.035, 0.34), (0.0, 0.42)]
     for i, (dx, dy, s, tilt) in enumerate(((0.0, 0.0, 0.85, 0.0), (-0.09, 0.03, 0.62, 0.35), (0.08, -0.03, 0.68, -0.3))):
         fl = lathe(f"fire.flame{i}", coll, [(r * s, z * s) for r, z in flame_profile], (FIRE_CX + dx, ly + dy, 0.12), MATS["flame"], segments=16, scale_xy=(1.0, 0.7), rotation=(0, tilt, 0))
-        shell_obj(no_shadow(fl))
+        shell_obj(no_ink(no_shadow(fl)))
 
 
 # ----------------------------------------------------------------------------
@@ -988,10 +850,39 @@ def add_room_lights(rug_center):
     world = bpy.data.worlds.new("World")
     bpy.context.scene.world = world
     world.use_nodes = True
-    bg = world.node_tree.nodes["Background"]
-    bg.inputs["Color"].default_value = (0.09, 0.065, 0.05, 1.0)
-    bg.inputs["Strength"].default_value = 1.0
+    lights["world"] = world.node_tree.nodes["Background"]
+    set_daylight(lights, False)
     return lights
+
+
+# The lights by night and by day: the moon through the window becomes the
+# sun, the cool fill a neutral daylight, the fire steps back, the ambient
+# brightens; the window planes swap their sky and lose the moon and stars.
+DAYLIGHT = {
+    "moon": {"night": ("#9fc4ff", 750.0), "day": ("#fff1d6", 2600.0)},
+    "moon.fill": {"night": ("#9fc4ff", 18.0), "day": ("#eef3ff", 150.0)},
+    "fire": {"night": ("#ff9a3c", 200.0), "day": ("#ff9a3c", 110.0)},
+    "fire.glow": {"night": (PAL["fire"], 12.0), "day": (PAL["fire"], 8.0)},
+    "world": {"night": ((0.09, 0.065, 0.05), 1.0), "day": ((0.40, 0.38, 0.34), 1.0)},
+}
+SKY_PLANES = []   # the window planes that show the night or the day sky
+NIGHT_ONLY = []   # the moon and the stars
+
+
+def set_daylight(lights, day):
+    when = "day" if day else "night"
+    for name, spec in DAYLIGHT.items():
+        color, energy = spec[when]
+        if name == "world":
+            lights["world"].inputs["Color"].default_value = (*color, 1.0)
+            lights["world"].inputs["Strength"].default_value = energy
+        else:
+            lights[name].data.color = rgb(color)
+            lights[name].data.energy = energy
+    for plane in SKY_PLANES:
+        plane.data.materials[0] = MATS["day" if day else "night"]
+    for obj in NIGHT_ONLY:
+        obj.hide_render = day
 
 
 def add_room_camera(scene):
@@ -1141,10 +1032,10 @@ def build_window_square(coll):
     box_bounds("window.transom", coll, x0, x1, y0 + 0.02, y1, WIN_CZ - 0.018, WIN_CZ + 0.018, fr, outline=0.004)
     box_bounds("window.sill", coll, x0 - 0.06, x1 + 0.06, WALL_Y - 0.13, WALL_Y, z0 - 0.045, z0, fr, outline=0.005)
     glass = box_bounds("window.glass", coll, x0 + t, x1 - t, WALL_Y - 0.03, WALL_Y - 0.025, z0 + t, z1 - t, MATS["glass"])
-    no_shadow(glass)
+    no_ink(no_shadow(glass))
     night = box_bounds("window.night", coll, x0 + t * 0.5, x1 - t * 0.5, WALL_Y - 0.012, WALL_Y - 0.008, z0 + t * 0.5, z1 - t * 0.5, MATS["night"])
     night.location = (WIN_CX, WALL_Y - 0.01, WIN_CZ)
-    no_shadow(night)
+    SKY_PLANES.append(no_ink(no_shadow(night)))
     build_night_sky(coll, WIN_CX, WIN_CZ, (WIN_W - 2 * t) / 2, (WIN_H - 2 * t) / 2)
     window_common(coll, "square")
 
@@ -1159,9 +1050,9 @@ def build_window_round(coll):
     box("window.cross.v", coll, (0.036, 0.05, 2 * r_in), (WIN_CX, WALL_Y - 0.03, WIN_CZ), fr, outline=0.004)
     box("window.cross.h", coll, (2 * r_in, 0.05, 0.036), (WIN_CX, WALL_Y - 0.03, WIN_CZ), fr, outline=0.004)
     glass = cylinder("window.glass", coll, r_in, 0.005, (WIN_CX, WALL_Y - 0.028, WIN_CZ), MATS["glass"], rotation=(math.pi / 2, 0, 0), segments=48)
-    no_shadow(glass)
+    no_ink(no_shadow(glass))
     night = cylinder("window.night", coll, r_in + 0.02, 0.004, (WIN_CX, WALL_Y - 0.01, WIN_CZ), MATS["night"], rotation=(math.pi / 2, 0, 0), segments=48)
-    no_shadow(night)
+    SKY_PLANES.append(no_ink(no_shadow(night)))
     build_night_sky(coll, WIN_CX, WIN_CZ, r_in * 0.72, r_in * 0.72)
     window_common(coll, "round")
 
@@ -1169,7 +1060,7 @@ def build_window_round(coll):
 def build_night_sky(coll, cx, cz, half_w, half_h):
     """Moon disc and stars floating just in front of the night plane."""
     moon = cylinder("window.moon", coll, 0.075, 0.004, (cx - half_w * 0.45, WALL_Y - 0.017, cz + half_h * 0.5), MATS["moon"], rotation=(math.pi / 2, 0, 0), segments=32)
-    no_shadow(moon)
+    NIGHT_ONLY.append(no_ink(no_shadow(moon)))
     rng = random.Random(3)
     for i in range(9):
         sx = cx + rng.uniform(-half_w * 0.95, half_w * 0.95)
@@ -1177,7 +1068,7 @@ def build_night_sky(coll, cx, cz, half_w, half_h):
         if abs(sx - moon.location.x) < 0.12 and abs(sz - moon.location.z) < 0.12:
             sz -= 0.25
         s = sphere(f"window.star{i}", coll, rng.uniform(0.006, 0.011), (sx, WALL_Y - 0.017, sz), MATS["star"], segments=8)
-        no_shadow(s)
+        NIGHT_ONLY.append(no_ink(no_shadow(s)))
 
 
 def build_shelf(coll):
@@ -1218,10 +1109,10 @@ def build_lantern(coll):
         box(f"lantern.bar{i}", coll, (0.016, 0.016, body_z1 - body_z0), (x + 0.085 * math.cos(a), y + 0.085 * math.sin(a), (body_z0 + body_z1) / 2), MATS["iron"], outline=0.003)
     cylinder("lantern.base", coll, 0.1, 0.03, (x, y, body_z0 - 0.015), MATS["iron"], outline=0.004, segments=16)
     glass = box("lantern.glass", coll, (0.165, 0.165, body_z1 - body_z0), (x, y, (body_z0 + body_z1) / 2), MATS["glass"])
-    no_shadow(glass)
+    no_ink(no_shadow(glass))
     cylinder("lantern.candle", coll, 0.03, 0.1, (x, y, body_z0 + 0.05), MATS["candle"], segments=12)
     flame = sphere("lantern.flame", coll, 0.028, (x, y, body_z0 + 0.13), MATS["lantern_glow"], scale=(1, 1, 1.5), segments=10)
-    no_shadow(flame)
+    no_ink(no_shadow(flame))
     light = _light("lantern.light", "POINT", (x, y, body_z0 + 0.14), PAL["ember_light"], 9.0, coll, radius=0.05)
     return light
 
@@ -1300,7 +1191,7 @@ def build_candle(coll, rug_center):
     cylinder("candle.dish", coll, 0.075, 0.015, (cx, cy, top_z + 0.0075), MATS["trim"], outline=0.004, segments=24)
     lathe("candle.wax", coll, [(0.0, 0.0), (0.034, 0.0), (0.034, 0.13), (0.028, 0.145), (0.0, 0.14)], (cx, cy, top_z + 0.015), MATS["candle"], outline=0.004, segments=16)
     flame = lathe("candle.flame", coll, [(0.0, 0.0), (0.014, 0.012), (0.011, 0.035), (0.0, 0.055)], (cx, cy, top_z + 0.155), MATS["flame"], segments=12)
-    no_shadow(flame)
+    no_ink(no_shadow(flame))
     return _light("candle.light", "POINT", (cx, cy, top_z + 0.19), PAL["ember_light"], 5.0, coll, radius=0.03)
 
 
@@ -1349,13 +1240,21 @@ SLOTS = [
 ]
 
 
-def build_everything(scene):
+def build_everything(scene, quality=True):
+    """The whole room in the scene: materials, shell, camera, lights, every
+    slot variant in its own collection, the ink. Returns the camera, its
+    tilt, the rug centre, the window plug, the slot collections and the
+    lights (for set_daylight)."""
     build_materials()
     shell_coll = _collection("shell")
     plug = build_shell(shell_coll)
     cam, tilt, rug_y = add_room_camera(scene)
     rug_center = (0.0, rug_y, 0.0)
-    add_room_lights(rug_center)
+    lights = add_room_lights(rug_center)
+    if LOOK["ink"]:
+        _common.add_line_art(scene, radius=LOOK["ink_radius"])
+    if quality:
+        _common.enable_quality(scene)
     builders = {
         ("rug", "braided"): lambda c: build_rug_braided(c, rug_center),
         ("rug", "green"): lambda c: build_rug_green(c, rug_center),
@@ -1376,7 +1275,7 @@ def build_everything(scene):
         coll = _collection(f"slot.{slot}.{variant}")
         builders[(slot, variant)](coll)
         slot_colls[(slot, variant)] = coll
-    return cam, tilt, rug_center, plug, slot_colls
+    return cam, tilt, rug_center, plug, slot_colls, lights
 
 
 def show_slots(slot_colls, visible):
@@ -1386,11 +1285,13 @@ def show_slots(slot_colls, visible):
 
 def set_shell_hidden_from_camera(flag):
     """In sprite renders the shell keeps bouncing light and casting shadows
-    exactly as in the plate, but camera rays pass through it."""
+    exactly as in the plate, but camera rays pass through it and the ink
+    leaves it out altogether (an occlusion-only shell still drew the room's
+    corners and the floor line across every sprite; the furniture stands
+    in front of the shell, so nothing needs hiding behind it)."""
     for obj in SHELL:
         obj.visible_camera = not flag
-        for child in obj.children:
-            child.hide_render = flag       # outline hulls off as well
+        obj.lineart.usage = "EXCLUDE" if flag else "INHERIT"
 
 
 def camera_report(scene, cam, tilt, rug_center, out_dir):
@@ -1439,6 +1340,16 @@ def camera_report(scene, cam, tilt, rug_center, out_dir):
     return report
 
 
+def read_flags(argv):
+    """The look flags into LOOK (shared with elf.py's)."""
+    if "--ramp" in argv:
+        LOOK["ramp"] = float(argv[argv.index("--ramp") + 1])
+    if "--no-ink" in argv:
+        LOOK["ink"] = False
+    if "--hull" in argv:
+        LOOK["hull"] = True
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     if not argv:
@@ -1446,8 +1357,8 @@ def main():
         sys.exit(1)
     out_dir = os.path.abspath(argv[0])
     os.makedirs(out_dir, exist_ok=True)
-    opts = {"scale": 1.0, "samples": 96, "sprite_samples": 64, "engine": "CYCLES", "only": None,
-            "sheet": True, "save_blend": False}
+    opts = {"scale": 1.0, "samples": 64, "sprite_samples": 32, "only": None, "sheet": True,
+            "save_blend": False, "times": ("night", "day")}
     i = 1
     while i < len(argv):
         a = argv[i]
@@ -1457,24 +1368,27 @@ def main():
             opts["samples"] = int(argv[i + 1]); i += 1
         elif a == "--sprite-samples":
             opts["sprite_samples"] = int(argv[i + 1]); i += 1
-        elif a == "--engine":
-            opts["engine"] = argv[i + 1]; i += 1
         elif a == "--only":
             opts["only"] = set(argv[i + 1].split(",")); i += 1
+        elif a == "--night-only":
+            opts["times"] = ("night",)
         elif a == "--no-sheet":
             opts["sheet"] = False
         elif a == "--save-blend":
             opts["save_blend"] = True
         i += 1
+    read_flags(argv)
 
     width, height = int(round(1000 * opts["scale"])), int(round(1600 * opts["scale"]))
-    scene = setup_scene(width, height, engine=opts["engine"], samples=opts["samples"], transparent=False)
-    cam, tilt, rug_center, plug, slot_colls = build_everything(scene)
+    scene = setup_scene(width, height, samples=opts["samples"], transparent=False)
+    cam, tilt, rug_center, plug, slot_colls, lights = build_everything(scene)
     camera_report(scene, cam, tilt, rug_center, out_dir)
-    cycles = opts["engine"] == "CYCLES"
 
     def wanted(name):
         return opts["only"] is None or name in opts["only"]
+
+    def suffix(time):
+        return "" if time == "night" else "_day"
 
     defaults = {(s, v) for s, v, d in SLOTS if d}
     rendered = []
@@ -1485,39 +1399,41 @@ def main():
         plug.hide_render = True
         bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out_dir, "room.blend"))
 
-    # (a) the full plate with the default furniture
-    if wanted("plate"):
-        set_shell_hidden_from_camera(False)
-        show_slots(slot_colls, defaults)
-        plug.hide_render = True
-        scene.render.film_transparent = False
-        if cycles:
-            scene.cycles.samples = opts["samples"]
-        rendered.append(render_still(scene, os.path.join(out_dir, "plate.png")))
+    for time in opts["times"]:
+        set_daylight(lights, time == "day")
+        # (a) the full plate with the default furniture
+        if wanted("plate"):
+            set_shell_hidden_from_camera(False)
+            show_slots(slot_colls, defaults)
+            plug.hide_render = True
+            scene.render.film_transparent = False
+            scene.eevee.taa_render_samples = opts["samples"]
+            rendered.append(render_still(scene, os.path.join(out_dir, f"plate{suffix(time)}.png")))
 
-    # (b) the empty shell: no swappable furniture, the window hole plugged
-    if wanted("plate_empty"):
-        set_shell_hidden_from_camera(False)
-        show_slots(slot_colls, set())
-        plug.hide_render = False
-        scene.render.film_transparent = False
-        rendered.append(render_still(scene, os.path.join(out_dir, "plate_empty.png")))
+        # (b) the empty shell: no swappable furniture, the window hole plugged
+        if wanted("plate_empty"):
+            set_shell_hidden_from_camera(False)
+            show_slots(slot_colls, set())
+            plug.hide_render = False
+            scene.render.film_transparent = False
+            rendered.append(render_still(scene, os.path.join(out_dir, f"plate_empty{suffix(time)}.png")))
 
-    # (c) each slot variant alone, lit by the full room but with the shell
-    # invisible to the camera; each piece carries its own contact shadow
-    for slot, variant, _default in SLOTS:
-        name = f"{slot}_{variant}"
-        if not wanted(name):
-            continue
-        show_slots(slot_colls, {(slot, variant)})
-        plug.hide_render = True
-        scene.render.film_transparent = True
-        set_shell_hidden_from_camera(True)
-        if cycles:
-            scene.cycles.samples = opts["sprite_samples"]
-        rendered.append(render_still(scene, os.path.join(out_dir, name + ".png")))
-        sprite_files.append(name + ".png")
-    set_shell_hidden_from_camera(False)
+        # (c) each slot variant alone, lit by the full room but with the shell
+        # invisible to the camera; each piece carries its own contact shadow
+        for slot, variant, _default in SLOTS:
+            name = f"{slot}_{variant}"
+            if not wanted(name):
+                continue
+            show_slots(slot_colls, {(slot, variant)})
+            plug.hide_render = True
+            scene.render.film_transparent = True
+            set_shell_hidden_from_camera(True)
+            scene.eevee.taa_render_samples = opts["sprite_samples"]
+            file = f"{name}{'.day' if time == 'day' else ''}.png"
+            rendered.append(render_still(scene, os.path.join(out_dir, file)))
+            if time == "night":
+                sprite_files.append(file)
+        set_shell_hidden_from_camera(False)
 
     # (d) bounding boxes and the contact sheet, with the system python and Pillow
     if opts["sheet"]:

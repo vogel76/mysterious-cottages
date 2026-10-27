@@ -22,7 +22,8 @@ the binary is `/snap/bin/blender`) or from blender.org elsewhere; the
 scripts below assume `blender` on the path. The packer runs with the
 system Python 3 and Pillow (`python3 -m pip install pillow`); it does not
 run inside Blender. Rendering uses Eevee over OpenGL, which works headless
-on a desktop GPU; Cycles (CPU) is for the odd still.
+on a desktop GPU; the painterly shading reads the light through Shader to
+RGB, which Cycles has not, so Cycles is not used.
 
 Check the install with the smoke scene, which renders a few spheres in the
 shared light and a short layered clip:
@@ -43,8 +44,11 @@ art/blender/common.py    shared helpers, imported by every build script: the sce
 art/blender/smoke.py     the smoke test described above
 art/blender/elf.py       the elf: the young forest elf (a FORM table gives the baby and the young form), its rig,
                          its clips, the look-dev stills, rendered as the body layer (face and hat layers to come)
-art/blender/room.py      the cottage: the walls and the floor, the furniture of each slot, the fire (see The room)
-art/blender/room_sheet.py the room's post-processing (system Python): sprite boxes, contact sheet, phone crop
+                         standing in the room of room.py, or alone in the studio rig with --studio
+art/blender/room.py      the cottage: the walls and the floor, the furniture of each slot, the fire, by night and
+                         by day (see The room); elf.py imports it for the elf's scene
+art/blender/room_sheet.py the room's post-processing (system Python): sprite boxes, contact sheet, phone crop,
+                         and with --pack the app's room assets
 art/blender/pack.py      the packer: frames to atlases and a manifest (system Python)
 art/blender/check.py     the atlas check: packs the frames again and compares with the committed atlas (system Python)
 art/out/                 renders, logs, .blend files (not committed)
@@ -227,17 +231,34 @@ character around its feet.
 beams and the fireplace with its fire, the swappable furniture of every
 slot (two rugs, a bed and a hammock, a square and a round window, the
 shelf, the lantern, the picture, the basket, the fern, the candle stool,
-the herbs), lights the room as a night scene (the fire as the warm key on
-the right, the moon through the window and a dim cool fill on the left, a
-soft hero spot on the rug so the elf's spot is the brightest floor) and
-renders stills with Cycles, not Eevee: the full plate with the default
-furniture (`plate.png`, for reference), the empty shell with the window
-hole plugged (`plate_empty.png`, the plate the app draws) and every slot
-variant alone as a transparent sprite (`<slot>_<variant>.png`), lit by the
-whole room with the shell invisible to the camera and a baked contact
-shadow of its own. `room_sheet.py` (system Python) then measures each
-sprite's opaque box in plate pixels into `sprites.json`, tiles a
-`contact.png` and writes `phone_crop.png`.
+the herbs), in the same painterly materials and the same Line Art ink as
+the elf (`paint_material` over its textures, the flames, the glass, the
+sky and the contact shadows opted out of the ink), lights it as a night
+scene (the fire as the warm key on the right, the moon through the window
+and a dim cool fill on the left, a soft hero spot on the rug so the elf's
+spot is the brightest floor) and as a day scene (the moon's lamp turned
+into the sun, the fill neutral, the fire stepped back, the ambient
+brighter, the window showing a day sky without the moon and the stars;
+`DAYLIGHT` and `set_daylight`), and renders with Eevee, by night and by
+day: the full plate with the default furniture (`plate.png`,
+`plate_day.png`, for reference), the empty shell with the window hole
+plugged (`plate_empty.png`, `plate_empty_day.png`, the plates the app
+draws) and every slot variant alone as a transparent sprite
+(`<slot>_<variant>.png` and `<slot>_<variant>.day.png`), lit by the whole
+room with the shell invisible to the camera and drawing no ink, and a
+baked contact shadow of its own. `room_sheet.py` (system Python) then
+measures each sprite's opaque box in plate pixels (the union of its night
+and day renders) into `sprites.json`, tiles a `contact.png`, writes
+`phone_crop.png` and, with `--pack` (`pnpm art:room-pack`), the app's
+assets.
+
+The elf's frames are rendered inside this scene (`elf.py` imports
+`room.py`, builds the room with the furniture hidden and the shell
+invisible to the camera, stands the elf on the rug sized to the app's
+figure height in plate pixels and crops the room's camera to the figure
+with a render border), so the figure is lit by the same fire and moon,
+shaded and inked the same way, from the same point of view; `--studio`
+renders it alone in the shared rig instead.
 
 The plate is 1000 by 1600, the room units of `src/features/elf/cottage`,
 and the app shows it with a cover fit: scaled to the phone's height, the
@@ -253,9 +274,11 @@ bed hugs the left wall with the shelf above it, the window is small and
 high (centre at x = -0.52 m, z = 2.0 m), up and left of the elf, never
 behind it. `camera.json` lists the camera, the floor line, the rug ellipse
 and the pixel positions of these landmarks. The committed assets in
-`assets/elf/room` are the empty plate as `plate.webp` and each sprite
-cropped to its box, with `manifest.json` carrying the boxes, the floor
-line and the rug centre.
+`assets/elf/room` are the empty plates as `plate.webp` and
+`plate_day.webp` and each sprite cropped to its box, by night and as its
+`_day` twin, with `manifest.json` carrying the boxes, the floor line and
+the rug centre; the app draws the day pictures over the night ones at the
+opacity of its clock's daylight.
 
 ## Adding a hat or a piece of furniture
 

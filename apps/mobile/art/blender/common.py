@@ -410,29 +410,95 @@ def _mix_rgb(a: Sequence[float], b: Sequence[float], t: float) -> tuple[float, f
     return tuple(a[i] + (b[i] - a[i]) * t for i in range(3)) + (1.0,)
 
 
-def painterly_material(name: str, base_color: str | Sequence[float], ramp: float = 0.4, roughness: float = 0.6,
-                       subsurface: float = 0.0, emission: str | Sequence[float] | None = None,
-                       emission_strength: float = 1.0, grain: float = 0.0, bands: int = 2,
-                       shadow_tint: str = SHADOW_TINT) -> bpy.types.Material:
-    """A soft matte material with a hand-painted feel.
-
-    The Principled shading of `toon_material` is mixed (by `ramp`, 0..1)
-    with a flat band shading: the light falling on a white diffuse surface
-    is read back (Shader to RGB) and stepped into `bands` colours, the base
-    colour where lit and the base colour darkened and tinted towards
-    `shadow_tint` in shadow, so forms turn with a painted edge instead of a
-    smooth gradient. `ramp` 0 is plain Principled, 1 is pure band (cel)
-    shading. `grain` (0..1) mottles the base colour with fine noise, like
-    felt or wool. Eevee only: Shader to RGB has no Cycles equivalent.
+def paint_material(mat: bpy.types.Material, ramp: float = 0.4, bands: int = 2,
+                   shadow_tint: str = SHADOW_TINT) -> bpy.types.Material:
+    """Gives a Principled material a hand-painted feel: its shading is mixed
+    (by `ramp`, 0..1) with a flat band shading, the light falling on a white
+    diffuse surface read back (Shader to RGB) and stepped into `bands`
+    colours, the material's own base colour (a texture included) where lit
+    and that colour darkened and tinted towards `shadow_tint` in shadow,
+    so forms turn with a painted edge instead of a smooth gradient. `ramp`
+    0 leaves the material alone, 1 is pure band (cel) shading. Eevee only:
+    Shader to RGB has no Cycles equivalent.
     """
-    mat = toon_material(name, base_color, roughness, subsurface, emission, emission_strength)
+    if ramp <= 0:
+        return mat
     tree = mat.node_tree
     nodes, links = tree.nodes, tree.links
     bsdf = nodes['Principled BSDF']
     output = nodes['Material Output']
-    color = hex_to_linear(base_color) if isinstance(base_color, str) else tuple(base_color)
+    base = bsdf.inputs['Base Color']
+    if base.links:
+        lit = base.links[0].from_socket
+    else:
+        swatch = nodes.new('ShaderNodeRGB')
+        swatch.outputs[0].default_value = tuple(base.default_value)
+        lit = swatch.outputs[0]
 
+    def mix_rgb(a, b, factor):
+        node = nodes.new('ShaderNodeMix')
+        node.data_type = 'RGBA'
+        node.inputs['Factor'].default_value = factor
+        if isinstance(a, tuple):
+            node.inputs['A'].default_value = a
+        else:
+            links.new(a, node.inputs['A'])
+        if isinstance(b, tuple):
+            node.inputs['B'].default_value = b
+        else:
+            links.new(b, node.inputs['B'])
+        return node
+
+    darkened = mix_rgb(lit, (0.0, 0.0, 0.0, 1.0), 0.5)
+    shadow = mix_rgb(darkened.outputs['Result'], hex_to_linear(shadow_tint), 0.3)
+
+    probe = nodes.new('ShaderNodeBsdfDiffuse')
+    probe.inputs['Color'].default_value = (1.0, 1.0, 1.0, 1.0)
+    to_rgb = nodes.new('ShaderNodeShaderToRGB')
+    links.new(probe.outputs[0], to_rgb.inputs[0])
+    to_bw = nodes.new('ShaderNodeRGBToBW')
+    links.new(to_rgb.outputs['Color'], to_bw.inputs[0])
+    steps = nodes.new('ShaderNodeValToRGB')
+    # A cel look (ramp 1) steps hard; the painterly blend eases over a narrow
+    # band, like a brush edge.
+    steps.color_ramp.interpolation = 'CONSTANT' if ramp >= 1.0 else 'EASE'
+    elements = steps.color_ramp.elements
+    elements[0].position = 0.30
+    elements[0].color = (0.0, 0.0, 0.0, 1.0)
+    elements[1].position = 0.38 if ramp >= 1.0 else 0.48
+    elements[1].color = (1.0, 1.0, 1.0, 1.0)
+    if bands >= 3:
+        mid = elements.new(0.16)
+        mid.color = (0.5, 0.5, 0.5, 1.0)
+    links.new(to_bw.outputs[0], steps.inputs['Fac'])
+    band = nodes.new('ShaderNodeMix')
+    band.data_type = 'RGBA'
+    links.new(steps.outputs['Color'], band.inputs['Factor'])
+    links.new(shadow.outputs['Result'], band.inputs['A'])
+    links.new(lit, band.inputs['B'])
+    flat = nodes.new('ShaderNodeEmission')
+    links.new(band.outputs['Result'], flat.inputs['Color'])
+    mix = nodes.new('ShaderNodeMixShader')
+    mix.inputs['Fac'].default_value = ramp
+    links.new(bsdf.outputs[0], mix.inputs[1])
+    links.new(flat.outputs[0], mix.inputs[2])
+    links.new(mix.outputs[0], output.inputs['Surface'])
+    return mat
+
+
+def painterly_material(name: str, base_color: str | Sequence[float], ramp: float = 0.4, roughness: float = 0.6,
+                       subsurface: float = 0.0, emission: str | Sequence[float] | None = None,
+                       emission_strength: float = 1.0, grain: float = 0.0, bands: int = 2,
+                       shadow_tint: str = SHADOW_TINT) -> bpy.types.Material:
+    """A soft matte material of one colour with the painted feel of
+    `paint_material`; `grain` (0..1) mottles the colour with fine noise,
+    like felt or wool."""
+    mat = toon_material(name, base_color, roughness, subsurface, emission, emission_strength)
     if grain > 0:
+        tree = mat.node_tree
+        nodes, links = tree.nodes, tree.links
+        bsdf = nodes['Principled BSDF']
+        color = hex_to_linear(base_color) if isinstance(base_color, str) else tuple(base_color)
         noise = nodes.new('ShaderNodeTexNoise')
         noise.inputs['Scale'].default_value = 60.0
         noise.inputs['Detail'].default_value = 3.0
@@ -447,37 +513,7 @@ def painterly_material(name: str, base_color: str | Sequence[float], ramp: float
         mottle.inputs['B'].default_value = _mix_rgb(color, (0.0, 0.0, 0.0, 1.0), 0.35)
         links.new(amount.outputs[0], mottle.inputs['Factor'])
         links.new(mottle.outputs['Result'], bsdf.inputs['Base Color'])
-
-    if ramp <= 0:
-        return mat
-    probe = nodes.new('ShaderNodeBsdfDiffuse')
-    probe.inputs['Color'].default_value = (1.0, 1.0, 1.0, 1.0)
-    to_rgb = nodes.new('ShaderNodeShaderToRGB')
-    links.new(probe.outputs[0], to_rgb.inputs[0])
-    to_bw = nodes.new('ShaderNodeRGBToBW')
-    links.new(to_rgb.outputs['Color'], to_bw.inputs[0])
-    steps = nodes.new('ShaderNodeValToRGB')
-    # A cel look (ramp 1) steps hard; the painterly blend eases over a narrow
-    # band, like a brush edge.
-    steps.color_ramp.interpolation = 'CONSTANT' if ramp >= 1.0 else 'EASE'
-    shadow = _mix_rgb(_mix_rgb(color, (0.0, 0.0, 0.0, 1.0), 0.5), hex_to_linear(shadow_tint), 0.3)
-    elements = steps.color_ramp.elements
-    elements[0].position = 0.30
-    elements[0].color = shadow
-    elements[1].position = 0.38 if ramp >= 1.0 else 0.48
-    elements[1].color = color
-    if bands >= 3:
-        mid = elements.new(0.16)
-        mid.color = _mix_rgb(shadow, color, 0.5)
-    links.new(to_bw.outputs[0], steps.inputs['Fac'])
-    flat = nodes.new('ShaderNodeEmission')
-    links.new(steps.outputs['Color'], flat.inputs['Color'])
-    mix = nodes.new('ShaderNodeMixShader')
-    mix.inputs['Fac'].default_value = ramp
-    links.new(bsdf.outputs[0], mix.inputs[1])
-    links.new(flat.outputs[0], mix.inputs[2])
-    links.new(mix.outputs[0], output.inputs['Surface'])
-    return mat
+    return paint_material(mat, ramp, bands, shadow_tint)
 
 
 def add_line_art(scene: bpy.types.Scene, radius: float = 0.003, color: str = INK_COLOR,

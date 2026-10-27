@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "plate": "plate.webp",
   "width": 1000,
   "height": 1600,
@@ -10,103 +10,34 @@
   },
   "sprites": [
     {
-      "slot": "rug",
-      "variant": "braided",
-      "file": "rug_braided.webp",
-      "x": 231,
-      "y": 1199,
-      "width": 538,
-      "height": 178
-    },
-    {
-      "slot": "rug",
-      "variant": "green",
-      "file": "rug_green.webp",
-      "x": 211,
-      "y": 1197,
-      "width": 578,
-      "height": 190
-    },
-    {
-      "slot": "bed",
-      "variant": "wooden",
-      "file": "bed_wooden.webp",
-      "x": 139,
-      "y": 916,
-      "width": 251,
-      "height": 288
+      "slot": "basket",
+      "variant": "acorns",
+      "file": "basket_acorns.webp",
+      "x": 570,
+      "y": 1105,
+      "width": 133,
+      "height": 126,
+      "fileDay": "basket_acorns_day.webp"
     },
     {
       "slot": "bed",
       "variant": "hammock",
       "file": "bed_hammock.webp",
       "x": 108,
-      "y": 696,
+      "y": 697,
       "width": 331,
-      "height": 516
+      "height": 515,
+      "fileDay": "bed_hammock_day.webp"
     },
     {
-      "slot": "window",
-      "variant": "square",
-      "file": "window_square.webp",
-      "x": 167,
-      "y": 334,
-      "width": 309,
-      "height": 333
-    },
-    {
-      "slot": "window",
-      "variant": "round",
-      "file": "window_round.webp",
-      "x": 167,
-      "y": 334,
-      "width": 309,
-      "height": 333
-    },
-    {
-      "slot": "shelf",
-      "variant": "books",
-      "file": "shelf_books.webp",
-      "x": 158,
-      "y": 184,
-      "width": 158,
-      "height": 141
-    },
-    {
-      "slot": "lantern",
-      "variant": "iron",
-      "file": "lantern_iron.webp",
-      "x": 714,
-      "y": 28,
-      "width": 87,
-      "height": 268
-    },
-    {
-      "slot": "picture",
-      "variant": "framed",
-      "file": "picture_framed.webp",
-      "x": 485,
-      "y": 467,
-      "width": 84,
-      "height": 106
-    },
-    {
-      "slot": "basket",
-      "variant": "acorns",
-      "file": "basket_acorns.webp",
-      "x": 570,
-      "y": 1104,
-      "width": 133,
-      "height": 127
-    },
-    {
-      "slot": "fern",
-      "variant": "potted",
-      "file": "fern_potted.webp",
-      "x": 85,
-      "y": 1073,
-      "width": 297,
-      "height": 336
+      "slot": "bed",
+      "variant": "wooden",
+      "file": "bed_wooden.webp",
+      "x": 139,
+      "y": 917,
+      "width": 251,
+      "height": 287,
+      "fileDay": "bed_wooden_day.webp"
     },
     {
       "slot": "candle",
@@ -115,16 +46,99 @@
       "x": 641,
       "y": 1123,
       "width": 223,
-      "height": 290
+      "height": 290,
+      "fileDay": "candle_stool_day.webp"
+    },
+    {
+      "slot": "fern",
+      "variant": "potted",
+      "file": "fern_potted.webp",
+      "x": 83,
+      "y": 1074,
+      "width": 300,
+      "height": 335,
+      "fileDay": "fern_potted_day.webp"
     },
     {
       "slot": "herbs",
       "variant": "dried",
       "file": "herbs_dried.webp",
       "x": 377,
-      "y": 55,
-      "width": 212,
-      "height": 164
+      "y": 54,
+      "width": 211,
+      "height": 165,
+      "fileDay": "herbs_dried_day.webp"
+    },
+    {
+      "slot": "lantern",
+      "variant": "iron",
+      "file": "lantern_iron.webp",
+      "x": 715,
+      "y": 27,
+      "width": 85,
+      "height": 269,
+      "fileDay": "lantern_iron_day.webp"
+    },
+    {
+      "slot": "picture",
+      "variant": "framed",
+      "file": "picture_framed.webp",
+      "x": 485,
+      "y": 468,
+      "width": 84,
+      "height": 105,
+      "fileDay": "picture_framed_day.webp"
+    },
+    {
+      "slot": "rug",
+      "variant": "braided",
+      "file": "rug_braided.webp",
+      "x": 231,
+      "y": 1200,
+      "width": 537,
+      "height": 176,
+      "fileDay": "rug_braided_day.webp"
+    },
+    {
+      "slot": "rug",
+      "variant": "green",
+      "file": "rug_green.webp",
+      "x": 209,
+      "y": 1196,
+      "width": 581,
+      "height": 192,
+      "fileDay": "rug_green_day.webp"
+    },
+    {
+      "slot": "shelf",
+      "variant": "books",
+      "file": "shelf_books.webp",
+      "x": 158,
+      "y": 185,
+      "width": 158,
+      "height": 140,
+      "fileDay": "shelf_books_day.webp"
+    },
+    {
+      "slot": "window",
+      "variant": "round",
+      "file": "window_round.webp",
+      "x": 167,
+      "y": 335,
+      "width": 308,
+      "height": 331,
+      "fileDay": "window_round_day.webp"
+    },
+    {
+      "slot": "window",
+      "variant": "square",
+      "file": "window_square.webp",
+      "x": 167,
+      "y": 335,
+      "width": 308,
+      "height": 331,
+      "fileDay": "window_square_day.webp"
     }
-  ]
+  ],
+  "plateDay": "plate_day.webp"
 }

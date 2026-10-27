@@ -264,8 +264,9 @@ art/                     the Blender art pipeline (art/README.md): common.py wit
                          and materials, elf.py (the character, its rig and clips) and room.py (the room plate and
                          the furniture), pack.py (frames to WebP atlases and a manifest), the contact sheets;
                          renders go to art/out, only the packed result is committed under assets/elf
-assets/elf/              room/ (manifest.json, plate.webp: the empty room at the room units, 1000 by 1600, and one
-                         transparent crop per furniture variant with its place in the plate), sprites/<character>/
+assets/elf/              room/ (manifest.json, plate.webp and plate_day.webp: the empty room at the room units,
+                         1000 by 1600, by night and by day, and one transparent crop per furniture variant, with
+                         its _day twin, at its place in the plate), sprites/<character>/
                          (the packed atlases and manifests the sprite player draws; elf/ today)
 metro.config.js          the monorepo watch and resolve settings
 app.config.ts            the configuration that depends on the environment: the AdMob app ids of the support sheet's rewarded
@@ -737,9 +738,16 @@ its walls, floor, beams and the fireplace with its fire, rendered at
 exactly the room units) with the furniture laid over it as transparent
 crops (`assets/elf/room/manifest.json` says where each variant sits in
 the plate, `cottage/RoomSprites.tsx` draws them, the rug under the elf
-and the rest in their depth), and the elf is an atlas
-(`assets/elf/sprites/elf/`: a cell of 268 by 386 pixels per frame at 180
-pixels to the metre, the feet as the anchor, 24 fps; the clips idle,
+and the rest in their depth); the plate and every crop have a daytime
+twin (`plate_day.webp`, `<slot>_<variant>_day.webp`) drawn over the night
+picture at the opacity of the cottage clock's daylight, so the room's
+light turns with the hour (the elf's frames are night-lit; by day
+`cottage/SpriteElf.tsx` lifts them with a colour matrix that follows the
+same value). The elf is an atlas
+(`assets/elf/sprites/elf/`: a cell of 275 by 391 pixels per frame at
+about 179 pixels to the metre, rendered inside the room's own scene so
+the figure carries the fire's and the moon's light, the feet as the
+anchor, 24 fps; the clips idle,
 happy, sad, sleep, pet, feed and wave) played by `cottage/SpriteElf.tsx` on the sprite player's
 UI-thread frame clock, with the figure's procedural motion (the bob, the
 squash, the tilt of the reactions) layered on top as a transform of the
@@ -804,8 +812,9 @@ Galaxy Note 10+:
 
 Baseline, release build of 2026-10-26 (the sprite scene, the vector
 cottage gone, the first elf's atlas of nine sheets at 180 pixels to the
-metre; the redesigned elf of 2026-10-27 with its new clips packs into
-eight sheets of the same scale, 4.2 MB, not yet re-measured):
+metre; the redesigned elf of 2026-10-27 with its new clips, lit in the
+room, packs into eight sheets of the same scale, 4.1 MB, and the room
+gained its day plate and day sprites, 0.6 MB; none of it re-measured):
 
 | Point | PSS | native heap | graphics (GL + EGL) | Dalvik | unknown | RSS | frames |
 |---|---|---|---|---|---|---|---|

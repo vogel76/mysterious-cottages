@@ -464,16 +464,16 @@ export const CottageScene = memo(
               never attaches there). */}
           <Canvas style={{ width, height }} opaque>
             <Group transform={roomTransform}>
-              <RoomSprites decor={decor} layer="back" photo={photo} />
-              <RoomSprites decor={decor} layer="mid" />
+              <RoomSprites decor={decor} layer="back" day={fire.day} photo={photo} />
+              <RoomSprites decor={decor} layer="mid" day={fire.day} />
               {hatched ? (
                 images ? (
-                  <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} images={images} manifest={ELF_SPRITES.manifest} />
+                  <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} manifest={ELF_SPRITES.manifest} />
                 ) : null
               ) : (
                 <EggNest starter={starter} warmth={warmth} motion={motion} origin={ROOM.elfAnchor} />
               )}
-              <RoomSprites decor={decor} layer="front" />
+              <RoomSprites decor={decor} layer="front" day={fire.day} />
               <ShootingStar progress={star} origin={windowSlot} />
               <Particles particles={particles} />
               <PlateLighting sleeping={sleeping} fire={fire} reduceMotion={reduceMotion} />
