@@ -654,6 +654,8 @@ Talking Tom, Neko Atsume, Finch) says, applied in the tab:
   the head toward a point on the screen (the sprite elf, with no separate
   head, leans towards it); a stroke over the body is the most alive input
   (eyes close, the head leans in, hearts trickle).
+- **Reduced motion** keeps a slow, shallow breath as the elf's only loop,
+  so it is alive and not a statue; reactions are a blip of particles.
 - **Idle fidgets** every 8 to 15 seconds (an ear twitch, a yawn, a glance
   at the fire, a shift of weight) keep it alive between actions; at
   bedtime (from 19:00, until it is tucked in) the elf gets heavy lids and
@@ -702,8 +704,11 @@ once through the provider, which saves it, and the placed item wears a
 check; a piece the finds have not unlocked yet (`DECOR_UNLOCKS`) is
 dimmed under a lock with how many more cottages it takes, and a tap on
 it places nothing: the elf says so. In the
-decorating mode the scene is in edit mode: the slots become tap targets
-that pick the panel's tab, the hint says so, and the elf admires each
+decorating mode the HUD steps aside (the whole room is there to pick
+from, no frame under the name block) and the scene is in edit mode: the
+slots become tap targets that pick the panel's tab (a screen reader gets
+them as actions of the room, one per piece on offer), the hint says so,
+and the elf admires each
 piece placed (`admireSlot`: it looks at it and sparkles).
 
 ### The art

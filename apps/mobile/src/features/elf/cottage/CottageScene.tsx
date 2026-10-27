@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '../../../ui'
 import { PET_COOLDOWN_MS, type ElfMood, type ElfStage, type ElfStarter } from '@chatynkowo/core'
 import { SPRITE_CHARACTERS, useSpriteImages, type SpriteSource } from '../sprites'
+import { elfKey } from '../labels'
 import { PHOTO_ID, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
 import { EGG_HIT_BOX, EggNest } from './EggNest'
@@ -370,17 +371,25 @@ export const CottageScene = memo(
        convert, so it always lands on the elf (or the egg). */
     const onAccessibilityAction = useCallback(
       (event: AccessibilityActionEvent) => {
+        const { actionName } = event.nativeEvent
+        if (actionName.startsWith('slot:')) {
+          onSelectSlot?.(actionName.slice('slot:'.length) as SlotId)
+          return
+        }
         if (editing) return
-        if (event.nativeEvent.actionName === 'openStory') {
+        if (actionName === 'openStory') {
           onPictureTapRef.current?.()
           return
         }
-        if (event.nativeEvent.actionName !== 'activate') return
+        if (actionName !== 'activate') return
         if (stage === 'egg') onPetEgg?.()
         else onPetElf?.()
       },
-      [stage, editing, onPetElf, onPetEgg],
+      [stage, editing, onPetElf, onPetEgg, onSelectSlot],
     )
+    /* In edit mode a screen reader picks a slot from the actions, one per
+       piece on offer, since it cannot tap a spot of the canvas. */
+    const slotActions = useMemo(() => editable.map((id) => ({ name: `slot:${id}`, label: t(elfKey('slot', id)) })), [editable, t])
     /* The frame's photo opens its cottage: a second action for a screen
        reader, which cannot tap a spot of the canvas. */
     const framePhoto = Boolean(photo) && decor.picture === PHOTO_ID
@@ -446,7 +455,7 @@ export const CottageScene = memo(
           accessibilityRole="button"
           accessibilityLabel={t('mobile:elf.cottageAria')}
           accessibilityHint={t(editing ? 'mobile:elf.decorateHint' : stage === 'egg' ? 'mobile:elf.tapHintEgg' : 'mobile:elf.tapHint')}
-          accessibilityActions={framePhoto ? [{ name: 'activate' }, { name: 'openStory', label: t('mobile:elf.frameAction') }] : [{ name: 'activate' }]}
+          accessibilityActions={editing ? slotActions : framePhoto ? [{ name: 'activate' }, { name: 'openStory', label: t('mobile:elf.frameAction') }] : [{ name: 'activate' }]}
           onAccessibilityAction={onAccessibilityAction}
         >
           {/* The room covers the whole canvas, so it can be opaque: Android

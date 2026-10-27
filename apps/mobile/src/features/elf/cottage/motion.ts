@@ -37,9 +37,9 @@ import { ROOM } from './room'
    which would otherwise cut the hop short; while 'cheer' plays, the other
    kinds are ignored. 'stroke' is special too: it is called again and
    again while the finger moves, and each call only extends it and lets a
-   heart go at most every 180 ms. With reduce motion on there are no loops
-   at all, the puppet holds a still pose and a reaction is only a brief
-   blip of its particles. Paused (the tab out of focus) is the same still
+   heart go at most every 180 ms. With reduce motion on the puppet holds a
+   still pose with a slow, shallow breath as its only loop, and a reaction
+   is only a brief blip of its particles. Paused (the tab out of focus) is the same still
    pose with no reactions, no fidgets and no zzz, so nothing runs on the UI
    thread for a scene nobody sees; the loops resume when the focus returns.
    Asleep, the elf answers nothing but the wake, a cheer and the egg, and
@@ -380,7 +380,10 @@ export function useCottageMotion(options: Options): CottageMotion {
     const droop = sleepy && !asleep && !egg ? IDLE.sleepyDroop : 0
 
     if (reduceMotion || paused) {
+      /* A still pose; with reduce motion the breath alone goes on, slow
+         and shallow, so the elf is alive and not a statue. */
       motion.breath.value = 0.5
+      if (reduceMotion && !paused) motion.breath.value = withRepeat(withSequence(withTiming(0.6, { duration: IDLE.breathMs, easing: EASING.inOut }), withTiming(0.4, { duration: IDLE.breathMs, easing: EASING.inOut })), -1)
       motion.bob.value = 0
       motion.squash.value = sad ? IDLE.sadSquash : 1
       motion.tilt.value = sad ? IDLE.sadTilt : asleep ? IDLE.sleepTilt : 0
