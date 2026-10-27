@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { ELF_NEEDS, type ElfMood, type ElfNeedId, type ElfNeeds, type ElfStage, type ElfWallet } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, NextIcon, PressableScale, QuestIcon, ReduceMotion, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, NextIcon, PressableScale, QuestIcon, ReduceMotion, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
@@ -73,12 +73,16 @@ export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, 
           </View>
           <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
         </View>
-        <View style={styles.controls} pointerEvents="box-none">
-          {/* The room can be arranged for the egg and the elf alike. */}
-          <IconButton label={t('mobile:elf.decorate')} onPress={onDecorate} active={panel === 'decor'} style={[styles.control, panel === 'decor' && styles.controlActive]}>
-            <DecorIcon size={iconSize.md} color={mapPalette.chromeIcon} />
-          </IconButton>
-        </View>
+        {/* The room can be arranged for the egg and the elf alike. The
+            button is a square as tall as the name block beside it. */}
+        <PressableScale
+          onPress={onDecorate}
+          accessibilityLabel={t('mobile:elf.decorate')}
+          accessibilityState={{ selected: panel === 'decor' }}
+          style={[styles.chrome, styles.control, panel === 'decor' && styles.controlActive]}
+        >
+          <DecorIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
+        </PressableScale>
       </View>
       <View style={styles.chips} pointerEvents="none">
         {hatched || hatchAt === null ? ELF_NEEDS.map((id) => <NeedChip key={id} id={id} value={needs[id]} />) : <EggChip hatchAt={hatchAt} />}
@@ -267,7 +271,7 @@ const styles = StyleSheet.create({
   },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'space-between',
     gap: space.sm,
   },
@@ -297,15 +301,12 @@ const styles = StyleSheet.create({
     color: mapPalette.chromeInk,
     opacity: 0.85,
   },
-  controls: {
-    flexDirection: 'row',
-    gap: space.sm,
-  },
-  /* The control's own border takes the chrome's gold; the open panel's
-     button brightens it (the chrome covers IconButton's own active face). */
+  /* The decorating button: a square the height of the name block, in the
+     chrome; the open panel brightens it. */
   control: {
-    borderColor: mapPalette.chromeBorder,
-    backgroundColor: mapPalette.chrome,
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   controlActive: {
     borderColor: colors.accentBorder,
