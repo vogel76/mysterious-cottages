@@ -13,7 +13,9 @@ import type { PuppetMotion } from './motion'
    from the origin, the base of the egg, upwards. */
 
 export type EggNestProps = {
-  starter: ElfStarter
+  /* Null before the hatch names the elf and picks its element: the egg
+     is then plain cream with the gold band. */
+  starter: ElfStarter | null
   /* 0..100 */
   warmth: number
   motion: PuppetMotion
@@ -23,6 +25,7 @@ export type EggNestProps = {
 export const EGG_HIT_BOX = { x: -140, y: -300, width: 280, height: 320 } as const
 
 type EggPalette = { tunic: string; trim: string; glow: string }
+const NEUTRAL: EggPalette = { tunic: '#c2ad7c', trim: '#c79a4b', glow: '#ffe3a6' }
 const PALETTES: Record<ElfStarter, EggPalette> = {
   forest: { tunic: '#4e8a54', trim: '#c79a4b', glow: '#9af08f' },
   ember: { tunic: '#e08a3d', trim: '#f4c76b', glow: '#ffb46b' },
@@ -93,7 +96,7 @@ function buildGeometry(): Geometry {
 
 export function EggNest({ starter, warmth, motion, origin }: EggNestProps) {
   const g = useMemo(buildGeometry, [])
-  const palette = PALETTES[starter]
+  const palette = starter ? PALETTES[starter] : NEUTRAL
   const { bob, tilt, glow } = motion
 
   const eggTransform = useDerivedValue(() => [{ translateY: bob.value }, { rotate: tilt.value }])

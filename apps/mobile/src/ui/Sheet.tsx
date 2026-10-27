@@ -14,7 +14,9 @@ import { colors, radius, space } from './tokens'
    own height (or the part of the screen it asks for) and can be pulled to
    the top; a scroll inside moves the content first and the sheet only at
    its top edge; a drag down past the first stop, a tap on the scrim or the
-   back button closes it, and the route goes back. The route itself is a
+   back button closes it, and the route goes back. A tap on a control while
+   the keyboard is up reaches the control (the keyboard does not swallow
+   it), so a form in a sheet works in one tap per step. The route itself is a
    transparent modal with no animation of its own. The content keeps to the
    readable column and clear of the side safe area. */
 
@@ -90,7 +92,7 @@ export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, 
         onClose={close}
       >
         {scroll ? (
-          <BottomSheetScrollView contentContainerStyle={content} showsVerticalScrollIndicator={false}>
+          <BottomSheetScrollView contentContainerStyle={content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {children}
           </BottomSheetScrollView>
         ) : (

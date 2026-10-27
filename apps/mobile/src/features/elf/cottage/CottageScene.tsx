@@ -100,7 +100,8 @@ export type CottageSceneHandle = {
 
 export type CottageSceneProps = {
   stage: ElfStage
-  starter: ElfStarter
+  /* Null until the hatch names the elf: the egg is then plain. */
+  starter: ElfStarter | null
   mood: ElfMood
   sleeping: boolean
   /* Bedtime, before the elf is tucked in: heavy lids and yawns. */

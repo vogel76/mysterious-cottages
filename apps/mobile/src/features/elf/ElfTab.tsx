@@ -12,7 +12,6 @@ import { DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, TAB_B
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
-import { ElfAdoption } from './ElfAdoption'
 import { ElfHud, type ElfPanel } from './ElfHud'
 import { DECOR_SLOTS, ElfPicker } from './ElfPicker'
 import { ElfSpeech } from './ElfSpeech'
@@ -20,8 +19,10 @@ import { elfKey } from './labels'
 import { useEvolutionPresenter } from './useEvolutionPresenter'
 import { useReturnGreeting } from './useReturnGreeting'
 
-/* The Elf tab's screen: the adoption form on the first visit, afterwards
-   the cottage. The elf (or its egg in the nest) lives in a full-screen
+/* The Elf tab's screen: the cottage, from the first visit, with the egg
+   in its nest (nothing to fill in: the elf is named and given its element
+   when it hatches, in the hatch sheet). The elf (or its egg) lives in a
+   full-screen
    painted room (src/features/elf/cottage) that fills the whole tab, under
    the status bar and the floating tab bar as the Atlas does, and a light
    HUD floats over it: the name, the form and the elf's mood, the
@@ -505,19 +506,11 @@ export function ElfTab() {
      inset themselves and end above the bar. */
   const bottom = { paddingBottom: tabBarHeight + space.xxl }
 
-  if (!loaded) {
+  if (!loaded || !state) {
     return (
       <Screen topInset contentStyle={bottom}>
         <SkeletonCard />
         <SkeletonCard />
-      </Screen>
-    )
-  }
-
-  if (!state) {
-    return (
-      <Screen topInset keyboard="interactive" contentStyle={bottom}>
-        <ElfAdoption />
       </Screen>
     )
   }

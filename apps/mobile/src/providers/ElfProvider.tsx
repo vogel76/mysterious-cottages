@@ -3,6 +3,7 @@ import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   applyElapsed,
+  christen as christenElf,
   claimDailyReward as claimElfReward,
   decorFindsNeeded,
   equip as equipElf,
@@ -46,9 +47,11 @@ import { useProgress } from './ProgressProvider'
 /* The elf companion's state for the whole app, on the rules in
    @chatynkowo/core (elf.ts): the Elf tab reads and acts on it. The state is
    read from the device when the provider mounts (the elf is not on the
-   first screen, so it stays out of the bootstrap); a read that fails is
-   retried, and until one succeeds there is no state to show and nothing is
-   written, so a storage hiccup never lets a fresh egg overwrite the elf.
+   first screen, so it stays out of the bootstrap), and a device with
+   nothing stored gets a fresh egg at once, so the egg waits in the nest
+   from the first visit; a read that fails is retried, and until one
+   succeeds there is no state to show and nothing is written, so a storage
+   hiccup never lets a fresh egg overwrite the elf.
    While the app is in the foreground the needs are brought up to date every
    few seconds (the drift is slow, days not minutes), the calendar day is
    settled as it turns, the egg hatches when its time has come and the elf
@@ -104,8 +107,10 @@ export type ElfValue = {
   decor: Decor
   /* When the player last did something for the elf; 0 without an elf. */
   lastInteraction: number
-  adopt: (name: string, starter: ElfStarter) => void
-  /* Lets the egg go; the next visit starts with a fresh one. */
+  /* The hatched elf named and given its element, which marks the first
+     form as seen is the tab's business (acknowledgeEvolution). */
+  christen: (name: string, starter: ElfStarter) => void
+  /* Lets the elf go: a fresh egg takes the nest. */
   reset: () => void
   /* The tab came into view: the day is settled and the visit counted. */
   visit: () => void
@@ -233,12 +238,14 @@ export function ElfProvider({ children }: { children: ReactNode }) {
         const now = Date.now()
         const stored = raw ? normalizeElf(raw, now) : null
         /* Only the drift here: the day and the hatch wait for the first
-           tick or visit, which report their news. */
-        const next = stored ? applyElapsed(stored, now) : null
+           tick or visit, which report their news. Nothing stored means a
+           fresh egg, written at once. */
+        const next = stored ? applyElapsed(stored, now) : newElf(now)
         stateRef.current = next
         setState(next)
         refreshPending(next, now)
         setLoaded(true)
+        if (!stored) persist(next)
       } catch {
         if (!current) return
         timer = setTimeout(() => void read(), READ_RETRY_MS[Math.min(attempt, READ_RETRY_MS.length - 1)])
@@ -250,7 +257,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       current = false
       if (timer) clearTimeout(timer)
     }
-  }, [refreshPending])
+  }, [refreshPending, persist])
 
   /* What the rules reported, as one news record for the tab: what the day
      said as it was settled (a find credited to its quest) and what the
@@ -318,20 +325,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     refreshPending(stateRef.current, Date.now())
   }, [foundCount, refreshPending])
 
-  const adopt = useCallback(
+  const christen = useCallback(
     (name: string, starter: ElfStarter) => {
-      const now = Date.now()
-      const fresh = newElf(name, starter, now)
-      const outcome = visitElf(fresh, now, findsRef.current)
-      commit(outcome.state, true)
-      /* The visit is the day's report too; the quests go in once. */
-      report(fresh, { state: outcome.state, completed: [], setBonus: false, celebrate: outcome.celebrate }, outcome)
+      const current = stateRef.current
+      if (!current) return
+      commit(christenElf(current, name, starter), true)
     },
-    [commit, report],
+    [commit],
   )
 
   const reset = useCallback(() => {
-    commit(null, true)
+    commit(newElf(Date.now()), true)
     setNews(null)
   }, [commit])
 
@@ -461,7 +465,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       outfit,
       decor,
       lastInteraction: state?.lastInteraction ?? 0,
-      adopt,
+      christen,
       reset,
       visit,
       care,
@@ -475,7 +479,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       acknowledgeEvolution,
       news,
     }
-  }, [state, loaded, foundCount, outfit, decor, adopt, reset, visit, care, tend, toggleSleep, pet, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news])
+  }, [state, loaded, foundCount, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }
