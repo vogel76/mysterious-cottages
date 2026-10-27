@@ -248,7 +248,7 @@ type MoodLineProps = {
   name: string
   stage: ElfStage
   mood: ElfMood
-  /* When the egg hatches on its own; null once hatched. */
+  /* When the egg is ready to hatch; null once hatched. */
   hatchAt: number | null
   wantedNeed: ElfNeedId | null
 }

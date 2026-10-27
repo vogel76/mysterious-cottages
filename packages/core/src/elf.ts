@@ -841,10 +841,11 @@ export function hatchAt(state: ElfState): number | null {
   return state.hatched ? null : state.eggAppearedAt + HATCH_AFTER_MS
 }
 
-/* The egg hatches at the first opening six hours after it appeared, or
-   the moment a cottage is found while it waits (a find from before it
-   appeared is the expedition's past and does not count: a veteran gets
-   the egg's wait like everyone). */
+/* The egg is ready to hatch six hours after it appeared, or the moment a
+   cottage is found while it waits (a find from before it appeared is the
+   expedition's past and does not count: a veteran gets the egg's wait
+   like everyone). The hatch itself is the player's: the app calls hatch
+   when the player cracks the ready egg. */
 export function hatchDue(state: ElfState, now: number, finds: readonly ElfFind[]): boolean {
   return !state.hatched && (finds.some((find) => find.at >= state.eggAppearedAt) || now - state.eggAppearedAt >= HATCH_AFTER_MS)
 }
@@ -859,16 +860,18 @@ export function hatch(state: ElfState, now: number): ElfState {
   if (state.hatched) return state
   const hatched: ElfState = { ...state, hatched: true, warmth: 100, born: now, needs: { ...HATCHED_NEEDS }, last: now, lastInteraction: now }
   const settled = ensureDay(hatched, now).state
-  /* The day's quests were dealt for an egg; the elf gets its own, with
-     what the day already counted carried over (a quest done and paid
-     stays done, and the set's dust is paid once a day). */
-  const redeal = settled.daily.day === state.daily.day && settled.daily.quests.some((quest) => quest.event === 'egg')
-  const quests = redeal
-    ? dealQuests(settled.daily.day, settled.name, true).map((quest) => {
-        const before = settled.daily.quests.find((old) => old.id === quest.id)
-        return before ? { ...quest, progress: before.progress, done: before.done } : quest
-      })
-    : settled.daily.quests
+  /* The day's deal stays through the hatch (what was done stays done and
+     paid, the set's dust is paid once a day): only a quest about the egg
+     that is still open, which the elf can no longer do, gives way to the
+     first care quest not in the deal. The hatch is no second set. */
+  const taken = new Set(settled.daily.quests.map((quest) => quest.id))
+  const quests = settled.daily.quests.map((quest) => {
+    if (quest.event !== 'egg' || quest.done) return quest
+    const spare = QUEST_POOL.find((spec) => !spec.when && spec.stage === 'elf' && !taken.has(spec.id))
+    if (!spare) return quest
+    taken.add(spare.id)
+    return questFrom(spare)
+  })
   return { ...settled, daily: { ...settled.daily, quests }, sleeping: isAsleepAt({ ...settled, hatched: true }, now) }
 }
 
