@@ -65,6 +65,9 @@ FILL_COLOR = '#9fc4ff'
 TOP_COLOR = '#fff4e6'
 AMBIENT_COLOR = '#343a48'
 OUTLINE_COLOR = '#14100c'
+INK_COLOR = '#3a2308'
+# The painterly shadow: the base colour darkened and pulled towards this cool forest green.
+SHADOW_TINT = '#243a2c'
 
 
 # ---------------------------------------------------------------------------
@@ -397,3 +400,124 @@ def hide_for_render(objects: Iterable[bpy.types.Object], hidden: bool) -> None:
     """Hides objects from the render (for rendering one layer of a layered character at a time)."""
     for obj in objects:
         obj.hide_render = hidden
+
+
+# ---------------------------------------------------------------------------
+# The painterly look: a two-band ramp blended into the Principled shading,
+# and a thin ink line from Grease Pencil Line Art.
+
+def _mix_rgb(a: Sequence[float], b: Sequence[float], t: float) -> tuple[float, float, float, float]:
+    return tuple(a[i] + (b[i] - a[i]) * t for i in range(3)) + (1.0,)
+
+
+def painterly_material(name: str, base_color: str | Sequence[float], ramp: float = 0.4, roughness: float = 0.6,
+                       subsurface: float = 0.0, emission: str | Sequence[float] | None = None,
+                       emission_strength: float = 1.0, grain: float = 0.0, bands: int = 2,
+                       shadow_tint: str = SHADOW_TINT) -> bpy.types.Material:
+    """A soft matte material with a hand-painted feel.
+
+    The Principled shading of `toon_material` is mixed (by `ramp`, 0..1)
+    with a flat band shading: the light falling on a white diffuse surface
+    is read back (Shader to RGB) and stepped into `bands` colours, the base
+    colour where lit and the base colour darkened and tinted towards
+    `shadow_tint` in shadow, so forms turn with a painted edge instead of a
+    smooth gradient. `ramp` 0 is plain Principled, 1 is pure band (cel)
+    shading. `grain` (0..1) mottles the base colour with fine noise, like
+    felt or wool. Eevee only: Shader to RGB has no Cycles equivalent.
+    """
+    mat = toon_material(name, base_color, roughness, subsurface, emission, emission_strength)
+    tree = mat.node_tree
+    nodes, links = tree.nodes, tree.links
+    bsdf = nodes['Principled BSDF']
+    output = nodes['Material Output']
+    color = hex_to_linear(base_color) if isinstance(base_color, str) else tuple(base_color)
+
+    if grain > 0:
+        noise = nodes.new('ShaderNodeTexNoise')
+        noise.inputs['Scale'].default_value = 60.0
+        noise.inputs['Detail'].default_value = 3.0
+        noise.inputs['Roughness'].default_value = 0.6
+        amount = nodes.new('ShaderNodeMath')
+        amount.operation = 'MULTIPLY'
+        amount.inputs[1].default_value = grain
+        links.new(noise.outputs['Fac'], amount.inputs[0])
+        mottle = nodes.new('ShaderNodeMix')
+        mottle.data_type = 'RGBA'
+        mottle.inputs['A'].default_value = color
+        mottle.inputs['B'].default_value = _mix_rgb(color, (0.0, 0.0, 0.0, 1.0), 0.35)
+        links.new(amount.outputs[0], mottle.inputs['Factor'])
+        links.new(mottle.outputs['Result'], bsdf.inputs['Base Color'])
+
+    if ramp <= 0:
+        return mat
+    probe = nodes.new('ShaderNodeBsdfDiffuse')
+    probe.inputs['Color'].default_value = (1.0, 1.0, 1.0, 1.0)
+    to_rgb = nodes.new('ShaderNodeShaderToRGB')
+    links.new(probe.outputs[0], to_rgb.inputs[0])
+    to_bw = nodes.new('ShaderNodeRGBToBW')
+    links.new(to_rgb.outputs['Color'], to_bw.inputs[0])
+    steps = nodes.new('ShaderNodeValToRGB')
+    # A cel look (ramp 1) steps hard; the painterly blend eases over a narrow
+    # band, like a brush edge.
+    steps.color_ramp.interpolation = 'CONSTANT' if ramp >= 1.0 else 'EASE'
+    shadow = _mix_rgb(_mix_rgb(color, (0.0, 0.0, 0.0, 1.0), 0.5), hex_to_linear(shadow_tint), 0.3)
+    elements = steps.color_ramp.elements
+    elements[0].position = 0.30
+    elements[0].color = shadow
+    elements[1].position = 0.38 if ramp >= 1.0 else 0.48
+    elements[1].color = color
+    if bands >= 3:
+        mid = elements.new(0.16)
+        mid.color = _mix_rgb(shadow, color, 0.5)
+    links.new(to_bw.outputs[0], steps.inputs['Fac'])
+    flat = nodes.new('ShaderNodeEmission')
+    links.new(steps.outputs['Color'], flat.inputs['Color'])
+    mix = nodes.new('ShaderNodeMixShader')
+    mix.inputs['Fac'].default_value = ramp
+    links.new(bsdf.outputs[0], mix.inputs[1])
+    links.new(flat.outputs[0], mix.inputs[2])
+    links.new(mix.outputs[0], output.inputs['Surface'])
+    return mat
+
+
+def add_line_art(scene: bpy.types.Scene, radius: float = 0.003, color: str = INK_COLOR,
+                 crease_deg: float = 140.0) -> bpy.types.Object:
+    """The ink: a Grease Pencil object whose Line Art modifier draws the
+    scene's visible contours, creases and intersections as thin strokes of
+    `radius` (metres on the figure; 0.003 is about a pixel at 300 px/m after
+    a 0.6 pack). Objects opt out through `obj.lineart.usage` ('EXCLUDE', or
+    'OCCLUSION_ONLY' for a part that hides others but draws no line of its
+    own). Verified on Blender 5.2: the modifier type is 'LINEART' and the
+    stroke width property is `radius`.
+    """
+    data = bpy.data.grease_pencils.new('Ink')
+    layer = data.layers.new('Lines')
+    mat = bpy.data.materials.new('Ink')
+    bpy.data.materials.create_gpencil_data(mat)
+    mat.grease_pencil.color = hex_to_linear(color)
+    data.materials.append(mat)
+    obj = _link(bpy.data.objects.new('Ink', data), scene)
+    mod = obj.modifiers.new('LineArt', 'LINEART')
+    mod.source_type = 'SCENE'
+    mod.target_layer = layer.name
+    mod.target_material = mat
+    mod.radius = radius
+    mod.use_contour = True
+    mod.use_crease = True
+    mod.crease_threshold = math.radians(crease_deg)
+    mod.use_intersection = True
+    mod.use_material = False
+    mod.use_edge_mark = False
+    mod.use_loose = False
+    mod.use_image_boundary_trimming = True
+    return obj
+
+
+def enable_quality(scene: bpy.types.Scene) -> None:
+    """Eevee's slower options for the figure: ray-traced reflections, Fast
+    GI and jittered soft shadows on every light. About twice the render
+    time of the defaults; measured on the elf at 1.47 s against 0.84 s a frame."""
+    scene.eevee.use_raytracing = True
+    scene.eevee.use_fast_gi = True
+    for light in bpy.data.lights:
+        light.use_shadow_jitter = True

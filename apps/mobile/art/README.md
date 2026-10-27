@@ -38,10 +38,11 @@ python3 art/blender/pack.py pack-layers art/out/smoke/frames --out art/out/smoke
 ```
 art/blender/common.py    shared helpers, imported by every build script: the scene (resolution, Standard view
                          transform, transparent film, Eevee at 32 samples), the orthographic camera, the light rig,
-                         the toon material, the outline modifier, meshes from bmesh, armature parenting, the
-                         renders, the anchor, saving a .blend for inspection
+                         the toon and painterly materials, the Line Art ink, the outline modifier, meshes from
+                         bmesh, armature parenting, the renders, the anchor, saving a .blend for inspection
 art/blender/smoke.py     the smoke test described above
-art/blender/elf.py       the elf: the chibi model, its rig, its clips, rendered as the body layer (face and hat layers to come)
+art/blender/elf.py       the elf: the young forest elf (a FORM table gives the baby and the young form), its rig,
+                         its clips, the look-dev stills, rendered as the body layer (face and hat layers to come)
 art/blender/room.py      the cottage: the walls and the floor, the furniture of each slot, the fire (see The room)
 art/blender/room_sheet.py the room's post-processing (system Python): sprite boxes, contact sheet, phone crop
 art/blender/pack.py      the packer: frames to atlases and a manifest (system Python)
@@ -71,10 +72,29 @@ everything: a warm key from the upper right (the fireplace side), a cool
 fill from the left (the moon in the window), a soft top light and a dim
 cool ambient; soft shadows come from wide shadow filters rather than
 jitter, which is grainy at 32 samples. Materials are soft and matte with a
-touch of subsurface on skin, and every mesh carries a thin dark outline,
-an inverted hull: a Solidify shell with flipped normals in a dark emission
-material, both materials culling backfaces. The whole look is set in
-`common.py`; a change there changes every render.
+touch of subsurface on skin. The elf's materials are painterly
+(`painterly_material`): the Principled shading is blended with a flat
+two-band shading read back through Shader to RGB, the base colour where
+lit and the colour darkened towards a cool forest green in shadow, with an
+eased edge between them (a hard step at ramp 1, the cel look); cloth gets
+a fine noise grain. The ink is Grease Pencil Line Art (`add_line_art`):
+one object whose modifier draws the scene's contours, creases and
+intersections as thin dark-brown strokes (radius 0.0045 m, about a pixel
+after the pack); painted-on parts (highlights, cheeks, iris, pupil) opt
+out through `obj.lineart.usage`. The older inverted-hull outline (a
+Solidify shell with flipped normals in a dark emission material, both
+materials culling backfaces) stays in `outline_modifier` as a switch
+(`--hull`). `enable_quality` turns on ray tracing, Fast GI and jittered
+shadows for the figure, about twice the render time. The whole look is set
+in `common.py` and `elf.py`'s `LOOK`; a change there changes every render.
+
+`elf.py` takes `--form young|baby`, `--ramp <0..1>` (0 plain Principled,
+1 cel), `--no-ink`, `--hull`, `--no-quality` and `--quick`, and its
+`lookdev` stage renders the wave pose and the four moods into
+`art/out/elf/lookdev/<look>/`, one folder per combination of flags, which
+is how the A/B sheet of a look-dev round is made. Verified on Blender
+5.2.2: the Line Art modifier type is `LINEART`, its width is `radius`, and
+Shader to RGB works in Eevee only (the hero still renders with Eevee too).
 
 ## Frames and the anchor
 
@@ -84,7 +104,7 @@ material, both materials culling backfaces. The whole look is set in
 layers, one directory per layer under `layers/` with the same clips and
 frame numbers (`layers/body/idle_0001.png`, later
 `layers/face_happy/idle_0001.png`, `layers/hat_pompom/idle_0001.png`).
-The elf has the body layer alone today, its face and hood baked in; the
+The elf has the body layer alone today, its face and hair baked in; the
 smoke scene shows the layout with two layers, which it separates by
 hiding objects, whereas the elf's layers will be holdout passes (the other
 parts keep cutting the alpha and casting shadows, so a hat never draws
