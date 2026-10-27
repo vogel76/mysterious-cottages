@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { ELF_NEEDS, type ElfMood, type ElfNeedId, type ElfNeeds, type ElfStage, type ElfWallet } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, PressableScale, QuestIcon, ReduceMotion, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, CrossfadeText, DURATIONS, DecorIcon, DustIcon, EASING, EggIcon, IconButton, NextIcon, PressableScale, QuestIcon, ReduceMotion, StreakIcon, Text, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, type Icon } from '../../ui'
 import { NEED_ICONS, elfKey } from './labels'
 
 /* The light HUD over the cottage scene, in the dark chrome of the Atlas's
@@ -63,10 +63,14 @@ export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, 
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.topRow} pointerEvents="box-none">
         <View style={[styles.chrome, styles.identity]} accessible accessibilityRole="header">
-          <Text weight="bold" variant="compact" numberOfLines={1} style={styles.chromeInk}>
-            {name}
-          </Text>
-          <CrossfadeText value={t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
+          {/* The name and the form share a line, so the block stays two lines
+              tall next to the decorating button. */}
+          <View style={styles.nameRow}>
+            <Text weight="bold" variant="compact" numberOfLines={1} style={styles.chromeInk}>
+              {name}
+            </Text>
+            <CrossfadeText value={t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
+          </View>
           <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
         </View>
         <View style={styles.controls} pointerEvents="box-none">
@@ -96,6 +100,8 @@ export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, 
         <View style={[styles.chrome, styles.ledgerChip]}>
           <QuestIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
           <CrossfadeText value={t('mobile:elf.questsChip', { done: questsDone, total: QUESTS_TOTAL })} variant="small" weight="bold" style={styles.chromeInk} />
+          {/* The caret says the row opens something. */}
+          <NextIcon size={iconSize.xs} weight="bold" color={mapPalette.chromeIcon} />
           {rewardWaiting ? <View style={styles.rewardDot} /> : null}
         </View>
       </PressableScale>
@@ -261,8 +267,13 @@ const styles = StyleSheet.create({
   },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    gap: space.sm,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     gap: space.sm,
   },
   chrome: {
