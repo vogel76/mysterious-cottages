@@ -69,8 +69,9 @@ import { useReturnGreeting } from './useReturnGreeting'
 
    The decorating mode is a panel inside the tab, not a route: a route
    would unfocus the tab and pause the scene, and the point of the panel
-   is the live preview in the room. It rises in place of the action bar,
-   and the room is lifted behind it (the panel's
+   is the live preview in the room. It rises in place of the action band
+   while the HUD steps aside, so every slot's frame is in view, and the
+   room is lifted behind it (the panel's
    measured height goes to the scene as its bottom inset) so the elf and
    the low furniture slots stay in view and in reach; the mode puts the
    scene in edit mode (its slots become tap targets that pick the panel's
@@ -571,7 +572,14 @@ export function ElfTab() {
           in the middle of it are never covered; the bottom holds the action
           bar or the open panel alone. */}
       <View style={[styles.top, { top: insets.top + space.md }]} pointerEvents="box-none" onLayout={onTopLayout}>
-        <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} />
+        {/* While decorating the HUD steps aside: the whole room is there to
+            pick from, and no slot's frame hides under the name block. The
+            panel has the way out. */}
+        {panel === 'none' ? (
+          <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
+            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} />
+          </Animated.View>
+        ) : null}
         {panel === 'decor' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="none" style={styles.editHint} accessibilityLiveRegion="polite">
             <Text variant="small" align="center" style={styles.editHintInk}>
