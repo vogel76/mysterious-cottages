@@ -296,6 +296,12 @@ export const mobilePl = {
     /* The elf's first words to a new player, said once in its bubble */
     firstLine: 'Pogłaszcz mnie! Możesz też przeciągnąć do mnie żołądź z guzika.',
     firstLineEgg: 'Dotknij jajka, żeby je pokołysać. Ogrzewanie też się liczy!',
+    guideLedger: 'Zadania dnia i nagroda czekają w księdze pod paskami. Zajrzyj tam!',
+    guideCare: 'Karm mnie, baw się ze mną i kąp mnie. Każde ma dzienny limit, widać go w kropkach.',
+    guideFind: 'Gdy odkryjesz Chatynkę, dostanę za nią zadanie, a jej zdjęcie trafi w ramkę.',
+    /* The egg getting ready while another screen is in front */
+    eggReadyToast: 'Jajko w chatynce pęka! Dotknij je, żeby wykluć elfa.',
+    eggReadyAction: 'Zobacz',
     /* The hatch: a word from inside the cracking egg, and the hello */
     crackLine: 'Puk, puk! Jeszcze raz!',
     hatchHello: 'Cześć! Nareszcie na świecie!',

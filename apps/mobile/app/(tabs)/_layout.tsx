@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Tabs, type BottomTabBarProps, type BottomTabNavigationOptions } from 'expo-router/js-tabs'
-import { useRouter } from 'expo-router'
+import { useRouter, useSegments } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useCelebrationPresenter } from '../../src/features/atlas/useCelebrationPresenter'
-import { useBoot, useProgress } from '../../src/providers'
+import { useBoot, useElf, useProgress, useToast } from '../../src/providers'
 import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../../src/ui'
 
 /* The expedition loop as tabs around one raised action: the Atlas (the
@@ -25,6 +25,7 @@ export default function TabsLayout() {
   const { t } = useTranslation()
   const router = useRouter()
   const { unseenRewards } = useProgress()
+  const elfWaiting = useElfWaiting()
 
   const discover = useMemo<DiscoverAction>(
     () => ({
@@ -47,7 +48,7 @@ export default function TabsLayout() {
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.page } }}
       >
         <Tabs.Screen name="index" options={{ title: t('mobile:tabs.atlas'), tabBarIcon: tabIcon(TAB_ICONS.index.Glyph) }} />
-        <Tabs.Screen name="elf" options={{ title: t('mobile:tabs.elf'), tabBarIcon: tabIcon(TAB_ICONS.elf.Glyph) }} />
+        <Tabs.Screen name="elf" options={{ title: t('mobile:tabs.elf'), tabBarIcon: tabIcon(TAB_ICONS.elf.Glyph), tabBarBadge: badge(elfWaiting) }} />
         <Tabs.Screen
           name="kronika"
           options={{ title: t('mobile:tabs.kronika'), tabBarIcon: tabIcon(TAB_ICONS.kronika.Glyph), tabBarBadge: badge(unseenRewards.length) }}
@@ -89,4 +90,33 @@ function tabIcon(Glyph: Icon): BottomTabNavigationOptions['tabBarIcon'] {
 
 function badge(count: number) {
   return count > 0 ? count : undefined
+}
+
+/* What waits for the player in the cottage, as the Elf tab's badge: an
+   egg ready to hatch (or an elf still to be named) and the day's reward
+   still to pick. The egg getting ready while another screen is in front
+   (a cottage found in the field) is also told once, in a toast with the
+   way there, since nothing else says the hatch waits for a tap. */
+function useElfWaiting(): number {
+  const { t } = useTranslation()
+  const router = useRouter()
+  const toast = useToast()
+  const segments = useSegments()
+  const { state, hatchReady } = useElf()
+  const unnamed = Boolean(state && state.hatched && state.starter === null)
+  const rewardWaiting = Boolean(state && state.daily.rewardPicked === null)
+  const onElfTab = segments[1] === 'elf'
+  /* An egg already ready at launch has the badge; the toast is for the
+     moment it gets ready during a session, a cottage just found. */
+  const told = useRef(hatchReady)
+  useEffect(() => {
+    if (!hatchReady) {
+      told.current = false
+      return
+    }
+    if (told.current || onElfTab) return
+    told.current = true
+    toast.show({ tone: 'info', text: t('mobile:elf.eggReadyToast'), durationMs: 6000, action: { label: t('mobile:elf.eggReadyAction'), onPress: () => router.navigate('/elf') } })
+  }, [hatchReady, onElfTab, toast, t, router])
+  return (hatchReady || unnamed ? 1 : 0) + (rewardWaiting ? 1 : 0)
 }
