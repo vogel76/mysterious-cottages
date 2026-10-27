@@ -90,11 +90,11 @@ in `common.py` and `elf.py`'s `LOOK`; a change there changes every render.
 
 The figure's parts are not left as primitives sitting in one another:
 `fuse` in `elf.py` joins a group (the torso with its shoulders and
-sleeves; the head with the neck, the chin, the nose and the ears; the
-hair, a sphere shell cut to the hairstyle with sideburns and mounds of
-volume; a hand with its palm, fingers and thumb; a boot with its shaft
-and toe), applies their modifiers, remeshes the union on a voxel grid
-(0.0035 to 0.01 m) and smooths it, so a sleeve grows out of a shoulder.
+sleeves; the head with the neck, the nose and the ears; the hair, a
+sphere shell cut to the hairstyle with sideburns and mounds of volume; a
+mitten hand with its thumb; a boot with its shaft and toe), applies their
+modifiers, remeshes the union on a voxel grid (0.0045 to 0.01 m) and
+smooths it, so a sleeve grows out of a shoulder.
 A fused mesh binds with automatic weights plus a Corrective Smooth (the
 arm bones' weights are kept out of the torso column, or a raised arm
 narrows the waist); the hair rides the head rigidly with its crown

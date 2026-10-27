@@ -409,13 +409,13 @@ def build_model():
     # neck, the nose and the ears fused into one skin.
     head = sphere("Head", hc, F.head_r, "Body", mats["skin"], scale=HEAD_SCALE, segments=48, rings=32, subsurf=1)
     half = F.head_r * HEAD_SCALE[2]
-    # The jaw narrows towards the chin, which a small sphere pushes forward.
+    # The lower half tapers gently towards a rounded chin.
     for v in head.data.vertices:
         rel = v.co - hc
         if rel.z < 0:
             t = min(1.0, -rel.z / half)
-            v.co = hc + Vector((rel.x * (1.0 - 0.30 * t ** 1.5), rel.y * (1.0 - 0.2 * t ** 1.6), rel.z))
-    chin = sphere("Chin", hp(0, -0.15, -0.285), 0.055 * k, "Body", mats["skin"], scale=(1.2, 0.9, 0.75), subsurf=1)
+            taper = 1.0 - 0.26 * t ** 1.6
+            v.co = hc + Vector((rel.x * taper, rel.y * taper, rel.z))
     neck = tube("Neck", [(0, 0.01, F.shoulder_z - 0.08), (0, 0.01, F.shoulder_z + 0.10)], [0.08, 0.075], "Body",
                 mats["skin"], segments=24, subsurf=1)
     nose = tube("Nose", [hp(0, -0.34, 0.01), hp(0, -0.362, -0.035), hp(0, -0.368, -0.06)],
@@ -424,7 +424,7 @@ def build_model():
     for side, suffix in ((1, "L"), (-1, "R")):
         ears.append(tube(f"Ear.{suffix}", ear_points(side), [0.1 * k, 0.085 * k, 0.05 * k, 0.006], "Body",
                          mats["skin"], flatten=(1.0, 0.55), ref=(0, 1, 0), segments=20, subsurf=1))
-    objs["Head"] = fuse("Head", [head, chin, neck, nose] + ears, mats["skin"], voxel=0.008)
+    objs["Head"] = fuse("Head", [head, neck, nose] + ears, mats["skin"], voxel=0.008)
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
         ear_pts = ear_points(s)
@@ -481,20 +481,13 @@ def build_model():
         along = (hand - elbow).normalized()
         objs[f"Cuff.{suffix}"] = torus(f"Cuff.{suffix}", hand - along * 0.1, 0.048, 0.014, "Body",
                                        mats["tunic_dark"], axis=along, subsurf=1)
-        # Hands: a flat palm with four fingers hanging in a slight curl and a
-        # thumb on the inner side, fused into one; the back of the hand faces the camera.
-        palm = sphere(f"Hand.{suffix}", hand, 1.0, "Body", mats["skin"], scale=(0.042, 0.026, 0.05), subsurf=1)
-        parts = [palm]
-        for j, dx in enumerate((-0.028, -0.0095, 0.0095, 0.028)):
-            length = 1.0 if j in (1, 2) else 0.88
-            pts = [hand + Vector((dx, 0.0, -0.035)), hand + Vector((dx * 1.05, -0.012, -0.035 - 0.045 * length)),
-                   hand + Vector((dx * 1.1, -0.03, -0.035 - 0.07 * length))]
-            parts.append(tube(f"Finger{j}.{suffix}", pts, [0.0125, 0.0115, 0.009], "Body", mats["skin"],
-                              segments=10, samples=8, subsurf=1))
-        parts.append(tube(f"Thumb.{suffix}", [hand + Vector((-0.03 * s, -0.012, 0.012)), hand + Vector((-0.052 * s, -0.03, -0.015)),
-                                              hand + Vector((-0.06 * s, -0.042, -0.045))],
-                          [0.013, 0.012, 0.009], "Body", mats["skin"], segments=10, samples=8, subsurf=1))
-        objs[f"Hand.{suffix}"] = fuse(f"Hand.{suffix}", parts, mats["skin"], voxel=0.0035, smooth=2)
+        # Hands: a mitten, a flattened palm with a thumb on the inner side,
+        # fused into one (fingers do not read at sprite size).
+        palm = sphere(f"Hand.{suffix}", hand + Vector((0, 0, -0.01)), 1.0, "Body", mats["skin"],
+                      scale=(0.05, 0.034, 0.062), subsurf=1)
+        thumb = sphere(f"Thumb.{suffix}", hand + Vector((-0.042 * s, -0.02, 0.012)), 0.026, "Body", mats["skin"],
+                       scale=(1.0, 0.9, 1.3), segments=16, rings=8, subsurf=1)
+        objs[f"Hand.{suffix}"] = fuse(f"Hand.{suffix}", [palm, thumb], mats["skin"], voxel=0.0045, smooth=3)
         hip, knee, ankle = leg_points(s)
         objs[f"Leg.{suffix}"] = tube(f"Leg.{suffix}", [hip, knee, ankle], [0.08, 0.064, 0.056], "Body",
                                      mats["legging"], ref=(0, 1, 0), segments=20, subsurf=1)
