@@ -2,21 +2,25 @@
 Elf character for the Chatynkowo "Elf" tab, built entirely by script in Blender.
 
 Why: the app shows a Pou-style virtual pet rendered to 2D sprite frames. This
-script rebuilds the chibi forest elf from primitives (no saved .blend needed),
-gives it toon materials with an inverted-hull outline, a small armature with
-automatic weights, shape keys for squash/stretch and the face, a set of short
-24 fps animation clips stored as actions, and renders review material plus the
-sprite frame sequences with an orthographic front camera.
+script rebuilds the young forest elf from primitives (no saved .blend needed):
+an egg-shaped head with iris eyes under a swept fringe, long elven ears, a
+leaf-collared tunic, leggings and curled boots; painterly materials with a
+thin Line Art ink (see common.py); a small armature with automatic weights;
+shape keys for squash/stretch and the face; a set of short 24 fps animation
+clips stored as actions; and renders review material plus the sprite frame
+sequences with an orthographic front camera.
 
 Run:
-    /snap/bin/blender --background --python elf.py -- <out_dir> [--stages still,turntable,moods,hats,anims,allanims,hero] [--clips wave,feed] [--quick]
+    blender --background --python elf.py -- <out_dir> [--stages still,turntable,moods,hats,anims,allanims,hero,lookdev]
+        [--clips wave,feed] [--form young|baby] [--ramp 0.4] [--no-ink] [--hull] [--no-quality] [--quick]
+
+The look is set by LOOK below (the ramp of the painterly shading, the ink,
+the inverted hull) and overridden by the flags, which the lookdev stage
+uses to render its A/B columns.
 
 Conventions: the character faces -Y, Z is up, feet at z = 0, the camera sits
 on -Y and looks at +Y tilted down. Bone names use Blender's .L/.R suffixes
 with .L on +X (the character's own left).
-
-The render helpers at the top mirror the contract of common.py (the shared
-pipeline module); once that module exists, swap them for a single import.
 """
 
 import json
@@ -24,12 +28,22 @@ import math
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 
 import bmesh
 import bpy
 from mathutils import Matrix, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import common as _common  # noqa: E402
+
+setup_scene = _common.setup_scene
+add_light_rig = _common.add_light_rig
+add_ortho_camera = _common.add_ortho_camera
+render_still = _common.render_still
+render_frames = _common.render_frames
+
 FPS = 24
 
 # ---------------------------------------------------------------------------
@@ -37,244 +51,61 @@ FPS = 24
 # ---------------------------------------------------------------------------
 
 PALETTE = {
-    "skin": "#f1d2b0",
-    "cheek": "#e8a090",
-    "eye": "#2b2118",
-    "tunic": "#4e8a54",
-    "tunic_dark": "#3c6b42",
+    "skin": "#f3d7ba",
+    "cheek": "#e8a49a",
+    "eye_white": "#fbf5e8",
+    "iris": "#4f8a45",
+    "pupil": "#201812",
+    "tunic": "#5a8f4e",
+    "tunic_dark": "#3f6b3a",
+    "leaf": "#8dbd62",
     "trim": "#c79a4b",
+    "belt": "#4a2f1a",
+    "legging": "#5a4632",
     "boot": "#3a2616",
     "sole": "#2a1a10",
-    "hair": "#6b3a1e",
+    "hair": "#a1562a",
+    "hair_dark": "#7a3f1e",
     "acorn": "#8a5a2b",
     "acorn_dark": "#5a3b22",
     "mushroom": "#c0392b",
     "cream": "#f3e4c0",
     "ear_inner": "#e9a69a",
-    "sick_skin": "#b9c98f",
     "white": "#ffffff",
 }
 
-
-def hex_to_rgb(value):
-    """Convert '#rrggbb' (sRGB) to linear RGB floats as Blender expects."""
-    value = value.lstrip("#")
-    srgb = [int(value[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
-    return tuple((c / 12.92) if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb)
+# The look: the painterly ramp (0 plain Principled, 1 pure bands), the Line
+# Art ink, the inverted-hull outline and Eevee's quality options (ray
+# tracing, Fast GI, shadow jitter). The flags override these per run.
+LOOK = {"ramp": 0.4, "ink": True, "hull": False, "grain": 0.06, "ink_radius": 0.0045, "quality": True}
 
 
-# ---------------------------------------------------------------------------
-# Pipeline helpers (same API as common.py)
-# ---------------------------------------------------------------------------
-
-def setup_scene(width, height, engine="BLENDER_EEVEE", samples=32, transparent=True):
-    """Reset to an empty scene with sprite-friendly render and colour settings."""
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    scene = bpy.context.scene
-    scene.render.engine = engine
-    scene.render.resolution_x = width
-    scene.render.resolution_y = height
-    scene.render.resolution_percentage = 100
-    scene.render.fps = FPS
-    scene.render.film_transparent = transparent
-    scene.render.image_settings.file_format = "PNG"
-    scene.render.image_settings.color_mode = "RGBA"
-    scene.render.image_settings.color_depth = "8"
-    scene.render.image_settings.compression = 50
-    scene.view_settings.view_transform = "Standard"
-    scene.view_settings.look = "None"
-    scene.view_settings.exposure = 0.0
-    scene.view_settings.gamma = 1.0
-    scene.display_settings.display_device = "sRGB"
-    scene.eevee.taa_render_samples = samples
-    scene.eevee.use_shadows = True
-    scene.eevee.shadow_ray_count = 2
-    scene.eevee.shadow_step_count = 4
-    scene.cycles.samples = samples
-    scene.cycles.use_denoising = True
-    scene.cycles.device = "CPU"
-    world = bpy.data.worlds.new("World")
-    world.use_nodes = True
-    background = world.node_tree.nodes["Background"]
-    background.inputs["Color"].default_value = (0.32, 0.36, 0.45, 1.0)
-    background.inputs["Strength"].default_value = 0.18
-    scene.world = world
-    return scene
-
-
-def add_light_rig(target=(0, 0, 0.8), key_strength=300.0, fill_strength=120.0, top_strength=70.0):
-    """Warm key upper right (fireplace side), cool fill left (moonlight), soft top."""
-    target = Vector(target)
-    specs = {
-        "Key": ((2.6, -2.6, 3.4), "#ffb66b", key_strength, 1.8),
-        "Fill": ((-3.4, -2.2, 1.6), "#9fc4ff", fill_strength, 3.0),
-        "Top": ((0.3, -0.8, 5.0), "#fff4e6", top_strength, 3.5),
-    }
-    lights = {}
-    for name, (position, color, energy, size) in specs.items():
-        data = bpy.data.lights.new(name, "AREA")
-        data.energy = energy
-        data.color = hex_to_rgb(color)
-        data.size = size
-        data.shape = "DISK"
-        data.use_shadow = True
-        data.shadow_soft_size = size * 0.6
-        obj = bpy.data.objects.new(name, data)
-        obj.location = position
-        direction = target - Vector(position)
-        obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
-        bpy.context.scene.collection.objects.link(obj)
-        lights[name] = obj
-    lights["Fill"].data.use_shadow = False
-    return lights
-
-
-def add_ortho_camera(center, ortho_scale, distance=10.0, tilt_deg=8.0, aspect=None):
-    """Orthographic camera on -Y looking towards +Y, tilted down by tilt_deg."""
-    data = bpy.data.cameras.new("Camera")
-    data.type = "ORTHO"
-    data.ortho_scale = ortho_scale
-    data.clip_start = 0.1
-    data.clip_end = distance * 3
-    cam = bpy.data.objects.new("Camera", data)
-    tilt = math.radians(tilt_deg)
-    cam.location = (center[0], center[1] - distance * math.cos(tilt), center[2] + distance * math.sin(tilt))
-    cam.rotation_euler = (math.pi / 2 - tilt, 0.0, 0.0)
-    bpy.context.scene.collection.objects.link(cam)
-    bpy.context.scene.camera = cam
-    return cam
-
-
-def render_still(scene, path):
-    """Render the current frame to one PNG."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    scene.render.filepath = path
-    bpy.ops.render.render(write_still=True)
-    return path
-
-
-def render_frames(scene, out_dir, name, frame_start, frame_end):
-    """Render frame_start..frame_end (inclusive) to out_dir/name_####.png."""
-    paths = []
-    for frame in range(frame_start, frame_end + 1):
-        scene.frame_set(frame)
-        paths.append(render_still(scene, os.path.join(out_dir, f"{name}_{frame:04d}.png")))
-    return paths
-
-
-def toon_material(name, base_color, roughness=0.6, subsurface=0.0, emission=None, emission_strength=1.0):
-    """Soft matte Principled material; emission is an optional '#rrggbb' glow colour."""
-    mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
-    rgb = hex_to_rgb(base_color) if isinstance(base_color, str) else base_color
-    bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
-    bsdf.inputs["Roughness"].default_value = roughness
-    bsdf.inputs["Specular IOR Level"].default_value = 0.18
-    if subsurface > 0:
-        bsdf.inputs["Subsurface Weight"].default_value = subsurface
-        bsdf.inputs["Subsurface Radius"].default_value = (1.0, 0.4, 0.25)
-        bsdf.inputs["Subsurface Scale"].default_value = 0.08
-    if emission:
-        bsdf.inputs["Emission Color"].default_value = (*hex_to_rgb(emission), 1.0)
-        bsdf.inputs["Emission Strength"].default_value = emission_strength
-    mat.diffuse_color = (*rgb, 1.0)
-    return mat
-
-
-def outline_material():
-    """Pure black emission for the inverted hull; back faces are made transparent in
-    the node tree so the hull works in Cycles too (backface culling is Eevee only)."""
-    if "Outline" in bpy.data.materials:
-        return bpy.data.materials["Outline"]
-    mat = bpy.data.materials.new("Outline")
-    mat.use_nodes = True
-    tree = mat.node_tree
-    for node in list(tree.nodes):
-        tree.nodes.remove(node)
-    emission = tree.nodes.new("ShaderNodeEmission")
-    emission.inputs["Color"].default_value = (0.0, 0.0, 0.0, 1.0)
-    emission.inputs["Strength"].default_value = 1.0
-    transparent = tree.nodes.new("ShaderNodeBsdfTransparent")
-    geometry = tree.nodes.new("ShaderNodeNewGeometry")
-    light_path = tree.nodes.new("ShaderNodeLightPath")
-    mix = tree.nodes.new("ShaderNodeMixShader")
-    output = tree.nodes.new("ShaderNodeOutputMaterial")
-    # Black only for camera rays hitting a front face; shadow and bounce rays pass through,
-    # otherwise the hull would shade the whole figure from inside in Cycles.
-    front = tree.nodes.new("ShaderNodeMath")
-    front.operation = "SUBTRACT"
-    front.inputs[0].default_value = 1.0
-    tree.links.new(geometry.outputs["Backfacing"], front.inputs[1])
-    camera_front = tree.nodes.new("ShaderNodeMath")
-    camera_front.operation = "MULTIPLY"
-    tree.links.new(light_path.outputs["Is Camera Ray"], camera_front.inputs[0])
-    tree.links.new(front.outputs["Value"], camera_front.inputs[1])
-    fac = tree.nodes.new("ShaderNodeMath")
-    fac.operation = "SUBTRACT"
-    fac.inputs[0].default_value = 1.0
-    tree.links.new(camera_front.outputs["Value"], fac.inputs[1])
-    tree.links.new(fac.outputs["Value"], mix.inputs["Fac"])
-    tree.links.new(emission.outputs["Emission"], mix.inputs[1])
-    tree.links.new(transparent.outputs["BSDF"], mix.inputs[2])
-    tree.links.new(mix.outputs["Shader"], output.inputs["Surface"])
-    mat.use_backface_culling = True
-    mat.use_backface_culling_shadow = True
-    mat.diffuse_color = (0, 0, 0, 1)
-    return mat
-
-
-def outline_modifier(obj, thickness=0.01):
-    """Inverted-hull outline: a flipped Solidify shell with the black material."""
-    obj.data.materials.append(outline_material())
-    mod = obj.modifiers.new("Outline", "SOLIDIFY")
-    mod.thickness = thickness
-    mod.offset = 1.0
-    mod.use_flip_normals = True
-    mod.use_rim = False
-    mod.material_offset = len(obj.data.materials) - 1
-    mod.use_quality_normals = True
-    return mod
-
-
-# When the shared pipeline module is present, its scene, light rig, camera,
-# materials and render calls replace the local copies above so the elf and the
-# room share one look. The outline material stays local: the shared one relies
-# on backface culling, which Cycles ignores, and the hero still uses Cycles.
-try:
-    sys.path.insert(0, HERE)
-    import common as _common
-    setup_scene = _common.setup_scene
-    add_light_rig = _common.add_light_rig
-    add_ortho_camera = _common.add_ortho_camera
-    toon_material = _common.toon_material
-    render_still = _common.render_still
-    render_frames = _common.render_frames
-    USING_COMMON = True
-except ImportError:
-    USING_COMMON = False
+def material(name, color, roughness=0.6, subsurface=0.0, emission=None, emission_strength=1.0, grain=None):
+    """A palette material in the current look."""
+    return _common.painterly_material(name, PALETTE[color], ramp=LOOK["ramp"], roughness=roughness,
+                                      subsurface=subsurface, emission=emission, emission_strength=emission_strength,
+                                      grain=LOOK["grain"] if grain is None else grain)
 
 
 # ---------------------------------------------------------------------------
-# Mesh building blocks
+# Mesh helpers
 # ---------------------------------------------------------------------------
 
 COLLECTIONS = {}
 
 
 def collection(path):
-    """Get or create a nested collection by 'Parent/Child' path."""
+    """Nested collections by 'A/B' path, created on demand."""
     if path in COLLECTIONS:
         return COLLECTIONS[path]
-    parts = path.split("/")
-    parent = bpy.context.scene.collection if len(parts) == 1 else collection("/".join(parts[:-1]))
-    coll = bpy.data.collections.new(parts[-1])
+    parent = bpy.context.scene.collection if "/" not in path else collection(path.rsplit("/", 1)[0])
+    coll = bpy.data.collections.new(path.rsplit("/", 1)[-1])
     parent.children.link(coll)
     COLLECTIONS[path] = coll
     return coll
 
 
-def finish_mesh(name, bm, coll, material, smooth=True, subsurf=1, outline=0.0):
+def finish_mesh(name, bm, coll, mat, smooth=True, subsurf=1, outline=0.0):
     """Turn a bmesh into an object in a collection with material and modifiers."""
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
@@ -283,14 +114,14 @@ def finish_mesh(name, bm, coll, material, smooth=True, subsurf=1, outline=0.0):
         mesh.shade_smooth()
     obj = bpy.data.objects.new(name, mesh)
     collection(coll).objects.link(obj)
-    if material is not None:
-        mesh.materials.append(material)
+    if mat is not None:
+        mesh.materials.append(mat)
     if subsurf:
         mod = obj.modifiers.new("Subdivision", "SUBSURF")
         mod.levels = subsurf
         mod.render_levels = subsurf
-    if outline:
-        outline_modifier(obj, outline)
+    if outline and LOOK["hull"]:
+        _common.outline_modifier(obj, outline)
     return obj
 
 
@@ -302,7 +133,7 @@ def transform_bmesh(bm, center=(0, 0, 0), scale=(1, 1, 1), rotation=None):
         v.co = rot @ p + Vector(center)
 
 
-def sphere(name, center, radius, coll, material, scale=(1, 1, 1), segments=32, rings=16,
+def sphere(name, center, radius, coll, mat, scale=(1, 1, 1), segments=32, rings=16,
            subsurf=1, outline=0.0, keep=None, rotation=None):
     """UV sphere; 'keep' is a predicate on the local (unscaled) offset to cut caps."""
     bm = bmesh.new()
@@ -311,7 +142,7 @@ def sphere(name, center, radius, coll, material, scale=(1, 1, 1), segments=32, r
         doomed = [f for f in bm.faces if not keep(f.calc_center_median())]
         bmesh.ops.delete(bm, geom=doomed, context="FACES")
     transform_bmesh(bm, center, scale, rotation)
-    return finish_mesh(name, bm, coll, material, subsurf=subsurf, outline=outline)
+    return finish_mesh(name, bm, coll, mat, subsurf=subsurf, outline=outline)
 
 
 def catmull_rom(points, samples):
@@ -330,12 +161,10 @@ def catmull_rom(points, samples):
     return out
 
 
-def tube(name, points, radii, coll, material, segments=16, samples=12, flatten=(1.0, 1.0),
+def tube(name, points, radii, coll, mat, segments=16, samples=12, flatten=(1.0, 1.0),
          ref=(0, 1, 0), subsurf=1, outline=0.0, cap_start=True, cap_end=True):
     """A capsule-like tube along a spline with a radius profile and oval section."""
     path = catmull_rom(points, samples)
-    prof = [Vector((0, 0, 0)) for _ in path]
-    # Interpolate the radius profile along the sampled path.
     rs = []
     for i in range(len(path)):
         t = i / (len(path) - 1) * (len(radii) - 1)
@@ -364,10 +193,10 @@ def tube(name, points, radii, coll, material, segments=16, samples=12, flatten=(
     if cap_end:
         bm.faces.new(rings[-1])
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    return finish_mesh(name, bm, coll, material, subsurf=subsurf, outline=outline)
+    return finish_mesh(name, bm, coll, mat, subsurf=subsurf, outline=outline)
 
 
-def torus(name, center, major, minor, coll, material, axis=(0, 0, 1), seg_major=48, seg_minor=12,
+def torus(name, center, major, minor, coll, mat, axis=(0, 0, 1), seg_major=48, seg_minor=12,
           subsurf=1, outline=0.0, arc=(0.0, 2 * math.pi)):
     """Torus with elliptical major radii (rx, ry) lying in the plane normal to axis."""
     rx, ry = major if isinstance(major, (tuple, list)) else (major, major)
@@ -393,15 +222,24 @@ def torus(name, center, major, minor, coll, material, axis=(0, 0, 1), seg_major=
         for j in range(seg_minor):
             bm.faces.new((a[j], b[j], b[(j + 1) % seg_minor], a[(j + 1) % seg_minor]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    return finish_mesh(name, bm, coll, material, subsurf=subsurf, outline=outline)
+    return finish_mesh(name, bm, coll, mat, subsurf=subsurf, outline=outline)
 
 
-def rounded_box(name, center, size, coll, material, subsurf=2, outline=0.0, rotation=None):
+def rounded_box(name, center, size, coll, mat, subsurf=2, outline=0.0, rotation=None):
     """A cube with Subdivision Surface, which rounds it into a soft pillow shape."""
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
     transform_bmesh(bm, center, size, rotation)
-    return finish_mesh(name, bm, coll, material, subsurf=subsurf, outline=outline)
+    return finish_mesh(name, bm, coll, mat, subsurf=subsurf, outline=outline)
+
+
+def leaf(name, base, direction, length, width, coll, mat, thickness=0.18):
+    """A flat leaf: an ellipsoid pointing along `direction` from `base`."""
+    d = Vector(direction).normalized()
+    rot = d.to_track_quat("Z", "Y").to_matrix()
+    return sphere(name, Vector(base) + d * length * 0.5, 1.0, coll, mat,
+                  scale=(width * 0.5, width * thickness, length * 0.5), segments=20, rings=10, subsurf=1,
+                  rotation=rot)
 
 
 def add_shape_key(obj, name, func):
@@ -415,214 +253,317 @@ def add_shape_key(obj, name, func):
     return key
 
 
+def mirror(p):
+    return (-p[0], p[1], p[2])
+
+
 # ---------------------------------------------------------------------------
-# The elf: dimensions (feet at z = 0, total height about 1.7 with the hood)
+# The forms: the proportions of the figure, feet at z = 0
 # ---------------------------------------------------------------------------
 
-HEAD_C = Vector((0.0, 0.0, 1.25))
-HEAD_R = 0.40
-HEAD_SCALE = (1.0, 0.97, 0.93)
-BODY_C = Vector((0.0, 0.0, 0.62))
-BODY_SCALE = (0.30, 0.27, 0.32)
-EYE_X, EYE_Y, EYE_Z = 0.15, -0.335, 1.26
-HOOD_R = 0.435
-HOOD_C = Vector((0.0, 0.03, 1.27))
+@dataclass(frozen=True)
+class Form:
+    """One form's proportions in metres; every mesh and bone derives from them.
+
+    The head keeps its features in proportion to head_r, the torso runs
+    from shoulder_z to hem_z, the legs from hip_z over knee_z to the feet,
+    ear and arm scale their lengths."""
+    head_c: float
+    head_r: float
+    shoulder_z: float
+    hem_z: float
+    chest_r: float
+    hem_r: float
+    hip_z: float
+    knee_z: float
+    ear: float
+    arm: float
+
+
+FORMS = {
+    # The young elf: about three heads tall, the form of the first months.
+    "young": Form(head_c=1.27, head_r=0.36, shoulder_z=0.95, hem_z=0.43, chest_r=0.20, hem_r=0.30,
+                  hip_z=0.47, knee_z=0.28, ear=1.0, arm=1.0),
+    # The hatchling: a bigger head on a shorter body, shorter ears and arms.
+    "baby": Form(head_c=1.08, head_r=0.37, shoulder_z=0.77, hem_z=0.35, chest_r=0.21, hem_r=0.29,
+                 hip_z=0.40, knee_z=0.24, ear=0.78, arm=0.8),
+}
+
+F = FORMS["young"]
+HEAD_SCALE = (1.0, 0.95, 1.08)
+# The face sits on the -Y side of the head, tilted a little down.
 FACE_AXIS = Vector((0.0, -1.0, -0.12)).normalized()
-FACE_HOLE_DEG = 64.0
 OUTLINE = 0.011
 
 
-def mirror(p):
-    return (-p[0], p[1], p[2])
+def set_form(name):
+    """Select the form every builder reads; call before build_model."""
+    global F, BONES
+    F = FORMS[name]
+    BONES = bones_for(F)
+
+
+def head_c():
+    return Vector((0.0, 0.0, F.head_c))
+
+
+def hp(x, y, z):
+    """A point on the head, given relative to a 0.36 m head and scaled to this form's."""
+    k = F.head_r / 0.36
+    return head_c() + Vector((x * k, y * k, z * k))
+
+
+def arm_points(s):
+    """Shoulder, elbow, hand centre of one arm (s = +1 left, -1 right)."""
+    shoulder = Vector((0.19 * s, -0.01, F.shoulder_z - 0.07))
+    elbow = shoulder + Vector((0.13 * s, -0.04, -0.20)) * F.arm
+    hand = elbow + Vector((0.06 * s, -0.08, -0.16)) * F.arm
+    return shoulder, elbow, hand
+
+
+def leg_points(s):
+    hip = Vector((0.12 * s, 0.0, F.hip_z))
+    knee = Vector((0.12 * s, -0.005, F.knee_z))
+    ankle = Vector((0.125 * s, -0.01, 0.12))
+    return hip, knee, ankle
+
+
+def ear_points(s):
+    base = hp(0.31 * s, 0.02, 0.01)
+    reach = Vector((0.30 * s, -0.04, 0.30)) * F.ear
+    return [base, base + reach * 0.37, base + reach * 0.72, base + reach]
+
+
+EYE_C = (0.145, -0.296, 0.0)
 
 
 def build_model():
     """Build every mesh of the elf and return a dict of the objects by name."""
     mats = {
-        "skin": toon_material("Skin", PALETTE["skin"], roughness=0.65, subsurface=0.06),
-        "cheek": toon_material("Cheek", PALETTE["cheek"], roughness=0.7),
-        "eye": toon_material("Eye", PALETTE["eye"], roughness=0.25),
-        "highlight": toon_material("Highlight", PALETTE["white"], roughness=0.4, emission=PALETTE["white"],
-                                    emission_strength=0.6),
-        "tunic": toon_material("Tunic", PALETTE["tunic"], roughness=0.75),
-        "tunic_dark": toon_material("TunicDark", PALETTE["tunic_dark"], roughness=0.75),
-        "trim": toon_material("Trim", PALETTE["trim"], roughness=0.5),
-        "boot": toon_material("Boot", PALETTE["boot"], roughness=0.6),
-        "sole": toon_material("Sole", PALETTE["sole"], roughness=0.8),
-        "hair": toon_material("Hair", PALETTE["hair"], roughness=0.6),
-        "acorn": toon_material("Acorn", PALETTE["acorn"], roughness=0.55),
-        "acorn_dark": toon_material("AcornDark", PALETTE["acorn_dark"], roughness=0.6),
-        "mushroom": toon_material("Mushroom", PALETTE["mushroom"], roughness=0.5),
-        "cream": toon_material("Cream", PALETTE["cream"], roughness=0.7),
-        "ear_inner": toon_material("EarInner", PALETTE["ear_inner"], roughness=0.7),
+        "skin": material("Skin", "skin", roughness=0.65, subsurface=0.06, grain=0.0),
+        "cheek": material("Cheek", "cheek", roughness=0.7, grain=0.0),
+        "eye_white": material("EyeWhite", "eye_white", roughness=0.3, grain=0.0),
+        "iris": material("Iris", "iris", roughness=0.3, grain=0.0),
+        "pupil": material("Pupil", "pupil", roughness=0.25, grain=0.0),
+        "highlight": material("Highlight", "white", roughness=0.4, emission=PALETTE["white"],
+                              emission_strength=0.6, grain=0.0),
+        "tunic": material("Tunic", "tunic", roughness=0.8),
+        "tunic_dark": material("TunicDark", "tunic_dark", roughness=0.8),
+        "leaf": material("Leaf", "leaf", roughness=0.6, grain=0.0),
+        "trim": material("Trim", "trim", roughness=0.5),
+        "belt": material("Belt", "belt", roughness=0.6),
+        "legging": material("Legging", "legging", roughness=0.85),
+        "boot": material("Boot", "boot", roughness=0.6),
+        "sole": material("Sole", "sole", roughness=0.8),
+        "hair": material("Hair", "hair", roughness=0.55, grain=0.0),
+        "hair_dark": material("HairDark", "hair_dark", roughness=0.55, grain=0.0),
+        "acorn": material("Acorn", "acorn", roughness=0.55),
+        "acorn_dark": material("AcornDark", "acorn_dark", roughness=0.6),
+        "mushroom": material("Mushroom", "mushroom", roughness=0.5),
+        "cream": material("Cream", "cream", roughness=0.7),
+        "ear_inner": material("EarInner", "ear_inner", roughness=0.7, grain=0.0),
     }
     objs = {}
+    hc = head_c()
+    k = F.head_r / 0.36
 
-    # --- Body -------------------------------------------------------------
-    objs["Head"] = sphere("Head", HEAD_C, HEAD_R, "Body", mats["skin"], scale=HEAD_SCALE,
-                          segments=40, rings=24, subsurf=1, outline=OUTLINE)
-    objs["Body"] = sphere("Body", BODY_C, 1.0, "Body", mats["tunic"], scale=BODY_SCALE,
-                          segments=32, rings=20, subsurf=1, outline=OUTLINE)
-    # Skirt hem of the tunic: a flattened torus at the bottom so the body reads as clothing.
-    objs["Hem"] = torus("Hem", (0, 0, 0.36), (0.235, 0.21), 0.035, "Body", mats["tunic_dark"],
-                        subsurf=1, outline=OUTLINE)
-    objs["Belt"] = torus("Belt", (0, 0, 0.50), (0.282, 0.253), 0.03, "Body", mats["boot"],
-                         subsurf=1, outline=0.0)
-    objs["Buckle"] = rounded_box("Buckle", (0, -0.268, 0.50), (0.09, 0.03, 0.08), "Body", mats["trim"], subsurf=2)
+    # --- Head: an egg, fuller above the eyes and tapering to the chin ------
+    head = sphere("Head", hc, F.head_r, "Body", mats["skin"], scale=HEAD_SCALE, segments=40, rings=24,
+                  subsurf=1, outline=OUTLINE)
+    half = F.head_r * HEAD_SCALE[2]
+    for v in head.data.vertices:
+        rel = v.co - hc
+        if rel.z < 0:
+            t = min(1.0, -rel.z / half)
+            taper = 1.0 - 0.24 * t ** 1.6
+            v.co = hc + Vector((rel.x * taper, rel.y * taper, rel.z))
+    objs["Head"] = head
+    objs["Neck"] = tube("Neck", [(0, 0.01, F.shoulder_z - 0.06), (0, 0.01, F.shoulder_z + 0.06)], [0.085, 0.08],
+                        "Body", mats["skin"], subsurf=1)
+
+    # --- Torso: an A-line tunic, belted, with a dark hem band and leaf collar
+    body = tube("Body", [(0, 0.0, F.shoulder_z), (0, 0.0, (F.shoulder_z + F.hem_z) / 2), (0, 0.0, F.hem_z)],
+                [F.chest_r, F.chest_r * 1.12, F.hem_r], "Body", mats["tunic"], segments=24, samples=10,
+                flatten=(1.0, 0.82), subsurf=1, outline=OUTLINE)
+    objs["Body"] = body
+    def girth(z):
+        """The tunic's half-widths (x, y) at height z, read off its mesh."""
+        ring = [v.co for v in body.data.vertices if abs(v.co.z - z) < 0.03]
+        return max(abs(v.x) for v in ring), max(abs(v.y) for v in ring)
+
+    hem_x, hem_y = girth(F.hem_z)
+    objs["Hem"] = torus("Hem", (0, 0, F.hem_z + 0.01), (hem_x - 0.012, hem_y - 0.012), 0.024, "Body",
+                        mats["tunic_dark"], subsurf=1, outline=OUTLINE)
+    belt_z = F.hem_z + (F.shoulder_z - F.hem_z) * 0.27
+    belt_x, belt_y = girth(belt_z)
+    objs["Belt"] = torus("Belt", (0, 0, belt_z), (belt_x - 0.008, belt_y - 0.008), 0.022, "Body",
+                         mats["belt"], subsurf=1, outline=0.0)
+    objs["Buckle"] = rounded_box("Buckle", (0, -(belt_y + 0.012), belt_z), (0.09, 0.03, 0.08), "Body",
+                                 mats["acorn"], subsurf=2)
+    objs["BucklePin"] = rounded_box("BucklePin", (0, -(belt_y + 0.03), belt_z), (0.014, 0.014, 0.05),
+                                    "Body", mats["acorn_dark"], subsurf=2)
+    for i in range(7):
+        a = math.radians(-120 + 40 * i)
+        base = Vector((math.sin(a) * F.chest_r * 0.72, -math.cos(a) * F.chest_r * 0.62, F.shoulder_z - 0.005))
+        direction = Vector((math.sin(a), -math.cos(a) * 0.8, -0.55))
+        objs[f"Collar{i}"] = leaf(f"Collar{i}", base, direction, 0.17, 0.085, "Body", mats["leaf"])
+
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
-        objs[f"Arm.{suffix}"] = tube(f"Arm.{suffix}",
-                                     [(0.22 * s, -0.02, 0.80), (0.36 * s, -0.08, 0.66), (0.42 * s, -0.17, 0.54)],
-                                     [0.07, 0.065, 0.058], "Body", mats["tunic"], ref=(0, 1, 0),
-                                     subsurf=1, outline=OUTLINE)
-        objs[f"Hand.{suffix}"] = sphere(f"Hand.{suffix}", (0.44 * s, -0.22, 0.47), 0.085, "Body", mats["skin"],
-                                        scale=(1.0, 0.85, 1.1), subsurf=1, outline=OUTLINE)
-        objs[f"Leg.{suffix}"] = tube(f"Leg.{suffix}",
-                                     [(0.125 * s, 0.0, 0.42), (0.125 * s, -0.01, 0.26), (0.125 * s, -0.01, 0.11)],
-                                     [0.075, 0.07, 0.07], "Body", mats["tunic_dark"], ref=(0, 1, 0),
-                                     subsurf=1, outline=OUTLINE)
-        objs[f"Boot.{suffix}"] = sphere(f"Boot.{suffix}", (0.13 * s, -0.045, 0.095), 1.0, "Body", mats["boot"],
-                                        scale=(0.125, 0.17, 0.095), subsurf=1, outline=OUTLINE)
-        objs[f"Sole.{suffix}"] = sphere(f"Sole.{suffix}", (0.13 * s, -0.045, 0.03), 1.0, "Body", mats["sole"],
-                                        scale=(0.13, 0.176, 0.035), subsurf=1, outline=0.0)
-        # Ears: flattened cones from the side of the head, pointing out and up, drooping outward.
-        base = Vector((0.355 * s, 0.03, 1.28))
-        ear_pts = [base, base + Vector((0.13 * s, -0.01, 0.075)), base + Vector((0.26 * s, -0.03, 0.13)),
-                   base + Vector((0.37 * s, -0.06, 0.15))]
-        objs[f"Ear.{suffix}"] = tube(f"Ear.{suffix}", ear_pts, [0.095, 0.08, 0.05, 0.004], "Body", mats["skin"],
-                                     flatten=(1.0, 0.5), ref=(0, 1, 0), subsurf=1, outline=OUTLINE)
-        inner_pts = [p + Vector((0, -0.036, 0)) for p in ear_pts[0:4]]
-        inner_pts[0] = inner_pts[0] + Vector((0.05 * s, 0, 0))
-        objs[f"EarInner.{suffix}"] = tube(f"EarInner.{suffix}", inner_pts, [0.055, 0.045, 0.028, 0.003], "Body",
-                                          mats["ear_inner"], flatten=(1.0, 0.45), ref=(0, 1, 0), subsurf=1)
+        shoulder, elbow, hand = arm_points(s)
+        objs[f"Arm.{suffix}"] = tube(f"Arm.{suffix}", [shoulder, elbow, hand - (hand - elbow) * 0.25],
+                                     [0.068, 0.06, 0.055], "Body", mats["tunic"], ref=(0, 1, 0), subsurf=1,
+                                     outline=OUTLINE)
+        objs[f"Cuff.{suffix}"] = torus(f"Cuff.{suffix}", hand - (hand - elbow) * 0.22, 0.058, 0.018, "Body",
+                                       mats["tunic_dark"], axis=(hand - elbow), subsurf=1)
+        objs[f"Hand.{suffix}"] = sphere(f"Hand.{suffix}", hand, 0.072, "Body", mats["skin"],
+                                        scale=(1.0, 0.8, 1.15), subsurf=1, outline=OUTLINE)
+        objs[f"Thumb.{suffix}"] = sphere(f"Thumb.{suffix}", hand + Vector((-0.045 * s, -0.035, 0.03)), 0.032,
+                                         "Body", mats["skin"], scale=(1.0, 0.9, 1.2), segments=16, rings=8,
+                                         subsurf=1)
+        hip, knee, ankle = leg_points(s)
+        objs[f"Leg.{suffix}"] = tube(f"Leg.{suffix}", [hip, knee, ankle], [0.078, 0.068, 0.062], "Body",
+                                     mats["legging"], ref=(0, 1, 0), subsurf=1, outline=OUTLINE)
+        objs[f"Boot.{suffix}"] = sphere(f"Boot.{suffix}", (0.125 * s, -0.05, 0.085), 1.0, "Body", mats["boot"],
+                                        scale=(0.105, 0.16, 0.085), subsurf=1, outline=OUTLINE)
+        objs[f"BootCuff.{suffix}"] = torus(f"BootCuff.{suffix}", (0.125 * s, -0.02, 0.165), (0.078, 0.085), 0.02,
+                                           "Body", mats["sole"], subsurf=1)
+        objs[f"BootToe.{suffix}"] = tube(f"BootToe.{suffix}",
+                                         [(0.125 * s, -0.16, 0.06), (0.125 * s, -0.24, 0.07), (0.125 * s, -0.275, 0.13)],
+                                         [0.06, 0.04, 0.012], "Body", mats["boot"], ref=(1, 0, 0), subsurf=1,
+                                         outline=OUTLINE)
+        objs[f"Sole.{suffix}"] = sphere(f"Sole.{suffix}", (0.125 * s, -0.06, 0.028), 1.0, "Body", mats["sole"],
+                                        scale=(0.11, 0.18, 0.03), subsurf=1, outline=0.0)
+        # Ears: long, thick, pointing out and up, with a shaded inner side.
+        ear_pts = ear_points(s)
+        objs[f"Ear.{suffix}"] = tube(f"Ear.{suffix}", ear_pts, [0.1 * k, 0.085 * k, 0.05 * k, 0.004], "Body",
+                                     mats["skin"], flatten=(1.0, 0.55), ref=(0, 1, 0), subsurf=1, outline=OUTLINE)
+        inner_pts = [p + Vector((0, -0.038 * k, 0)) for p in ear_pts]
+        inner_pts[0] = inner_pts[0] + Vector((0.05 * k * s, 0, 0))
+        objs[f"EarInner.{suffix}"] = tube(f"EarInner.{suffix}", inner_pts, [0.058 * k, 0.048 * k, 0.028 * k, 0.003],
+                                          "Body", mats["ear_inner"], flatten=(1.0, 0.45), ref=(0, 1, 0), subsurf=1)
 
-    # --- Face -------------------------------------------------------------
+    # --- Face --------------------------------------------------------------
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
-        c = Vector((EYE_X * s, EYE_Y, EYE_Z))
-        objs[f"Eye.{suffix}"] = sphere(f"Eye.{suffix}", c, 0.085, "Face", mats["eye"], scale=(1.0, 0.6, 1.2),
-                                       subsurf=1)
-        objs[f"Highlight.{suffix}"] = sphere(f"Highlight.{suffix}", c + Vector((0.028, -0.046, 0.045)), 0.027,
+        c = hp(EYE_C[0] * s, EYE_C[1], EYE_C[2])
+        tilt = Matrix.Rotation(math.radians(-9 * s), 3, "Y")
+        objs[f"EyeWhite.{suffix}"] = sphere(f"EyeWhite.{suffix}", c, 0.085 * k, "Face", mats["eye_white"],
+                                            scale=(1.0, 0.55, 1.18), subsurf=1, rotation=tilt)
+        objs[f"Iris.{suffix}"] = sphere(f"Iris.{suffix}", c + Vector((0.004 * s, -0.040, -0.004)) * k, 0.054 * k,
+                                        "Face", mats["iris"], scale=(1.0, 0.4, 1.1), subsurf=1)
+        objs[f"Pupil.{suffix}"] = sphere(f"Pupil.{suffix}", c + Vector((0.004 * s, -0.056, -0.004)) * k, 0.03 * k,
+                                         "Face", mats["pupil"], scale=(1.0, 0.4, 1.15), subsurf=1)
+        objs[f"Highlight.{suffix}"] = sphere(f"Highlight.{suffix}", c + Vector((0.026, -0.072, 0.034)) * k, 0.024 * k,
                                              "Face", mats["highlight"], scale=(1.0, 0.5, 1.0), segments=16,
                                              rings=8, subsurf=0)
-        objs[f"HighlightSmall.{suffix}"] = sphere(f"HighlightSmall.{suffix}", c + Vector((-0.03, -0.044, -0.05)),
-                                                  0.013, "Face", mats["highlight"], scale=(1.0, 0.5, 1.0),
+        objs[f"HighlightSmall.{suffix}"] = sphere(f"HighlightSmall.{suffix}", c + Vector((-0.024, -0.07, -0.034)) * k,
+                                                  0.012 * k, "Face", mats["highlight"], scale=(1.0, 0.5, 1.0),
                                                   segments=12, rings=6, subsurf=0)
         # Eyelid: the back hemisphere of a slightly larger sphere; a bone rotates it over the eye.
-        objs[f"Eyelid.{suffix}"] = sphere(f"Eyelid.{suffix}", c, 0.097, "Face", mats["skin"],
-                                          scale=(1.0, 0.66, 1.25), subsurf=1, keep=lambda p: p.y > -0.005)
+        objs[f"Eyelid.{suffix}"] = sphere(f"Eyelid.{suffix}", c, 0.091 * k, "Face", mats["skin"],
+                                          scale=(1.0, 0.6, 1.2), subsurf=1, keep=lambda p: p.y > -0.005,
+                                          rotation=tilt)
         # Lash line for the closed eye: rides on the eyelid bone, hidden inside the head at rest.
-        objs[f"Lash.{suffix}"] = tube(f"Lash.{suffix}", [c + Vector((-0.062, 0.058, 0.03)), c + Vector((0, 0.066, -0.002)),
-                                                          c + Vector((0.062, 0.058, 0.03))],
-                                      [0.009, 0.012, 0.009], "Face", mats["eye"], ref=(0, 1, 0), segments=8,
-                                      samples=8, subsurf=1)
-        objs[f"Cheek.{suffix}"] = sphere(f"Cheek.{suffix}", (0.25 * s, -0.272, 1.14), 0.065, "Face", mats["cheek"],
-                                         scale=(1.0, 0.4, 0.75), subsurf=1)
-        brow = tube(f"Brow.{suffix}", [(0.07 * s, -0.378, 1.365), (0.15 * s, -0.355, 1.392), (0.235 * s, -0.318, 1.372)],
-                    [0.012, 0.015, 0.009], "Face", mats["hair"], ref=(0, 1, 0), segments=8, samples=8, subsurf=1)
-        add_shape_key(brow, "sad", lambda p, s=s: Vector((p.x, p.y, p.z + 0.035 * (1 - abs(p.x) / 0.235) - 0.015)))
+        objs[f"Lash.{suffix}"] = tube(f"Lash.{suffix}", [c + Vector((-0.064, 0.058, 0.03)) * k, c + Vector((0, 0.066, -0.002)) * k,
+                                                          c + Vector((0.064, 0.058, 0.03)) * k],
+                                      [0.009 * k, 0.012 * k, 0.009 * k], "Face", mats["pupil"], ref=(0, 1, 0),
+                                      segments=8, samples=8, subsurf=1)
+        objs[f"Cheek.{suffix}"] = sphere(f"Cheek.{suffix}", hp(0.225 * s, -0.245, -0.09), 0.06 * k, "Face",
+                                         mats["cheek"], scale=(1.0, 0.4, 0.7), subsurf=1)
+        brow = tube(f"Brow.{suffix}", [hp(0.06 * s, -0.345, 0.125), hp(0.15 * s, -0.33, 0.152), hp(0.235 * s, -0.292, 0.128)],
+                    [0.010 * k, 0.014 * k, 0.007 * k], "Face", mats["hair_dark"], ref=(0, 1, 0), segments=8,
+                    samples=8, subsurf=1)
+        add_shape_key(brow, "sad", lambda p, s=s: Vector((p.x, p.y, p.z + 0.035 * k * (1 - abs(p.x) / (0.235 * k)) - 0.015 * k)))
         objs[f"Brow.{suffix}"] = brow
-    objs["Nose"] = sphere("Nose", (0, -0.392, 1.195), 0.022, "Face", mats["skin"], scale=(1.0, 0.8, 0.85),
+    objs["Nose"] = sphere("Nose", hp(0, -0.345, -0.05), 0.02 * k, "Face", mats["skin"], scale=(1.0, 0.8, 0.85),
                           segments=16, rings=8, subsurf=0)
-    mouth = sphere("Mouth", (0, 0, 0), 1.0, "Face", mats["eye"], scale=(0.064, 0.014, 0.018), segments=24,
-                   rings=12, subsurf=1)
+    mc = hp(0, -0.318, -0.13)
+    mouth = sphere("Mouth", (0, 0, 0), 1.0, "Face", mats["pupil"], scale=(0.064 * k, 0.014 * k, 0.018 * k),
+                   segments=24, rings=12, subsurf=1)
     # Rest shape: a thin gentle smile line sitting on the face surface.
     for v in mouth.data.vertices:
-        t = v.co.x / 0.058
-        v.co.z += 0.012 * (t * t - 0.5)
-        v.co += Vector((0, -0.372, 1.105))
-    mc = Vector((0, -0.372, 1.105))
-    add_shape_key(mouth, "open", lambda p: mc + Vector(((p.x - mc.x) * 0.85, (p.y - mc.y) * 1.2 + 0.012,
-                                                        (p.z - mc.z) * 3.4 - 0.018)))
+        t = v.co.x / (0.058 * k)
+        v.co.z += 0.012 * k * (t * t - 0.5)
+        v.co += mc
+    add_shape_key(mouth, "open", lambda p: mc + Vector(((p.x - mc.x) * 0.85, (p.y - mc.y) * 1.2 + 0.012 * k,
+                                                        (p.z - mc.z) * 3.4 - 0.018 * k)))
     add_shape_key(mouth, "smile", lambda p: mc + Vector(((p.x - mc.x) * 1.25, p.y - mc.y,
-                                                         (p.z - mc.z) + 0.03 * (((p.x - mc.x) / 0.058) ** 2 - 0.5))))
+                                                         (p.z - mc.z) + 0.03 * k * (((p.x - mc.x) / (0.058 * k)) ** 2 - 0.5))))
     add_shape_key(mouth, "frown", lambda p: mc + Vector(((p.x - mc.x) * 0.8, p.y - mc.y,
-                                                         (p.z - mc.z) - 0.032 * (((p.x - mc.x) / 0.058) ** 2 - 0.5))))
+                                                         (p.z - mc.z) - 0.032 * k * (((p.x - mc.x) / (0.058 * k)) ** 2 - 0.5))))
     objs["Mouth"] = mouth
-    # Sick face: crossed sticks over each eye, hidden unless the mood asks for them.
-    for side, suffix in ((1, "L"), (-1, "R")):
-        c = Vector((EYE_X * side, EYE_Y - 0.075, EYE_Z))
-        for k, angle in enumerate((45, -45)):
-            rot = Matrix.Rotation(math.radians(angle), 3, "Y")
-            objs[f"CrossEye{k}.{suffix}"] = rounded_box(f"CrossEye{k}.{suffix}", c, (0.19, 0.022, 0.042),
-                                                        "Face/Sick", mats["eye"], subsurf=1, rotation=rot)
-    collection("Face/Sick").hide_render = True
 
-    # --- Hats -------------------------------------------------------------
-    cos_hole = math.cos(math.radians(FACE_HOLE_DEG))
-
-    def hood_keep(p):
-        d = p.normalized()
-        below_chin = p.z < -0.16 and p.y < 0.02 - 0.8 * (-0.16 - p.z)
-        return d.dot(FACE_AXIS) < cos_hole and p.z > -0.36 and not below_chin
-
-    hood = sphere("Hood", HOOD_C, HOOD_R, "Hat/Hood", mats["tunic"], segments=48, rings=28, subsurf=1,
-                  keep=hood_keep)
-    # Drape the lower part of the hood down onto the shoulders like a short cape.
-    for v in hood.data.vertices:
-        rel = v.co - HOOD_C
-        if rel.z < -0.05:
-            t = min(1.0, (-0.05 - rel.z) / 0.32)
-            t = t * t * (3 - 2 * t)
-            v.co = HOOD_C + Vector((rel.x * (1 + 0.07 * t), rel.y * (1 + 0.07 * t), rel.z - 0.09 * t))
-    shell = hood.modifiers.new("Shell", "SOLIDIFY")
-    shell.thickness = 0.03
-    shell.offset = 1.0
-    shell.use_rim = True
-    outline_modifier(hood, OUTLINE)
-    objs["Hood"] = hood
-    rim_center = HOOD_C + FACE_AXIS * HOOD_R * cos_hole
-    # The trim is an arch over the face (an arc of torus); the hood is open under the chin.
-    objs["HoodTrim"] = torus("HoodTrim", rim_center, HOOD_R * math.sin(math.radians(FACE_HOLE_DEG)) + 0.012, 0.034,
-                             "Hat/Hood", mats["trim"], axis=FACE_AXIS, subsurf=1, outline=OUTLINE,
-                             arc=(math.radians(150), math.radians(390)))
-    # The tip droops to the character's left so the pompom is visible from the front.
-    tip_pts = [(0.0, 0.10, 1.64), (0.14, 0.22, 1.84), (0.38, 0.30, 1.80), (0.54, 0.30, 1.62)]
-    objs["HoodTip"] = tube("HoodTip", tip_pts, [0.19, 0.13, 0.07, 0.035], "Hat/Hood", mats["tunic"], ref=(0, 1, 0),
-                           samples=14, subsurf=1, outline=OUTLINE, cap_start=True)
-    objs["Pompom"] = sphere("Pompom", (0.57, 0.30, 1.54), 0.095, "Hat/Hood", mats["trim"], subsurf=1,
-                            outline=OUTLINE)
-
-    hair = sphere("Hair", HEAD_C + Vector((0, 0.005, 0.01)), HEAD_R + 0.025, "Hat/Hair", mats["hair"],
-                  scale=HEAD_SCALE, segments=40, rings=24, subsurf=1, outline=OUTLINE,
-                  keep=lambda p: p.z > 0.09 or (p.y > 0.05 and p.z > -0.12))
-    # A few bangs: short tubes hanging over the forehead.
-    for i, x in enumerate((-0.2, -0.07, 0.08, 0.2)):
-        objs[f"Bang{i}"] = tube(f"Bang{i}", [(x, -0.30, 1.52), (x * 1.1, -0.36, 1.45), (x * 1.15, -0.37, 1.40)],
-                                [0.05, 0.035, 0.004], "Hat/Hair", mats["hair"], flatten=(1.0, 0.6), ref=(0, 1, 0),
-                                samples=6, subsurf=1, outline=OUTLINE)
+    # --- Hair: a cap over the skull, a fringe swept to the character's left,
+    # locks in front of the ears and a tuft at the crown (on the tuft bone).
+    hair = sphere("Hair", hc + Vector((0, 0.012, 0.015)), F.head_r + 0.028, "Hair", mats["hair"], scale=HEAD_SCALE,
+                  segments=40, rings=24, subsurf=1, outline=OUTLINE,
+                  keep=lambda p: p.z > 0.17 or (p.y > 0.04 and p.z > -0.20) or (abs(p.x) > 0.27 and p.y > -0.12 and p.z > -0.02))
     objs["Hair"] = hair
-    acorn = sphere("AcornCap", HEAD_C + Vector((0, 0.02, 0.19)), HEAD_R + 0.06, "Hat/Acorn", mats["acorn"],
+    fringe = [(-0.26, -0.20, -0.09, 0.04, 0.062), (-0.12, -0.02, 0.06, 0.01, 0.07), (0.02, 0.14, 0.24, 0.0, 0.072),
+              (0.14, 0.26, 0.33, -0.02, 0.06), (-0.30, -0.33, -0.31, 0.02, 0.045)]
+    for i, (x0, x1, x2, dz, r) in enumerate(fringe):
+        pts = [hp(x0, -0.21, 0.37), hp(x1, -0.325, 0.29), hp(x2, -0.345, 0.195 + dz)]
+        objs[f"Fringe{i}"] = tube(f"Fringe{i}", pts, [r * k, r * k * 0.72, 0.004], "Hair", mats["hair"],
+                                  flatten=(1.0, 0.55), ref=(0, 1, 0), samples=8, subsurf=1, outline=OUTLINE)
+    for side, suffix in ((1, "L"), (-1, "R")):
+        s = side
+        pts = [hp(0.30 * s, -0.12, 0.20), hp(0.36 * s, -0.17, 0.02), hp(0.37 * s, -0.19, -0.16)]
+        objs[f"Lock.{suffix}"] = tube(f"Lock.{suffix}", pts, [0.07 * k, 0.05 * k, 0.004], "Hair", mats["hair"],
+                                      flatten=(0.7, 1.0), ref=(0, 1, 0), samples=8, subsurf=1, outline=OUTLINE)
+    tuft = [hp(0.0, 0.10, 0.36), hp(0.05, 0.16, 0.52), hp(0.15, 0.19, 0.60)]
+    objs["Tuft"] = tube("Tuft", tuft, [0.09 * k, 0.06 * k, 0.004], "Hair", mats["hair"], ref=(0, 1, 0), samples=8,
+                        subsurf=1, outline=OUTLINE)
+    tuft2 = [hp(-0.06, 0.08, 0.36), hp(-0.12, 0.12, 0.49), hp(-0.20, 0.13, 0.52)]
+    objs["Tuft2"] = tube("Tuft2", tuft2, [0.07 * k, 0.045 * k, 0.004], "Hair", mats["hair"], ref=(0, 1, 0), samples=8,
+                         subsurf=1, outline=OUTLINE)
+    # A leaf tucked into the hair above the right ear: the forest elf's mark.
+    objs["HairLeaf"] = leaf("HairLeaf", hp(-0.27, -0.14, 0.22), (-0.55, -0.45, 0.7), 0.19, 0.085, "Hair", mats["leaf"])
+    objs["HairLeafStem"] = tube("HairLeafStem", [hp(-0.24, -0.11, 0.17), hp(-0.30, -0.16, 0.25)], [0.008, 0.006],
+                                "Hair", mats["tunic_dark"], segments=8, samples=4, subsurf=0)
+
+    # --- Hats (cosmetics, rendered as their own layers later) --------------
+    acorn = sphere("AcornCap", hc + Vector((0, 0.02, 0.17)), F.head_r + 0.07, "Hat/Acorn", mats["acorn"],
                    scale=(1.0, 1.0, 0.78), segments=40, rings=20, subsurf=1, outline=OUTLINE,
                    keep=lambda p: p.z > -0.02)
     objs["AcornCap"] = acorn
-    objs["AcornRim"] = torus("AcornRim", HEAD_C + Vector((0, 0.02, 0.175)), HEAD_R + 0.06, 0.03, "Hat/Acorn",
+    objs["AcornRim"] = torus("AcornRim", hc + Vector((0, 0.02, 0.155)), F.head_r + 0.07, 0.03, "Hat/Acorn",
                              mats["acorn_dark"], subsurf=1, outline=OUTLINE)
-    objs["AcornStalk"] = tube("AcornStalk", [(0, 0.02, 1.76), (0.04, 0.03, 1.90), (0.11, 0.05, 1.98)],
+    objs["AcornStalk"] = tube("AcornStalk", [hc + Vector((0, 0.02, 0.50)), hc + Vector((0.04, 0.03, 0.64)),
+                                             hc + Vector((0.11, 0.05, 0.72))],
                               [0.045, 0.035, 0.03], "Hat/Acorn", mats["acorn_dark"], ref=(0, 1, 0), samples=8,
                               subsurf=1, outline=OUTLINE)
-    mush = sphere("MushroomCap", HEAD_C + Vector((0, 0.03, 0.17)), HEAD_R + 0.17, "Hat/Mushroom", mats["mushroom"],
+    mush = sphere("MushroomCap", hc + Vector((0, 0.03, 0.15)), F.head_r + 0.18, "Hat/Mushroom", mats["mushroom"],
                   scale=(1.0, 1.0, 0.62), segments=48, rings=24, subsurf=1, outline=OUTLINE,
                   keep=lambda p: p.z > -0.04)
     objs["MushroomCap"] = mush
-    objs["MushroomRim"] = torus("MushroomRim", HEAD_C + Vector((0, 0.03, 0.155)), HEAD_R + 0.165, 0.035,
+    objs["MushroomRim"] = torus("MushroomRim", hc + Vector((0, 0.03, 0.135)), F.head_r + 0.175, 0.035,
                                 "Hat/Mushroom", mats["cream"], subsurf=1, outline=OUTLINE)
     for i, (az, el, size) in enumerate(((-100, 50, 0.085), (-45, 70, 0.065), (20, 55, 0.075), (-150, 35, 0.06),
                                         (110, 45, 0.07), (-70, 25, 0.05), (60, 20, 0.055), (170, 65, 0.06))):
         d = Vector((math.cos(math.radians(el)) * math.sin(math.radians(az)),
                     -math.cos(math.radians(el)) * math.cos(math.radians(az)), math.sin(math.radians(el))))
-        center = HEAD_C + Vector((0, 0.03, 0.17)) + Vector((d.x * (HEAD_R + 0.17), d.y * (HEAD_R + 0.17),
-                                                             d.z * (HEAD_R + 0.17) * 0.62))
+        r = F.head_r + 0.18
+        center = hc + Vector((0, 0.03, 0.15)) + Vector((d.x * r, d.y * r, d.z * r * 0.62))
         rot = d.to_track_quat("Z", "Y").to_matrix()
         objs[f"Dot{i}"] = sphere(f"Dot{i}", center, size, "Hat/Mushroom", mats["cream"], scale=(1.0, 1.0, 0.3),
                                  segments=16, rings=8, subsurf=1, rotation=rot)
-    for path in ("Hat/Hair", "Hat/Acorn", "Hat/Mushroom"):
+    for path in ("Hat/Acorn", "Hat/Mushroom"):
         collection(path).hide_render = True
 
-    # Body shape keys: squash and stretch about the feet.
-    body = objs["Body"]
-    add_shape_key(body, "squash", lambda p: Vector((p.x * 1.15, p.y * 1.15, 0.30 + (p.z - 0.30) * 0.82)))
-    add_shape_key(body, "stretch", lambda p: Vector((p.x * 0.9, p.y * 0.9, 0.30 + (p.z - 0.30) * 1.18)))
+    # Body shape keys: squash and stretch about the hem.
+    pivot = F.hem_z - 0.1
+    add_shape_key(body, "squash", lambda p: Vector((p.x * 1.15, p.y * 1.15, pivot + (p.z - pivot) * 0.82)))
+    add_shape_key(body, "stretch", lambda p: Vector((p.x * 0.9, p.y * 0.9, pivot + (p.z - pivot) * 1.18)))
+
+    # The ink skips the parts that are painted on, and the eyelids hide
+    # without drawing (the lash line draws the closed eye).
+    for name, obj in objs.items():
+        base = name.partition(".")[0]
+        if base in ("Highlight", "HighlightSmall", "Cheek", "Iris", "Pupil", "Nose") or base.startswith("Dot"):
+            obj.lineart.usage = "EXCLUDE"
+        elif base == "Eyelid":
+            obj.lineart.usage = "OCCLUSION_ONLY"
     return objs, mats
 
 
@@ -630,27 +571,41 @@ def build_model():
 # Armature and binding
 # ---------------------------------------------------------------------------
 
-BONES = [
-    # name, head, tail, parent, deform
-    ("root", (0, 0, 0), (0, 0, 0.25), None, False),
-    ("hips", (0, 0, 0.42), (0, 0, 0.55), "root", True),
-    ("spine", (0, 0, 0.55), (0, 0, 0.70), "hips", True),
-    ("chest", (0, 0, 0.70), (0, 0, 0.88), "spine", True),
-    ("neck", (0, 0, 0.88), (0, 0, 0.96), "chest", True),
-    ("head", (0, 0, 0.96), (0, 0, 1.62), "neck", True),
-    ("hood_tip", (0.02, 0.14, 1.70), (0.52, 0.30, 1.64), "head", True),
-]
-for _side, _sfx in ((1, "L"), (-1, "R")):
-    BONES += [
-        (f"ear.{_sfx}", (0.355 * _side, 0.03, 1.28), (0.72 * _side, -0.03, 1.43), "head", True),
-        (f"eyelid.{_sfx}", (EYE_X * _side, EYE_Y, EYE_Z), (EYE_X * _side + 0.1, EYE_Y, EYE_Z), "head", True),
-        (f"upper_arm.{_sfx}", (0.22 * _side, -0.02, 0.80), (0.36 * _side, -0.08, 0.66), "chest", True),
-        (f"forearm.{_sfx}", (0.36 * _side, -0.08, 0.66), (0.42 * _side, -0.17, 0.54), f"upper_arm.{_sfx}", True),
-        (f"hand.{_sfx}", (0.42 * _side, -0.17, 0.54), (0.46 * _side, -0.25, 0.42), f"forearm.{_sfx}", True),
-        (f"thigh.{_sfx}", (0.125 * _side, 0, 0.44), (0.125 * _side, -0.005, 0.26), "hips", True),
-        (f"shin.{_sfx}", (0.125 * _side, -0.005, 0.26), (0.125 * _side, -0.01, 0.11), f"thigh.{_sfx}", True),
-        (f"foot.{_sfx}", (0.125 * _side, -0.01, 0.11), (0.13 * _side, -0.20, 0.05), f"shin.{_sfx}", True),
+def bones_for(form):
+    """The bone table (name, head, tail, parent, deform) for a form."""
+    global F
+    previous, F = F, form
+    hc = head_c()
+    crown = F.head_c + F.head_r * HEAD_SCALE[2]
+    bones = [
+        ("root", (0, 0, 0), (0, 0, 0.25), None, False),
+        ("hips", (0, 0, F.hem_z), (0, 0, F.hem_z + 0.13), "root", True),
+        ("spine", (0, 0, F.hem_z + 0.13), (0, 0, F.hem_z + 0.28), "hips", True),
+        ("chest", (0, 0, F.hem_z + 0.28), (0, 0, F.shoulder_z - 0.05), "spine", True),
+        ("neck", (0, 0, F.shoulder_z - 0.05), (0, 0, F.shoulder_z + 0.03), "chest", True),
+        ("head", (0, 0, F.shoulder_z + 0.03), (0, 0, crown), "neck", True),
+        ("hood_tip", tuple(hp(0.0, 0.10, 0.36)), tuple(hp(0.15, 0.19, 0.60)), "head", True),
     ]
+    for s, sfx in ((1, "L"), (-1, "R")):
+        ear = ear_points(s)
+        eye = hp(EYE_C[0] * s, EYE_C[1], EYE_C[2])
+        shoulder, elbow, hand = arm_points(s)
+        hip, knee, ankle = leg_points(s)
+        bones += [
+            (f"ear.{sfx}", tuple(ear[0]), tuple(ear[3]), "head", True),
+            (f"eyelid.{sfx}", tuple(eye), tuple(eye + Vector((0.1, 0, 0))), "head", True),
+            (f"upper_arm.{sfx}", tuple(shoulder), tuple(elbow), "chest", True),
+            (f"forearm.{sfx}", tuple(elbow), tuple(hand), f"upper_arm.{sfx}", True),
+            (f"hand.{sfx}", tuple(hand), tuple(hand + Vector((0.04 * s, -0.08, -0.12))), f"forearm.{sfx}", True),
+            (f"thigh.{sfx}", tuple(hip), tuple(knee), "hips", True),
+            (f"shin.{sfx}", tuple(knee), tuple(ankle), f"thigh.{sfx}", True),
+            (f"foot.{sfx}", tuple(ankle), (0.13 * s, -0.22, 0.05), f"shin.{sfx}", True),
+        ]
+    F = previous
+    return bones
+
+
+BONES = bones_for(F)
 NO_INHERIT_SCALE = {"neck", "upper_arm.L", "upper_arm.R", "ear.L", "ear.R", "hood_tip", "eyelid.L", "eyelid.R"}
 
 
@@ -709,10 +664,10 @@ def _armature_modifier_first(obj):
             return
 
 
+# Parts that ride one bone; everything on the head not listed here rides "head".
 RIGID_BINDS = {
-    "Head": "head", "Nose": "head", "Mouth": "head", "Hem": "hips", "Belt": "hips", "Buckle": "hips",
-    "Pompom": "hood_tip", "Hair": "head", "AcornCap": "head", "AcornRim": "head", "AcornStalk": "head",
-    "MushroomCap": "head", "MushroomRim": "head",
+    "Hem": "hips", "Belt": "hips", "Buckle": "hips", "BucklePin": "hips", "Neck": "neck",
+    "Tuft": "hood_tip", "Tuft2": "hood_tip",
 }
 
 
@@ -721,13 +676,13 @@ def bind_all(arm, objs):
         base, _, side = name.partition(".")
         if name in RIGID_BINDS:
             bind_rigid(arm, obj, RIGID_BINDS[name])
-        elif base in ("Eye", "Highlight", "HighlightSmall", "Cheek", "Brow", "CrossEye0", "CrossEye1") or base.startswith("Bang") or base.startswith("Dot"):
-            bind_rigid(arm, obj, "head")
+        elif base.startswith("Collar"):
+            bind_rigid(arm, obj, "chest")
         elif base in ("Eyelid", "Lash"):
             bind_rigid(arm, obj, f"eyelid.{side}")
-        elif base == "Hand":
+        elif base in ("Hand", "Thumb", "Cuff"):
             bind_rigid(arm, obj, f"hand.{side}")
-        elif base in ("Boot", "Sole"):
+        elif base in ("Boot", "BootCuff", "BootToe", "Sole"):
             bind_rigid(arm, obj, f"foot.{side}")
         elif base == "Body":
             bind_auto(arm, obj, ["hips", "spine", "chest"])
@@ -737,10 +692,6 @@ def bind_all(arm, objs):
             bind_auto(arm, obj, [f"thigh.{side}", f"shin.{side}"])
         elif base in ("Ear", "EarInner"):
             bind_auto(arm, obj, [f"ear.{side}", "head"])
-        elif base in ("Hood", "HoodTrim"):
-            bind_auto(arm, obj, ["head", "hood_tip"])
-        elif base == "HoodTip":
-            bind_auto(arm, obj, ["hood_tip", "head"])
         else:
             bind_rigid(arm, obj, "head")
 
@@ -849,7 +800,7 @@ class Rig:
             self.bone(f"ear.{side}", frame, rot=[((0, 1, 0), -up_deg * s), ((0, 0, 1), swing_deg * s)])
 
     def raise_arm(self, side, frame, raise_deg, fore_deg=0.0, forward_deg=0.0):
-        """Swing the upper arm up sideways by raise_deg (the rest arm hangs 48 degrees below
+        """Swing the upper arm up sideways by raise_deg (the rest arm hangs about 55 degrees below
         horizontal), bend the forearm, then tilt the raised arm towards the camera."""
         s = 1 if side == "L" else -1
         self.bone(f"upper_arm.{side}", frame, rot=[((0, 1, 0), -raise_deg * s), ((1, 0, 0), forward_deg)])
@@ -865,8 +816,9 @@ class Rig:
 
 
 def build_clips(rig):
-    """Author every clip. Frame 1 is the first frame; clips loop back to frame 1."""
-    # idle: 48 frames, breath, bob, lagging ears and hood tip, blink at 30.
+    """Author every clip. Frame 1 is the first frame; clips loop back to frame 1.
+    The hood_tip bone now carries the hair tuft at the crown."""
+    # idle: 48 frames, breath, bob, lagging ears and tuft, blink at 30.
     rig.begin("idle", 48)
     for f in range(1, 50, 4):
         ph = 2 * math.pi * (f - 1) / 48
@@ -1036,21 +988,20 @@ def build_clips(rig):
 # ---------------------------------------------------------------------------
 
 # The frame and the camera: 300 pixels to the metre, the feet (the world
-# origin) FEET_MARGIN_PX above the bottom edge, headroom above the hood's
-# tip (about 2.0 m with its outline) for the hops of the happy clip, which
-# lift the figure by 0.19 m and stretch it on the way up, and room at the
-# sides for the lean of the pet clip. The packer trims the frame to the
-# figure, so the margins cost render time only; check.py refuses a frame
-# the figure touches the edge of.
+# origin) FEET_MARGIN_PX above the bottom edge, headroom above the crown
+# (about 1.9 m with the tuft) for the hops of the happy clip, which lift
+# the figure by 0.19 m and stretch it on the way up, and room at the sides
+# for the lean of the pet clip. The packer trims the frame to the figure,
+# so the margins cost render time only; check.py refuses a frame the
+# figure touches the edge of.
 PX_PER_M = 300
 FRAME_W, FRAME_H = 640, 832
 FEET_MARGIN_PX = 30
 ORTHO_SCALE = FRAME_H / PX_PER_M
 CAMERA_CENTER = (0.0, 0.0, (FRAME_H / 2 - FEET_MARGIN_PX) / PX_PER_M)
 # Watts that put the lit front of the figure at the palette colours (the skin
-# #f1d2b0 is bright and clips first). The shared rig keeps its lights farther
-# away than the local one, hence the two sets.
-LIGHT_WATTS = {"key": 540.0, "fill": 190.0, "top": 130.0} if USING_COMMON else {"key": 300.0, "fill": 120.0, "top": 70.0}
+# is bright and clips first).
+LIGHT_WATTS = {"key": 540.0, "fill": 190.0, "top": 130.0}
 
 
 def contact_sheet(out_path, columns, scale, items):
@@ -1060,12 +1011,10 @@ def contact_sheet(out_path, columns, scale, items):
 
 
 def set_hat(name):
-    for hat in ("Hood", "Hair", "Acorn", "Mushroom"):
+    """Show one hat collection ('none' for bare hair)."""
+    for hat in ("Acorn", "Mushroom"):
         collection(f"Hat/{hat}").hide_render = True
-    if name == "hood":
-        collection("Hat/Hood").hide_render = False
-    else:
-        collection("Hat/Hair").hide_render = False
+    if name != "none":
         collection(f"Hat/{name.capitalize()}").hide_render = False
 
 
@@ -1089,37 +1038,38 @@ def stage_turntable(scene, rig, out):
     contact_sheet(os.path.join(out, "turntable.png"), 4, 0.5, items)
 
 
-def stage_moods(scene, rig, objs, mats, out):
+MOOD_POSES = (("ok", "idle", 1), ("happy", "happy", 5), ("sad", "sad", 24), ("sleep", "sleep", 25))
+
+
+def stage_moods(scene, rig, out):
     items = []
-    for mood, clip, frame in (("ok", "idle", 1), ("happy", "happy", 5), ("sad", "sad", 24), ("sleep", "sleep", 25)):
+    for mood, clip, frame in MOOD_POSES:
         pose(rig, clip, frame)
         items.append((mood, render_still(scene, os.path.join(out, "moods", f"{mood}.png"))))
-    # sick: crossed eyes, greenish skin.
-    pose(rig, "sad", 24)
-    skin = mats["skin"].node_tree.nodes["Principled BSDF"].inputs["Base Color"]
-    original = tuple(skin.default_value)
-    skin.default_value = (*hex_to_rgb(PALETTE["sick_skin"]), 1.0)
-    collection("Face/Sick").hide_render = False
-    for name in ("Eye", "Highlight", "HighlightSmall", "Eyelid"):
-        for side in ("L", "R"):
-            objs[f"{name}.{side}"].hide_render = True
-    items.insert(3, ("sick", render_still(scene, os.path.join(out, "moods", "sick.png"))))
-    for name in ("Eye", "Highlight", "HighlightSmall", "Eyelid"):
-        for side in ("L", "R"):
-            objs[f"{name}.{side}"].hide_render = False
-    collection("Face/Sick").hide_render = True
-    skin.default_value = original
-    contact_sheet(os.path.join(out, "moods.png"), 5, 0.5, items)
+    contact_sheet(os.path.join(out, "moods.png"), 4, 0.5, items)
 
 
 def stage_hats(scene, rig, out):
     pose(rig, "idle", 1)
     items = []
-    for hat in ("hood", "acorn", "mushroom"):
+    for hat in ("none", "acorn", "mushroom"):
         set_hat(hat)
         items.append((hat, render_still(scene, os.path.join(out, "hats", f"{hat}.png"))))
-    set_hat("hood")
+    set_hat("none")
     contact_sheet(os.path.join(out, "hats.png"), 3, 0.5, items)
+
+
+def stage_lookdev(scene, rig, out):
+    """The look-dev stills: the wave pose and the four moods in the current
+    look, into <out>/lookdev/<look>/, where <look> names the flags (the
+    A/B sheet is composed from several runs with different flags)."""
+    name = f"ramp{LOOK['ramp']:.2f}" + ("-ink" if LOOK["ink"] else "") + ("-hull" if LOOK["hull"] else "")
+    folder = os.path.join(out, "lookdev", name)
+    pose(rig, "wave", 11)
+    render_still(scene, os.path.join(folder, "wave.png"))
+    for mood, clip, frame in MOOD_POSES:
+        pose(rig, clip, frame)
+        render_still(scene, os.path.join(folder, f"{mood}.png"))
 
 
 def stage_anims(scene, rig, out, clips):
@@ -1135,15 +1085,12 @@ def stage_anims(scene, rig, out, clips):
         contact_sheet(os.path.join(out, f"{clip}_sheet.png"), 8, 0.4, items)
 
 
-def stage_hero(scene, rig, out, cycles=True):
+def stage_hero(scene, rig, out):
+    """A double-size still of the wave pose (Eevee: the painterly ramp reads
+    the light through Shader to RGB, which Cycles cannot)."""
     pose(rig, "wave", 11)
     scene.render.resolution_x, scene.render.resolution_y = FRAME_W * 2, FRAME_H * 2
-    if cycles:
-        scene.render.engine = "CYCLES"
-        scene.cycles.samples = 64
-        scene.cycles.use_denoising = True
     render_still(scene, os.path.join(out, "hero.png"))
-    scene.render.engine = "BLENDER_EEVEE"
     scene.render.resolution_x, scene.render.resolution_y = FRAME_W, FRAME_H
 
 
@@ -1183,6 +1130,19 @@ def report_dimensions(objs):
     return lo, hi
 
 
+def read_flags(argv):
+    """The look and form flags into LOOK and the selected form."""
+    if "--ramp" in argv:
+        LOOK["ramp"] = float(argv[argv.index("--ramp") + 1])
+    if "--no-ink" in argv:
+        LOOK["ink"] = False
+    if "--hull" in argv:
+        LOOK["hull"] = True
+    if "--no-quality" in argv:
+        LOOK["quality"] = False
+    set_form(argv[argv.index("--form") + 1] if "--form" in argv else "young")
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     out = argv[0] if argv else os.path.join(os.path.expanduser("~"), "elf-renders")
@@ -1191,6 +1151,7 @@ def main():
     if "--stages" in argv:
         stages = argv[argv.index("--stages") + 1].split(",")
     os.makedirs(out, exist_ok=True)
+    read_flags(argv)
 
     scene = setup_scene(FRAME_W, FRAME_H, samples=16 if quick else 32)
     objs, mats = build_model()
@@ -1201,9 +1162,13 @@ def main():
     add_light_rig(target=CAMERA_CENTER, key_strength=LIGHT_WATTS["key"], fill_strength=LIGHT_WATTS["fill"],
                   top_strength=LIGHT_WATTS["top"])
     add_ortho_camera(CAMERA_CENTER, ORTHO_SCALE)
+    if LOOK["ink"]:
+        _common.add_line_art(scene, radius=LOOK["ink_radius"])
+    if LOOK["quality"] and not quick:
+        _common.enable_quality(scene)
     _, top = report_dimensions(objs)
     write_render_info(out, argv, top.z)
-    print(f"[elf] shared common.py in use: {USING_COMMON}")
+    print(f"[elf] form {F} look {LOOK}")
     for name, (start, end) in clips.items():
         print(f"[elf] clip {name}: frames {start}-{end} ({end - start + 1} frames)")
 
@@ -1212,9 +1177,11 @@ def main():
     if "turntable" in stages:
         stage_turntable(scene, rig, out)
     if "moods" in stages:
-        stage_moods(scene, rig, objs, mats, out)
+        stage_moods(scene, rig, out)
     if "hats" in stages:
         stage_hats(scene, rig, out)
+    if "lookdev" in stages:
+        stage_lookdev(scene, rig, out)
     if "anims" in stages:
         stage_anims(scene, rig, out, ["idle", "pet"])
     if "allanims" in stages:
@@ -1222,7 +1189,7 @@ def main():
     if "--clips" in argv:
         stage_anims(scene, rig, out, argv[argv.index("--clips") + 1].split(","))
     if "hero" in stages:
-        stage_hero(scene, rig, out, cycles=not quick)
+        stage_hero(scene, rig, out)
     pose(rig, "idle", 1)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, "elf.blend"))
 
