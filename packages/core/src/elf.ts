@@ -195,12 +195,30 @@ const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; cap: number }
   play: { need: 'joy', gain: 30, cap: 2 },
   bath: { need: 'clean', gain: 60, cap: 1 },
 }
-/* The furniture the finds unlock, by slot and id: a piece stays locked in
-   the decorating panel until this many cottages are found. The ids are
-   the app's catalogue's; the rules keep only the thresholds, so a shop
-   paid in acorns can use the same table later. What a player placed
-   before a lock existed is never taken away. */
-export const DECOR_UNLOCKS: Record<string, number> = { 'rug:woven': 1, 'window:round': 3, 'bed:hammock': 5 }
+/* The pieces the finds unlock, by slot and id: a piece stays locked in
+   the decorating catalogue until this many cottages are found. Every
+   place keeps one choice besides its default free from the start, so a
+   new player can arrange the room at once; the rest come one or two at a
+   time up to the eighth cottage. The ids are the app's catalogue's; the
+   rules keep only the thresholds, so a shop paid in acorns can use the
+   same table later. What a player placed before a lock existed is never
+   taken away. */
+export const DECOR_UNLOCKS: Record<string, number> = {
+  'rug:moss': 1,
+  'lantern:bell': 1,
+  'shelf:seedlings': 2,
+  'basket:pumpkins': 2,
+  'floor:flagstones': 2,
+  'window:round': 3,
+  'herbs:dreamcatcher': 3,
+  'wall:logs': 3,
+  'fern:mushroom': 4,
+  'candle:cauldron': 4,
+  'bed:hammock': 5,
+  'floor:terracotta': 5,
+  'bed:nest': 8,
+  'picture:antlers': 8,
+}
 
 /* How many more cottages a piece needs before it can be placed; 0 when it
    is free. */

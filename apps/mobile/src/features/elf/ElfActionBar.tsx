@@ -1,29 +1,34 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
-import { BathIcon, FeedIcon, LullabyIcon, PressableScale, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
-import { ELF_CARE_CAPS, type ElfCareAction, type ElfEggAction, type ElfStage } from '@chatynkowo/core'
+import { BathIcon, FeedIcon, LullabyIcon, PressableScale, ProgressRing, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
+import { ELF_CARE_CAPS, ELF_CARE_NEEDS, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfStage } from '@chatynkowo/core'
+import { elfKey } from './labels'
 
 /* The care actions as round buttons on a band of the HUD's chrome that
    sits on the tab bar, split around the tab bar's raised discover key
    (two buttons on each side of it, one on each for the egg), so the key
    and the buttons never cover one another and nothing floats over the
    rug: for an egg the two ways to hatch it, for an elf feeding, playing,
-   bathing and sleep or wake. The care buttons take
-   the gold face of a primary button, the sleep toggle the ghost face, each
-   with a short label underneath, and under each care button the dots of
-   its daily cap (three feeds, two plays, one bath), lit while they are
-   left, so the player sees before tapping what the day still allows.
-   While the elf sleeps, or once a cap is used up, the button dims and
-   tells assistive tech it is disabled, but it stays pressable: the rules
-   refuse the action and the elf says why, so a tap is never met with
-   silence. The feed button also lets the acorn
-   be dragged: a pan that starts on it reports the finger's position in
-   window coordinates to the tab, which floats an acorn under the finger,
-   has the elf follow it with its eyes and feeds it when the acorn is
-   dropped on it (the pan and the plain tap race, so a still finger stays a
-   tap). */
+   bathing and sleep or wake. The care buttons take the gold face of a
+   primary button, the sleep toggle the ghost face, each with a short
+   label underneath. Around each care button a ring shows the need the
+   care sees to (fullness, joy, cleanliness): green while comfortable,
+   gold once the elf would like it seen to, eased to each new value as
+   the needs drift; a care's gain floats up over the button as "+25" for
+   a moment. Under each care button the dots of its daily cap (three
+   feeds, two plays, one bath), lit while they are left, so the player
+   sees before tapping what the day still allows. While the elf sleeps,
+   or once a cap is used up, the button dims and tells assistive tech it
+   is disabled, but it stays pressable: the rules refuse the action and
+   the elf says why, so a tap is never met with silence. The feed button
+   also lets the acorn be dragged: a pan that starts on it reports the
+   finger's position in window coordinates to the tab, which floats an
+   acorn under the finger, has the elf follow it with its eyes and feeds
+   it when the acorn is dropped on it (the pan and the plain tap race, so
+   a still finger stays a tap). */
 
 export type FeedDragPhase = 'begin' | 'move' | 'end'
 /* The acorn under the finger, in window coordinates. */
@@ -32,6 +37,8 @@ export type FeedDragHandler = (phase: FeedDragPhase, x: number, y: number) => vo
 export type ElfActionBarProps = {
   stage: ElfStage
   sleeping: boolean
+  /* The needs, 0..100, for the rings around the care buttons. */
+  needs: ElfNeeds
   /* How many of each care the day still allows. */
   careLeft: Record<ElfCareAction, number>
   onCare: (id: ElfCareAction) => void
@@ -47,6 +54,8 @@ type Action = {
   /* The gold primary face, or the ghost face of the sleep toggle. */
   face: 'primary' | 'ghost'
   disabled?: boolean
+  /* The need the care sees to, 0..100, for the ring. */
+  need?: { id: ElfNeedId; value: number }
   /* The daily cap and what is left of it, as dots under the button, and
      the same in words for a screen reader. */
   cap?: { total: number; left: number }
@@ -55,24 +64,40 @@ type Action = {
 }
 
 const BUTTON = 56
+/* The ring around a care button: its box and its thickness. */
+const RING = 64
+const RING_STROKE = 3
 const DOT = 6
 /* The press feedback of the round buttons. */
 const PRESS_SCALE = 0.9
 /* How far the finger travels before a press on the acorn becomes a drag. */
 const DRAG_START = 10
+/* The ring turns gold where the rules name a want (under 60). There is no
+   danger tint: the needs never fall under the floor of 35, and an elf
+   left alone wants, it does not suffer. */
+const COMFORTABLE = 60
+/* A rise of at least this much is a care, not a pet: it floats up as "+N". */
+const GAIN_SHOWN = 10
+const GAIN_MS = 1400
 
-export function ElfActionBar({ stage, sleeping, careLeft, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
+export function ElfActionBar({ stage, sleeping, needs, careLeft, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
   const { t } = useTranslation()
-  const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => ({
-    key: id,
-    Glyph,
-    label,
-    face: 'primary',
-    disabled: sleeping || careLeft[id] === 0,
-    cap: { total: ELF_CARE_CAPS[id], left: careLeft[id] },
-    valueText: careLeft[id] > 0 ? t('mobile:elf.careLeftAria', { left: careLeft[id], total: ELF_CARE_CAPS[id] }) : t('mobile:elf.careUsedAria'),
-    onPress: () => onCare(id),
-  })
+  const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => {
+    const needId = ELF_CARE_NEEDS[id]
+    const value = needs[needId]
+    const left = careLeft[id] > 0 ? t('mobile:elf.careLeftAria', { left: careLeft[id], total: ELF_CARE_CAPS[id] }) : t('mobile:elf.careUsedAria')
+    return {
+      key: id,
+      Glyph,
+      label,
+      face: 'primary',
+      disabled: sleeping || careLeft[id] === 0,
+      need: { id: needId, value },
+      cap: { total: ELF_CARE_CAPS[id], left: careLeft[id] },
+      valueText: `${t('mobile:elf.needAria', { need: t(elfKey('need', needId)), value: Math.round(value) })}. ${left}`,
+      onPress: () => onCare(id),
+    }
+  }
 
   const actions: Action[] =
     stage === 'egg'
@@ -103,28 +128,79 @@ export function ElfActionBar({ stage, sleeping, careLeft, onCare, onTendEgg, onT
 }
 
 function ActionButton({ action }: { action: Action }) {
-  const { Glyph, label, face, disabled, cap, valueText, onPress } = action
+  const { Glyph, label, face, disabled, need, cap, valueText, onPress } = action
   const primary = face === 'primary'
   return (
     <View style={[styles.item, disabled && styles.itemDisabled]}>
-      <PressableScale
-        onPress={onPress}
-        scaleTo={PRESS_SCALE}
-        accessibilityLabel={label}
-        accessibilityState={{ disabled: Boolean(disabled) }}
-        accessibilityValue={valueText ? { text: valueText } : undefined}
-        /* The accent wash is invisible on the gold face; the lighter border
-           gold reads as a pressed shade there, as on the primary button. */
-        pressedFill={primary ? colors.accentBorder : colors.accentWash}
-        style={[styles.button, primary ? styles.primary : styles.ghost]}
-      >
-        <Glyph size={iconSize.lg} weight={primary ? 'fill' : 'duotone'} color={primary ? colors.accentInk : colors.ink} />
-      </PressableScale>
+      <View style={styles.well}>
+        {need ? <NeedRing value={need.value} /> : null}
+        <PressableScale
+          onPress={onPress}
+          scaleTo={PRESS_SCALE}
+          accessibilityLabel={label}
+          accessibilityState={{ disabled: Boolean(disabled) }}
+          accessibilityValue={valueText ? { text: valueText } : undefined}
+          /* The accent wash is invisible on the gold face; the lighter border
+             gold reads as a pressed shade there, as on the primary button. */
+          pressedFill={primary ? colors.accentBorder : colors.accentWash}
+          style={[styles.button, primary ? styles.primary : styles.ghost]}
+        >
+          <Glyph size={iconSize.lg} weight={primary ? 'fill' : 'duotone'} color={primary ? colors.accentInk : colors.ink} />
+        </PressableScale>
+        {need ? <NeedGain value={need.value} /> : null}
+      </View>
       <CapDots cap={cap} />
       <Text variant="label" weight="semibold" align="center" numberOfLines={1} style={styles.label}>
         {label}
       </Text>
     </View>
+  )
+}
+
+/* The need around the button: the arc is the need out of a hundred, in
+   the colour of how it stands. The button describes the value, so the
+   ring is decoration. */
+function NeedRing({ value }: { value: number }) {
+  return (
+    <View style={styles.ring} pointerEvents="none">
+      <ProgressRing size={RING} value={value} max={100} stroke={RING_STROKE} color={value >= COMFORTABLE ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
+    </View>
+  )
+}
+
+/* A care's gain, floating up over the button for a moment. The drift only
+   lowers a need, so a rise is the player's doing. Its own timer: the
+   drift changes the value every few seconds, and a timer tied to the
+   effect would be cancelled by it before it fired. */
+function NeedGain({ value }: { value: number }) {
+  const { t } = useTranslation()
+  const [gain, setGain] = useState<{ amount: number; key: number } | null>(null)
+  const previous = useRef(value)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    const rise = value - previous.current
+    previous.current = value
+    if (rise < GAIN_SHOWN) return
+    setGain((current) => ({ amount: Math.round(rise), key: (current?.key ?? 0) + 1 }))
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      timer.current = null
+      setGain(null)
+    }, GAIN_MS)
+  }, [value])
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    [],
+  )
+  if (!gain) return null
+  return (
+    <Animated.View key={gain.key} entering={enterUp()} exiting={leaveUp()} style={styles.gain} pointerEvents="none">
+      <Text variant="small" weight="bold" style={styles.gainInk}>
+        {t('mobile:elf.needGain', { value: gain.amount })}
+      </Text>
+    </Animated.View>
   )
 }
 
@@ -147,7 +223,7 @@ function CapDots({ cap }: { cap?: { total: number; left: number } }) {
    name, and feeds on a screen reader's activate; its own press is left to
    the tap gesture so a finger feeds once. */
 function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: FeedDragHandler }) {
-  const { Glyph, label, disabled, cap, valueText, onPress } = action
+  const { Glyph, label, disabled, need, cap, valueText, onPress } = action
 
   const gesture = useMemo(() => {
     const pan = Gesture.Pan()
@@ -172,20 +248,24 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
 
   return (
     <View style={[styles.item, disabled && styles.itemDisabled]}>
-      <GestureDetector gesture={gesture}>
-        <PressableScale
-          scaleTo={PRESS_SCALE}
-          accessibilityLabel={label}
-          accessibilityState={{ disabled: Boolean(disabled) }}
-          accessibilityValue={valueText ? { text: valueText } : undefined}
-          accessibilityActions={[{ name: 'activate' }]}
-          onAccessibilityAction={onAccessibilityAction}
-          pressedFill={colors.accentBorder}
-          style={[styles.button, styles.primary]}
-        >
-          <Glyph size={iconSize.lg} weight="fill" color={colors.accentInk} />
-        </PressableScale>
-      </GestureDetector>
+      <View style={styles.well}>
+        {need ? <NeedRing value={need.value} /> : null}
+        <GestureDetector gesture={gesture}>
+          <PressableScale
+            scaleTo={PRESS_SCALE}
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: Boolean(disabled) }}
+            accessibilityValue={valueText ? { text: valueText } : undefined}
+            accessibilityActions={[{ name: 'activate' }]}
+            onAccessibilityAction={onAccessibilityAction}
+            pressedFill={colors.accentBorder}
+            style={[styles.button, styles.primary]}
+          >
+            <Glyph size={iconSize.lg} weight="fill" color={colors.accentInk} />
+          </PressableScale>
+        </GestureDetector>
+        {need ? <NeedGain value={need.value} /> : null}
+      </View>
       <CapDots cap={cap} />
       <Text variant="label" weight="semibold" align="center" numberOfLines={1} style={styles.label}>
         {label}
@@ -207,7 +287,7 @@ const styles = StyleSheet.create({
     paddingBottom: space.xs,
     borderTopWidth: 1,
     borderTopColor: mapPalette.chromeBorder,
-    backgroundColor: mapPalette.chrome,
+    backgroundColor: mapPalette.chromeSolid,
   },
   side: {
     flexDirection: 'row',
@@ -218,12 +298,40 @@ const styles = StyleSheet.create({
     width: KEY_GAP,
   },
   item: {
-    width: BUTTON + space.lg,
+    width: RING + space.md,
     alignItems: 'center',
     gap: space.xs,
   },
   itemDisabled: {
     opacity: 0.5,
+  },
+  /* The button in the middle of its ring's box. */
+  well: {
+    width: RING,
+    height: RING,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ring: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  /* The gain rises from the ring's top. */
+  gain: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -12,
+    alignItems: 'center',
+  },
+  gainInk: {
+    color: colors.success,
+    textShadowColor: colors.page,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   dots: {
     flexDirection: 'row',
@@ -261,11 +369,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ghost,
     borderColor: colors.lineStrong,
   },
-  /* The label sits on the painted room, not on a surface: a shadow keeps
-     it legible over the lit floor. */
   label: {
-    textShadowColor: colors.page,
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    color: mapPalette.chromeInk,
   },
 })

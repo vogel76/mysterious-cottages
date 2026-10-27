@@ -1,26 +1,31 @@
 /* The cottage room's coordinate contract. The room is designed once in
-   "room units", a portrait canvas 1000 wide and 1600 tall, and the scene
-   scales it to cover whatever view it gets (the way a background image
-   covers a screen), centred both ways; a narrow phone crops up to about a
-   fifth of each side, a short one a little of the top and bottom. Every
-   drawing in the cottage (the room shell, the furniture, the elf, the
-   lights) is laid out in these units and never knows the view's size; the
-   layout here is the only place that converts between the two.
+   "room units", the pixels of the rendered plate (1000 wide and 1300
+   tall, as art/blender/room.py frames it and assets/elf/room/manifest.json
+   records it), and the scene scales it to cover the part of the view the
+   tab leaves free between its top strip (the HUD) and what covers the
+   bottom (the care band, an open panel), the way a background image
+   covers a screen, centred both ways; a narrow phone crops a little of
+   each side, a short one a little of the top and bottom. Every drawing in
+   the cottage (the room shell, the furniture, the elf, the lights) is laid
+   out in these units and never knows the view's size; the layout here is
+   the only place that converts between the two. Nothing of the interface
+   lies over the room, so everything in the plate is on view.
 
-   The head-up display of the Elf tab covers roughly the top 260 and the
-   bottom 300 units, so the elf and the heart of the room live in the band
-   between. The floor meets the wall at y 1150, the elf stands on the rug
-   with its feet at (500, 1240), and everything important stays within
-   x 120..880 so no phone crops it away. The slots place each piece of
+   The floor meets the wall and the rug has its centre where the manifest
+   says; the elf stands on the upper half of the rug, and everything
+   important stays within x 60..940 so no phone crops it away. The slots place each piece of
    furniture by its base centre and say in which depth layer it is drawn:
    on the wall behind everything, on the floor behind the elf, or on the
    floor in front of it. Each slot also carries its tap target: the box,
-   around the anchor, that a finger has to land in to pick the slot in edit
-   mode or to poke the item out of it; it is the union of the slot's
-   variants with a little slack, so a swapped item never falls out of it.
-   The variants themselves are named in ./catalogue and drawn from
-   ./roomAssets; this module only knows the slots (a type-only import, so
-   there is no cycle at runtime).
+   around the anchor, that a finger has to land in to poke the item. Both
+   come from the plate's manifest: a piece's anchor and box are those of
+   the slot's default render, the fireplace's (baked into the plate) and
+   the wall's and the floor's (the room's surfaces) the boxes the renderer
+   recorded for them, and the scene swaps in the box of the variant
+   actually drawn (roomAssets.spriteSlotsFor). The variants
+   themselves are named in ./catalogue and drawn from ./roomAssets; this
+   module only knows the slots (a type-only import, so there is no cycle
+   at runtime).
 
    The floor and the light overlays run on below the room's bottom edge by
    the overrun: the scene lifts the room while a panel is open at the
@@ -29,20 +34,62 @@
 
 import type { SlotId } from './catalogue'
 
-/* The elf stands on the upper half of the rug, so the action bar at the
-   bottom of the screen clears its feet. */
-export const ROOM = { width: 1000, height: 1600, floorY: 1150, elfAnchor: { x: 500, y: 1240 }, overrun: 600 } as const
+/* A box in plate pixels, as the packer writes it. */
+type PlateBox = { x: number; y: number; width: number; height: number }
+
+/* The plate's frame, as the packer wrote it (a JSON require, so this
+   module stays free of the asset registry that imports it). */
+const PLATE: {
+  width: number
+  height: number
+  floorY: number
+  rug: { x: number; y: number }
+  fireplace: PlateBox
+  hearth: { x: number; y: number }
+  wall: PlateBox
+  floor: PlateBox
+  sprites: readonly (PlateBox & { slot: string; default: boolean })[]
+} = require('../../../../assets/elf/room/manifest.json')
+
+/* How far above the rug's centre the figure's feet stand: the upper half
+   of the rug, so the pieces in front of it stay in front. */
+const FEET_ABOVE_RUG = 30
+
+/* The room's size and landmarks in room units; the overrun is the floor
+   that runs on below the plate's edge when a view is wider than the plate
+   is tall. */
+export const ROOM = {
+  width: PLATE.width,
+  height: PLATE.height,
+  floorY: PLATE.floorY,
+  elfAnchor: { x: PLATE.rug.x, y: PLATE.rug.y - FEET_ABOVE_RUG },
+  overrun: 400,
+} as const
+
+/* The fire in the plate's hearth and how far its glow reaches, room
+   units: the light painted over the plate breathes there. */
+export const HEARTH = { x: PLATE.hearth.x, y: PLATE.hearth.y, reach: PLATE.fireplace.width * 1.9 } as const
 
 /* How the room maps onto a view: view = room * scale + offset. */
 export type RoomLayout = { scale: number; offsetX: number; offsetY: number }
 
-/* The cover fit: the larger of the two ratios, centred on both axes. */
-export function fitRoom(viewWidth: number, viewHeight: number): RoomLayout {
-  const scale = Math.max(viewWidth / ROOM.width, viewHeight / ROOM.height)
+/* The cover fit into the band of the view between topInset and
+   bottomInset: the larger of the two ratios, centred on both axes of that
+   band, or, given a focus (a room point), moved as far as the band allows
+   towards having the focus in the band's middle, so a short band (an
+   open catalogue) still shows the piece being chosen for. */
+export function fitRoom(viewWidth: number, viewHeight: number, topInset = 0, bottomInset = 0, focus: { x: number; y: number } | null = null): RoomLayout {
+  const free = Math.max(1, viewHeight - topInset - bottomInset)
+  const scale = Math.max(viewWidth / ROOM.width, free / ROOM.height)
+  const width = ROOM.width * scale
+  const height = ROOM.height * scale
+  const centred = { x: (viewWidth - width) / 2, y: topInset + (free - height) / 2 }
+  if (!focus) return { scale, offsetX: centred.x, offsetY: centred.y }
+  const clampTo = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value))
   return {
     scale,
-    offsetX: (viewWidth - ROOM.width * scale) / 2,
-    offsetY: (viewHeight - ROOM.height * scale) / 2,
+    offsetX: clampTo(viewWidth / 2 - focus.x * scale, viewWidth - width, 0),
+    offsetY: clampTo(topInset + free / 2 - focus.y * scale, topInset + free - height, topInset),
   }
 }
 
@@ -74,23 +121,43 @@ export const SLOT_ZS: readonly SlotZ[] = ['back', 'mid', 'front']
    tap target of the slot, room units around the anchor. */
 export type Slot = { id: SlotId; x: number; y: number; z: SlotZ; hit: Bounds }
 
-/* The furniture of the cottage in drawing order within each layer. The
-   window sits centre-left with the night outside, the fireplace fills the
-   right wall, the small things hang and stand between them; the rug is
-   first of the floor items so everything else lies on it. */
-export const SLOTS: readonly Slot[] = [
-  { id: 'window', x: 320, y: 760, z: 'back', hit: { x: -215, y: -380, width: 430, height: 460 } },
-  { id: 'herbs', x: 540, y: 430, z: 'back', hit: { x: -90, y: -150, width: 180, height: 170 } },
-  { id: 'shelf', x: 530, y: 570, z: 'back', hit: { x: -110, y: -120, width: 220, height: 160 } },
-  { id: 'lantern', x: 810, y: 400, z: 'back', hit: { x: -70, y: -300, width: 140, height: 320 } },
-  { id: 'picture', x: 740, y: 600, z: 'back', hit: { x: -90, y: -150, width: 180, height: 170 } },
-  { id: 'fireplace', x: 740, y: 1150, z: 'back', hit: { x: -190, y: -530, width: 380, height: 610 } },
-  { id: 'rug', x: ROOM.elfAnchor.x, y: 1290, z: 'mid', hit: { x: -335, y: -145, width: 670, height: 275 } },
-  { id: 'bed', x: 230, y: 1200, z: 'mid', hit: { x: -180, y: -260, width: 360, height: 300 } },
-  { id: 'basket', x: 640, y: 1235, z: 'mid', hit: { x: -90, y: -150, width: 180, height: 170 } },
-  { id: 'fern', x: 160, y: 1450, z: 'front', hit: { x: -170, y: -310, width: 340, height: 335 } },
-  { id: 'candle', x: 800, y: 1420, z: 'front', hit: { x: -130, y: -330, width: 260, height: 360 } },
+/* The places of the cottage in drawing order within each layer: the wall
+   and the floor first (the plate draws them; a tap finds them only where
+   no piece lies over them), the window over the bed on the left, the
+   fireplace on the right, the small things hanging and standing between
+   them; the rug is first of the floor items so everything else lies on
+   it. */
+const SLOT_LAYERS: readonly { id: SlotId; z: SlotZ }[] = [
+  { id: 'wall', z: 'back' },
+  { id: 'floor', z: 'back' },
+  { id: 'window', z: 'back' },
+  { id: 'herbs', z: 'back' },
+  { id: 'shelf', z: 'back' },
+  { id: 'lantern', z: 'back' },
+  { id: 'picture', z: 'back' },
+  { id: 'fireplace', z: 'back' },
+  { id: 'rug', z: 'mid' },
+  { id: 'bed', z: 'mid' },
+  { id: 'basket', z: 'mid' },
+  { id: 'fern', z: 'front' },
+  { id: 'candle', z: 'front' },
 ]
+
+/* A slot anchored at the base centre of its box in the plate. */
+function slotOn(id: SlotId, z: SlotZ, box: PlateBox): Slot {
+  const x = box.x + box.width / 2
+  const y = box.y + box.height
+  return { id, x, y, z, hit: { x: box.x - x, y: box.y - y, width: box.width, height: box.height } }
+}
+
+/* The plate's own box for a place: the fireplace, the wall, the floor. */
+const PLATE_BOXES: Partial<Record<SlotId, PlateBox>> = { fireplace: PLATE.fireplace, wall: PLATE.wall, floor: PLATE.floor }
+
+export const SLOTS: readonly Slot[] = SLOT_LAYERS.map(({ id, z }) => {
+  const box = PLATE_BOXES[id] ?? PLATE.sprites.find((sprite) => sprite.slot === id && sprite.default) ?? PLATE.sprites.find((sprite) => sprite.slot === id)
+  if (!box) throw new Error(`The room manifest has no render for the slot ${id}`)
+  return slotOn(id, z, box)
+})
 
 /* The slots of one layer, in drawing order. */
 export function slotsIn(z: SlotZ): readonly Slot[] {

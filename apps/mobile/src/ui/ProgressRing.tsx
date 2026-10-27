@@ -6,10 +6,11 @@ import { DURATIONS, EASING, ReduceMotion } from './motion'
 import { Text } from './Text'
 import { colors } from './tokens'
 
-/* Finds out of the total as a ring: the quest card on the Atlas, the
-   Kronika header, the reward cards and the reward sheet. The arc sweeps
-   from its previous value to the new one over the reveal duration. The
-   first render draws the value in place; only real changes animate. */
+/* A value out of its maximum as a ring: the finds on the quest card of
+   the Atlas, the Kronika header, the reward cards and the reward sheet,
+   the elf's needs around its care buttons. The arc sweeps from its
+   previous value to the new one over the reveal duration. The first
+   render draws the value in place; only real changes animate. */
 
 export type ProgressRingProps = {
   size: 24 | 34 | 40 | 56 | 64
@@ -19,11 +20,17 @@ export type ProgressRingProps = {
   stroke?: number
   /* Centre text, small semibold. */
   label?: string
+  /* The arc's colour and the track's; the accent over the line by default. */
+  color?: string
+  track?: string
+  /* A ring that only decorates a control which describes the value
+     itself: no role or value of its own for assistive tech. */
+  decorative?: boolean
 }
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 
-export function ProgressRing({ size, value, max, stroke = size / 10, label }: ProgressRingProps) {
+export function ProgressRing({ size, value, max, stroke = size / 10, label, color = colors.accentStrong, track = colors.line, decorative = false }: ProgressRingProps) {
   const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
@@ -49,18 +56,19 @@ export function ProgressRing({ size, value, max, stroke = size / 10, label }: Pr
   return (
     <View
       style={[styles.box, { width: size, height: size }]}
-      accessibilityRole="progressbar"
-      accessibilityValue={{ min: 0, max, now: value }}
-      accessibilityLabel={label}
+      accessibilityRole={decorative ? undefined : 'progressbar'}
+      accessibilityValue={decorative ? undefined : { min: 0, max, now: value }}
+      accessibilityLabel={decorative ? undefined : label}
+      importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
     >
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={colors.line} strokeWidth={stroke} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={track} strokeWidth={stroke} fill="none" />
         <AnimatedCircle
           animatedProps={arcProps}
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={colors.accentStrong}
+          stroke={color}
           strokeWidth={stroke}
           strokeLinecap="round"
           fill="none"

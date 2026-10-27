@@ -47,8 +47,8 @@ art/blender/elf.py       the elf: the young forest elf (a FORM table gives the b
                          standing in the room of room.py, or alone in the studio rig with --studio
 art/blender/room.py      the cottage: the walls and the floor, the furniture of each slot, the fire, by night and
                          by day (see The room); elf.py imports it for the elf's scene
-art/blender/room_sheet.py the room's post-processing (system Python): sprite boxes, contact sheet, phone crop,
-                         and with --pack the app's room assets
+art/blender/room_sheet.py the room's post-processing (system Python): sprite boxes, contact sheet, and with
+                         --pack and --registry the app's room assets and the module that names them
 art/blender/pack.py      the packer: frames to atlases and a manifest (system Python)
 art/blender/check.py     the atlas check: packs the frames again and compares with the committed atlas (system Python)
 art/out/                 renders, logs, .blend files (not committed)
@@ -228,29 +228,45 @@ character around its feet.
 ## The room
 
 `room.py` is the cottage interior: it models the walls, the floor, the
-beams and the fireplace with its fire, the swappable furniture of every
-slot (two rugs, a bed and a hammock, a square and a round window, the
-shelf, the lantern, the picture, the basket, the fern, the candle stool,
-the herbs), in the same painterly materials and the same Line Art ink as
-the elf (`paint_material` over its textures, the flames, the glass, the
-sky and the contact shadows opted out of the ink), lights it as a night
-scene (the fire as the warm key on the right, the moon through the window
-and a dim cool fill on the left, a soft hero spot on the rug so the elf's
-spot is the brightest floor) and as a day scene (the moon's lamp turned
-into the sun, the fill neutral, the fire stepped back, the ambient
-brighter, the window showing a day sky without the moon and the stars;
-`DAYLIGHT` and `set_daylight`), and renders with Eevee, by night and by
-day: the full plate with the default furniture (`plate.png`,
-`plate_day.png`, for reference), the empty shell with the window hole
-plugged (`plate_empty.png`, `plate_empty_day.png`, the plates the app
-draws) and every slot variant alone as a transparent sprite
-(`<slot>_<variant>.png` and `<slot>_<variant>.day.png`), lit by the whole
-room with the shell invisible to the camera and drawing no ink, and a
-baked contact shadow of its own. `room_sheet.py` (system Python) then
-measures each sprite's opaque box in plate pixels (the union of its night
-and day renders) into `sprites.json`, tiles a `contact.png`, writes
-`phone_crop.png` and, with `--pack` (`pnpm art:room-pack`), the app's
-assets.
+beams and the fireplace with its fire, and the pieces of every place of
+the room, three variants each, named after the catalogue's ids
+(`src/features/elf/cottage/catalogue.ts`): the rug (braided, a kilim, a
+cushion of moss), the bed (oak, a hammock, a nest), the window (arched,
+round, shuttered with a flower box), the picture (the cottage, a map,
+antlers), the shelf (books, jars, seedlings), the lantern (iron, paper,
+a brass bell), the herbs under the beam (dried herbs, garlic, a
+dreamcatcher), the basket by the hearth (acorns, firewood, pumpkins),
+the corner plant (a fern, a toadstool, a stump) and the stool by the
+fire (a candle, a cauldron, a toy chest); and three walls (plaster,
+boards, logs) and three floors (planks, flagstones, terracotta) as
+materials of the room's own surfaces (`WALL_IDS`, `FLOOR_IDS`,
+`set_surfaces`). Everything is in the same painterly materials and the
+same Line Art ink as the elf (`paint_material` over its textures, the
+flames, the glass, the sky and the contact shadows opted out of the
+ink). It lights the room as a night scene (the fire as the warm key on
+the right, the moon through the window and a dim cool fill on the left,
+a soft hero spot on the rug so the elf's spot is the brightest floor)
+and as a day scene (the moon's lamp turned into the sun, the fill
+neutral, the fire stepped back, the ambient brighter, the window showing
+a day sky without the moon and the stars; `DAYLIGHT` and
+`set_daylight`), and renders with Eevee, by night and by day: the full
+plate with the default furniture (`plate.png`, `plate_day.png`, for
+review), the empty room with the window hole plugged for every pair of
+wall and floor (`plate_<wall>_<floor>.png` and `_day`, the plates the
+app draws), and every piece alone as a transparent sprite
+(`<slot>_<variant>.png` and `.day.png`), lit by the whole room with the
+shell invisible to the camera and drawing no ink, and a baked contact
+shadow of its own. Then, by day, the decorating catalogue's pictures:
+every piece once more, close up (`render_thumb`: the camera's view
+cropped to the piece by a render border and scaled so its longer side
+comes out at about 360 pixels, `<slot>_<variant>.thumb.png`), and a patch
+of every wall and floor (`wall_<id>.thumb.png`, `floor_<id>.thumb.png`).
+`room_sheet.py` (system Python) then measures each sprite's opaque box in
+plate pixels (the union of its night and day renders) into
+`sprites.json` and tiles a `contact.png`; with `--pack` and `--registry`
+(`pnpm art:room-pack`) it writes the app's assets (emptying the folder of
+its old WebP files first) and the module that names them for Metro,
+`src/features/elf/cottage/roomFiles.ts`.
 
 The elf's frames are rendered inside this scene (`elf.py` imports
 `room.py`, builds the room with the furniture hidden and the shell
@@ -260,25 +276,29 @@ with a render border), so the figure is lit by the same fire and moon,
 shaded and inked the same way, from the same point of view; `--studio`
 renders it alone in the shared rig instead.
 
-The plate is 1000 by 1600, the room units of `src/features/elf/cottage`,
-and the app shows it with a cover fit: scaled to the phone's height, the
-sides cropped, so a 9:20 phone sees x = 140..860 of it (`phone_crop.png`
-is that band). The layout is framed for it: the room is 2.2 m wide, a
-40 mm perspective camera at eye height 1.3 m stands 5.33 m in front of
-the back wall, where the frame is 3 m wide (333 px per metre) and the
-room's corners land at x = 133 and 867, just outside the phone band. The
-floor line (floor meets the back wall) sits at y = 1152, the rug centre at
-(500, 1280), both of which the app relies on, the ceiling at 3.45 m at the
-top of the frame. The fireplace spans x = 0.34..0.98 m on the right, the
-bed hugs the left wall with the shelf above it, the window is small and
-high (centre at x = -0.52 m, z = 2.0 m), up and left of the elf, never
-behind it. `camera.json` lists the camera, the floor line, the rug ellipse
-and the pixel positions of these landmarks. The committed assets in
-`assets/elf/room` are the empty plates as `plate.webp` and
-`plate_day.webp` and each sprite cropped to its box, by night and as its
-`_day` twin, with `manifest.json` carrying the boxes, the floor line and
-the rug centre; the app draws the day pictures over the night ones at the
-opacity of its clock's daylight.
+The plate is 1000 by 1300, the room units of `src/features/elf/cottage`,
+the aspect of the band a 9:20 phone leaves free between the Elf tab's top
+strip and its care band, and the app shows it there with a cover fit, so
+a phone crops at most a sliver of its sides or of its top and bottom.
+The layout is framed for it: the room is 3 m wide and 2.75 m high, a
+35 mm perspective camera at eye height 1.25 m stands about 4.2 m in front
+of the back wall, where the frame is 3.3 m wide (303 px per metre) and
+the room's corners land at x = 45 and 955. The floor line (floor meets the
+back wall) sits at 64 percent of the height and the rug centre at 78
+percent. The fireplace spans x = 0.62..1.32 m on the right with the
+lantern before its chimney, the bed hugs the left wall with the shelf
+above it and the window over its head, the picture and the herbs hang
+between them over the elf, and the corner plant and the stool stand in
+front at x = -0.68 and 0.68 m. `camera.json` lists the camera, the floor
+line, the rug ellipse, the fireplace's box and its fire, the wall's and
+the floor's boxes, the catalogue as rendered and the pixel positions of
+these landmarks. The committed assets in `assets/elf/room` are the plates
+of every pair, each sprite cropped to its box by night and as its `_day`
+twin, and the catalogue's pictures as `_thumb`, with `manifest.json`
+(version 3) carrying the plates by pair, the boxes and which piece is
+each place's default, the floor line, the rug centre, the fireplace with
+its fire and the boxes of the wall and the floor; the app draws the day
+pictures over the night ones at the opacity of its clock's daylight.
 
 ## Adding a hat or a piece of furniture
 
@@ -289,9 +309,18 @@ the new sheet files in `manifest.ts`, and draw the layer with
 `LayeredSprite` when the elf wears it. The hat follows the head because it
 is rigged to the same armature and rendered through the same frames.
 
-A piece of furniture is a character of its own: a scene in `room.py` with
-the camera and the light rig at the same settings as the elf's, an `idle`
-clip (a single frame is a clip of one), packed with `pack` into
-`assets/elf/sprites/<piece>/` and drawn with `SpritePlayer` at its slot.
-Because the camera and the light are shared, a piece sits in the room's
-light without any seam.
+A piece of furniture is a builder in `room.py` named after its place and
+its id (`build_<slot>_<id>`, building into the collection it is handed,
+standing where its place's other variants stand so the room's depth and
+the app's tap target stay right) and a line of `SLOTS`; the same id goes
+into the catalogue (`DECOR_IDS` in `src/features/elf/cottage/catalogue.ts`),
+its name into the dictionaries (`item<Id>` in the elf group of
+`packages/i18n`) and, if it is to be earned, its threshold into
+`DECOR_UNLOCKS` in the rules. `pnpm art:room` renders it by night, by
+day and close up for the catalogue, and `pnpm art:room-pack` packs it and
+regenerates the registry, so the app draws and offers it with no code of
+its own. A wall or a floor is a material in `build_materials`
+(`wall.<id>`, `floor.<id>`, patterned in world coordinates so the pattern
+runs on across the wall's pieces) and an id in `WALL_IDS` or `FLOOR_IDS`;
+every pair gets a plate, so each new one adds a plate per pair of the
+other kind.

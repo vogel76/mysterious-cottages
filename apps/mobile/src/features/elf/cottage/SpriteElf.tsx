@@ -3,7 +3,7 @@ import { ColorMatrix, Group, Oval, Paint, RadialGradient, vec } from '@shopify/r
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
 import { LayeredSprite, type SpriteImages, type SpriteLayer, type SpriteManifest } from '../sprites'
 import type { PuppetMotion } from './motion'
-import type { Bounds } from './room'
+import { ROOM, type Bounds } from './room'
 
 /* The elf as the rendered sprite (art/blender/elf.py, packed into the
    atlases of assets/elf/sprites/elf): the body layer alone for now, the
@@ -26,11 +26,13 @@ import type { Bounds } from './room'
    the player and its clock. Nothing here is rebuilt per frame: the clock
    advances a shared value, the atlases read it. */
 
-/* The figure's height on screen, room units; the owner tunes this. */
-export const ELF_HEIGHT_UNITS = 540
-/* Where the feet stand in sprite mode: the upper half of the rendered
-   rug, whose centre is (500, 1280). */
-export const SPRITE_ELF_ORIGIN = { x: 500, y: 1240 } as const
+/* The figure's height on screen, room units; the owner tunes this, and
+   art/blender/elf.py renders the figure at the same height in the plate's
+   pixels (ROOM_FIGURE_PX), so the room's light falls on it as drawn. */
+export const ELF_HEIGHT_UNITS = 460
+/* Where the feet stand in sprite mode: the room's anchor, on the upper
+   half of the rendered rug. */
+export const SPRITE_ELF_ORIGIN = ROOM.elfAnchor
 /* Cell pixels to room units: the figure, modelHeight metres tall at the
    manifest's pixels to the metre, stands ELF_HEIGHT_UNITS tall. */
 function figureScale(manifest: SpriteManifest): number {

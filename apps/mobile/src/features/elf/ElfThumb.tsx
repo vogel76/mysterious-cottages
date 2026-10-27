@@ -1,50 +1,70 @@
 import { memo, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { Canvas, Group, Image, useImage } from '@shopify/react-native-skia'
-import { PHOTO_ID, type SlotId } from './cottage/catalogue'
+import { PHOTO_ID, isSurface, type SlotId } from './cottage/catalogue'
 import { FramedPhoto } from './cottage/RoomSprites'
-import { roomSpriteFor, type RoomSprite } from './cottage/roomAssets'
+import { roomSpriteFor, surfaceThumbFor, type RoomSprite } from './cottage/roomAssets'
 
-/* One thumbnail of the decorating panel: a small Skia canvas that shows
-   the rendered crop of a piece of furniture (cottage/roomAssets), the very
-   picture the room draws, fitted into a padded square and centred (the
-   sprite is drawn at its own room box under one transform, which keeps
-   its proportions, all the room itself does with it), so the player sees
-   the real thing before choosing it; the live preview is the room behind
-   the panel. The frame's photo id draws the latest cottage's photo into
-   the frame the way the room does. The crops are small (a few hundred
-   pixels a side), so Skia's useImage decoding them per thumbnail is
-   cheap, unlike the elf's sheets, which are shared. The panel mounts only
-   the active slot's strip, so a handful of canvases exist at a time. An
-   id without a render shows an empty square; the panel never offers one. */
+/* The picture of a piece on a card of the decorating catalogue: a Skia
+   canvas showing the piece's catalogue render (art/blender/room.py
+   renders every piece a second time close up and by day, so a card is
+   sharp at its size), fitted into the square and centred; where no such
+   render exists, the room's own crop of the piece, the very picture the
+   room draws, fitted the same way. The frame's photo id draws the latest
+   cottage's photo into the frame the way the room does; a wall or a floor
+   shows its patch, filling the square. The catalogue
+   mounts only the active category's cards, so a handful of canvases
+   exist at a time. An id without a render shows an empty square; the
+   catalogue never offers one. */
 
-export const THUMB_SIZE = 72
-const PADDING = 6
-const INNER = THUMB_SIZE - 2 * PADDING
+const PADDING_SHARE = 0.08
 
 export type ElfThumbProps = {
   slot: SlotId
   id: string
+  /* The side of the square, points. */
+  size: number
   /* The latest cottage's picture, for the frame's photo id. */
   photo?: string | null
 }
 
-export const ElfThumb = memo(function ElfThumb({ slot, id, photo = null }: ElfThumbProps) {
+export const ElfThumb = memo(function ElfThumb({ slot, id, size, photo = null }: ElfThumbProps) {
+  if (isSurface(slot)) {
+    const thumb = surfaceThumbFor(slot, id)
+    return <View style={{ width: size, height: size }}>{thumb !== null ? <CatalogueThumb module={thumb} size={size} fill /> : null}</View>
+  }
   const sprite = roomSpriteFor(slot, id)
   const framed = slot === 'picture' && id === PHOTO_ID ? photo : null
-  return <View style={styles.thumb}>{sprite ? <SpriteThumb sprite={sprite} photo={framed} /> : null}</View>
+  const box = { width: size, height: size }
+  if (!sprite) return <View style={box} />
+  return (
+    <View style={box}>
+      {sprite.moduleThumb !== null && !framed ? <CatalogueThumb module={sprite.moduleThumb} size={size} /> : <SpriteThumb sprite={sprite} photo={framed} size={size} />}
+    </View>
+  )
 })
 
-function SpriteThumb({ sprite, photo }: { sprite: RoomSprite; photo: string | null }) {
+/* The close-up render, fitted with a margin, or filling the square. */
+function CatalogueThumb({ module, size, fill = false }: { module: number; size: number; fill?: boolean }) {
+  const image = useImage(module)
+  const inner = fill ? size : size * (1 - 2 * PADDING_SHARE)
+  const offset = (size - inner) / 2
+  return <Canvas style={[styles.canvas, { width: size, height: size }]}>{image ? <Image image={image} fit={fill ? 'cover' : 'contain'} x={offset} y={offset} width={inner} height={inner} /> : null}</Canvas>
+}
+
+/* The room's crop of the piece, drawn at its own room box under one
+   transform that fits it into the square (the frame's photo with it). */
+function SpriteThumb({ sprite, photo, size }: { sprite: RoomSprite; photo: string | null; size: number }) {
   const image = useImage(sprite.module)
   const { x, y, width, height } = sprite
   const transform = useMemo(() => {
-    const scale = Math.min(INNER / Math.max(1, width), INNER / Math.max(1, height))
+    const inner = size * (1 - 2 * PADDING_SHARE)
+    const scale = Math.min(inner / Math.max(1, width), inner / Math.max(1, height))
     const fitted = { width: width * scale, height: height * scale }
-    return [{ translateX: (THUMB_SIZE - fitted.width) / 2 - x * scale }, { translateY: (THUMB_SIZE - fitted.height) / 2 - y * scale }, { scale }]
-  }, [x, y, width, height])
+    return [{ translateX: (size - fitted.width) / 2 - x * scale }, { translateY: (size - fitted.height) / 2 - y * scale }, { scale }]
+  }, [x, y, width, height, size])
   return (
-    <Canvas style={styles.canvas}>
+    <Canvas style={[styles.canvas, { width: size, height: size }]}>
       <Group transform={transform}>
         {image ? <Image image={image} fit="fill" x={x} y={y} width={width} height={height} /> : null}
         {photo ? <FramedPhoto sprite={sprite} uri={photo} /> : null}
@@ -54,12 +74,7 @@ function SpriteThumb({ sprite, photo }: { sprite: RoomSprite; photo: string | nu
 }
 
 const styles = StyleSheet.create({
-  thumb: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-  },
   canvas: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
+    backgroundColor: 'transparent',
   },
 })

@@ -1283,7 +1283,7 @@ FRAME = {"origin": (0.0, 0.0), "feet": (0.0, 0.0, 0.0), "pixels_per_metre": floa
 # The figure's height in plate pixels when it stands at the rug of the
 # room: the app's ELF_HEIGHT_UNITS, so the room render shows the elf
 # exactly as the app does.
-ROOM_FIGURE_PX = 540
+ROOM_FIGURE_PX = 460
 # Watts that put the lit front of the figure at the palette colours (the skin
 # is bright and clips first).
 LIGHT_WATTS = {"key": 540.0, "fill": 190.0, "top": 130.0}
@@ -1424,7 +1424,7 @@ def room_scene(samples, quality=True):
     invisible to the camera and drawing no ink of its own, by night."""
     import room
     room.LOOK.update(ramp=LOOK["ramp"], ink=LOOK["ink"], hull=LOOK["hull"])
-    scene = room.setup_scene(1000, 1600, samples=samples, transparent=True)
+    scene = room.setup_scene(room.PLATE_W, room.PLATE_H, samples=samples, transparent=True)
     cam, _tilt, rug_center, plug, slot_colls, lights = room.build_everything(scene, quality=quality)
     room.show_slots(slot_colls, set())
     plug.hide_render = True

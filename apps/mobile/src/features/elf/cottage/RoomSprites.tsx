@@ -3,10 +3,11 @@ import { FilterMode, Group, Image, MipmapMode, Rect, rect, useImage } from '@sho
 import type { SharedValue } from 'react-native-reanimated'
 import { PHOTO_ID, type Decor } from './catalogue'
 import { ROOM, slotsIn, type SlotZ } from './room'
-import { ROOM_PLATE, ROOM_PLATE_DAY, photoRect, roomSpriteFor, type RoomSprite } from './roomAssets'
+import { photoRect, roomPlateFor, roomSpriteFor, type RoomSprite } from './roomAssets'
 
 /* The rendered room inside the room group: the plate (the empty cottage,
-   fireplace and all) covering the room exactly, and the furniture of the
+   fireplace and all, in the decor's wall and floor) covering the room
+   exactly, and the furniture of the
    decor as transparent crops laid at the boxes the room manifest gives
    them, in the depth layers of ./room so the scene can put the elf (or
    the egg) between the floor pieces behind it and the ones before it.
@@ -50,9 +51,10 @@ const PLANK_COLOUR = '#55443f'
    pixels on most phones, and plain linear sampling would shimmer. */
 const SAMPLING = { filter: FilterMode.Linear, mipmap: MipmapMode.Linear }
 
-function Plate({ day }: { day: SharedValue<number> }) {
-  const image = useImage(ROOM_PLATE)
-  const dayImage = useImage(ROOM_PLATE_DAY)
+function Plate({ decor, day }: { decor: Decor; day: SharedValue<number> }) {
+  const plate = roomPlateFor(decor)
+  const image = useImage(plate.night)
+  const dayImage = useImage(plate.day)
   return (
     <>
       {image ? (
@@ -103,7 +105,7 @@ export function FramedPhoto({ sprite, uri }: { sprite: RoomSprite; uri: string }
 export const RoomSprites = memo(function RoomSprites({ decor, layer, day, photo = null }: RoomSpritesProps) {
   return (
     <>
-      {layer === 'back' ? <Plate day={day} /> : null}
+      {layer === 'back' ? <Plate decor={decor} day={day} /> : null}
       {slotsIn(layer).map((slot) => {
         const sprite = roomSpriteFor(slot.id, decor[slot.id])
         if (!sprite) return null

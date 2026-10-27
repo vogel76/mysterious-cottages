@@ -3,7 +3,7 @@ import { Group, RadialGradient, Rect, vec } from '@shopify/react-native-skia'
 import { useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated'
 import { EASING, colors, withAlpha } from '../../../ui'
 import type { FireMotion } from './fire'
-import { ROOM } from './room'
+import { HEARTH, ROOM } from './room'
 
 /* The light painted over the rendered room. The plate is lit in Blender,
    fire and all, so only what the picture cannot do by itself is drawn
@@ -21,9 +21,10 @@ const FULL_HEIGHT = ROOM.height + ROOM.overrun
 const NIGHT_MS = 800
 const NIGHT_TINT = 0.45
 
-/* The glow over the plate's hearth: its centre and reach in room units
-   and how strong it gets at the flicker's peak. The owner tunes this. */
-export const HEARTH_GLOW = { cx: 735, cy: 1060, r: 480, strength: 0.32 } as const
+/* The glow over the plate's hearth: its centre and reach in room units,
+   where the renderer recorded the fire, and how strong it gets at the
+   flicker's peak. The owner tunes the strength. */
+export const HEARTH_GLOW = { cx: HEARTH.x, cy: HEARTH.y, r: HEARTH.reach, strength: 0.32 } as const
 
 export type LightingProps = {
   sleeping: boolean

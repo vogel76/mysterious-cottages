@@ -126,6 +126,9 @@ export const mapPalette = {
   vignetteLine: 'rgba(230, 195, 122, 0.25)',
   glow: '#59724b',
   chrome: 'rgba(40, 32, 23, 0.92)',
+  /* The same chrome with nothing showing through: the strips that frame
+     the cottage above and below the room. */
+  chromeSolid: '#282017',
   chromeBorder: 'rgba(225, 184, 99, 0.5)',
   chromeDivider: 'rgba(225, 184, 99, 0.25)',
   chromeInk: '#efdcab',
