@@ -79,7 +79,8 @@ import { useReturnGreeting } from './useReturnGreeting'
    elf's body counts as a pet for the rules without a reaction of its own:
    the scene plays the stroke. The scene is paused while another tab is on
    top: the tabs keep this screen mounted, and its loops would otherwise
-   run under the Atlas for nobody. A new egg gets a fresh scene. */
+   run under the Atlas for nobody. A new egg gets a fresh scene (keyed by
+   the egg's own moment, so the hatch keeps the room on screen). */
 
 /* How long a line stays in the elf's speech bubble. */
 const SPEECH_MS = 4000
@@ -567,7 +568,7 @@ export function ElfTab() {
   return (
     <View ref={rootRef} style={styles.screen} onLayout={onLayout}>
       {size ? (
-        <View key={state.born} style={StyleSheet.absoluteFill}>
+        <View key={state.eggAppearedAt} style={StyleSheet.absoluteFill}>
           <CottageScene
             ref={sceneRef}
             stage={stage}
