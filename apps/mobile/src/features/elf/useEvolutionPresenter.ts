@@ -17,6 +17,8 @@ import { useElf } from '../../providers'
    pushes nothing. Losing focus before the timer fires cancels the push. */
 
 const SETTLE_MS = 350
+/* The hatched elf gets its hop and its hello before the sheet asks for a name. */
+const HATCH_SETTLE_MS = 2600
 
 export function useEvolutionPresenter() {
   const router = useRouter()
@@ -26,7 +28,7 @@ export function useEvolutionPresenter() {
 
   useEffect(() => {
     if (!isFocused || (!unnamed && !pendingEvolution)) return
-    const timer = setTimeout(() => router.push(unnamed ? '/elf-hatch' : '/elf-evolve'), SETTLE_MS)
+    const timer = setTimeout(() => router.push(unnamed ? '/elf-hatch' : '/elf-evolve'), unnamed ? HATCH_SETTLE_MS : SETTLE_MS)
     return () => clearTimeout(timer)
   }, [isFocused, unnamed, pendingEvolution, router])
 }

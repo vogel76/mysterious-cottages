@@ -248,7 +248,7 @@ export const mobilePl = {
     /* The egg's countdown in the HUD */
     hatching: 'Wykluwanie',
     hatchIn: 'za {{time}}',
-    hatchSoon: 'lada chwila',
+    hatchSoon: 'teraz!',
     hatchAria: 'Wykluwanie {{when}}',
     durationHours: '{{hours}} h {{minutes}} min',
     durationHoursOnly: '{{hours}} h',
@@ -285,7 +285,7 @@ export const mobilePl = {
     wantsClean: '{{name}} marzy o kąpieli.',
     /* The mood line in the HUD, and the hints a screen reader gets for the room */
     moodEgg: 'Wykluje się po odliczaniu albo przy najbliższej odkrytej Chatynce.',
-    moodEggDue: 'Zaraz się wykluje!',
+    moodEggDue: 'Jajko pęka! Dotknij je.',
     moodBeaming: '{{name}} promienieje radością!',
     moodContent: '{{name}} rozgląda się ciekawie.',
     moodWants: '{{name}} czegoś by chciał...',
@@ -296,6 +296,9 @@ export const mobilePl = {
     /* The elf's first words to a new player, said once in its bubble */
     firstLine: 'Pogłaszcz mnie! Możesz też przeciągnąć do mnie żołądź z guzika.',
     firstLineEgg: 'Dotknij jajka, żeby je pokołysać. Ogrzewanie też się liczy!',
+    /* The hatch: a word from inside the cracking egg, and the hello */
+    crackLine: 'Puk, puk! Jeszcze raz!',
+    hatchHello: 'Cześć! Nareszcie na świecie!',
     cottageAria: 'Twój elf w swojej chatynce',
     /* Starting over, from the profile */
     startOver: 'Zacznij elfa od nowa',

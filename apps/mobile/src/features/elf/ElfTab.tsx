@@ -83,6 +83,11 @@ import { useReturnGreeting } from './useReturnGreeting'
 
 /* How long a line stays in the elf's speech bubble. */
 const SPEECH_MS = 4000
+/* The hatch: how often the ready egg rocks on its own, how many taps crack
+   it, and the moment the hatched elf hops after the swap of the figure. */
+const HATCH_ROCK_MS = 4000
+const HATCH_TAPS = 2
+const HATCH_CHEER_DELAY_MS = 400
 /* The acorn under the finger. */
 const ACORN = 44
 
@@ -93,7 +98,7 @@ export function ElfTab() {
      gets no automatic content inset. */
   const tabBarHeight = useTabBarHeight()
   const elf = useElf()
-  const { state, loaded, stage, mood, decor, lastInteraction, news, visit } = elf
+  const { state, loaded, stage, mood, decor, lastInteraction, news, visit, hatchReady, hatchNow } = elf
   /* The cottages, to name the one the elf cheers about and to find the
      latest one's photo; the finds themselves and their count. */
   const { cottages } = useContent()
@@ -418,10 +423,33 @@ export function ElfTab() {
      already plays the stroke and its hearts. */
   const onStrokeElf = useCallback(() => pet(), [pet])
 
+  /* The hatch is the player's: once the egg is ready it rocks on its own
+     every few seconds and the name block says to tap it; the first tap
+     cracks it (a word from inside), the second lets the elf out, who hops
+     with a cheer and says hello before the sheet asks for its name. */
+  const cracks = useRef(0)
+  useEffect(() => {
+    if (!hatchReady || stage !== 'egg' || !focused || panel !== 'none') return
+    cracks.current = 0
+    const timer = setInterval(() => sceneRef.current?.react('egg'), HATCH_ROCK_MS)
+    return () => clearInterval(timer)
+  }, [hatchReady, stage, focused, panel])
   const onPetEgg = useCallback(() => {
+    if (hatchReady) {
+      cracks.current += 1
+      sceneRef.current?.react('egg')
+      if (cracks.current < HATCH_TAPS) {
+        say(t('mobile:elf.crackLine'))
+        return
+      }
+      hatchNow()
+      setTimeout(() => sceneRef.current?.react('cheer'), HATCH_CHEER_DELAY_MS)
+      say(t('mobile:elf.hatchHello'))
+      return
+    }
     tendEgg('rock')
     sceneRef.current?.react('egg')
-  }, [tendEgg])
+  }, [hatchReady, hatchNow, tendEgg, say, t])
 
   /* Returns how the rules took it, so the drag-to-feed can tell an eaten
      acorn from a refused one. */

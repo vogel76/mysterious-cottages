@@ -120,6 +120,9 @@ export type ElfValue = {
   toggleSleep: () => SleepOutcome['kind']
   /* A tap on the elf; false while asleep, an egg or within the cooldown. */
   pet: () => boolean
+  /* The egg is ready to hatch: the tab lets the player crack it. */
+  hatchReady: boolean
+  hatchNow: () => void
   /* Puts a wearable on (the slot's 'none' takes it off); unknown ids are ignored. */
   equip: (slot: WearableSlot, id: string) => void
   /* Swaps the furniture in a slot of the room; unknown ids and pieces the
@@ -220,13 +223,12 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   )
 
   /* The elf as it is now: the drift applied, the day settled (its news
-     handed back for the caller to report), the egg hatched when its time
-     has come (or a cottage was found while it waited). */
+     handed back for the caller to report). */
   const settle = useCallback((current: ElfState, now: number): { state: ElfState; day: DayReport } => {
     const settled = settleDay(current, now, findsRef.current)
-    const next = hatchDue(settled.state, now, findsRef.current) ? hatch(settled.state, now) : settled.state
-    return { state: next, day: settled }
+    return { state: settled.state, day: settled }
   }, [])
+
 
   useEffect(() => {
     let current = true
@@ -297,7 +299,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const now = Date.now()
       const { state: next, day } = settle(current, now)
       if (next === current) return
-      const save = now - lastSave >= DRIFT_SAVE_MS || next.hatched !== current.hatched || day.newDay
+      const save = now - lastSave >= DRIFT_SAVE_MS || day.newDay
       if (save) lastSave = now
       commit(next, save)
       if (day.newDay || day.completed.length) report(current, { state: next, completed: [], setBonus: false }, day)
@@ -347,6 +349,18 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     const outcome = visitElf(settled, now, findsRef.current)
     if (outcome.state !== current) commit(outcome.state, true)
     report(current, outcome, day)
+  }, [commit, settle, report])
+
+  /* The player cracks the ready egg: the hatch, with the day settled first. */
+  const hatchNow = useCallback(() => {
+    const current = stateRef.current
+    if (!current) return
+    const now = Date.now()
+    if (!hatchDue(current, now, findsRef.current)) return
+    const { state: settled, day } = settle(current, now)
+    const next = hatch(settled, now)
+    commit(next, true)
+    report(current, { state: next, completed: [], setBonus: false }, day)
   }, [commit, settle, report])
 
   const care = useCallback(
@@ -472,6 +486,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       tendEgg: tend,
       toggleSleep,
       pet,
+      hatchReady: state ? hatchDue(state, now, finds) : false,
+      hatchNow,
       equip,
       placeDecor,
       claimDailyReward,
@@ -479,7 +495,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       acknowledgeEvolution,
       news,
     }
-  }, [state, loaded, foundCount, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news])
+  }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

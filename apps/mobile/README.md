@@ -633,7 +633,7 @@ every care, pet, egg, sleep and swap:
 | Drift | each need eases towards the floor over days (about two thirds of the way in 4 days for fullness, 5 for joy, 7 for clean), at half pace at night; a day away leaves the elf content, three days wanting, a week missing the player |
 | Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under 60 (the name block names it); beaming from an average of 75 with no want; otherwise content |
 | Sleep | by the clock: asleep from 21:00 to 07:00; the button tucks the elf in from 19:00 (until the morning) and before that answers that it is too early; woken at night it dozes off again after 10 minutes |
-| Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it hatches 6 hours after it appeared, or at a cottage found while it waits, whichever comes first, and the HUD counts the hours down |
+| Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, or at a cottage found while it waits, whichever comes first (the HUD counts the hours down), and then the player hatches it: the egg rocks on its own, two taps crack it, the elf hops out with a hello and the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one |
 | Care | feed fullness +25 (3 a day, refused at 90), play joy +30 (2 a day), bath clean +60 (1 a day); past the cap the elf has had enough for today |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days |
