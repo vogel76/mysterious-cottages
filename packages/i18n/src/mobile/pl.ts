@@ -284,7 +284,7 @@ export const mobilePl = {
     wantsJoy: '{{name}} ma ochotę na zabawę.',
     wantsClean: '{{name}} marzy o kąpieli.',
     /* The mood line in the HUD, and the hints a screen reader gets for the room */
-    moodEgg: 'Wykluje się po odliczaniu albo przy pierwszej odkrytej Chatynce.',
+    moodEgg: 'Wykluje się po odliczaniu albo przy najbliższej odkrytej Chatynce.',
     moodEggDue: 'Zaraz się wykluje!',
     moodBeaming: '{{name}} promienieje radością!',
     moodContent: '{{name}} rozgląda się ciekawie.',

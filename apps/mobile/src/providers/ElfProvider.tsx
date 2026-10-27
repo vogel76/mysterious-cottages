@@ -67,11 +67,11 @@ import { useProgress } from './ProgressProvider'
    record the tab turns into the elf's lines.
 
    The cottages found come from the progress provider, which this one
-   mounts under: they decide the form, the first find counts as the first
-   story read, which hatches the egg early, each find is credited to the
-   day's find quest by the rules, and a find from an earlier day is
-   celebrated on the next visit (never on its own day, which belongs to
-   the expedition). The wardrobe and the decor
+   mounts under: they decide the form, a find while the egg waits hatches
+   it early, each find is credited to the day's find quest by the rules,
+   and a find from an earlier day is celebrated on the next visit (never
+   on its own day, which belongs to the expedition); finds from before the
+   egg appeared are the expedition's past and stay quiet. The wardrobe and the decor
    are stored as the slots the player changed (the rules keep them as plain
    strings) and handed to the scene resolved against the cottage's
    catalogues: an id the catalogue no longer knows falls back to the slot's
@@ -221,10 +221,10 @@ export function ElfProvider({ children }: { children: ReactNode }) {
 
   /* The elf as it is now: the drift applied, the day settled (its news
      handed back for the caller to report), the egg hatched when its time
-     has come (the first find counts as the first story read). */
+     has come (or a cottage was found while it waited). */
   const settle = useCallback((current: ElfState, now: number): { state: ElfState; day: DayReport } => {
     const settled = settleDay(current, now, findsRef.current)
-    const next = hatchDue(settled.state, now, findsRef.current.length > 0) ? hatch(settled.state, now) : settled.state
+    const next = hatchDue(settled.state, now, findsRef.current) ? hatch(settled.state, now) : settled.state
     return { state: next, day: settled }
   }, [])
 
@@ -263,7 +263,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
      action said, each quest completed with its own pay. Nothing to tell
      stays quiet. */
   const report = useCallback((before: ElfState, quests: QuestReport, day?: DayReport) => {
-    const newDay = day?.newDay ?? false
+    /* The first visit ever is not a new day to announce. */
+    const newDay = (day?.newDay ?? false) && before.lastVisitDay !== null
     const streakLost = day?.streakLost ?? null
     const milestoneDust = day?.milestoneDust ?? 0
     const completed = [...(day?.completed ?? []), ...quests.completed]

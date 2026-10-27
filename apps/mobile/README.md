@@ -591,7 +591,9 @@ a refusal, a good night, a greeting, a quest done). A tap on the elf pets it (wi
 cooldown it is poked instead, so it always answers), a tap on the egg
 rocks it. It touches nothing of the expedition flow: no cottage, code,
 story or reward knows about it, but the cottages found reach the elf:
-they decide its form, the first find hatches the egg early, a find pays
+they decide its form, a find while the egg waits hatches it early (finds
+from before the egg appeared stay the expedition's past: no early hatch,
+no cheer), a find pays
 the weekend's find quest (credited to the day of the find even when the
 elf is visited later), and on the first visit of a later day the elf
 cheers for it by the cottage's title (several at once by their count),
@@ -631,7 +633,7 @@ every care, pet, egg, sleep and swap:
 | Drift | each need eases towards the floor over days (about two thirds of the way in 4 days for fullness, 5 for joy, 7 for clean), at half pace at night; a day away leaves the elf content, three days wanting, a week missing the player |
 | Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under 60 (the name block names it); beaming from an average of 75 with no want; otherwise content |
 | Sleep | by the clock: asleep from 21:00 to 07:00; the button tucks the elf in from 19:00 (until the morning) and before that answers that it is too early; woken at night it dozes off again after 10 minutes |
-| Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it hatches 6 hours after it appeared, or at the first cottage found, whichever comes first, and the HUD counts the hours down |
+| Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it hatches 6 hours after it appeared, or at a cottage found while it waits, whichever comes first, and the HUD counts the hours down |
 | Care | feed fullness +25 (3 a day, refused at 90), play joy +30 (2 a day), bath clean +60 (1 a day); past the cap the elf has had enough for today |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days |
