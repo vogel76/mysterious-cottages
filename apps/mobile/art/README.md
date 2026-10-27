@@ -129,7 +129,30 @@ land in the frame's pixels. The packer carries that point through the
 trim and the scale, and the app places a sprite by it.
 
 Clips run at 24 fps. Every clip loops unless the packer is told otherwise
-(`--once`); a looping clip should end where it starts.
+(`--once`); a looping clip should end where it starts, and a one-shot
+settles into the rest pose on its last frame, so the switch back to the
+idle loop is not a cut.
+
+The elf's clips are authored in `elf.py` through `Rig`, which speaks in
+world terms: a bone's offset or world-axis rotation, a hand's position
+(`hand`, `hands`: the arms are on a two-bone IK whose pole angle is
+calibrated at build time so the elbow rests where it was modelled), a
+point the head looks at (`look`, within a comfortable range, with an
+optional roll), a breath over the clip, squash and stretch about the
+feet, blinks and the mouth and brow shape keys. Every key may carry its
+own easing (`ease='EASE_OUT'` or `('BACK', 'EASE_OUT')` for an
+overshoot); the default is an ease in and out. The ears and the crown of
+the hair are not keyed by hand: when a clip is finished, `follow_through`
+samples the head's pitch and roll and the body's height over the clip
+and keys them against that velocity two frames late, so they trail a nod
+and flap on a hop, on top of a resting angle the clip sets for its mood
+(`rig.mood`, drooped ears for sad and sleep). The seven clips: idle (a
+breath, a weight shift, a glance aside, a blink; 48 frames), happy (a
+crouch, two hops with the arms thrown up, a settle; 36), sad (a slumped
+sway with a sigh; 24, loop), sleep (48, loop), pet (a lean into the
+hand with a squint; 24), feed (the hands bring the food to the mouth,
+two bites, a happy settle; 36) and wave (the arm up beside the head,
+three waves from the elbow, a head tilt; 36).
 
 ## Packing
 

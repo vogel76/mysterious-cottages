@@ -675,6 +675,9 @@ def bones_for(form):
             (f"thigh.{sfx}", tuple(hip), tuple(knee), "hips", True),
             (f"shin.{sfx}", tuple(knee), tuple(ankle), f"thigh.{sfx}", True),
             (f"foot.{sfx}", tuple(ankle), (0.13 * s, -0.22, 0.05), f"shin.{sfx}", True),
+            # The arm's IK: the target the hand reaches for and the pole the elbow points at.
+            (f"hand_ik.{sfx}", tuple(hand), tuple(hand + Vector((0, 0, -0.1))), "root", False),
+            (f"elbow_pole.{sfx}", tuple(elbow + Vector((0.3 * s, 0.4, 0))), tuple(elbow + Vector((0.3 * s, 0.5, 0))), "root", False),
         ]
     F = previous
     return bones
@@ -701,8 +704,34 @@ def build_armature():
     bpy.ops.object.mode_set(mode="POSE")
     for pb in arm.pose.bones:
         pb.rotation_mode = "XYZ"
+    for side in ("L", "R"):
+        ik = arm.pose.bones[f"forearm.{side}"].constraints.new("IK")
+        ik.target = arm
+        ik.subtarget = f"hand_ik.{side}"
+        ik.pole_target = arm
+        ik.pole_subtarget = f"elbow_pole.{side}"
+        ik.chain_count = 2
+        ik.use_stretch = False
+        calibrate_pole(arm, side, ik)
     bpy.ops.object.mode_set(mode="OBJECT")
     return arm
+
+
+def calibrate_pole(arm, side, ik):
+    """Find the pole angle at which the IK, with its target at rest, leaves
+    the elbow where the rest pose has it (the elbow bends the way it was
+    modelled); a coarse then a fine search over the angle."""
+    rest = Vector(arm.data.bones[f"forearm.{side}"].head_local)
+    forearm = arm.pose.bones[f"forearm.{side}"]
+
+    def error(deg):
+        ik.pole_angle = math.radians(deg)
+        bpy.context.view_layer.update()
+        return (forearm.head - rest).length
+
+    coarse = min(range(-180, 180, 5), key=error)
+    best = min(range(coarse - 5, coarse + 6), key=error)
+    print(f"[elf] pole angle {side}: {best} deg, elbow off by {error(best) * 1000:.1f} mm")
 
 
 def bind_auto(arm, obj, bones, corrective=False):
@@ -825,12 +854,20 @@ def bind_all(arm, objs):
 # ---------------------------------------------------------------------------
 
 class Rig:
-    """Keyframing helper that talks in world axes and manages one action per clip."""
+    """Keyframing helper that talks in world axes and manages one action per clip.
+
+    Poses are given as world things: a bone's offset or rotation, a hand's
+    position (the IK targets move the arms), a point the head looks at.
+    Every key may carry its own easing. When a clip is finished, the ears
+    and the crown of the hair get their lag from the motion itself: they
+    swing against the head's and the body's recent velocity (follow-through),
+    on top of a resting angle the clip may set for its mood."""
 
     def __init__(self, arm, objs):
         self.arm = arm
         self.objs = objs
         self.rest = {b.name: b.matrix_local.to_3x3() for b in arm.data.bones}
+        self.rest_head = {b.name: Vector(b.head_local) for b in arm.data.bones}
         self.keys = {
             "squash": objs["Body"], "stretch": objs["Body"],
             "open": objs["Mouth"], "smile": objs["Mouth"], "frown": objs["Mouth"],
@@ -838,11 +875,19 @@ class Rig:
         }
         self.clips = {}
         self.actions = {}
+        self.loops = {}
+        self.eases = {}
+        self.mood = {}
 
     # -- clip management --------------------------------------------------
-    def begin(self, name, length):
+    def begin(self, name, length, loop=True):
+        """Start a clip of `length` frames; frame length + 1 equals frame 1 for
+        a loop and is the rest pose a one-shot settles into."""
         self.current = name
         self.clips[name] = (1, length)
+        self.loops[name] = loop
+        self.eases = {}
+        self.mood = {"ear": 0.0, "crown": 0.0}
         acts = {}
         ad = self.arm.animation_data or self.arm.animation_data_create()
         acts[self.arm] = ad.action = bpy.data.actions.new(f"{name}")
@@ -855,14 +900,17 @@ class Rig:
             self.rest_pose(f)
 
     def finish(self):
+        """Close the clip: the followers get their lag, then every key its easing."""
+        self.follow_through()
         for act in self.actions[self.current].values():
             for layer in act.layers:
                 for strip in layer.strips:
                     for bag in strip.channelbags:
                         for fc in bag.fcurves:
                             for kp in fc.keyframe_points:
-                                kp.interpolation = "BEZIER"
-                                kp.easing = "EASE_IN_OUT"
+                                interp, easing = self.eases.get((fc.data_path, round(kp.co.x)), ("BEZIER", "EASE_IN_OUT"))
+                                kp.interpolation = interp
+                                kp.easing = easing
                             fc.update()
 
     def apply(self, name):
@@ -886,13 +934,23 @@ class Rig:
         for key in self.keys:
             self.shape(key, frame, 0.0)
 
-    def bone(self, name, frame, move=None, rot=None, scale=None):
-        """Key a bone: move is a world offset, rot is (world_axis, degrees) or a list of them."""
+    def _ease(self, data_path, frame, ease):
+        if ease is not None:
+            interp, easing = ease if isinstance(ease, tuple) else ("BEZIER", ease)
+            self.eases[(data_path, frame)] = (interp, easing)
+
+    def bone(self, name, frame, move=None, rot=None, scale=None, ease=None):
+        """Key a bone: move is a world offset, rot is (world_axis, degrees) or a
+        list of them, scale is (xy, z) world. `ease` is an easing name
+        ('EASE_OUT', 'EASE_IN', 'EASE_IN_OUT') or (interpolation, easing),
+        such as ('BACK', 'EASE_OUT') for an overshoot."""
         pb = self.arm.pose.bones[name]
         rest = self.rest[name]
+        path = f'pose.bones["{name}"].'
         if move is not None:
             pb.location = rest.inverted() @ Vector(move)
             pb.keyframe_insert("location", frame=frame)
+            self._ease(path + "location", frame, ease)
         if rot is not None:
             rots = [rot] if isinstance(rot[1], (int, float)) else rot
             world = Matrix.Identity(3)
@@ -900,209 +958,298 @@ class Rig:
                 world = Matrix.Rotation(math.radians(deg), 3, Vector(axis).normalized()) @ world
             pb.rotation_euler = (rest.inverted() @ world @ rest).to_euler("XYZ")
             pb.keyframe_insert("rotation_euler", frame=frame)
+            self._ease(path + "rotation_euler", frame, ease)
         if scale is not None:
             sx, sy, sz = scale
             # World-space (xy, z) scale expressed in the bone's local frame (bones here point up).
             pb.scale = (sx, sz, sy) if abs(rest.col[1].z) > 0.7 else (sx, sy, sz)
             pb.keyframe_insert("scale", frame=frame)
+            self._ease(path + "scale", frame, ease)
 
-    def shape(self, key, frame, value):
+    def shape(self, key, frame, value, ease=None):
         obj = self.keys[key]
-        kb = obj.data.shape_keys.key_blocks[key.split(".")[0]]
+        name = key.split(".")[0]
+        kb = obj.data.shape_keys.key_blocks[name]
         kb.value = value
         kb.keyframe_insert("value", frame=frame)
+        self._ease(f'key_blocks["{name}"].value', frame, ease)
 
     # -- compound helpers -----------------------------------------------
-    def squash(self, frame, amount):
+    def squash(self, frame, amount, ease=None):
         """amount > 0 squashes (wider, shorter), amount < 0 stretches."""
-        self.bone("root", frame, scale=(1 + 0.5 * amount, 1 + 0.5 * amount, 1 - amount))
-        self.shape("squash", frame, max(0.0, amount) * 1.5)
-        self.shape("stretch", frame, max(0.0, -amount) * 1.5)
+        self.bone("root", frame, scale=(1 + 0.5 * amount, 1 + 0.5 * amount, 1 - amount), ease=ease)
+        self.shape("squash", frame, max(0.0, amount) * 1.5, ease=ease)
+        self.shape("stretch", frame, max(0.0, -amount) * 1.5, ease=ease)
 
-    def ears(self, frame, up_deg, swing_deg=0.0):
-        for side, s in (("L", 1), ("R", -1)):
-            self.bone(f"ear.{side}", frame, rot=[((0, 1, 0), -up_deg * s), ((0, 0, 1), swing_deg * s)])
+    def hand(self, side, frame, point, ease=None):
+        """Put a hand at a world point; the IK solves the arm."""
+        self.bone(f"hand_ik.{side}", frame, move=Vector(point) - self.rest_head[f"hand.{side}"], ease=ease)
 
-    def raise_arm(self, side, frame, raise_deg, fore_deg=0.0, forward_deg=0.0):
-        """Swing the upper arm up sideways by raise_deg (the rest arm hangs about 55 degrees below
-        horizontal), bend the forearm, then tilt the raised arm towards the camera."""
-        s = 1 if side == "L" else -1
-        self.bone(f"upper_arm.{side}", frame, rot=[((0, 1, 0), -raise_deg * s), ((1, 0, 0), forward_deg)])
-        self.bone(f"forearm.{side}", frame, rot=((0, 1, 0), -fore_deg * s))
+    def hands(self, frame, left, right=None, ease=None):
+        """Both hands, the right mirrored from the left unless given."""
+        self.hand("L", frame, left, ease)
+        self.hand("R", frame, right if right is not None else (-left[0], left[1], left[2]), ease)
 
-    def blink(self, frame, amount):
+    def look(self, frame, point, amount=1.0, roll=0.0, ease=None):
+        """Turn the head towards a world point (the face looks down -Y at rest),
+        within a comfortable range, with an optional roll for charm."""
+        centre = self.rest_head["head"] + Vector((0, 0, F.head_r * 0.7))
+        d = Vector(point) - centre
+        yaw = max(-35.0, min(35.0, math.degrees(math.atan2(d.x, -d.y)))) * amount
+        pitch = max(-25.0, min(25.0, -math.degrees(math.atan2(d.z, math.hypot(d.x, d.y))))) * amount
+        self.bone("head", frame, rot=[((1, 0, 0), pitch), ((0, 0, 1), yaw), ((0, 1, 0), roll)], ease=ease)
+
+    def blink(self, frame, amount, ease=None):
         for side in ("L", "R"):
-            self.bone(f"eyelid.{side}", frame, rot=((1, 0, 0), 180.0 * amount))
+            self.bone(f"eyelid.{side}", frame, rot=((1, 0, 0), 180.0 * amount), ease=ease)
 
-    def brows_sad(self, frame, value):
-        self.shape("sad.L", frame, value)
-        self.shape("sad.R", frame, value)
+    def brows_sad(self, frame, value, ease=None):
+        self.shape("sad.L", frame, value, ease)
+        self.shape("sad.R", frame, value, ease)
+
+    def breath(self, length, depth=0.025, lift=0.012, phase=0.0):
+        """A breathing cycle over the whole clip: the chest swells, the hips lift."""
+        for f in range(1, length + 2, 4):
+            ph = 2 * math.pi * (f - 1) / length + phase
+            s = math.sin(ph)
+            self.bone("chest", f, scale=(1 + depth * s, 1 + depth * s, 1 + depth * 1.6 * s))
+            self.bone("hips", f, move=(0, 0, lift * s))
+
+    # -- follow-through ---------------------------------------------------
+    EAR_PER_LIFT = -420.0   # degrees of ear flap per metre/frame of the body rising
+    EAR_PER_ROLL = 5.0      # degrees of ear swing per degree/frame of head roll
+    CROWN_PER_LIFT = -300.0
+    CROWN_PER_PITCH = 4.0
+    LAG = 2                 # frames the followers trail the motion by
+
+    def follow_through(self):
+        """Key the ears and the crown of the hair against the head's and the
+        body's velocity a couple of frames earlier, so they trail and flap
+        instead of moving as one block with the head. A loop samples around
+        its end; a one-shot is at rest before its first frame."""
+        name = self.current
+        start, length = self.clips[name]
+        loop = self.loops[name]
+        self.apply(name)
+        scene = bpy.context.scene
+        head, root = self.arm.pose.bones["head"], self.arm.pose.bones["root"]
+        samples = []
+        for f in range(1, length + 2):
+            scene.frame_set(f)
+            axis = head.matrix.to_3x3().col[1]
+            pitch = math.degrees(math.atan2(-axis.y, axis.z))
+            roll = math.degrees(math.atan2(axis.x, axis.z))
+            samples.append((pitch, roll, root.matrix.translation.z))
+
+        def at(f):
+            if loop:
+                return samples[(f - 1) % length]
+            return samples[max(0, min(length, f - 1))] if f >= 1 else samples[0]
+
+        ear_mood, crown_mood = self.mood["ear"], self.mood["crown"]
+        for f in range(1, length + 2):
+            a, b = at(f - self.LAG - 1), at(f - self.LAG)
+            dpitch, droll, dz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+            flap = max(-30.0, min(30.0, self.EAR_PER_LIFT * dz))
+            swing = max(-15.0, min(15.0, self.EAR_PER_ROLL * droll))
+            for side, s in (("L", 1), ("R", -1)):
+                up = ear_mood + flap - swing * s
+                self.bone(f"ear.{side}", f, rot=((0, 1, 0), -up * s))
+            nod = max(-20.0, min(20.0, self.CROWN_PER_PITCH * dpitch + self.CROWN_PER_LIFT * dz))
+            self.bone("hood_tip", f, rot=[((1, 0, 0), -nod), ((0, 1, 0), crown_mood)])
 
 
 def build_clips(rig):
-    """Author every clip. Frame 1 is the first frame; clips loop back to frame 1.
-    The hood_tip bone now carries the hair tuft at the crown."""
-    # idle: 48 frames, breath, bob, lagging ears and tuft, blink at 30.
-    rig.begin("idle", 48)
+    """Author every clip. Frame 1 is the first frame; a loop returns to it at
+    length + 1, a one-shot settles into the rest pose there (so the switch
+    back to idle is not a cut). The hands are placed, the arms follow."""
+    L = {s: rig.rest_head[f"hand.{s}"].copy() for s in ("L", "R")}
+    camera = (0.0, -6.0, 1.45)
+
+    # idle: 48 frames, breath, a weight shift, a glance aside and back, a blink.
+    rig.begin("idle", 48, loop=True)
+    rig.breath(48)
     for f in range(1, 50, 4):
         ph = 2 * math.pi * (f - 1) / 48
-        rig.bone("chest", f, scale=(1 + 0.025 * math.sin(ph), 1 + 0.025 * math.sin(ph), 1 + 0.04 * math.sin(ph)))
-        rig.bone("hips", f, move=(0, 0, 0.012 * math.sin(ph)))
-        rig.bone("head", f, rot=((1, 0, 0), 1.5 * math.sin(ph)))
-        lag = 2 * math.pi * (f - 1 - 2.5) / 48
-        rig.ears(f, 3.0 * math.sin(lag))
-        rig.bone("hood_tip", f, rot=((0, 1, 0), -3.0 * math.sin(lag)))
-    rig.blink(28, 0.0)
+        rig.bone("hips", f, move=(0.01 * math.sin(ph), 0, 0.012 * math.sin(ph)))
+        rig.bone("root", f, rot=((0, 1, 0), 1.2 * math.sin(ph)))
+    rig.look(1, camera)
+    rig.look(14, camera, ease="EASE_IN_OUT")
+    rig.look(22, (1.6, -5.0, 1.5), roll=3, ease="EASE_IN_OUT")
+    rig.look(34, (1.6, -5.0, 1.5), roll=3)
+    rig.look(42, camera, ease="EASE_IN_OUT")
+    rig.look(49, camera)
+    rig.shape("smile", 1, 0.25)
+    rig.shape("smile", 49, 0.25)
+    rig.blink(27, 0.0)
+    rig.blink(29, 1.0, ease="EASE_OUT")
     rig.blink(30, 1.0)
-    rig.blink(31, 1.0)
-    rig.blink(34, 0.0)
+    rig.blink(33, 0.0, ease="EASE_IN")
     rig.finish()
 
-    # happy: two hops with squash on landing and stretch at the top, arms up.
-    rig.begin("happy", 24)
-    for hop in range(2):
-        s = 1 + 12 * hop
-        rig.bone("root", s, move=(0, 0, 0))
-        rig.squash(s, 0.0)
-        rig.squash(s + 1, 0.14)
-        rig.bone("root", s + 1, move=(0, 0, 0))
-        rig.bone("root", s + 3, move=(0, 0, 0.14))
-        rig.squash(s + 3, -0.12)
-        rig.bone("root", s + 5, move=(0, 0, 0.19))
-        rig.squash(s + 5, -0.02)
-        rig.bone("root", s + 8, move=(0, 0, 0))
-        rig.squash(s + 8, 0.18)
-        rig.squash(s + 10, -0.04)
-        rig.squash(s + 12, 0.0)
-        rig.ears(s + 1, -8)
-        rig.ears(s + 5, 22)
-        rig.ears(s + 9, -10)
-        rig.ears(s + 12, 0)
-        rig.bone("hood_tip", s + 1, rot=((0, 1, 0), 10))
-        rig.bone("hood_tip", s + 5, rot=((0, 1, 0), -20))
-        rig.bone("hood_tip", s + 9, rot=((0, 1, 0), 8))
-    for side in ("L", "R"):
-        rig.raise_arm(side, 1, 0)
-        rig.raise_arm(side, 4, 108, 15, 40)
-        rig.raise_arm(side, 13, 96, 8, 35)
-        rig.raise_arm(side, 16, 108, 15, 40)
-        rig.raise_arm(side, 22, 20, 0, 10)
-        rig.raise_arm(side, 25, 0)
-    rig.shape("smile", 1, 0.3)
+    # happy: 36 frames, a crouch, two hops with the arms thrown up, a settle.
+    rig.begin("happy", 36, loop=False)
+    up = (0.62, -0.2, 1.42)
+    rig.squash(1, 0.0)
+    rig.squash(4, 0.16, ease="EASE_OUT")
+    rig.bone("root", 4, move=(0, 0, 0))
+    rig.bone("root", 6, move=(0, 0, 0.09), ease="EASE_OUT")
+    rig.squash(6, -0.12)
+    rig.bone("root", 10, move=(0, 0, 0.21), ease="EASE_OUT")
+    rig.squash(10, -0.03)
+    rig.bone("root", 14, move=(0, 0, 0.0), ease="EASE_IN")
+    rig.squash(14, 0.17, ease="EASE_OUT")
+    rig.squash(16, -0.06)
+    rig.bone("root", 18, move=(0, 0, 0.07), ease="EASE_OUT")
+    rig.squash(18, -0.1)
+    rig.bone("root", 22, move=(0, 0, 0.19), ease="EASE_OUT")
+    rig.squash(22, -0.03)
+    rig.bone("root", 26, move=(0, 0, 0.0), ease="EASE_IN")
+    rig.squash(26, 0.15, ease="EASE_OUT")
+    rig.squash(29, -0.05)
+    rig.squash(32, 0.02)
+    rig.squash(37, 0.0)
+    rig.hands(1, L["L"])
+    rig.hands(4, (L["L"].x + 0.02, L["L"].y + 0.06, L["L"].z - 0.04), ease="EASE_OUT")
+    rig.hands(10, up, ease=("BACK", "EASE_OUT"))
+    rig.hands(14, (up[0] - 0.02, up[1], up[2] - 0.04))
+    rig.hands(22, (up[0] + 0.03, up[1] - 0.02, up[2] + 0.02))
+    rig.hands(27, (up[0] - 0.02, up[1], up[2] - 0.08))
+    rig.hands(32, (0.36, -0.16, 1.1), ease="EASE_IN_OUT")
+    rig.hands(37, L["L"], ease="EASE_OUT")
+    rig.look(1, camera)
+    rig.look(10, (0, -6, 3.0), ease="EASE_OUT")
+    rig.look(14, camera)
+    rig.look(22, (0, -6, 2.8), ease="EASE_OUT")
+    rig.look(26, camera)
+    rig.look(37, camera)
+    rig.shape("smile", 1, 0.25)
     rig.shape("smile", 4, 1.0)
-    rig.shape("open", 5, 0.5)
-    rig.shape("open", 9, 0.0)
-    rig.shape("open", 17, 0.5)
-    rig.shape("open", 21, 0.0)
-    rig.shape("smile", 22, 1.0)
-    rig.shape("smile", 25, 0.3)
+    rig.shape("open", 6, 0.6)
+    rig.shape("open", 14, 0.1)
+    rig.shape("open", 18, 0.6)
+    rig.shape("open", 26, 0.0)
+    rig.shape("smile", 30, 1.0)
+    rig.shape("smile", 37, 0.25)
     rig.finish()
 
-    # sad: slump, head down, slow breath, frown, drooping ears.
-    rig.begin("sad", 24)
-    rig.bone("hips", 10, move=(0, 0, -0.05))
-    rig.bone("hips", 24, move=(0, 0, -0.045))
-    rig.bone("chest", 10, rot=((1, 0, 0), 10))
-    rig.bone("chest", 24, rot=((1, 0, 0), 11))
-    rig.bone("head", 10, rot=((1, 0, 0), 16))
-    rig.bone("head", 24, rot=((1, 0, 0), 15))
-    rig.bone("chest", 17, scale=(1.02, 1.02, 1.03))
-    rig.ears(10, -28, 10)
-    rig.ears(24, -26, 10)
-    rig.bone("hood_tip", 10, rot=((0, 1, 0), 22))
-    rig.bone("hood_tip", 24, rot=((0, 1, 0), 20))
-    for side in ("L", "R"):
-        rig.raise_arm(side, 10, -8, 0)
-        rig.raise_arm(side, 24, -8, 0)
-    rig.brows_sad(8, 1.0)
-    rig.brows_sad(24, 1.0)
-    rig.shape("frown", 8, 1.0)
-    rig.shape("frown", 24, 1.0)
-    rig.blink(8, 0.25)
-    rig.blink(24, 0.25)
+    # sad: 24-frame loop, slumped, swaying slowly, a sigh in the middle.
+    rig.begin("sad", 24, loop=True)
+    rig.mood.update(ear=-26.0, crown=16.0)
+    for f in range(1, 26, 4):
+        ph = 2 * math.pi * (f - 1) / 24
+        rig.bone("hips", f, move=(0.008 * math.sin(ph), 0, -0.045))
+        rig.bone("root", f, rot=((0, 1, 0), 2.0 * math.sin(ph)))
+        rig.bone("chest", f, rot=((1, 0, 0), 10.0))
+    rig.bone("chest", 9, scale=(1.0, 1.0, 1.0))
+    rig.bone("chest", 13, scale=(1.03, 1.03, 1.04), ease="EASE_OUT")
+    rig.bone("chest", 21, scale=(1.0, 1.0, 1.0), ease="EASE_IN")
+    for f in (1, 9, 13, 21, 25):
+        rig.bone("head", f, rot=((1, 0, 0), 16.0 if f in (1, 9, 25) else 13.0))
+    rig.hands(1, (L["L"].x - 0.02, L["L"].y + 0.03, L["L"].z - 0.03))
+    rig.hands(25, (L["L"].x - 0.02, L["L"].y + 0.03, L["L"].z - 0.03))
+    rig.brows_sad(1, 1.0)
+    rig.brows_sad(25, 1.0)
+    rig.shape("frown", 1, 1.0)
+    rig.shape("frown", 25, 1.0)
+    rig.blink(1, 0.3)
+    rig.blink(25, 0.3)
     rig.finish()
 
-    # sleep: eyes closed, deep slow breath, head drooped.
-    rig.begin("sleep", 48)
+    # sleep: 48-frame loop, eyes closed, deep breath, the head nodding off.
+    rig.begin("sleep", 48, loop=True)
+    rig.mood.update(ear=-18.0, crown=12.0)
+    rig.breath(48, depth=0.04, lift=0.0)
+    for f in range(1, 50, 4):
+        ph = 2 * math.pi * (f - 1) / 48
+        rig.bone("hips", f, move=(0, 0, -0.03 + 0.01 * math.sin(ph)))
+        rig.bone("root", f, rot=((0, 1, 0), 1.5 * math.sin(ph)))
+        rig.bone("head", f, rot=[((1, 0, 0), 12 + 2.0 * math.sin(ph)), ((0, 1, 0), 6)])
     rig.blink(1, 1.0)
     rig.blink(49, 1.0)
-    for f in range(1, 50, 4):
-        ph = 2 * math.pi * (f - 1) / 48
-        rig.bone("chest", f, scale=(1 + 0.04 * math.sin(ph), 1 + 0.04 * math.sin(ph), 1 + 0.06 * math.sin(ph)))
-        rig.bone("hips", f, move=(0, 0, -0.03 + 0.01 * math.sin(ph)))
-        rig.bone("head", f, rot=[((1, 0, 0), 12 + 1.5 * math.sin(ph)), ((0, 1, 0), 6)])
-        rig.ears(f, -18 + 2 * math.sin(ph - 0.3))
-        rig.bone("hood_tip", f, rot=((0, 1, 0), 14 - 2 * math.sin(ph - 0.3)))
     rig.shape("open", 1, 0.2)
     rig.shape("open", 49, 0.2)
     rig.finish()
 
-    # pet: squash then stretch spring, head tilt, ears flap, happy squint.
-    rig.begin("pet", 24)
+    # pet: 24 frames, leans into the hand, squints and smiles, springs back.
+    rig.begin("pet", 24, loop=False)
+    rig.mood.update(ear=8.0)
     rig.squash(1, 0.0)
-    rig.squash(4, 0.18)
-    rig.squash(9, -0.14)
-    rig.squash(13, 0.06)
-    rig.squash(17, -0.03)
-    rig.squash(21, 0.01)
+    rig.squash(4, 0.14, ease="EASE_OUT")
+    rig.squash(9, -0.1, ease=("BACK", "EASE_OUT"))
+    rig.squash(14, 0.04)
+    rig.squash(19, -0.02)
     rig.squash(25, 0.0)
-    rig.bone("head", 1, rot=((0, 1, 0), 0))
-    rig.bone("head", 8, rot=((0, 1, 0), 14))
-    rig.bone("head", 16, rot=((0, 1, 0), -5))
-    rig.bone("head", 25, rot=((0, 1, 0), 0))
-    rig.ears(3, -10)
-    rig.ears(7, 28)
-    rig.ears(12, -16)
-    rig.ears(17, 12)
-    rig.ears(21, -4)
-    rig.ears(25, 0)
-    rig.bone("hood_tip", 4, rot=((0, 1, 0), 15))
-    rig.bone("hood_tip", 10, rot=((0, 1, 0), -18))
-    rig.bone("hood_tip", 16, rot=((0, 1, 0), 6))
-    rig.shape("smile", 5, 1.0)
-    rig.shape("smile", 20, 1.0)
-    rig.blink(4, 0.0)
-    rig.blink(8, 0.55)
-    rig.blink(18, 0.55)
+    rig.look(1, camera)
+    rig.look(7, camera, roll=14, ease="EASE_OUT")
+    rig.look(17, camera, roll=10)
+    rig.look(25, camera, ease="EASE_IN_OUT")
+    rig.bone("root", 1, rot=((0, 1, 0), 0))
+    rig.bone("root", 8, rot=((0, 1, 0), 4), ease="EASE_OUT")
+    rig.bone("root", 18, rot=((0, 1, 0), 3))
+    rig.bone("root", 25, rot=((0, 1, 0), 0))
+    rig.shape("smile", 4, 1.0, ease="EASE_OUT")
+    rig.shape("smile", 19, 1.0)
+    rig.shape("smile", 25, 0.0)
+    rig.blink(3, 0.0)
+    rig.blink(7, 0.6, ease="EASE_OUT")
+    rig.blink(18, 0.6)
     rig.blink(23, 0.0)
     rig.finish()
 
-    # feed: mouth opens and closes three times, then a satisfied squash.
-    rig.begin("feed", 24)
-    for k in range(3):
-        s = 1 + 6 * k
+    # feed: 36 frames, the hands bring the food to the mouth, two bites, a happy settle.
+    rig.begin("feed", 36, loop=False)
+    mouth = (0.07, -0.36, 1.12)
+    rig.hands(1, L["L"])
+    rig.hands(6, mouth, ease=("BACK", "EASE_OUT"))
+    rig.hands(18, (mouth[0], mouth[1] + 0.01, mouth[2] - 0.01))
+    rig.hands(24, (L["L"].x, L["L"].y - 0.02, L["L"].z + 0.03), ease="EASE_IN_OUT")
+    rig.hands(37, L["L"])
+    rig.look(1, camera)
+    rig.look(6, (0, -6, 0.6), ease="EASE_OUT")
+    rig.look(18, (0, -6, 0.6))
+    rig.look(24, camera, ease="EASE_IN_OUT")
+    rig.look(37, camera)
+    for s in (6, 13):
         rig.shape("open", s, 0.0)
-        rig.shape("open", s + 3, 0.9)
-        rig.shape("open", s + 6, 0.0)
-        rig.bone("head", s, rot=((1, 0, 0), 0))
-        rig.bone("head", s + 3, rot=((1, 0, 0), -4))
-    rig.squash(19, 0.0)
-    rig.squash(21, 0.12)
-    rig.squash(23, -0.03)
-    rig.shape("smile", 19, 0.0)
-    rig.shape("smile", 22, 1.0)
-    rig.shape("smile", 25, 0.0)
-    rig.blink(20, 0.0)
-    rig.blink(22, 0.5)
-    rig.blink(25, 0.0)
+        rig.shape("open", s + 3, 0.9, ease="EASE_OUT")
+        rig.shape("open", s + 6, 0.0, ease="EASE_IN")
+    rig.squash(22, 0.0)
+    rig.squash(26, 0.11, ease="EASE_OUT")
+    rig.squash(30, -0.04)
+    rig.squash(37, 0.0)
+    rig.shape("smile", 22, 0.0)
+    rig.shape("smile", 26, 1.0)
+    rig.shape("smile", 33, 1.0)
+    rig.shape("smile", 37, 0.0)
+    rig.blink(24, 0.0)
+    rig.blink(27, 0.5)
+    rig.blink(31, 0.0)
     rig.finish()
 
-    # wave: the right arm waves twice.
-    rig.begin("wave", 24)
-    rig.raise_arm("R", 1, 0, 0)
-    rig.raise_arm("R", 5, 78, 10, 35)
-    rig.raise_arm("R", 8, 78, -35, 35)
-    rig.raise_arm("R", 11, 78, 40, 35)
-    rig.raise_arm("R", 14, 78, -35, 35)
-    rig.raise_arm("R", 17, 78, 30, 35)
-    rig.raise_arm("R", 21, 45, 10, 20)
-    rig.raise_arm("R", 25, 0, 0)
-    rig.bone("head", 6, rot=((0, 1, 0), -6))
-    rig.bone("head", 18, rot=((0, 1, 0), -6))
-    rig.shape("smile", 5, 0.8)
-    rig.shape("smile", 20, 0.8)
-    rig.ears(6, 10)
-    rig.ears(14, 10)
+    # wave: 36 frames, the right arm up beside the head, three waves from the
+    # elbow, a head tilt, the arm down and a settle.
+    rig.begin("wave", 36, loop=False)
+    high = Vector((-0.47, -0.24, 1.2))
+    rig.hand("R", 1, L["R"])
+    rig.hand("R", 6, high, ease=("BACK", "EASE_OUT"))
+    for i, dx in enumerate((-0.09, 0.08, -0.09, 0.08, -0.04)):
+        rig.hand("R", 9 + 3 * i, high + Vector((dx, 0.0, 0.03 if dx < 0 else -0.02)), ease="EASE_IN_OUT")
+    rig.hand("R", 30, (L["R"].x - 0.06, L["R"].y - 0.05, L["R"].z + 0.12), ease="EASE_IN_OUT")
+    rig.hand("R", 37, L["R"], ease="EASE_OUT")
+    rig.bone("hand.R", 1, rot=((0, 1, 0), 0))
+    for i, deg in enumerate((18, -18, 18, -18, 8)):
+        rig.bone("hand.R", 9 + 3 * i, rot=((0, 1, 0), deg), ease="EASE_IN_OUT")
+    rig.bone("hand.R", 30, rot=((0, 1, 0), 0))
+    rig.look(1, camera)
+    rig.look(7, camera, roll=-7, ease="EASE_OUT")
+    rig.look(24, camera, roll=-7)
+    rig.look(32, camera, ease="EASE_IN_OUT")
+    rig.look(37, camera)
+    rig.shape("smile", 4, 0.0)
+    rig.shape("smile", 8, 0.9, ease="EASE_OUT")
+    rig.shape("smile", 26, 0.9)
+    rig.shape("smile", 37, 0.0)
     rig.finish()
     return rig.clips
 
@@ -1162,7 +1309,7 @@ def stage_turntable(scene, rig, out):
     contact_sheet(os.path.join(out, "turntable.png"), 4, 0.5, items)
 
 
-MOOD_POSES = (("ok", "idle", 1), ("happy", "happy", 5), ("sad", "sad", 24), ("sleep", "sleep", 25))
+MOOD_POSES = (("ok", "idle", 1), ("happy", "happy", 10), ("sad", "sad", 13), ("sleep", "sleep", 25))
 
 
 def stage_moods(scene, rig, out):
@@ -1189,7 +1336,7 @@ def stage_lookdev(scene, rig, out):
     A/B sheet is composed from several runs with different flags)."""
     name = f"ramp{LOOK['ramp']:.2f}" + ("-ink" if LOOK["ink"] else "") + ("-hull" if LOOK["hull"] else "")
     folder = os.path.join(out, "lookdev", name)
-    pose(rig, "wave", 11)
+    pose(rig, "wave", 12)
     render_still(scene, os.path.join(folder, "wave.png"))
     for mood, clip, frame in MOOD_POSES:
         pose(rig, clip, frame)
@@ -1212,7 +1359,7 @@ def stage_anims(scene, rig, out, clips):
 def stage_hero(scene, rig, out):
     """A double-size still of the wave pose (Eevee: the painterly ramp reads
     the light through Shader to RGB, which Cycles cannot)."""
-    pose(rig, "wave", 11)
+    pose(rig, "wave", 12)
     scene.render.resolution_x, scene.render.resolution_y = FRAME_W * 2, FRAME_H * 2
     render_still(scene, os.path.join(out, "hero.png"))
     scene.render.resolution_x, scene.render.resolution_y = FRAME_W, FRAME_H
