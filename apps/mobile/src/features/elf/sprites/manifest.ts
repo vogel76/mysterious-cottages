@@ -61,7 +61,7 @@ export type SpriteSource = {
 /* The characters as bundled; the paths are relative to this file. A new
    character or a new layer is added the same way: the manifest, then one
    line per sheet file it names. The elf is the body alone for now, the
-   face (neutral, blinking in idle) and the hood baked in; the face and hat
+   face (neutral, blinking in idle) and the hair baked in; the face and hat
    layers follow once art/blender renders them. */
 export const SPRITE_CHARACTERS: Record<string, SpriteSource> = {
   elf: {
@@ -73,9 +73,6 @@ export const SPRITE_CHARACTERS: Record<string, SpriteSource> = {
       'body-4.webp': require('../../../../assets/elf/sprites/elf/body-4.webp'),
       'body-5.webp': require('../../../../assets/elf/sprites/elf/body-5.webp'),
       'body-6.webp': require('../../../../assets/elf/sprites/elf/body-6.webp'),
-      'body-7.webp': require('../../../../assets/elf/sprites/elf/body-7.webp'),
-      'body-8.webp': require('../../../../assets/elf/sprites/elf/body-8.webp'),
-      'body-9.webp': require('../../../../assets/elf/sprites/elf/body-9.webp'),
     },
   },
 }

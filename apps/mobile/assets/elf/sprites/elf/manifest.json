@@ -1,66 +1,48 @@
 {
   "version": 2,
-  "frameWidth": 293,
-  "frameHeight": 427,
+  "frameWidth": 256,
+  "frameHeight": 387,
   "anchor": {
-    "x": 139.2,
-    "y": 412.94
+    "x": 130.2,
+    "y": 372.74
   },
   "fps": 24,
   "sheets": [
     {
       "file": "body-1.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
+      "columns": 8,
+      "rows": 5,
+      "frames": 40
     },
     {
       "file": "body-2.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
+      "columns": 8,
+      "rows": 5,
+      "frames": 40
     },
     {
       "file": "body-3.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
+      "columns": 8,
+      "rows": 5,
+      "frames": 40
     },
     {
       "file": "body-4.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
+      "columns": 8,
+      "rows": 5,
+      "frames": 40
     },
     {
       "file": "body-5.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
+      "columns": 8,
+      "rows": 5,
+      "frames": 40
     },
     {
       "file": "body-6.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
-    },
-    {
-      "file": "body-7.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
-    },
-    {
-      "file": "body-8.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
-    },
-    {
-      "file": "body-9.webp",
-      "columns": 6,
-      "rows": 4,
-      "frames": 24
+      "columns": 8,
+      "rows": 2,
+      "frames": 16
     }
   ],
   "clips": {
@@ -101,7 +83,7 @@
     }
   },
   "pixelsPerMetre": 180.0,
-  "modelHeight": 1.9655,
+  "modelHeight": 1.8144,
   "source": {
     "render": {
       "script": "elf.py",
