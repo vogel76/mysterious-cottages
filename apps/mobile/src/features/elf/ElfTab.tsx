@@ -577,7 +577,7 @@ export function ElfTab() {
             panel has the way out. */}
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} panel={panel} onDecorate={onDecorate} onLedger={onLedger} />
+            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} needs={state.needs} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onLedger={onLedger} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (

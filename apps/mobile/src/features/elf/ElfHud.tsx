@@ -30,7 +30,7 @@ import { NEED_ICONS, elfKey } from './labels'
 
 /* ---------- The top block ---------- */
 
-/* Which panel of the tab is open, if any; the matching button is marked. */
+/* Which panel of the tab is open, if any; the HUD leaves while one is. */
 export type ElfPanel = 'none' | 'decor'
 
 export type ElfHudProps = {
@@ -49,14 +49,13 @@ export type ElfHudProps = {
      waits to be picked. */
   questsDone: number
   rewardWaiting: boolean
-  panel: ElfPanel
   onDecorate: () => void
   /* The ledger was tapped: the day's sheet (the quests, the reward to
      pick, the streak, and what the figures mean). */
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, streak, questsDone, rewardWaiting, panel, onDecorate, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const hatched = stage !== 'egg'
   return (
@@ -80,8 +79,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, needs, hatchAt, wallet, 
         <PressableScale
           onPress={onDecorate}
           accessibilityLabel={t('mobile:elf.decorate')}
-          accessibilityState={{ selected: panel === 'decor' }}
-          style={[styles.chrome, styles.control, panel === 'decor' && styles.controlActive]}
+          style={[styles.chrome, styles.control]}
         >
           <DecorIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
         </PressableScale>
@@ -306,15 +304,11 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   /* The decorating button: a square the height of the name block, in the
-     chrome; the open panel brightens it. */
+     chrome. */
   control: {
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  controlActive: {
-    borderColor: colors.accentBorder,
-    backgroundColor: colors.accentWash,
   },
   /* One row of three, each chip sharing the width so the needs never wrap
      onto a second line over the room. */

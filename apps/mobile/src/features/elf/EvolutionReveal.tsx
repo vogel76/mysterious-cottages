@@ -33,7 +33,7 @@ export function EvolutionReveal() {
      clears the provider's slot before the modal has faded, and the card
      must not go blank meanwhile. */
   const stage = useRef(pendingEvolution).current
-  const name = state?.name ?? t('mobile:elf.defaultName')
+  const name = state?.name || t('mobile:elf.defaultName')
 
   /* Every way out passes this flag, so a double back can never happen. */
   const leaving = useRef(false)

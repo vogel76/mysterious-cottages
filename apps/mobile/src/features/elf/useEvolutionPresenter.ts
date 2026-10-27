@@ -3,8 +3,9 @@ import { useIsFocused, useRouter } from 'expo-router'
 import { useElf } from '../../providers'
 
 /* The one owner of the evolution card and the hatch sheet, mounted by the
-   Elf tab: the first form opens the sheet that names the elf, the later
-   ones the card. The tab is
+   Elf tab: a hatched elf without a name opens the sheet that names it
+   (whatever form the hatch landed on), a form reached opens the card. The
+   tab is
    the top screen exactly while it is focused (no modal over it, not even
    the card itself), so the focus drives the presenter, as the Atlas's
    celebration presenter does for the reward card. When the tab is focused
@@ -20,11 +21,12 @@ const SETTLE_MS = 350
 export function useEvolutionPresenter() {
   const router = useRouter()
   const isFocused = useIsFocused()
-  const { pendingEvolution } = useElf()
+  const { state, pendingEvolution } = useElf()
+  const unnamed = Boolean(state && state.hatched && state.starter === null)
 
   useEffect(() => {
-    if (!isFocused || !pendingEvolution) return
-    const timer = setTimeout(() => router.push(pendingEvolution === 'baby' ? '/elf-hatch' : '/elf-evolve'), SETTLE_MS)
+    if (!isFocused || (!unnamed && !pendingEvolution)) return
+    const timer = setTimeout(() => router.push(unnamed ? '/elf-hatch' : '/elf-evolve'), SETTLE_MS)
     return () => clearTimeout(timer)
-  }, [isFocused, pendingEvolution, router])
+  }, [isFocused, unnamed, pendingEvolution, router])
 }
