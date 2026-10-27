@@ -720,8 +720,11 @@ export function visit(state: ElfState, now: number, finds: readonly ElfFind[] = 
   const opened = recordEvent(settled.state, 'open')
   const evening = hourOf(now) >= EVENING_FROM_HOUR ? recordEvent(opened.state, 'evening') : { state: opened.state, completed: [], setBonus: false }
   const today = dayKey(now)
-  const celebrate = finds.filter((find) => dayKey(find.at) < today && !evening.state.findsCelebrated.includes(find.slug)).map((find) => find.slug)
-  const state_ = celebrate.length ? { ...evening.state, findsCelebrated: [...evening.state.findsCelebrated, ...celebrate] } : evening.state
+  /* Finds from before the egg appeared are the expedition's past, noted
+     without a cheer: a veteran's first visit is the egg's, not a parade. */
+  const celebrate = finds.filter((find) => find.at >= evening.state.eggAppearedAt && dayKey(find.at) < today && !evening.state.findsCelebrated.includes(find.slug)).map((find) => find.slug)
+  const noted = finds.filter((find) => find.at < evening.state.eggAppearedAt && !evening.state.findsCelebrated.includes(find.slug)).map((find) => find.slug)
+  const state_ = celebrate.length || noted.length ? { ...evening.state, findsCelebrated: [...evening.state.findsCelebrated, ...celebrate, ...noted] } : evening.state
   return {
     state: state_,
     newDay: settled.newDay,
@@ -839,9 +842,11 @@ export function hatchAt(state: ElfState): number | null {
 }
 
 /* The egg hatches at the first opening six hours after it appeared, or
-   the moment the first cottage story is read. */
-export function hatchDue(state: ElfState, now: number, storyRead: boolean): boolean {
-  return !state.hatched && (storyRead || now - state.eggAppearedAt >= HATCH_AFTER_MS)
+   the moment a cottage is found while it waits (a find from before it
+   appeared is the expedition's past and does not count: a veteran gets
+   the egg's wait like everyone). */
+export function hatchDue(state: ElfState, now: number, finds: readonly ElfFind[]): boolean {
+  return !state.hatched && (finds.some((find) => find.at >= state.eggAppearedAt) || now - state.eggAppearedAt >= HATCH_AFTER_MS)
 }
 
 /* The hatched elf named and given its element by the player; the app
