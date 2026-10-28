@@ -126,13 +126,14 @@ export const mobilePl = {
     signOutFooter: 'Odkrycia zostaną na tym urządzeniu i wrócą do konta po ponownym zalogowaniu.',
     deleteTitle: 'Usuwanie konta',
   },
-  /* The preferences screen (src/features/preferences): the consent to
-     ads, read from Google's consent SDK, and the row that opens the form
-     again, so it can be changed or withdrawn as easily as it was given. */
+  /* The preferences screen (src/features/preferences): the elf's
+     reminders (their copy is under reminders) and the consent to ads, read
+     from Google's consent SDK, with the row that opens the form again, so
+     it can be changed or withdrawn as easily as it was given. */
   preferences: {
     title: 'Preferencje',
-    row: 'Prywatność i reklamy',
-    rowFooter: 'Zgoda na reklamy i to, czy mogą być dopasowane do Ciebie.',
+    row: 'Powiadomienia i prywatność',
+    rowFooter: 'Przypomnienia od elfa, zgoda na reklamy i to, czy mogą być dopasowane do Ciebie.',
     lead: 'Jedyna reklama w aplikacji to ta, o którą sam poprosisz w arkuszu wsparcia. Formularz zgody Google decyduje, czy może być dopasowana do Ciebie. Zgodę zmienisz albo cofniesz tutaj w każdej chwili, tak samo łatwo, jak ją wyrażasz.',
     adsTitle: 'Reklamy',
     consentRow: 'Zgoda na reklamy',
@@ -226,6 +227,37 @@ export const mobilePl = {
   },
   /* The elf companion prototype: the egg, the care loop, the full-screen
      cottage and its HUD, the evolution card. */
+  /* The elf's reminders (src/features/elf/useElfReminders.ts): local
+     notifications, the elf's question and the preferences' switch. */
+  reminders: {
+    channel: 'Elf i chatynka',
+    eggTitle: 'Jajko jest gotowe!',
+    eggBody: 'Twój elf zaraz się wykluje. Dotknij jajka w chatce.',
+    eggWaitsTitle: 'Jajko wciąż czeka',
+    eggWaitsBody: 'Dotknij je w chatce, a elf się wykluje.',
+    evolveTitle: '{{name}} się zmienia!',
+    evolveBody: 'Zajrzyj do chatki, dzieje się coś wyjątkowego.',
+    letterTitle: 'Przyszedł list!',
+    letterBody: '{{name}} czeka, aż razem go przeczytacie.',
+    plantTitle: 'Roślinka urosła!',
+    plantBody: 'Zobacz, co wyrosło na parapecie.',
+    dayTitle: 'Nowe zadania dnia',
+    dayBody: '{{name}} ma dla Ciebie trzy zadania i nagrodę dnia.',
+    questsToo: 'Czekają też nowe zadania dnia.',
+    askKicker: 'Powiadomienia',
+    askEgg: 'Dać Ci znać, kiedy jajko będzie gotowe do wyklucia? Powiem też, kiedy przyjdzie list albo czekają nowe zadania.',
+    askElf: 'Dać Ci znać, kiedy przyjdzie list, urośnie roślinka albo czekają nowe zadania dnia?',
+    askYes: 'Tak, daj znać',
+    askNo: 'Nie teraz',
+    saidYes: 'Super! Dam znać, gdy coś się wydarzy.',
+    saidNo: 'Jasne. Gdyby co, włączysz to w Preferencjach.',
+    saidDenied: 'Telefon nie pozwala mi dawać znać. Zmienisz to w jego ustawieniach.',
+    sectionTitle: 'Powiadomienia od elfa',
+    row: 'Przypomnienia',
+    footer: 'Elf daje znać, gdy jajko jest gotowe, przyjdzie list, urośnie roślinka albo czekają nowe zadania dnia. Najwyżej raz dziennie i nigdy w nocy; dźwięk i wibracja zależą od ustawień telefonu.',
+    blocked: 'Powiadomienia są wyłączone w ustawieniach telefonu.',
+    openSettings: 'Otwórz ustawienia telefonu',
+  },
   elf: {
     title: 'Twój Elf',
     /* The hatch sheet: the elf is named and given its element here */

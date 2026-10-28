@@ -115,6 +115,13 @@
       "expo-iap",
       "expo-asset",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#d2a64d"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

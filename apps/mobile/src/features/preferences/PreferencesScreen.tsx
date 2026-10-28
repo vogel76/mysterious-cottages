@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { adsOffered, consentAction, openConsentForm, type ConsentSnapshot } from '../../lib/ads'
 import { useOnline, useToast } from '../../providers'
 import { Screen, SettingsRow, SettingsSection, Text, WatchAdIcon, colors, iconSize, space, useTabBarClearance } from '../../ui'
+import { RemindersSection } from './RemindersSection'
 import { useAdsConsent } from './useAdsConsent'
 
 /* The preferences screen (the route /profile/preferences), reached from
    the account screen and from the Profile list, so it is there for a
-   seeker who is signed out as well: the consent to ads, which Google's
-   form decides. The screen names where the consent stands (given,
+   seeker who is signed out as well: the elf's reminders (RemindersSection)
+   and the consent to ads, which Google's form decides. The screen names where the consent stands (given,
    refused, not answered, not required in this region, unknown) and offers the one row
    that reopens the form: the privacy options in the EEA once an answer
    was given (change it, or withdraw it as easily as it was given), the
@@ -47,6 +48,7 @@ export function PreferencesScreen() {
   if (!adsOffered) {
     return (
       <Screen contentStyle={contentStyle}>
+        <RemindersSection />
         <SettingsSection title={t('mobile:preferences.adsTitle')} footer={t('mobile:preferences.adsNotInBuild')}>
           <SettingsRow icon={<WatchAdIcon size={iconSize.md} color={colors.inkSoft} />} label={t('mobile:preferences.consentRow')} value={t('mobile:preferences.statusNotRequired')} />
         </SettingsSection>
@@ -86,6 +88,7 @@ export function PreferencesScreen() {
 
   return (
     <Screen contentStyle={contentStyle}>
+      <RemindersSection />
       <Text tone="soft">{t('mobile:preferences.lead')}</Text>
       <SettingsSection title={t('mobile:preferences.adsTitle')} footer={footer}>
         <SettingsRow icon={<WatchAdIcon size={iconSize.md} color={colors.accentStrong} />} label={t('mobile:preferences.consentRow')} value={status} />

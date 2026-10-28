@@ -111,6 +111,8 @@ export type ElfValue = {
   /* Null until the device has been read, then the elf or null for no egg. */
   state: ElfState | null
   loaded: boolean
+  /* The cottages found, as the rules take them (for the reminders). */
+  finds: readonly ElfFind[]
   stage: ElfStage
   mood: ElfMood
   /* What the elf wears and what stands in the room, every slot filled. */
@@ -523,6 +525,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     return {
       state,
       loaded,
+      finds,
       stage: state ? stageOf(state, foundCount, now) : 'egg',
       mood: state ? moodOf(state, now) : 'content',
       outfit,

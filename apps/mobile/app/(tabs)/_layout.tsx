@@ -3,6 +3,7 @@ import { Tabs, type BottomTabBarProps, type BottomTabNavigationOptions } from 'e
 import { useRouter, useSegments } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useCelebrationPresenter } from '../../src/features/atlas/useCelebrationPresenter'
+import { useElfReminders } from '../../src/features/elf/useElfReminders'
 import { useBoot, useElf, useProgress, useToast } from '../../src/providers'
 import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../../src/ui'
 
@@ -16,9 +17,11 @@ import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../..
    tab screens, which read its height through useTabBarHeight(). Icons are
    the vocabulary's tab glyphs, labels come from the "mobile" namespace, and
    the Kronika carries the badge of seals not yet viewed (mounted only while
-   the count is above zero). The layout also hosts the two things that must
-   act once the tabs are in the navigation state: the celebration presenter
-   and the route the onboarding left behind. Adding a tab is one more
+   the count is above zero). The layout also hosts the things that must
+   act once the tabs are in the navigation state: the celebration
+   presenter, the route the onboarding left behind, and the elf's
+   reminders (planned whenever the app leaves, a tapped one opening the
+   Elf tab). Adding a tab is one more
    Tabs.Screen here plus a folder (with a Stack _layout) or a file in this
    directory. */
 
@@ -43,6 +46,7 @@ export default function TabsLayout() {
     <>
       <CelebrationPresenter />
       <PendingHref />
+      <ElfReminders />
       <Tabs
         backBehavior="initialRoute"
         tabBar={(props: BottomTabBarProps) => <TabBar {...props} discover={discover} />}
@@ -63,6 +67,12 @@ export default function TabsLayout() {
 /* The reward card after a story, presented over whichever tab is showing. */
 function CelebrationPresenter() {
   useCelebrationPresenter()
+  return null
+}
+
+/* The elf's reminders, whichever tab is showing. */
+function ElfReminders() {
+  useElfReminders()
   return null
 }
 

@@ -1116,3 +1116,101 @@ export function placeDecor(state: ElfState, slotId: string, id: string, now: num
   const current = ensureDay(state, now).state
   return recordEvent({ ...current, decor: { ...current.decor, [slotId]: id }, lastInteraction: now }, 'decor')
 }
+
+/* ---------- Reminders ---------- */
+
+/* What the app may tell the player while it is closed, as a reaction to
+   something happening in the cottage, never at a time the player picks:
+   the egg ready to hatch (at that moment), the elf reaching a form by time
+   alone, a letter come, the plant grown (on their day), and the day's new
+   quests and reward (only on the first days after a visit, while the
+   player has not come by yet). At most one a day, the most important of
+   the day's (egg, form, letter, plant, then the quests; an event inside
+   the days of the daily reminder mentions the quests too); never at night
+   (an egg ready in the night waits for the morning); nothing on a day a
+   cottage was found, which belongs to the expedition. The daily one comes
+   at the player's own hour (the app learns it from the visits), so does
+   an event of a day; four weeks after the last visit the cottage falls
+   silent until the player comes back. The app schedules the list when it goes to the
+   background and drops it when it comes back. */
+export type ElfReminderKind = 'egg' | 'evolve' | 'letter' | 'plant' | 'day'
+export type ElfReminder = {
+  at: number
+  kind: ElfReminderKind
+  /* The day's quests are new and the player has not come by yet. */
+  quests: boolean
+}
+
+/* The night the reminders keep, minutes of the local day. */
+export const REMINDER_QUIET = { from: 21 * 60, to: 8 * 60 } as const
+/* The day's reminder comes on this many days after the last visit, then
+   only the events do. */
+export const REMINDER_DAILY_DAYS = 3
+const REMINDER_HORIZON_DAYS = 60
+/* After this many days without a visit nothing more is told. */
+const REMINDER_AWAY_DAYS = 28
+const REMINDERS_MAX = 8
+const REMINDER_RANK: Record<ElfReminderKind, number> = { egg: 5, evolve: 4, letter: 3, plant: 2, day: 1 }
+
+/* The local moment of a day at a minute of it. */
+function atMinute(day: string, minute: number): number {
+  const [y, m, d] = day.split('-').map(Number)
+  return new Date(y!, m! - 1, d!, 0, minute).getTime()
+}
+
+/* A moment moved out of the night: before the morning to the morning,
+   after the evening to the next morning. */
+function outOfQuiet(ms: number): number {
+  const date = new Date(ms)
+  const minute = date.getHours() * 60 + date.getMinutes()
+  if (minute >= REMINDER_QUIET.to && minute < REMINDER_QUIET.from) return ms
+  const day = minute < REMINDER_QUIET.to ? dayKey(ms) : dayKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime())
+  return atMinute(day, REMINDER_QUIET.to)
+}
+
+export function elfReminders(state: ElfState, now: number, finds: readonly ElfFind[], habitMinute: number): ElfReminder[] {
+  const today = dayKey(now)
+  const lastVisit = state.lastVisitDay ?? today
+  const minute = Math.min(REMINDER_QUIET.from - 30, Math.max(REMINDER_QUIET.to, Math.round(habitMinute)))
+  const candidates: ElfReminder[] = []
+  const [y, m, d] = today.split('-').map(Number)
+  const dayAt = (offset: number) => dayKey(new Date(y!, m! - 1, d! + offset).getTime())
+  /* The egg: at the moment it is ready. */
+  if (!state.hatched) {
+    const ready = state.eggAppearedAt + HATCH_AFTER_MS
+    if (ready > now) candidates.push({ at: outOfQuiet(ready), kind: 'egg', quests: false })
+  }
+  const visitedToday = lastVisit === today
+  for (let offset = 0; offset <= REMINDER_HORIZON_DAYS; offset += 1) {
+    const day = dayAt(offset)
+    const before = dayAt(offset - 1)
+    const at = atMinute(day, minute)
+    /* Today's events are the visit's when the player came by already. */
+    const open = offset > 0 || !visitedToday
+    const away = calendarDaysBetween(lastVisit, day)
+    if (away > REMINDER_AWAY_DAYS) break
+    const quests = open && away >= 1 && away <= REMINDER_DAILY_DAYS
+    if (state.hatched && open) {
+      const stageThen = stageOf(state, finds.length, atMinute(day, 12 * 60))
+      if (stageThen !== stageOf(state, finds.length, atMinute(before, 12 * 60))) candidates.push({ at, kind: 'evolve', quests })
+      const daysOld = calendarDaysBetween(dayKey(state.born), day)
+      const due = lettersDueBy(daysOld)
+      if (due > lettersDueBy(daysOld - 1) && (offset > 0 || due > state.lettersSent)) candidates.push({ at, kind: 'letter', quests })
+      if (plantStageOn(state, day) > plantStageOn(state, before)) candidates.push({ at, kind: 'plant', quests })
+    }
+    if (quests && (state.hatched || hatchDue(state, at, finds))) candidates.push({ at, kind: 'day', quests: true })
+  }
+  /* One a day, the most important; none on the day of a find. */
+  const foundToday = finds.some((find) => dayKey(find.at) === today)
+  const byDay = new Map<string, ElfReminder>()
+  for (const candidate of candidates) {
+    if (candidate.at <= now) continue
+    const day = dayKey(candidate.at)
+    if (foundToday && day === today) continue
+    const held = byDay.get(day)
+    const quests = (held?.quests ?? false) || candidate.quests
+    if (!held || REMINDER_RANK[candidate.kind] > REMINDER_RANK[held.kind]) byDay.set(day, { ...candidate, quests: candidate.kind === 'day' || quests })
+    else byDay.set(day, { ...held, quests: held.kind === 'day' || quests })
+  }
+  return [...byDay.values()].sort((a, b) => a.at - b.at).slice(0, REMINDERS_MAX)
+}
