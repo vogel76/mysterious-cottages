@@ -89,6 +89,9 @@ export const MOBILE_ICON_ROLES = [
   'LockIcon',
   /* The cottage's decor edit mode. */
   'DecorIcon',
+  /* A letter from the cottages, sealed and opened. */
+  'LetterIcon',
+  'LetterOpenIcon',
 ] as const
 
 export type SharedIconRole = (typeof SHARED_ICON_ROLES)[number]

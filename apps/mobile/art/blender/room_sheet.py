@@ -17,8 +17,8 @@ plate_<wall>_<floor>.webp with its _day twin, every sprite cropped to its box
 as <slot>_<variant>.webp with its _day twin, the catalogue's pictures as
 <slot>_<variant>_thumb.webp, wall_<id>_thumb.webp and floor_<id>_thumb.webp,
 and manifest.json with the plates, the boxes, the floor line, the rug centre,
-the baked fireplace's box and fire, and the wall's and the floor's boxes, all
-from camera.json; with --registry it writes the TypeScript module that names
+the baked fireplace's box and fire, the wall's and the floor's boxes and
+the sill's places for the finds, all from camera.json; with --registry it writes the TypeScript module that names
 every file of DEST for Metro (src/features/elf/cottage/roomFiles.ts).
 """
 
@@ -163,6 +163,7 @@ def pack(out_dir, entries, camera, dest):
                 "fireplace": camera["fireplace_px"],
                 "hearth": {"x": int(round(camera["hearth_px"][0])), "y": int(round(camera["hearth_px"][1]))},
                 "wall": camera["wall_px"], "floor": camera["floor_px"],
+                "sillOffsets": camera.get("sill_offsets_px", [0]),
                 "walls": [], "floors": [], "plates": {}, "sprites": []}
     for wall in walls:
         for floor in floors:

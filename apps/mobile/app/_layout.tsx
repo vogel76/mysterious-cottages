@@ -247,8 +247,13 @@ function RootStack() {
       <Stack.Screen name="rules" options={sheetRoute} />
       {/* The elf's day (src/features/elf): the quests, the reward to pick,
           the streak and what the ledger's figures mean, a sheet from the
-          Elf tab's HUD. */}
+          Elf tab's HUD; what the days brought (the 'while you were away'
+          card, a letter by its number, the keepsake shelf), sheets from
+          the tab and the room. */}
       <Stack.Screen name="elf-today" options={sheetRoute} />
+      <Stack.Screen name="elf-away" options={sheetRoute} />
+      <Stack.Screen name="elf-letter" options={sheetRoute} />
+      <Stack.Screen name="elf-shelf" options={sheetRoute} />
       {/* Supporting Chatynkowo (src/features/support): a sheet from the
           profile, the Kronika, a tale's end and the celebration card. */}
       <Stack.Screen name="support" options={sheetRoute} />

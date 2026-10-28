@@ -45,6 +45,14 @@
      and a find from an earlier day is handed back once, on the next
      visit, for the elf to celebrate; the find's own day belongs to the
      expedition.
+   - An absence leaves something, never takes: the first visit of a day
+     after it finds one small thing per day away for the windowsill (the
+     newest SILL_SIZE lie there, all are counted in a collection), brings
+     the letter that fell due meanwhile (on the 2nd, 5th and 9th day after
+     the hatch, then weekly: from a cottage found, an invitation from one
+     the app proposes, or the forest's), and tells whether the plant on
+     the sill reached a new stage (7, 30, 90 and 180 days). Two days away,
+     a letter or a new stage make it worth the app's card (ElfAway).
 
    The state also carries what the player chose for the elf and its room:
    the outfit (one id per wearable slot) and the decor (one id per
@@ -74,6 +82,42 @@ export type WearableSlot = 'hat' | 'outfit' | 'neck' | 'hand' | 'face'
 export const WEARABLE_SLOT_IDS: readonly WearableSlot[] = ['hat', 'outfit', 'neck', 'hand', 'face']
 /* What the elf wears: a wearable id per slot. */
 export type ElfOutfit = Record<WearableSlot, string>
+/* The small things the elf finds while the player is away, one for each
+   calendar day of an absence: they lie on the windowsill (the newest
+   SILL_SIZE, the places the room's render has beside the plant) and every
+   one is counted in the collection. */
+export const SILL_ITEMS = ['pinecone', 'feather', 'pebble', 'acorn', 'mushroom', 'leaf', 'berries', 'fossil'] as const
+export type ElfSillItem = (typeof SILL_ITEMS)[number]
+export const SILL_SIZE = 3
+
+/* A letter from the elves of the cottages: from one already found (a
+   thank-you and a word about its virtue), an invitation from the nearest
+   one not found yet, or a word from the forest when there is neither. */
+export type ElfLetterKind = 'found' | 'invite' | 'forest'
+export type ElfLetter = {
+  /* The letter's number, from 1. */
+  n: number
+  /* The local day it arrived. */
+  day: string
+  kind: ElfLetterKind
+  /* The cottage it comes from; null for the forest's. */
+  slug: string | null
+  read: boolean
+}
+
+/* What came of an absence on the first visit of a new day: the days since
+   the last visit, the things found for them, the letter that arrived and
+   the plant's new stage when it grew. `card` says whether it is worth the
+   'while you were away' card (two days or more, a letter or a grown
+   plant); a single night's find is only said. */
+export type ElfAway = {
+  days: number
+  found: ElfSillItem[]
+  letter: ElfLetter | null
+  plantStage: number | null
+  card: boolean
+}
+
 /* What stands in the room: a decor id per furniture slot. The rules do
    not know the slot union (it belongs to the app's catalogue), so the key
    is a string. */
@@ -173,6 +217,13 @@ export type ElfState = {
      the cottage fills the rest with its defaults. */
   outfit?: Partial<ElfOutfit>
   decor?: ElfDecor
+  /* The windowsill, newest first, and how many of each thing were found. */
+  sill: ElfSillItem[]
+  collection: Partial<Record<ElfSillItem, number>>
+  /* The letters kept (the latest LETTERS_KEPT, oldest first) and how many
+     the schedule has delivered or passed. */
+  letters: ElfLetter[]
+  lettersSent: number
 }
 
 /* ---------- The numbers ---------- */
@@ -459,6 +510,10 @@ export function newElf(now: number): ElfState {
     stageShown: null,
     findsCredited: [],
     findsCelebrated: [],
+    sill: [],
+    collection: {},
+    letters: [],
+    lettersSent: 0,
   }
 }
 
@@ -493,6 +548,27 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
     play: count(raw.play),
     bath: count(raw.bath),
   }
+}
+
+function isSillItem(value: string): value is ElfSillItem {
+  return (SILL_ITEMS as readonly string[]).includes(value)
+}
+
+function normalizeCollection(raw: unknown): Partial<Record<ElfSillItem, number>> {
+  const collection: Partial<Record<ElfSillItem, number>> = {}
+  if (!isRecord(raw)) return collection
+  for (const item of SILL_ITEMS) {
+    const value = count(raw[item])
+    if (value > 0) collection[item] = value
+  }
+  return collection
+}
+
+function normalizeLetter(raw: unknown): ElfLetter | null {
+  if (!isRecord(raw) || typeof raw.day !== 'string') return null
+  const kind = raw.kind === 'found' || raw.kind === 'invite' || raw.kind === 'forest' ? raw.kind : null
+  if (!kind) return null
+  return { n: count(raw.n), day: raw.day, kind, slug: typeof raw.slug === 'string' ? raw.slug : null, read: raw.read === true }
 }
 
 /* A stored state brought back to the shape above, or null when the entry
@@ -535,6 +611,10 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     stageShown,
     findsCredited: stringList(raw.findsCredited),
     findsCelebrated: stringList(raw.findsCelebrated),
+    sill: stringList(raw.sill).filter(isSillItem).slice(0, SILL_SIZE),
+    collection: normalizeCollection(raw.collection),
+    letters: Array.isArray(raw.letters) ? raw.letters.map(normalizeLetter).filter((letter): letter is ElfLetter => letter !== null).slice(-LETTERS_KEPT) : [],
+    lettersSent: count(raw.lettersSent),
   }
   const outfit = stringRecord(raw.outfit, WEARABLE_SLOT_IDS) as Partial<ElfOutfit> | undefined
   const decor = stringRecord(raw.decor)
@@ -634,6 +714,105 @@ export function markFormShown(state: ElfState, form: ElfForm): ElfState {
 
 /* ---------- The day ---------- */
 
+/* The calendar days from one local day key to another (0 for the same
+   day), whatever the clock changes between them. */
+function calendarDaysBetween(from: string, to: string): number {
+  const [fy, fm, fd] = from.split('-').map(Number)
+  const [ty, tm, td] = to.split('-').map(Number)
+  return Math.round((Date.UTC(ty!, tm! - 1, td!) - Date.UTC(fy!, fm! - 1, fd!)) / 86400000)
+}
+
+/* The plant on the windowsill grows with the days together since the
+   hatch: a seedling, then a sprout at a week, a small plant at a month, a
+   bush at three months, in flower at half a year. */
+export const PLANT_STAGE_DAYS = [0, 7, 30, 90, 180] as const
+
+function plantStageOn(state: ElfState, day: string): number {
+  if (!state.hatched) return 0
+  const days = calendarDaysBetween(dayKey(state.born), day)
+  let stage = 0
+  PLANT_STAGE_DAYS.forEach((threshold, index) => {
+    if (days >= threshold) stage = index
+  })
+  return stage
+}
+
+/* The plant's stage at a moment, 0..4. */
+export function plantStageAt(state: ElfState, now: number): number {
+  return plantStageOn(state, dayKey(now))
+}
+
+/* Letters come on the 2nd, 5th and 9th day together, then every week;
+   how many are due by a number of days. */
+const LETTER_DAYS = [2, 5, 9] as const
+function lettersDueBy(days: number): number {
+  const early = LETTER_DAYS.filter((day) => days >= day).length
+  return early + (days > 9 ? Math.floor((days - 9) / 7) : 0)
+}
+const LETTERS_KEPT = 12
+
+/* What the elf found on a day of the player's absence: chosen by the day
+   and the elf's name, so it is the same however often the day is settled. */
+function sillFindOn(day: string, name: string): ElfSillItem {
+  return SILL_ITEMS[hashOf(`${day}:${name}`) % SILL_ITEMS.length]!
+}
+
+/* The longest absence the sill is filled for: a long one brings a full
+   sill, not a heap. */
+const SILL_FINDS_MAX = SILL_SIZE
+
+/* Who writes the next letter: the odd ones (the first, the third...) come
+   from a cottage found and not written from yet when there is one, the
+   others are an invitation from the first of the cottages the app
+   proposes (the ones not found, nearest first) that has not invited the
+   elf yet, and the forest writes when there is neither. */
+function nextLetter(state: ElfState, n: number, day: string, finds: readonly ElfFind[], invites: readonly string[]): ElfLetter {
+  const written = new Set(state.letters.filter((letter) => letter.kind === 'found').map((letter) => letter.slug))
+  const invited = new Set(state.letters.filter((letter) => letter.kind === 'invite').map((letter) => letter.slug))
+  const fresh = [...finds].sort((a, b) => a.at - b.at).map((find) => find.slug).filter((slug) => !written.has(slug))
+  const invite = invites.find((slug) => !invited.has(slug)) ?? invites[0] ?? null
+  const pick = (kind: ElfLetterKind, slug: string | null): ElfLetter => ({ n, day, kind, slug, read: false })
+  if (n % 2 === 1 && fresh.length > 0) return pick('found', fresh[0]!)
+  if (invite) return pick('invite', invite)
+  if (fresh.length > 0) return pick('found', fresh[0]!)
+  return pick('forest', null)
+}
+
+/* The absence behind a new day: the things found for each day since the
+   last visit (on the sill, newest first, and in the collection), the
+   letter the schedule has due and whether the plant grew. An egg finds
+   nothing and gets no letters; the first visit ever is no absence. */
+function settleAbsence(previous: ElfState, state: ElfState, today: string, finds: readonly ElfFind[], invites: readonly string[]): { state: ElfState; away: ElfAway | null } {
+  if (!state.hatched || previous.lastVisitDay === null) return { state, away: null }
+  const days = Math.max(1, calendarDaysBetween(previous.lastVisitDay, today))
+  const found: ElfSillItem[] = []
+  const [y, m, d] = today.split('-').map(Number)
+  for (let back = 0; back < Math.min(days, SILL_FINDS_MAX); back += 1) {
+    const date = new Date(y!, m! - 1, d! - back)
+    found.push(sillFindOn(dayKey(date.getTime()), state.name))
+  }
+  const collection = { ...state.collection }
+  for (const item of found) collection[item] = (collection[item] ?? 0) + 1
+  let next: ElfState = { ...state, sill: [...found, ...state.sill].slice(0, SILL_SIZE), collection }
+  const due = lettersDueBy(calendarDaysBetween(dayKey(state.born), today))
+  let letter: ElfLetter | null = null
+  if (due > state.lettersSent) {
+    letter = nextLetter(next, (state.letters[state.letters.length - 1]?.n ?? 0) + 1, today, finds, invites)
+    next = { ...next, letters: [...next.letters, letter].slice(-LETTERS_KEPT), lettersSent: due }
+  }
+  const before = plantStageOn(state, previous.lastVisitDay)
+  const after = plantStageOn(state, today)
+  const plantStage = after > before ? after : null
+  const card = days >= 2 || letter !== null || plantStage !== null
+  return { state: next, away: { days, found, letter, plantStage, card } }
+}
+
+/* A letter read. */
+export function readLetter(state: ElfState, n: number): ElfState {
+  if (!state.letters.some((letter) => letter.n === n && !letter.read)) return state
+  return { ...state, letters: state.letters.map((letter) => (letter.n === n ? { ...letter, read: true } : letter)) }
+}
+
 export type VisitOutcome = {
   state: ElfState
   /* The first visit of a calendar day. */
@@ -648,6 +827,8 @@ export type VisitOutcome = {
      cheer on the first visit after a find (never on the find's own day,
      which belongs to the expedition). */
   celebrate: string[]
+  /* What the absence behind a new day brought, when it brought something. */
+  away: ElfAway | null
 }
 
 /* The day the state lives in is the calendar's: on a new day the visit is
@@ -736,8 +917,8 @@ function creditFinds(state: ElfState, finds: readonly ElfFind[], today: string):
    quests (and the evening one after 18:00), and the cottages found on
    earlier days that the elf has not cheered for yet are handed back to
    celebrate. Call it whenever the tab comes into view. */
-export function visit(state: ElfState, now: number, finds: readonly ElfFind[] = []): VisitOutcome {
-  const settled = settleDay(state, now, finds)
+export function visit(state: ElfState, now: number, finds: readonly ElfFind[] = [], invites: readonly string[] = []): VisitOutcome {
+  const settled = settleDay(state, now, finds, invites)
   const opened = recordEvent(settled.state, 'open')
   const evening = hourOf(now) >= EVENING_FROM_HOUR ? recordEvent(opened.state, 'evening') : { state: opened.state, completed: [], setBonus: false }
   const today = dayKey(now)
@@ -754,19 +935,23 @@ export function visit(state: ElfState, now: number, finds: readonly ElfFind[] = 
     completed: [...settled.completed, ...opened.completed, ...evening.completed],
     setBonus: settled.setBonus || opened.setBonus || evening.setBonus,
     celebrate,
+    away: settled.away,
   }
 }
 
 /* The day settled without a visit's events, for the app's tick and its
    actions: a day that turns while the elf is on screen, or that the hatch
    would otherwise consume, still reports its news (the new day, a streak
-   lost, a milestone), and the cottages found are credited to the day
-   they belong to, before and after the turn. */
-export function settleDay(state: ElfState, now: number, finds: readonly ElfFind[] = []): VisitOutcome {
+   lost, a milestone, what the absence brought), and the cottages found
+   are credited to the day they belong to, before and after the turn.
+   `invites` are the cottages the app proposes for an invitation (those
+   not found, nearest first). */
+export function settleDay(state: ElfState, now: number, finds: readonly ElfFind[] = [], invites: readonly string[] = []): VisitOutcome {
   const today = dayKey(now)
   const before = creditFinds(applyElapsed(state, now), finds, today)
   const day = ensureDay(before.state, now)
-  const after = creditFinds(day.state, finds, today)
+  const absence = day.newDay ? settleAbsence(before.state, day.state, today, finds, invites) : { state: day.state, away: null }
+  const after = creditFinds(absence.state, finds, today)
   return {
     state: after.state,
     newDay: day.newDay,
@@ -775,6 +960,7 @@ export function settleDay(state: ElfState, now: number, finds: readonly ElfFind[
     completed: [...before.completed, ...after.completed],
     setBonus: before.setBonus || after.setBonus,
     celebrate: [],
+    away: absence.away,
   }
 }
 

@@ -2,11 +2,12 @@ import type { ElfEvent, ElfMood, ElfNeedId, ElfStage, ElfStarter } from '@chatyn
 import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, FoundIcon, JoyIcon, LoreIcon, SleepIcon, ToyIcon, WarmIcon, type Icon } from '../../ui'
 
 /* How the elf's ids (a form, an element, a need, a mood, a quest, a
-   wearable or decor slot, an item of either catalogue) map to the copy in the "elf"
-   group of the mobile dictionary and to the vocabulary's glyphs. The
+   wearable or decor slot, an item of either catalogue, a find of the
+   sill, a stage of the plant) map to the copy in the "elf" group of the
+   mobile dictionary and to the vocabulary's glyphs. The
    dictionary names each entry with a prefix and the id in title case
    (stageBaby, starterEmber, needJoy, moodAsleep, wantsClean, guardCap,
-   questFeedTwice, slotHat, itemAcornCap), so the screens build the key
+   questFeedTwice, slotHat, itemAcornCap, sillPinecone), so the screens build the key
    here rather than spelling out every switch themselves. */
 
 function titleCase(id: string): string {
@@ -14,8 +15,13 @@ function titleCase(id: string): string {
 }
 
 /* The full i18next key for a prefixed entry of the elf group. */
-export function elfKey(prefix: 'stage' | 'starter' | 'need' | 'wants' | 'mood' | 'guard' | 'evo' | 'quest' | 'slot' | 'item', id: ElfStage | ElfStarter | ElfNeedId | ElfMood | string): string {
+export function elfKey(prefix: 'stage' | 'starter' | 'need' | 'wants' | 'mood' | 'guard' | 'evo' | 'quest' | 'slot' | 'item' | 'sill', id: ElfStage | ElfStarter | ElfNeedId | ElfMood | string): string {
   return `mobile:elf.${prefix}${titleCase(id)}`
+}
+
+/* The name of the plant's stage, 0..4. */
+export function plantStageKey(stage: number): string {
+  return `mobile:elf.plantStage${stage}`
 }
 
 /* The description of a starter element sits next to its name. */

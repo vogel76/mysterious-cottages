@@ -6,7 +6,8 @@ Skia code we model it here by script (walls, beams, window, fireplace, furniture
 light it like a storybook scene and render it to 2D: one full background plate,
 one empty shell plate and every swappable piece of furniture as its own
 transparent sprite rendered with the same camera and lights, each by night and
-by day. The app composites the sprites over the shell plate, crossfades night
+by day, and so are what the days bring (the plant on the windowsill in its
+stages, the small things the elf finds, the letter on the floor). The app composites the sprites over the shell plate, crossfades night
 and day by its clock and places the elf sprite on the rug. The elf's own frames
 are rendered inside this scene too (elf.py imports this module), so the figure
 and the room share one light, one painterly shading and one ink.
@@ -38,7 +39,7 @@ import sys
 import bmesh
 import bpy
 from bpy_extras.object_utils import world_to_camera_view
-from mathutils import Matrix, Vector
+from mathutils import Euler, Matrix, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -784,6 +785,13 @@ WIN_HOLE = 0.46                   # square hole in the wall, centred on the wind
 ROUND_R = 0.36                    # outer radius of the round window
 RUG_R = 0.6                       # radius of the rugs
 FERN_X, CANDLE_X = -0.68, 0.68    # the corner pieces in front, kept inside the phone's band
+# The windowsill every window has, where the plant and the things the elf
+# finds stand: its top, its depth, the pot at its left end and three
+# places for the newest finds beside it.
+SILL_Z = WIN_CZ - WIN_H / 2
+SILL_Y = WALL_Y - 0.07
+SILL_POT_X = -0.8
+SILL_ITEM_X = (-0.68, -0.57, -0.46)
 
 FIRE_X0, FIRE_X1 = 0.62, 1.32     # the whole fireplace, mantel included, on the right
 FIRE_D = 0.3                      # how far the stone body protrudes from the wall
@@ -882,6 +890,13 @@ def build_materials():
     MATS["ball"] = checker_material("Ball", "#d9473a", "#f3e4c0", scale=4.0, roughness=0.5)
     MATS["mushroom"] = toon_material("Mushroom", "#c0392b", roughness=0.5)
     MATS["stump_rings"] = ring_material("StumpRings", ["#c9a36a", "#a8814c"], ring_width=0.018)
+    MATS["flower_pink"] = toon_material("FlowerPink", "#e98aa6", roughness=0.8)
+    MATS["pebble"] = noisy_material("Pebble", "#9a948a", "#6f6a62", scale=40.0, strength=0.5, roughness=0.8)
+    MATS["autumn_leaf"] = toon_material("AutumnLeaf", "#d0722c", roughness=0.8)
+    MATS["berry"] = toon_material("Berry", "#b3263a", roughness=0.3)
+    MATS["fossil_line"] = toon_material("FossilLine", "#6a5f52", roughness=0.9)
+    MATS["paper_shade"] = toon_material("PaperShade", "#e2d5b6", roughness=0.9)
+    MATS["seal"] = toon_material("Seal", "#a3262a", roughness=0.4)
     # the walls and the floors on offer (the plates are rendered for every pair)
     MATS["wall.boards"] = plank_material("WallBoards", plank_width=0.15, along="z", tint=("#8a6440", "#b08a5c"), seam_color="#3a2716", world=True)
     MATS["wall.logs"] = band_material("WallLogs", "z", 0.22, [(0.0, "#3e2716"), (0.25, "#7a5030"), (0.55, "#a07246"), (0.85, "#6a4528"), (1.0, "#3e2716")], seam_color="#24160c", seam=0.04, world=True)
@@ -1174,7 +1189,14 @@ def build_window_round(coll):
     night = cylinder("window.night", coll, r_in + 0.02, 0.004, (WIN_CX, WALL_Y - 0.01, WIN_CZ), MATS["night"], rotation=(math.pi / 2, 0, 0), segments=48)
     SKY_PLANES.append(no_ink(no_shadow(night)))
     build_night_sky(coll, WIN_CX, WIN_CZ, r_in * 0.72, r_in * 0.72)
+    window_sill(coll)
     window_common(coll, "round")
+
+
+def window_sill(coll):
+    """The sill under a window, the one the plant and the finds stand on."""
+    box_bounds("window.sill", coll, WIN_CX - WIN_W / 2 - 0.06, WIN_CX + WIN_W / 2 + 0.06, WALL_Y - 0.13, WALL_Y,
+               SILL_Z - 0.045, SILL_Z, MATS["wood_light"], outline=0.005)
 
 
 def build_night_sky(coll, cx, cz, half_w, half_h):
@@ -1449,12 +1471,16 @@ def build_window_shuttered(coll):
             rot = Matrix.Rotation(angle, 4, "Z")
             obj.matrix_basis = Matrix.Translation(pivot) @ rot @ Matrix.Translation(-pivot) @ obj.matrix_basis
     # the flower box on the sill
-    box_bounds("window.planter", coll, x0 - 0.02, x1 + 0.02, WALL_Y - 0.16, WALL_Y - 0.02, z0 - 0.1, z0, MATS["terracotta"])
+    window_sill(coll)
+    # a little box of flowers at the sill's right end, the left kept for
+    # the plant and the finds
+    px0 = SILL_ITEM_X[-1] + 0.05
+    box_bounds("window.planter", coll, px0, x1 + 0.04, WALL_Y - 0.13, WALL_Y - 0.02, z0, z0 + 0.07, MATS["terracotta"])
     rng = random.Random(21)
-    for k in range(9):
-        fx = x0 + 0.04 + (x1 - x0 - 0.08) * k / 8
-        stem_top = Vector((fx + rng.uniform(-0.02, 0.02), WALL_Y - 0.09, z0 + 0.06 + rng.uniform(0, 0.05)))
-        stick(f"window.stem{k}", coll, (fx, WALL_Y - 0.09, z0), stem_top, 0.006, 0.004, MATS["fern"], segments=6)
+    for k in range(4):
+        fx = px0 + 0.025 + (x1 + 0.02 - px0 - 0.05) * k / 3
+        stem_top = Vector((fx + rng.uniform(-0.01, 0.01), WALL_Y - 0.075, z0 + 0.13 + rng.uniform(0, 0.04)))
+        stick(f"window.stem{k}", coll, (fx, WALL_Y - 0.075, z0 + 0.07), stem_top, 0.006, 0.004, MATS["fern"], segments=6)
         petal = MATS["flower_red"] if k % 3 == 0 else MATS["flower_yellow"] if k % 3 == 1 else MATS["lavender"]
         sphere(f"window.flower{k}", coll, 0.024, stem_top, petal, scale=(1, 1, 0.7), segments=10)
 
@@ -1742,6 +1768,133 @@ def build_candle_toychest(coll, rug_center):
 
 
 # ----------------------------------------------------------------------------
+# What the days bring: the plant on the sill, the things found, a letter
+# ----------------------------------------------------------------------------
+
+PLANT_STAGES = ("stage0", "stage1", "stage2", "stage3", "stage4")
+
+
+def build_plant(coll, stage):
+    """The plant in its pot at the sill's left end, by its stage: a seedling,
+    a sprout, a small plant, a bush, a bush in flower."""
+    x, y, z = SILL_POT_X, SILL_Y, SILL_Z
+    lathe("plant.pot", coll, [(0.0, 0.0), (0.032, 0.0), (0.042, 0.06), (0.048, 0.065), (0.048, 0.08), (0.0, 0.08)],
+          (x, y, z), MATS["terracotta"], segments=20)
+    cylinder("plant.soil", coll, 0.04, 0.006, (x, y, z + 0.075), MATS["soil"], segments=20)
+    top = z + 0.078
+    rng = random.Random(30 + stage)
+    stems = (1, 1, 2, 4, 4)[stage]
+    height = (0.025, 0.06, 0.1, 0.15, 0.16)[stage]
+    leaves = (2, 4, 6, 12, 12)[stage]
+    tips = []
+    for i in range(stems):
+        a = 2 * math.pi * i / max(1, stems) + rng.uniform(-0.3, 0.3)
+        lean = 0.0 if stems == 1 else 0.025
+        tip = Vector((x + lean * math.cos(a), y + lean * math.sin(a), top + height * rng.uniform(0.85, 1.0)))
+        stick(f"plant.stem{i}", coll, (x, y, top), tip, 0.004, 0.003, MATS["fern"], segments=6)
+        tips.append(tip)
+    size = (0.014, 0.02, 0.026, 0.03, 0.03)[stage]
+    for k in range(leaves):
+        tip = tips[k % len(tips)]
+        t = 0.35 + 0.65 * (k // len(tips)) / max(1, leaves // len(tips))
+        base = Vector((x, y, top)).lerp(tip, min(1.0, t))
+        a = 2 * math.pi * k / leaves + rng.uniform(-0.4, 0.4)
+        p = base + Vector((math.cos(a), math.sin(a), 0.4)) * size
+        sphere(f"plant.leaf{k}", coll, size, p, MATS["fern"], scale=(1.0, 0.5, 0.3), segments=10)
+    if stage == 4:
+        for i, tip in enumerate(tips[:3]):
+            for j in range(5):
+                b = 2 * math.pi * j / 5
+                sphere(f"plant.petal{i}{j}", coll, 0.012, tip + Vector((math.cos(b) * 0.014, -0.01, math.sin(b) * 0.014)), MATS["flower_pink"],
+                       scale=(1, 0.4, 1), segments=8)
+            sphere(f"plant.heart{i}", coll, 0.008, tip + Vector((0, -0.015, 0)), MATS["flower_yellow"], segments=8)
+
+
+SILL_ITEMS = ("pinecone", "feather", "pebble", "acorn", "mushroom", "leaf", "berries", "fossil")
+
+
+def almond(length, width, skew=0.0, steps=10):
+    """The outline of a leaf or a feather standing on its foot at the
+    origin, for prism_xz: pointed at both ends, widest in the middle (or,
+    with skew, nearer the top), counter-clockwise so its face looks at the
+    camera."""
+    def half(t):
+        return 0.5 * width * math.sin(math.pi * t) ** 0.8 * (1 + skew * (t - 0.5))
+    right = [(half(i / steps), length * i / steps) for i in range(steps + 1)]
+    left = [(-half(i / steps), length * i / steps) for i in range(steps - 1, 0, -1)]
+    return right + left
+
+
+def leant(obj, rotation, base):
+    """A flat piece built at the origin, turned and set down at base."""
+    obj.rotation_euler = rotation
+    obj.location = base
+    return obj
+
+
+def build_sill_item(coll, item):
+    """One of the things the elf finds, on the sill's first place for finds
+    (the app moves it to the others)."""
+    x, y, z = SILL_ITEM_X[0], SILL_Y, SILL_Z
+    if item == "pinecone":
+        sphere("sill.cone", coll, 1.0, (x, y, z + 0.035), MATS["bark"], scale=(0.026, 0.026, 0.036), segments=16)
+        for k in range(4):
+            torus(f"sill.scale{k}", coll, 0.024 - 0.004 * abs(k - 1.5), 0.005, (x, y, z + 0.014 + k * 0.014), MATS["acorn_cap"], segments=16, rings=6)
+    elif item == "feather":
+        # a flat quill feather leant against the glass, its tip dark; lying
+        # flat it would be a line from the camera
+        turn = (math.radians(-20), math.radians(22), 0)
+        base = Vector((x - 0.012, y, z + 0.004))
+        leant(prism_xz("sill.vane", coll, almond(0.1, 0.024, skew=0.4), -0.0015, 0.0015, MATS["feather"]), turn, base)
+        leant(prism_xz("sill.tip", coll, [(px, pz + 0.072) for px, pz in almond(0.028, 0.017)], -0.0025, -0.0015, MATS["feather_dark"]), turn, base)
+        rotate = Euler(turn).to_matrix()
+        stick("sill.quill", coll, base + rotate @ Vector((0, -0.002, -0.004)), base + rotate @ Vector((0, -0.002, 0.098)), 0.0022, 0.0008, MATS["feather_dark"], segments=6)
+    elif item == "pebble":
+        sphere("sill.pebble", coll, 1.0, (x, y, z + 0.012), MATS["pebble"], scale=(0.03, 0.024, 0.013), segments=16)
+    elif item == "acorn":
+        sphere("sill.acorn", coll, 0.02, (x, y, z + 0.022), MATS["acorn"], scale=(1, 1, 1.3), segments=14)
+        cylinder("sill.cap", coll, 0.022, 0.014, (x, y, z + 0.044), MATS["acorn_cap"], radius2=0.015, segments=14)
+        stick("sill.stalk", coll, (x, y, z + 0.05), (x + 0.004, y, z + 0.062), 0.003, 0.002, MATS["acorn_cap"], segments=6)
+    elif item == "mushroom":
+        cylinder("sill.stem", coll, 0.008, 0.035, (x, y, z + 0.0175), MATS["cream"], segments=10)
+        sphere("sill.cap", coll, 0.024, (x, y, z + 0.036), MATS["mushroom"], scale=(1, 1, 0.55), segments=14)
+        for k in range(3):
+            a = 2 * math.pi * k / 3 + 0.4
+            sphere(f"sill.dot{k}", coll, 0.005, (x + 0.014 * math.cos(a), y + 0.014 * math.sin(a) - 0.004, z + 0.044), MATS["cream"], segments=6)
+    elif item == "leaf":
+        # leant against the glass like the feather, on its stalk
+        turn = (math.radians(-24), math.radians(-14), 0)
+        base = Vector((x + 0.004, y, z + 0.008))
+        leant(prism_xz("sill.leaf", coll, almond(0.072, 0.05), -0.0015, 0.0015, MATS["autumn_leaf"]), turn, base)
+        rotate = Euler(turn).to_matrix()
+        stick("sill.vein", coll, base + rotate @ Vector((0, -0.002, 0.004)), base + rotate @ Vector((0, -0.002, 0.064)), 0.0014, 0.0006, MATS["acorn_cap"], segments=4)
+        stick("sill.stalk", coll, base + rotate @ Vector((0, -0.002, 0.006)), base + rotate @ Vector((0.006, -0.002, -0.01)), 0.0016, 0.0012, MATS["acorn_cap"], segments=4)
+    elif item == "berries":
+        for k, (dx, dy) in enumerate(((0.0, 0.0), (0.014, 0.006), (-0.012, 0.008), (0.004, -0.012))):
+            sphere(f"sill.berry{k}", coll, 0.009, (x + dx, y + dy, z + 0.009), MATS["berry"], segments=10)
+        sphere("sill.berryleaf", coll, 1.0, (x - 0.02, y + 0.012, z + 0.004), MATS["fern"], scale=(0.02, 0.011, 0.003), segments=10)
+    elif item == "fossil":
+        cylinder("sill.fossil", coll, 0.032, 0.012, (x, y, z + 0.016), MATS["pebble"], rotation=(math.pi / 2, 0, 0), segments=24)
+        for k, r in enumerate((0.026, 0.018, 0.011, 0.005)):
+            torus(f"sill.coil{k}", coll, r, 0.0025, (x + 0.003 * k, y - 0.007, z + 0.016), MATS["fossil_line"], rotation=(math.pi / 2, 0, 0), segments=24, rings=6)
+
+
+def build_letter(coll, rug_center):
+    """A letter on the floor in front of the rug, sealed in red."""
+    x, y = -0.28, rug_center[1] - 0.66
+    env = box("letter.envelope", coll, (0.17, 0.11, 0.006), (x, y, 0.004), MATS["paper"])
+    env.rotation_euler = (0, 0, math.radians(-12))
+    # the flap folded down over the front, its tip under the seal; turned
+    # with the envelope about the envelope's centre
+    turn = math.radians(-12)
+    flap = prism_xz("letter.flap", coll, [(-0.085, 0.0), (0.0, 0.052), (0.085, 0.0)], -0.002, 0.002, MATS["paper_shade"])
+    flap.rotation_euler = (math.radians(90), 0, turn)
+    flap.location = (x - 0.054 * math.sin(turn), y + 0.054 * math.cos(turn), 0.008)
+    cylinder("letter.seal", coll, 0.016, 0.005, (x + 0.003, y + 0.002, 0.009), MATS["seal"], segments=16)
+    contact_shadow(coll, (x, y, 0), 0.12, 0.08, strength=0.4)
+
+
+# ----------------------------------------------------------------------------
 # Scene assembly and renders
 # ----------------------------------------------------------------------------
 
@@ -1757,12 +1910,22 @@ SLOTS = [
     ("fern", "fern", True), ("fern", "mushroom", False), ("fern", "stump", False),
     ("candle", "candle", True), ("candle", "cauldron", False), ("candle", "toyChest", False),
     ("herbs", "herbs", True), ("herbs", "garlic", False), ("herbs", "dreamcatcher", False),
+    # what the days bring: not chosen but shown as the rules say
+    ("plant", "stage0", True), ("plant", "stage1", False), ("plant", "stage2", False), ("plant", "stage3", False),
+    ("plant", "stage4", False),
+    ("sill", "pinecone", True), ("sill", "feather", False), ("sill", "pebble", False), ("sill", "acorn", False),
+    ("sill", "mushroom", False), ("sill", "leaf", False), ("sill", "berries", False), ("sill", "fossil", False),
+    ("letter", "envelope", True),
 ]
 
 # The walls and the floors on offer, the first of each the default: they
 # are not pieces but the room's own surfaces, so the plate is rendered for
 # every pair (plate_<wall>_<floor>.png) and the app draws the pair the
 # decor names.
+# The pieces the days bring rather than the player: in the manifest like
+# the furniture, but not in the review plate with the defaults.
+EXTRA_SLOTS = ("plant", "sill", "letter")
+
 WALL_IDS = ("plaster", "boards", "logs")
 FLOOR_IDS = ("planks", "flagstones", "terracotta")
 WALL_OBJECTS = []
@@ -1806,7 +1969,12 @@ def build_everything(scene, quality=True):
         ("candle", "candle"): lambda c: build_candle_candle(c, rug_center),
         ("candle", "cauldron"): lambda c: build_candle_cauldron(c, rug_center),
         ("candle", "toyChest"): lambda c: build_candle_toychest(c, rug_center),
+        ("letter", "envelope"): lambda c: build_letter(c, rug_center),
     }
+    for index, stage in enumerate(PLANT_STAGES):
+        builders[("plant", stage)] = lambda c, index=index: build_plant(c, index)
+    for item in SILL_ITEMS:
+        builders[("sill", item)] = lambda c, item=item: build_sill_item(c, item)
     for slot, variant, _default in SLOTS:
         if (slot, variant) not in builders:
             builders[(slot, variant)] = globals()[f"build_{slot}_{variant.lower()}"]
@@ -1871,6 +2039,9 @@ def camera_report(scene, cam, tilt, rug_center, out_dir):
         "hearth_px": px((FIRE_CX, WALL_Y - FIRE_D, 0.3)),
         # the room's surfaces, the app's tap targets for the wall and the floor
         "wall_px": box_px((-ROOM_W / 2, WALL_Y, 0.0), (ROOM_W / 2, WALL_Y, CEIL_Z)),
+        # the sill's places for the finds, as offsets in plate pixels from the
+        # first, where every find is rendered
+        "sill_offsets_px": [round(px((sx, SILL_Y, SILL_Z))[0] - px((SILL_ITEM_X[0], SILL_Y, SILL_Z))[0], 1) for sx in SILL_ITEM_X],
         "floor_px": {"x": 0, "y": round((1 - fl.y) * h), "width": w, "height": h - round((1 - fl.y) * h)},
         # the catalogue as rendered: the pieces in slot order with their
         # defaults, and the walls and floors, the default first
@@ -2005,7 +2176,7 @@ def main():
     def suffix(time):
         return "" if time == "night" else "_day"
 
-    defaults = {(s, v) for s, v, d in SLOTS if d}
+    defaults = {(s, v) for s, v, d in SLOTS if d and s not in EXTRA_SLOTS}
     rendered = []
     sprite_files = []
 

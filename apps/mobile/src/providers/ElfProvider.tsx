@@ -18,13 +18,16 @@ import {
   pet as petElf,
   PET_COOLDOWN_MS,
   placeDecor as placeElfDecor,
+  readLetter as readElfLetter,
   settleDay,
   stageOf,
   tendEgg,
   toggleSleep as toggleElfSleep,
   visit as visitElf,
   WEARABLE_SLOT_IDS,
+  distanceKm,
   type CareOutcome,
+  type ElfAway,
   type ElfCareAction,
   type ElfEggAction,
   type ElfFind,
@@ -42,6 +45,7 @@ import {
 import { STORAGE_KEYS } from '../config'
 import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, PHOTO_ID, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
 import { readJsonStrict, writeJson } from '../lib/storage'
+import { useContent } from './ContentProvider'
 import { useProgress } from './ProgressProvider'
 
 /* The elf companion's state for the whole app, on the rules in
@@ -63,8 +67,12 @@ import { useProgress } from './ProgressProvider'
    time) waits in `pendingEvolution` until the Elf tab has shown its card.
    What the day's rules said about an action or a visit (a quest completed
    and its pay, the full set, a new day, a streak milestone or a streak
-   lost, a cottage found to cheer about) is published as `news`, one
-   record the tab turns into the elf's lines.
+   lost, a cottage found to cheer about, what an absence brought) is
+   published as `news`, one record the tab turns into the elf's lines; an
+   absence worth its card (two days or more, a letter, the plant grown)
+   also waits in `away` until the tab has shown it. The cottages proposed
+   for the letters' invitations are the ones not found, nearest first to
+   the latest find, from the content provider this one mounts under.
 
    The cottages found come from the progress provider, which this one
    mounts under: they decide the form, a find while the egg waits hatches
@@ -94,6 +102,9 @@ export type ElfNews = {
   streak: number
   /* Cottages found on an earlier day, for the elf to cheer about. */
   celebrate: string[]
+  /* What the absence behind a new day brought (the things found, a
+     letter, the plant grown), when it brought something. */
+  away: ElfAway | null
 }
 
 export type ElfValue = {
@@ -133,6 +144,11 @@ export type ElfValue = {
   pendingEvolution: ElfForm | null
   acknowledgeEvolution: () => void
   news: ElfNews | null
+  /* The 'while you were away' card waiting to be shown, and its dismissal. */
+  away: ElfAway | null
+  dismissAway: () => void
+  /* A letter opened. */
+  readLetter: (n: number) => void
 }
 
 const ElfContext = createContext<ElfValue | null>(null)
@@ -186,6 +202,24 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [progress.found],
   )
   const findsRef = useRef(finds)
+  /* The cottages proposed for an invitation: those not found, nearest
+     first to the latest find (to the middle of the map before any). */
+  const { cottages } = useContent()
+  const invites = useMemo(() => {
+    const unfound = cottages.filter((cottage) => !progress.found[cottage.slug])
+    if (unfound.length === 0) return []
+    const latest = Object.entries(progress.found).sort((a, b) => Date.parse(b[1].foundAt) - Date.parse(a[1].foundAt))[0]
+    const anchor = (latest && cottages.find((cottage) => cottage.slug === latest[0])) || {
+      lat: cottages.reduce((sum, cottage) => sum + cottage.lat, 0) / cottages.length,
+      lng: cottages.reduce((sum, cottage) => sum + cottage.lng, 0) / cottages.length,
+    }
+    return [...unfound].sort((a, b) => distanceKm(anchor, a) - distanceKm(anchor, b)).slice(0, 5).map((cottage) => cottage.slug)
+  }, [cottages, progress.found])
+  const invitesRef = useRef(invites)
+  useEffect(() => {
+    invitesRef.current = invites
+  }, [invites])
+  const [away, setAway] = useState<ElfAway | null>(null)
   const dirtyRef = useRef(false)
   const petAtRef = useRef(0)
   const newsSeq = useRef(0)
@@ -225,7 +259,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   /* The elf as it is now: the drift applied, the day settled (its news
      handed back for the caller to report). */
   const settle = useCallback((current: ElfState, now: number): { state: ElfState; day: DayReport } => {
-    const settled = settleDay(current, now, findsRef.current)
+    const settled = settleDay(current, now, findsRef.current, invitesRef.current)
     return { state: settled.state, day: settled }
   }, [])
 
@@ -272,7 +306,9 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     const completed = [...(day?.completed ?? []), ...quests.completed]
     const setBonus = (day?.setBonus ?? false) || quests.setBonus
     const celebrate = quests.celebrate ?? []
-    if (!completed.length && !setBonus && !newDay && streakLost === null && !milestoneDust && !celebrate.length) return
+    const absence = day?.away ?? null
+    if (absence?.card) setAway(absence)
+    if (!completed.length && !setBonus && !newDay && streakLost === null && !milestoneDust && !celebrate.length && !absence) return
     newsSeq.current += 1
     setNews({
       seq: newsSeq.current,
@@ -283,6 +319,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       milestoneDust,
       streak: quests.state.streak,
       celebrate,
+      away: absence,
     })
   }, [])
 
@@ -339,14 +376,26 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     commit(newElf(Date.now()), true)
     setNews(null)
+    setAway(null)
   }, [commit])
+
+  const dismissAway = useCallback(() => setAway(null), [])
+  const readLetter = useCallback(
+    (n: number) => {
+      const current = stateRef.current
+      if (!current) return
+      const next = readElfLetter(current, n)
+      if (next !== current) commit(next, true)
+    },
+    [commit],
+  )
 
   const visit = useCallback(() => {
     const now = Date.now()
     /* The first visit ever lays the egg in the nest. */
     const current = stateRef.current ?? newElf(now)
     const { state: settled, day } = settle(current, now)
-    const outcome = visitElf(settled, now, findsRef.current)
+    const outcome = visitElf(settled, now, findsRef.current, invitesRef.current)
     if (outcome.state !== current) commit(outcome.state, true)
     report(current, outcome, day)
   }, [commit, settle, report])
@@ -494,8 +543,11 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       pendingEvolution,
       acknowledgeEvolution,
       news,
+      away,
+      dismissAway,
+      readLetter,
     }
-  }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news])
+  }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

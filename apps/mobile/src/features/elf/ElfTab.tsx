@@ -4,13 +4,14 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
 import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
+import type { RoomExtras } from './cottage/roomAssets'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfHud, type ElfPanel } from './ElfHud'
 import { DECOR_SLOTS, ElfDecorPanel, type CatalogueTab } from './ElfDecorPanel'
@@ -18,7 +19,7 @@ import { ElfSpeech } from './ElfSpeech'
 import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
 import { elfKey } from './labels'
-import { useEvolutionPresenter } from './useEvolutionPresenter'
+import { useElfCardPresenter } from './useElfCardPresenter'
 import { useReturnGreeting } from './useReturnGreeting'
 
 /* The Elf tab's screen: the cottage, from the first visit, with the egg
@@ -68,6 +69,12 @@ import { useReturnGreeting } from './useReturnGreeting'
    shows the latest cottage found (its photo, from the expedition's cache,
    drawn into the frame's render) once there is one, unless the player
    picks another picture, and a tap on it opens that cottage's story.
+   What the days bring is in the room too: the plant on the windowsill
+   grows with the elf's age, the finds of the days away lie beside it, and
+   a letter that came waits on the floor. A tap on the letter opens it, one
+   on the shelf or the finds the keepsake shelf, and the first visit after
+   an absence of two days or more opens the 'while you were away' card (the
+   card presenter); a single night's find the elf says itself.
 
    The decorating mode is a panel inside the tab, not a route: a route
    would unfocus the tab and pause the scene, and the point of the panel
@@ -84,6 +91,12 @@ import { useReturnGreeting } from './useReturnGreeting'
    run under the Atlas for nobody. A new egg gets a fresh scene (keyed by
    the egg's own moment, so the hatch keeps the room on screen). */
 
+/* A name in the middle of a line: its first letter lowered ("Szyszka" to
+   "szyszka"), the rest kept ("Amonit z Jury"). */
+function lowerFirst(text: string, language: string): string {
+  return text.charAt(0).toLocaleLowerCase(language) + text.slice(1)
+}
+
 /* How long a line stays in the elf's speech bubble. */
 const SPEECH_MS = 4000
 /* The hatch: how often the ready egg rocks on its own, how many taps crack
@@ -95,18 +108,18 @@ const HATCH_CHEER_DELAY_MS = 400
 const ACORN = 44
 
 export function ElfTab() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const insets = useSafeAreaInsets()
   /* The HUD sits above the floating bar's full height: an absolute layout
      gets no automatic content inset. */
   const tabBarHeight = useTabBarHeight()
   const elf = useElf()
-  const { state, loaded, stage, mood, decor, lastInteraction, news, visit, hatchReady, hatchNow } = elf
+  const { state, loaded, stage, mood, decor, lastInteraction, news, away, visit, hatchReady, hatchNow } = elf
   /* The cottages, to name the one the elf cheers about and to find the
      latest one's photo; the finds themselves and their count. */
   const { cottages } = useContent()
   const { foundCount, state: progress } = useProgress()
-  useEvolutionPresenter()
+  useElfCardPresenter()
   const router = useRouter()
   const focused = useIsFocused()
 
@@ -220,10 +233,14 @@ export function ElfTab() {
   /* The latest state for the handlers, without re-making them on the drift. */
   const stateRef = useRef(state)
   stateRef.current = state
+  /* Whether the 'while you were away' card waits: it tells of the letter itself. */
+  const awayRef = useRef(away)
+  awayRef.current = away
 
   /* The news of the last action or visit, said line by line: a cottage
      found since the last visit first (the elf's own joy), a streak lost
-     (the one that stings), the new day with its quests and reward, then
+     (the one that stings), the new day with its quests and reward, the
+     night's find on the sill (a longer absence has the card instead), then
      each quest earned. A find, the full set of quests and a streak
      milestone get a cheer in the scene. Each record is said once, when
      the tab is in view: news that arrived while another tab was on top
@@ -241,11 +258,13 @@ export function ElfTab() {
     if (news.streakLost !== null) lines.push(t('mobile:elf.streakLost', { count: news.streakLost }))
     if (news.milestoneDust) lines.push(t('mobile:elf.streakMilestone', { days: news.streak, dust: news.milestoneDust }))
     if (news.newDay) lines.push(t('mobile:elf.newDayLine'))
+    const find = news.away && !news.away.card ? news.away.found[0] : undefined
+    if (find) lines.push(t('mobile:elf.sillFoundLine', { item: lowerFirst(t(elfKey('sill', find)), i18n.language) }))
     for (const quest of news.completed) lines.push(quest.dust > 0 ? t('mobile:elf.questDoneDust', { count: quest.acorns, dust: quest.dust }) : t('mobile:elf.questDone', { count: quest.acorns }))
     if (news.setBonus) lines.push(t('mobile:elf.questSet'))
     queueSpeech(lines)
     if (news.setBonus || news.milestoneDust || news.celebrate.length) sceneRef.current?.react('cheer')
-  }, [news, focused, queueSpeech, t, cottages, foundCount])
+  }, [news, focused, queueSpeech, t, i18n.language, cottages, foundCount])
 
 
   /* The elf waking, by the button or by the morning: the scene plays the
@@ -286,6 +305,20 @@ export function ElfTab() {
     if (decor.picture !== PHOTO_ID || !latestSlug) return
     router.push({ pathname: '/story/[slug]', params: { slug: latestSlug } })
   }, [decor.picture, latestSlug, router])
+
+  /* What the days have brought into the room: the plant at its stage, the
+     finds on the sill, and the newest unread letter on the floor, which a
+     tap opens; the shelf and the sill's finds open the keepsake shelf.
+     Built from plain values, so the room is not redrawn on every drift of
+     the needs. */
+  const plantStage = state ? plantStageAt(state, Date.now()) : 0
+  const sillLine = state?.sill.join(',') ?? ''
+  const unreadLetter = state ? ([...state.letters].reverse().find((letter) => !letter.read)?.n ?? null) : null
+  const extras = useMemo<RoomExtras>(() => ({ plantStage, sill: sillLine ? sillLine.split(',') : [], letter: unreadLetter !== null }), [plantStage, sillLine, unreadLetter])
+  const onLetterTap = useCallback(() => {
+    if (unreadLetter !== null) router.push({ pathname: '/elf-letter', params: { n: String(unreadLetter) } })
+  }, [unreadLetter, router])
+  const onShelfTap = useCallback(() => router.push('/elf-shelf'), [router])
 
   /* ---------- The panels ---------- */
 
@@ -394,7 +427,8 @@ export function ElfTab() {
     lastInteraction,
     onGreet: () => {
       sceneRef.current?.react('greet')
-      sayNext(t('mobile:elf.greetHint'))
+      const letterWaits = !awayRef.current && Boolean(stateRef.current?.letters.some((letter) => !letter.read))
+      sayNext(t(letterWaits ? 'mobile:elf.letterWaiting' : 'mobile:elf.greetHint'))
     },
   })
 
@@ -613,6 +647,9 @@ export function ElfTab() {
             onFigureTop={setFigureTop}
             photo={photo}
             onPictureTap={onPictureTap}
+            extras={extras}
+            onLetterTap={onLetterTap}
+            onShelfTap={onShelfTap}
           />
         </View>
       ) : null}

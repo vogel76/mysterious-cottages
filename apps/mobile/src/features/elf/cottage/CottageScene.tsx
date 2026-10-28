@@ -16,7 +16,7 @@ import { PlateLighting } from './Lighting'
 import { useCottageMotion, type ReactionKind } from './motion'
 import { Particles } from './Particles'
 import { ROOM, fitRoom, inBounds, slotAtIn, slotById, toRoom, type Slot } from './room'
-import { spriteSlotsFor } from './roomAssets'
+import { extraPictures, placedBounds, spriteSlotsFor, type RoomExtras } from './roomAssets'
 import { RoomSprites } from './RoomSprites'
 import { SlotHighlight } from './SlotHighlight'
 import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf } from './SpriteElf'
@@ -147,8 +147,16 @@ export type CottageSceneProps = {
   photo?: string | null
   /* A tap on the picture frame; the tab opens the cottage it shows. */
   onPictureTap?: () => void
+  /* What the days have brought: the plant, the sill's finds, a letter. */
+  extras?: RoomExtras
+  /* A tap on the waiting letter, and on the shelf or the sill's finds
+     (the keepsake shelf). */
+  onLetterTap?: () => void
+  onShelfTap?: () => void
 }
 
+/* The days' pieces have room-absolute boxes: inBounds measures them from here. */
+const ORIGIN = { x: 0, y: 0 } as const
 /* How long the elf's glance at a touched item lasts. */
 const GLANCE_MS = 900
 /* The shooting star's flight across the window, as shares of the
@@ -224,7 +232,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, sleepy, warmth, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, editable },
+    { stage, starter, mood, sleeping, sleepy, warmth, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
     ref,
   ) {
     const { t } = useTranslation()
@@ -272,6 +280,16 @@ export const CottageScene = memo(
        rebuilt when the tab's handler changes. */
     const onPictureTapRef = useRef(onPictureTap)
     onPictureTapRef.current = onPictureTap
+    const onLetterTapRef = useRef(onLetterTap)
+    onLetterTapRef.current = onLetterTap
+    const onShelfTapRef = useRef(onShelfTap)
+    onShelfTapRef.current = onShelfTap
+    /* Where the letter and the sill's finds take a tap, room units. */
+    const extraHits = useMemo(() => {
+      if (!extras) return { letter: null, sill: null }
+      const { sill, letter } = extraPictures(extras)
+      return { letter: letter ? placedBounds([{ picture: letter, dx: 0 }]) : null, sill: placedBounds(sill) }
+    }, [extras])
     /* Edit mode frames and picks only what the panel offers. */
     const acceptsEdit = useCallback((id: SlotId) => editable.includes(id), [editable])
 
@@ -393,6 +411,14 @@ export const CottageScene = memo(
           onPictureTapRef.current?.()
           return
         }
+        if (actionName === 'openLetter') {
+          onLetterTapRef.current?.()
+          return
+        }
+        if (actionName === 'openShelf') {
+          onShelfTapRef.current?.()
+          return
+        }
         if (actionName !== 'activate') return
         if (stage === 'egg') onPetEgg?.()
         else onPetElf?.()
@@ -405,6 +431,17 @@ export const CottageScene = memo(
     /* The frame's photo opens its cottage: a second action for a screen
        reader, which cannot tap a spot of the canvas. */
     const framePhoto = Boolean(photo) && decor.picture === PHOTO_ID
+    /* The actions outside edit mode: the touch, the frame's cottage, the
+       letter while one waits, the keepsake shelf. */
+    const sceneActions = useMemo(
+      () => [
+        { name: 'activate' },
+        ...(framePhoto ? [{ name: 'openStory', label: t('mobile:elf.frameAction') }] : []),
+        ...(extras?.letter ? [{ name: 'openLetter', label: t('mobile:elf.awayLetterRead') }] : []),
+        { name: 'openShelf', label: t('mobile:elf.shelfOpen') },
+      ],
+      [framePhoto, extras?.letter, t],
+    )
 
     const gesture = useMemo(() => {
       const pan = Gesture.Pan()
@@ -440,6 +477,12 @@ export const CottageScene = memo(
             if (slot) onSelectSlot?.(slot.id)
             return
           }
+          /* The letter lies in front of everything, the finds on the
+             window's sill. */
+          if (extraHits.letter && inBounds(point, ORIGIN, extraHits.letter)) {
+            onLetterTapRef.current?.()
+            return
+          }
           if (hitsFigure(point)) {
             if (stage === 'egg') onPetEgg?.()
             else if (point.y < headLine && onPokeElf) onPokeElf()
@@ -450,13 +493,14 @@ export const CottageScene = memo(
           const slot = slotAtIn(sceneSlots, point, (candidate) => !isSurface(candidate.id))
           if (!slot) return
           glanceAt(slot)
-          if (slot.id === 'fireplace') fire.flare()
+          if (slot.id === 'shelf' || (slot.id === 'window' && extraHits.sill && inBounds(point, ORIGIN, extraHits.sill))) onShelfTapRef.current?.()
+          else if (slot.id === 'fireplace') fire.flare()
           else if (slot.id === 'window') shootStar()
           else if (slot.id === 'picture') onPictureTapRef.current?.()
         })
 
       return Gesture.Exclusive(pan, tap)
-    }, [layout, stage, editing, sleeping, headLine, hitsFigure, sceneSlots, lookAt, lookRelease, reactScene, glanceAt, shootStar, fire, acceptsEdit, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg])
+    }, [layout, stage, editing, sleeping, headLine, hitsFigure, extraHits, sceneSlots, lookAt, lookRelease, reactScene, glanceAt, shootStar, fire, acceptsEdit, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg])
 
     const roomTransform = useDerivedValue(() => [{ translateX: drawnOffsetX.value }, { translateY: drawnOffsetY.value }, { scale: layout.scale }])
 
@@ -468,7 +512,7 @@ export const CottageScene = memo(
           accessibilityRole="button"
           accessibilityLabel={t('mobile:elf.cottageAria')}
           accessibilityHint={t(editing ? 'mobile:elf.decorateHint' : stage === 'egg' ? 'mobile:elf.tapHintEgg' : 'mobile:elf.tapHint')}
-          accessibilityActions={editing ? slotActions : framePhoto ? [{ name: 'activate' }, { name: 'openStory', label: t('mobile:elf.frameAction') }] : [{ name: 'activate' }]}
+          accessibilityActions={editing ? slotActions : sceneActions}
           onAccessibilityAction={onAccessibilityAction}
         >
           {/* The room covers the whole canvas, so it can be opaque: Android
@@ -477,7 +521,7 @@ export const CottageScene = memo(
               never attaches there). */}
           <Canvas style={{ width, height }} opaque>
             <Group transform={roomTransform}>
-              <RoomSprites decor={decor} layer="back" day={fire.day} photo={photo} />
+              <RoomSprites decor={decor} layer="back" day={fire.day} photo={photo} extras={extras} />
               <RoomSprites decor={decor} layer="mid" day={fire.day} />
               {hatched ? (
                 images ? (
@@ -486,7 +530,7 @@ export const CottageScene = memo(
               ) : (
                 <EggNest starter={starter} warmth={warmth} motion={motion} origin={ROOM.elfAnchor} />
               )}
-              <RoomSprites decor={decor} layer="front" day={fire.day} />
+              <RoomSprites decor={decor} layer="front" day={fire.day} extras={extras} />
               <ShootingStar progress={star} window={windowSlot} />
               <Particles particles={particles} />
               <PlateLighting sleeping={sleeping} fire={fire} reduceMotion={reduceMotion} />

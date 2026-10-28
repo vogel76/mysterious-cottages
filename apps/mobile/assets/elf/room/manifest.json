@@ -29,6 +29,11 @@
     "width": 1000,
     "height": 468
   },
+  "sillOffsets": [
+    0.0,
+    34.5,
+    69.1
+  ],
   "walls": [
     {
       "id": "plaster",
@@ -200,7 +205,7 @@
       "x": 120,
       "y": 164,
       "width": 372,
-      "height": 271,
+      "height": 254,
       "fileDay": "window_shuttered_day.webp",
       "fileThumb": "window_shuttered_thumb.webp"
     },
@@ -455,6 +460,174 @@
       "height": 186,
       "fileDay": "herbs_dreamcatcher_day.webp",
       "fileThumb": "herbs_dreamcatcher_thumb.webp"
+    },
+    {
+      "slot": "plant",
+      "variant": "stage0",
+      "default": true,
+      "file": "plant_stage0.webp",
+      "x": 231,
+      "y": 367,
+      "width": 34,
+      "height": 36,
+      "fileDay": "plant_stage0_day.webp",
+      "fileThumb": "plant_stage0_thumb.webp"
+    },
+    {
+      "slot": "plant",
+      "variant": "stage1",
+      "default": false,
+      "file": "plant_stage1.webp",
+      "x": 231,
+      "y": 356,
+      "width": 34,
+      "height": 47,
+      "fileDay": "plant_stage1_day.webp",
+      "fileThumb": "plant_stage1_thumb.webp"
+    },
+    {
+      "slot": "plant",
+      "variant": "stage2",
+      "default": false,
+      "file": "plant_stage2.webp",
+      "x": 226,
+      "y": 343,
+      "width": 41,
+      "height": 60,
+      "fileDay": "plant_stage2_day.webp",
+      "fileThumb": "plant_stage2_thumb.webp"
+    },
+    {
+      "slot": "plant",
+      "variant": "stage3",
+      "default": false,
+      "file": "plant_stage3.webp",
+      "x": 223,
+      "y": 327,
+      "width": 47,
+      "height": 76,
+      "fileDay": "plant_stage3_day.webp",
+      "fileThumb": "plant_stage3_thumb.webp"
+    },
+    {
+      "slot": "plant",
+      "variant": "stage4",
+      "default": false,
+      "file": "plant_stage4.webp",
+      "x": 223,
+      "y": 317,
+      "width": 46,
+      "height": 86,
+      "fileDay": "plant_stage4_day.webp",
+      "fileThumb": "plant_stage4_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "pinecone",
+      "default": true,
+      "file": "sill_pinecone.webp",
+      "x": 276,
+      "y": 377,
+      "width": 20,
+      "height": 26,
+      "fileDay": "sill_pinecone_day.webp",
+      "fileThumb": "sill_pinecone_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "feather",
+      "default": false,
+      "file": "sill_feather.webp",
+      "x": 280,
+      "y": 371,
+      "width": 17,
+      "height": 32,
+      "fileDay": "sill_feather_day.webp",
+      "fileThumb": "sill_feather_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "pebble",
+      "default": false,
+      "file": "sill_pebble.webp",
+      "x": 276,
+      "y": 392,
+      "width": 21,
+      "height": 11,
+      "fileDay": "sill_pebble_day.webp",
+      "fileThumb": "sill_pebble_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "acorn",
+      "default": false,
+      "file": "sill_acorn.webp",
+      "x": 278,
+      "y": 380,
+      "width": 16,
+      "height": 24,
+      "fileDay": "sill_acorn_day.webp",
+      "fileThumb": "sill_acorn_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "mushroom",
+      "default": false,
+      "file": "sill_mushroom.webp",
+      "x": 277,
+      "y": 384,
+      "width": 18,
+      "height": 19,
+      "fileDay": "sill_mushroom_day.webp",
+      "fileThumb": "sill_mushroom_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "leaf",
+      "default": false,
+      "file": "sill_leaf.webp",
+      "x": 277,
+      "y": 378,
+      "width": 18,
+      "height": 24,
+      "fileDay": "sill_leaf_day.webp",
+      "fileThumb": "sill_leaf_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "berries",
+      "default": false,
+      "file": "sill_berries.webp",
+      "x": 274,
+      "y": 394,
+      "width": 21,
+      "height": 9,
+      "fileDay": "sill_berries_day.webp",
+      "fileThumb": "sill_berries_thumb.webp"
+    },
+    {
+      "slot": "sill",
+      "variant": "fossil",
+      "default": false,
+      "file": "sill_fossil.webp",
+      "x": 275,
+      "y": 385,
+      "width": 23,
+      "height": 23,
+      "fileDay": "sill_fossil_day.webp",
+      "fileThumb": "sill_fossil_thumb.webp"
+    },
+    {
+      "slot": "letter",
+      "variant": "envelope",
+      "default": true,
+      "file": "letter_envelope.webp",
+      "x": 283,
+      "y": 1147,
+      "width": 115,
+      "height": 53,
+      "fileDay": "letter_envelope_day.webp",
+      "fileThumb": "letter_envelope_thumb.webp"
     }
   ]
 }
