@@ -20,7 +20,8 @@ import { ROOM, type Bounds } from './room'
    A soft shadow pools under the feet and thins as the elf hops. The
    frames are lit by the room's night (the fire and the moon); by day the
    figure is lifted by a colour matrix that follows the clock's daylight,
-   so it does not stand in the bright room as a night picture.
+   so it does not stand in the bright room as a night picture; the same
+   matrix lights the figure up for the evolution's moment (the flash).
 
    The frame clock restarts when the clip name changes; to play the same
    one-shot clip twice in a row the scene changes clipKey, which remounts
@@ -46,8 +47,11 @@ const HEAD_LEAN = 0.3
 export const SPRITE_ELF_HEAD_LINE = 0.58 * ELF_HEIGHT_UNITS
 
 const SHADOW = { rx: 150, ry: 32, opacity: 0.3 } as const
-/* How much brighter the night-lit frames are drawn in full daylight. */
+/* How much brighter the night-lit frames are drawn in full daylight, and
+   how far the evolution's flash lifts them towards light (a gain and a
+   wash of warm white). */
 const DAY_LIFT = 0.28
+const FLASH = { gain: 0.6, wash: 0.45 } as const
 
 /* The tap target, room units around the feet: the figure itself, not the
    atlas cell, whose transparent margins would otherwise swallow the
@@ -76,7 +80,7 @@ export type SpriteElfProps = {
 }
 
 export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origin, day, images, hat = null, manifest, flipX }: SpriteElfProps) {
-  const { bob, squash, tilt, headTilt } = motion
+  const { bob, squash, tilt, headTilt, flash } = motion
   const { x, y } = origin
   const transform = useDerivedValue(
     () => [
@@ -92,8 +96,9 @@ export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origi
   )
   const shadowOpacity = useDerivedValue(() => SHADOW.opacity * Math.max(0.3, 1 + bob.value / 200))
   const daylight = useDerivedValue(() => {
-    const k = 1 + DAY_LIFT * day.value
-    return [k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, 1, 0]
+    const k = 1 + DAY_LIFT * day.value + FLASH.gain * flash.value
+    const w = FLASH.wash * flash.value
+    return [k, 0, 0, 0, w, 0, k, 0, 0, w * 0.92, 0, 0, k, 0, w * 0.7, 0, 0, 0, 1, 0]
   })
   const layers = useMemo<SpriteLayer[]>(() => (hat ? [{ sheets: images.body }, { layer: hat.layer, sheets: hat.sheets }] : [{ sheets: images.body }]), [images, hat])
   const scale = useMemo(() => figureScale(manifest), [manifest])

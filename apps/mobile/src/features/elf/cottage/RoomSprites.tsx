@@ -79,8 +79,9 @@ function Plate({ decor, day }: { decor: Decor; day: SharedValue<number> }) {
   )
 }
 
-/* A render at its box, moved right by dx (a find at a later place of the sill). */
-function Sprite({ sprite, day, dx = 0 }: { sprite: RoomPicture; day: SharedValue<number>; dx?: number }) {
+/* A render at its box, moved right by dx (a find at a later place of the
+   sill), its day twin over it at the daylight's opacity. */
+export function PictureSprite({ sprite, day, dx = 0 }: { sprite: RoomPicture; day: SharedValue<number>; dx?: number }) {
   const image = useImage(sprite.module)
   const dayImage = useImage(sprite.moduleDay)
   if (!image) return null
@@ -101,9 +102,9 @@ function SillThings({ extras, day }: { extras: RoomExtras; day: SharedValue<numb
   const { plant, sill } = extraPictures(extras)
   return (
     <>
-      {plant ? <Sprite sprite={plant} day={day} /> : null}
+      {plant ? <PictureSprite sprite={plant} day={day} /> : null}
       {sill.map(({ picture, dx }, index) => (
-        <Sprite key={`sill:${index}`} sprite={picture} day={day} dx={dx} />
+        <PictureSprite key={`sill:${index}`} sprite={picture} day={day} dx={dx} />
       ))}
     </>
   )
@@ -129,14 +130,14 @@ export const RoomSprites = memo(function RoomSprites({ decor, layer, day, photo 
   return (
     <>
       {layer === 'back' ? <Plate decor={decor} day={day} /> : null}
-      {layer === 'front' && extras?.letter && LETTER ? <Sprite sprite={LETTER} day={day} /> : null}
+      {layer === 'front' && extras?.letter && LETTER ? <PictureSprite sprite={LETTER} day={day} /> : null}
       {slotsIn(layer).map((slot) => {
         const sprite = roomSpriteFor(slot.id, decor[slot.id])
         if (!sprite) return null
         const framed = slot.id === 'picture' && decor.picture === PHOTO_ID ? photo : null
         return (
           <Fragment key={slot.id}>
-            <Sprite sprite={sprite} day={day} />
+            <PictureSprite sprite={sprite} day={day} />
             {framed ? <FramedPhoto sprite={sprite} uri={framed} /> : null}
             {slot.id === 'window' && extras ? <SillThings extras={extras} day={day} /> : null}
           </Fragment>
