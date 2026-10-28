@@ -224,7 +224,6 @@ export const TAB_ICONS = {
   index: { Glyph: AtlasIcon },
   elf: { Glyph: ElfIcon },
   kronika: { Glyph: ChronicleIcon },
-  ranking: { Glyph: RewardIcon },
   profile: { Glyph: ProfileIcon },
 } as const satisfies Record<string, TabIcon>
 

@@ -91,8 +91,9 @@ export function TabBar({ state, descriptors, navigation, insets, discover }: Tab
   })
   /* The button stays in the middle of the bar whatever the count of tabs:
      each half of the bar takes the same width and shares it among its
-     tabs, so an odd fifth tab makes one half's tabs narrower rather than
-     pushing the button aside. The extra tab goes to the right half. */
+     tabs (two and two), so an odd count would make one half's tabs
+     narrower rather than push the button aside; the extra tab would go to
+     the right half. */
   const middle = Math.floor(tabs.length / 2)
 
   return (

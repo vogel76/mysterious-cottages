@@ -1,12 +1,15 @@
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import type { RewardLevel } from '@chatynkowo/core'
-import { ChronicleIcon, MarkdownView, NextIcon, PressableScale, ProgressRing, Text, colors, iconSize, radius, space } from '../../ui'
+import { ChronicleIcon, MarkdownView, NextIcon, PressableScale, ProgressRing, RewardIcon, Text, colors, iconSize, radius, space } from '../../ui'
 
 /* The head of the Kronika grid: the subtitle with the chronicle emblem, the
    progress card (finds out of the total as a ring, the next level to earn;
-   pressing it opens the cottage directory) and the intro the editor
-   published for the collection. */
+   pressing it opens the cottage directory), the Ranking's card in the same
+   form (it opens the leaderboard on the Kronika's stack) and the intro the
+   editor published for the collection. */
+
+const RING_SIZE = 64
 
 export type CollectionHeaderProps = {
   found: number
@@ -20,9 +23,11 @@ export type CollectionHeaderProps = {
   note: string | null
   /* Opens the list of every cottage, found and still waiting. */
   onOpenList: () => void
+  /* Opens the Ranking. */
+  onOpenRanking: () => void
 }
 
-export function CollectionHeader({ found, total, next, intro, note, onOpenList }: CollectionHeaderProps) {
+export function CollectionHeader({ found, total, next, intro, note, onOpenList, onOpenRanking }: CollectionHeaderProps) {
   const { t } = useTranslation()
   /* Nothing to say about levels until the cottages are known. */
   const quest = total <= 0 ? null : next ? t('quest.nextLevel', { name: next.level.name, count: next.remaining }) : t('quest.allFound')
@@ -41,7 +46,7 @@ export function CollectionHeader({ found, total, next, intro, note, onOpenList }
         accessibilityLabel={[t('mobile:kronika.progressAria', { found, total }), quest, t('mobile:kronika.openListAria')].filter(Boolean).join('. ')}
         style={styles.card}
       >
-        <ProgressRing size={64} value={found} max={total} label={String(found)} />
+        <ProgressRing size={RING_SIZE} value={found} max={total} label={String(found)} />
         <View style={styles.cardText}>
           <Text weight="bold">{progress}</Text>
           {quest ? (
@@ -49,6 +54,18 @@ export function CollectionHeader({ found, total, next, intro, note, onOpenList }
               {quest}
             </Text>
           ) : null}
+        </View>
+        <NextIcon size={iconSize.md} color={colors.inkFaint} />
+      </PressableScale>
+      <PressableScale onPress={onOpenRanking} accessibilityLabel={`${t('ranking.title')}. ${t('mobile:kronika.rankingCard')}`} accessibilityHint={t('mobile:kronika.rankingCardAria')} style={styles.card}>
+        <View style={styles.emblem}>
+          <RewardIcon size={iconSize.xl} weight="duotone" color={colors.accentStrong} />
+        </View>
+        <View style={styles.cardText}>
+          <Text weight="bold">{t('ranking.title')}</Text>
+          <Text variant="small" tone="soft">
+            {t('mobile:kronika.rankingCard')}
+          </Text>
         </View>
         <NextIcon size={iconSize.md} color={colors.inkFaint} />
       </PressableScale>
@@ -83,5 +100,10 @@ const styles = StyleSheet.create({
   cardText: {
     flex: 1,
     gap: space.xs,
+  },
+  /* The trophy in the ring's place, so the two cards line up. */
+  emblem: {
+    width: RING_SIZE,
+    alignItems: 'center',
   },
 })

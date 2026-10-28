@@ -189,15 +189,17 @@ app/                     expo-router routes
                          welcome and (tabs) behind Stack.Protected guards, the sheets and modals on top
   welcome.tsx            the onboarding pager (the lore; the four questions and the creed; the guide as a trail;
                          the photo, the notes and the two ways to begin), first launch only
-  (tabs)/_layout.tsx     the tab bar (src/ui/TabBar.tsx): Atlas / Elf / Kronika / Ranking / Profile around a raised gold
-                         centre button that opens the code sheet (long press: the scanner); the button stays centred
-                         with an odd number of tabs (each half of the bar shares its width among its tabs)
+  (tabs)/_layout.tsx     the tab bar (src/ui/TabBar.tsx): Atlas / Elf on the left, Kronika / Profile on the right of a
+                         raised gold centre button that opens the code sheet (long press: the scanner); the button
+                         would stay centred with an odd number of tabs too (each half of the bar shares its width
+                         among its tabs)
   (tabs)/index.tsx       the Atlas: the full-bleed map with floating chrome, the quest card, the seeker's position
                          and the parchment cottage sheet (a gesture sheet with three snaps)
-  (tabs)/kronika/        its own native stack: the collection grid with the progress card
+  (tabs)/kronika/        its own native stack: the collection grid with the progress card and the Ranking's card,
+                         and ranking.tsx pushed on top: the leaderboard list, the rules and share header items (the
+                         stack is anchored at the collection, so a link from the account screen still has a back)
   (tabs)/elf/            its own native stack (_layout.tsx, no bar on the screen) and one screen (index.tsx): the elf
                          companion prototype, the full-screen cottage drawn in Skia with the HUD floating over it
-  (tabs)/ranking/        its own native stack: the leaderboard list, the rules and share header items
   (tabs)/profile/        its own native stack: grouped settings (account, language, preferences, lore, legal, social)
                          with the support invitation, account.tsx (the signed-in account: identity, leaderboard entry,
                          finds, preferences, sign-out, deletion), preferences.tsx (the consent to ads: its state and
@@ -293,7 +295,7 @@ assets/                  app icon, adaptive icon layers, the splash emblem and t
 ```
 
 Navigation model: the tab bar holds destinations only (the Atlas, the
-collection, the elf, the leaderboard, the profile); entering a code is an action and
+elf, the collection with the leaderboard on its stack, the profile); entering a code is an action and
 lives in a sheet reachable from the tab bar's centre button, the cottage sheet, the
 onboarding, the empty states and plaque links, so every `/code` href still
 works. A discovery runs in place (the sheet or the scanner shows the

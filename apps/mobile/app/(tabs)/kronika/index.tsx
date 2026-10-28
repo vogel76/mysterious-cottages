@@ -11,7 +11,8 @@ import { ChronicleIcon, EmptyState, LinkButton, SkeletonCard, colors, readable, 
 
 /* The Kronika tab: the collection of reward levels, earned and still locked,
    as a two-column grid under a standard native title, with the progress card
-   (which opens the cottage directory) and the published intro above it.
+   (which opens the cottage directory), the Ranking's card (the leaderboard,
+   pushed on this tab's stack) and the published intro above it.
    Seals earned since the last visit are marked "new" for this visit and
    then counted as seen, which clears the tab badge. The full set unlocks
    the ranking invite at the bottom, and under whatever the foot shows (the
@@ -93,6 +94,7 @@ export default function KronikaScreen() {
 
   const openReward = useCallback((id: string) => router.push({ pathname: '/reward/[id]', params: { id } }), [router])
   const openDirectory = useCallback(() => router.push('/cottages'), [router])
+  const openRanking = useCallback(() => router.push('/kronika/ranking'), [router])
 
   const renderCell = useCallback(
     ({ item, index }: { item: Cell; index: number }) => {
@@ -128,13 +130,14 @@ export default function KronikaScreen() {
       intro={rewards.treasury.intro}
       note={foundCount ? t('treasury.fallbackProgress', { found: foundCount, total }) : null}
       onOpenList={openDirectory}
+      onOpenRanking={openRanking}
     />
   )
 
   const footer = loading ? null : (
     <View style={styles.footer}>
       {completed ? (
-        <LinkButton variant="primary" block href="/ranking">
+        <LinkButton variant="primary" block href="/kronika/ranking">
           {t('treasury.seeRanking')}
         </LinkButton>
       ) : foundCount === 0 ? (

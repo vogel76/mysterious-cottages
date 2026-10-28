@@ -12,14 +12,17 @@ import { useLeaderboard } from '../../../src/features/ranking/useLeaderboard'
 import { useContent, useOnline, useProgress, useSession } from '../../../src/providers'
 import { Button, EmptyState, RewardIcon, ShieldIcon, SkeletonRow, Text, colors, headerRightItems, layoutLinear, readable, space, useTabBarClearance, type HeaderItemSpec } from '../../../src/ui'
 
-/* The Ranking tab: the site's leaderboard as a native list under a
-   standard title. The account block sits at the top (sign-in, or the seeker's place
+/* The Ranking, pushed on the Kronika's stack (from the Kronika's ranking
+   card, its invite once the set is complete, and the account screen): the
+   site's leaderboard as a native list under a standard title, with the
+   native back button to the Kronika. The account block sits at the top (sign-in, or the seeker's place
    and the state of the exchange with the account), then the podium and
    the seekers in order, a page at a time: the next page follows the scroll
    and, for anyone who does not scroll to the end, a button in the footer.
    The rules open from the header's info item and a shareable result from
    the share item once the seeker has a profile. The tab bar floats over
-   the list, so it pads its end by the bar's height. */
+   the list (the screen is still the Kronika tab's), so it pads its end by
+   the bar's height. */
 
 const SKELETON_ROWS = 6
 const INITIAL_ROWS = 12
@@ -133,7 +136,7 @@ export default function RankingScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t('ranking.title'), ...headerRightItems(headerItems) }} />
+      <Stack.Screen options={{ title: t('mobile:ranking.headerTitle'), ...headerRightItems(headerItems) }} />
       <Animated.FlatList
         data={visibleRows}
         keyExtractor={(row) => row.public_id}

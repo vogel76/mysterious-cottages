@@ -7,8 +7,9 @@ import { useBoot, useElf, useProgress, useToast } from '../../src/providers'
 import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../../src/ui'
 
 /* The expedition loop as tabs around one raised action: the Atlas (the
-   play field), the Elf (the companion prototype, see src/features/elf),
-   the Kronika (the collection), the Ranking and the Profile, with the gold
+   play field) and the Elf (the companion prototype, see src/features/elf)
+   on the left, the Kronika (the collection, with the Ranking on its stack)
+   and the Profile on the right, with the gold
    "discover" button in the middle of the bar opening the code sheet (a
    press) or the scanner (a long press). The bar is the app's own
    (src/ui/TabBar.tsx) so the button can rise above it; it floats over the
@@ -53,7 +54,6 @@ export default function TabsLayout() {
           name="kronika"
           options={{ title: t('mobile:tabs.kronika'), tabBarIcon: tabIcon(TAB_ICONS.kronika.Glyph), tabBarBadge: badge(unseenRewards.length) }}
         />
-        <Tabs.Screen name="ranking" options={{ title: t('mobile:tabs.ranking'), tabBarIcon: tabIcon(TAB_ICONS.ranking.Glyph) }} />
         <Tabs.Screen name="profile" options={{ title: t('mobile:tabs.profile'), tabBarIcon: tabIcon(TAB_ICONS.profile.Glyph) }} />
       </Tabs>
     </>

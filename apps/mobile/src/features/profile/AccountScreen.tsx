@@ -192,7 +192,7 @@ export function AccountScreen() {
       <SettingsSection title={t('mobile:profile.findsTitle')} footer={findsFooter}>
         {/* What the account holds: the device's finds less those still queued. */}
         <SettingsRow label={t('mobile:profile.findsRow')} value={String(Math.max(0, foundCount - pendingCount))} />
-        <SettingsRow label={t('mobile:profile.openRanking')} trailing="chevron" onPress={unlessBusy(() => router.navigate('/ranking'))} />
+        <SettingsRow label={t('mobile:profile.openRanking')} trailing="chevron" onPress={unlessBusy(() => router.navigate('/kronika/ranking', { withAnchor: true }))} />
       </SettingsSection>
 
       <SettingsSection title={t('mobile:preferences.title')} footer={t('mobile:preferences.rowFooter')}>

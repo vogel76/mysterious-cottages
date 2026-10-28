@@ -5,7 +5,7 @@ import type { OAuthProvider } from '../../lib/sync'
 import { useSession, useToast } from '../../providers'
 import { Button, radius, sizes, space } from '../../ui'
 
-/* Native sign-in, offered on the Ranking tab and the Profile: Google as the
+/* Native sign-in, offered on the Ranking and the Profile: Google as the
    app's primary button and, on iOS, the system Sign in with Apple button
    (App Store rules ask for the real control). Each shows only when the
    build offers it (src/config.ts). A closed dialog is nothing, a failure

@@ -7,7 +7,6 @@ export const mobileEn: typeof mobilePl = {
     atlas: 'Atlas',
     elf: 'Elf',
     kronika: 'Chronicle',
-    ranking: 'Leaderboard',
     discover: 'Discover',
     discoverAria: 'Discover a Cottage: enter the plaque code, or hold to scan the QR code',
     profile: 'Profile',
@@ -84,6 +83,8 @@ export const mobileEn: typeof mobilePl = {
     newBadge: 'New',
     progressAria: 'Progress: {{found}} of {{total}} Cottages',
     levelProgress: '{{found}} of {{required}} finds',
+    rankingCard: 'Who has found the most tales, and where you stand',
+    rankingCardAria: 'Open the leaderboard',
   },
   cottages: {
     title: 'Cottages',
@@ -94,6 +95,8 @@ export const mobileEn: typeof mobilePl = {
     hiddenByFilter: 'Those Cottages are already found. Show all to see them.',
   },
   ranking: {
+    /* The header's title on the Kronika's stack, short beside the back button and two items. */
+    headerTitle: 'Leaderboard',
     showMore: 'Show more',
     signInFailed: 'Sign-in failed. Please try again.',
     rules: 'Rules',
