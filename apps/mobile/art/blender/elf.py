@@ -81,7 +81,8 @@ PALETTE = {
     "crown_yellow": "#f2c641",
     "crown_heart": "#c7861f",
     "nightcap": "#3e5a8c",
-    "wand_crystal": "#b9e6ff",
+    "wand_crystal": "#3fb6f2",
+    "cape": "#5b6b34",
 }
 
 # The hats of the wardrobe, the catalogue's ids (cottage/catalogue.ts,
@@ -303,26 +304,34 @@ FORMS = {
     # The young elf: about three and a half heads tall, the form of the first months.
     "young": Form(head_c=1.36, head_r=0.33, shoulder_z=1.03, hem_z=0.52, chest_r=0.20, hem_r=0.255,
                   hip_z=0.58, knee_z=0.34, ear=1.0, arm=1.0),
-    # The hatchling: about three quarters of the young elf, a bigger head
-    # on a short body, short ears and arms.
-    "baby": Form(head_c=0.98, head_r=0.345, shoulder_z=0.66, hem_z=0.34, chest_r=0.2, hem_r=0.25,
-                 hip_z=0.38, knee_z=0.22, ear=0.74, arm=0.76),
-    # The grown elf: taller, a smaller head on longer limbs, longer ears;
-    # it carries its own wand (FORM_LOOK).
-    "adult": Form(head_c=1.6, head_r=0.31, shoulder_z=1.25, hem_z=0.64, chest_r=0.21, hem_r=0.27,
-                  hip_z=0.70, knee_z=0.41, ear=1.12, arm=1.14),
-    # The elder: the grown elf's frame in a robe down to the boots, with
-    # silver hair, a beard and a gnarled wand with a glowing crystal.
-    "elder": Form(head_c=1.6, head_r=0.31, shoulder_z=1.25, hem_z=0.24, chest_r=0.22, hem_r=0.36,
-                  hip_z=0.70, knee_z=0.41, ear=1.18, arm=1.14),
+    # The hatchling: about two thirds of the young elf, a big head on a
+    # small round body, short ears and arms, small boots.
+    "baby": Form(head_c=0.8, head_r=0.33, shoulder_z=0.42, hem_z=0.22, chest_r=0.18, hem_r=0.22,
+                 hip_z=0.27, knee_z=0.15, ear=0.62, arm=0.62),
+    # The grown elf: a head taller, a smaller head on long limbs, long ears.
+    "adult": Form(head_c=1.74, head_r=0.30, shoulder_z=1.38, hem_z=0.67, chest_r=0.215, hem_r=0.27,
+                  hip_z=0.75, knee_z=0.44, ear=1.25, arm=1.24),
+    # The elder: the grown elf's frame in a robe down to the boots.
+    "elder": Form(head_c=1.74, head_r=0.30, shoulder_z=1.38, hem_z=0.2, chest_r=0.23, hem_r=0.4,
+                  hip_z=0.75, knee_z=0.44, ear=1.3, arm=1.24),
 }
 
-# What a form wears or carries beyond its proportions: the wand ("twig"
-# or the elder's "crystal"), a beard, the colours of the hair and of the
-# tunic (the elder's is a deep blue robe).
+# What a form wears or carries beyond its proportions, so the four read
+# apart at a glance (the young elf has none of it):
+#   head_scale, eyes, brows: the head's shape, the eyes' and brows' size;
+#   boots: the boots' size; belt: False for none;
+#   hair: False for no hairstyle (the hatchling's sprout instead), or the
+#     colours (hair, dark); hair_back: long hair down the back;
+#   tunic, trim: the cloth's colours, gold for the hem and the cuffs;
+#   wand: "twig" (a seed of light) or "staff" (taller than the elf, a
+#     crystal at the top); cape and pouch; beard: "long"; stars on the robe.
 FORM_LOOK = {
-    "adult": {"wand": "twig"},
-    "elder": {"wand": "crystal", "beard": True, "hair": ("#dcd7cc", "#a9a296"), "tunic": ("#3f5687", "#2c3d66")},
+    "baby": {"head_scale": (1.04, 1.0, 1.0), "eyes": 1.25, "boots": 0.6, "belt": False, "hair": False,
+             "sprout": True, "tunic": ("#86c05e", "#5f9a43")},
+    "adult": {"head_scale": (0.98, 0.95, 1.15), "eyes": 0.9, "wand": "twig", "cape": True, "pouch": True},
+    "elder": {"head_scale": (0.98, 0.95, 1.12), "eyes": 0.88, "brows": 2.2, "wand": "staff", "beard": "long",
+              "hair": ("#dcd7cc", "#a9a296"), "hair_back": True, "tunic": ("#3f5687", "#2c3d66"), "trim": True,
+              "stars": True},
 }
 FORM_NAME = "young"
 
@@ -341,7 +350,7 @@ def set_form(name):
     FORM_NAME = name
     BONES = bones_for(F)
     look = FORM_LOOK.get(name, {})
-    if look.get("hair"):
+    if isinstance(look.get("hair"), tuple):
         PALETTE["hair"], PALETTE["hair_dark"] = look["hair"]
     if look.get("tunic"):
         PALETTE["tunic"], PALETTE["tunic_dark"] = look["tunic"]
@@ -349,6 +358,19 @@ def set_form(name):
 
 def head_c():
     return Vector((0.0, 0.0, F.head_c))
+
+
+def form_look():
+    return FORM_LOOK.get(FORM_NAME, {})
+
+
+def head_scale():
+    return form_look().get("head_scale", HEAD_SCALE)
+
+
+def pelvis_z():
+    """Where the hips are: the tunic's hem, or above a robe's."""
+    return max(F.hem_z, F.hip_z - 0.06)
 
 
 def hp(x, y, z):
@@ -369,7 +391,7 @@ def arm_points(s):
 def leg_points(s):
     hip = Vector((0.12 * s, 0.0, F.hip_z))
     knee = Vector((0.12 * s, -0.02, F.knee_z))
-    ankle = Vector((0.125 * s, -0.01, 0.12))
+    ankle = Vector((0.125 * s, -0.01, 0.12 * form_look().get("boots", 1.0)))
     return hip, knee, ankle
 
 
@@ -450,11 +472,12 @@ def build_model():
         "crown_yellow": material("CrownYellow", "crown_yellow", roughness=0.7, grain=0.0),
         "crown_heart": material("CrownHeart", "crown_heart", roughness=0.6, grain=0.0),
         "nightcap": material("Nightcap", "nightcap", roughness=0.85),
+        "cape": material("Cape", "cape", roughness=0.85),
         # the wand's tip: a seed of warm light, the elder's crystal of cool light
         "wand_seed": material("WandSeed", "crown_yellow", roughness=0.4, emission=PALETTE["crown_yellow"],
                               emission_strength=4.0, grain=0.0),
         "wand_crystal": material("WandCrystal", "wand_crystal", roughness=0.25, emission=PALETTE["wand_crystal"],
-                                 emission_strength=4.5, grain=0.0),
+                                 emission_strength=1.6, grain=0.0),
     }
     objs = {}
     hc = head_c()
@@ -462,8 +485,8 @@ def build_model():
 
     # --- Head: an egg fuller above the eyes and tapering to the chin, the
     # neck, the nose and the ears fused into one skin.
-    head = sphere("Head", hc, F.head_r, "Body", mats["skin"], scale=HEAD_SCALE, segments=48, rings=32, subsurf=1)
-    half = F.head_r * HEAD_SCALE[2]
+    head = sphere("Head", hc, F.head_r, "Body", mats["skin"], scale=head_scale(), segments=48, rings=32, subsurf=1)
+    half = F.head_r * head_scale()[2]
     # The lower half tapers gently towards a rounded chin.
     for v in head.data.vertices:
         rel = v.co - hc
@@ -490,10 +513,16 @@ def build_model():
 
     # --- Torso: an A-line tunic with a waist, round shoulders and sleeves,
     # fused into one cloth; the belt and the hem band ride on it.
-    waist_z = F.hem_z + (F.shoulder_z - F.hem_z) * 0.35
-    torso = tube("Body", [(0, 0.0, F.shoulder_z), (0, 0.0, waist_z), (0, 0.0, F.hem_z)],
-                 [F.chest_r, F.chest_r * 0.93, F.hem_r], "Body", mats["tunic"], segments=32, samples=12,
-                 flatten=(1.0, 0.8), subsurf=1)
+    look = form_look()
+    pelvis = pelvis_z()
+    waist_z = pelvis + (F.shoulder_z - pelvis) * 0.35
+    line = [(0, 0.0, F.shoulder_z), (0, 0.0, waist_z), (0, 0.0, F.hem_z)]
+    girths = [F.chest_r, F.chest_r * 0.93, F.hem_r]
+    if F.hem_z < pelvis - 0.05:
+        # a robe: down the hips first, then flaring to the boots
+        line.insert(2, (0, 0.0, pelvis - 0.05))
+        girths.insert(2, F.chest_r * 1.02)
+    torso = tube("Body", line, girths, "Body", mats["tunic"], segments=32, samples=12, flatten=(1.0, 0.8), subsurf=1)
     pieces = [torso]
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
@@ -515,15 +544,28 @@ def build_model():
     belt_x, belt_y = girth(waist_z_belt)
     body = fuse("Body", pieces, mats["tunic"], voxel=0.01)
     objs["Body"] = body
-    objs["Hem"] = torus("Hem", (0, 0, F.hem_z + 0.015), (hem_x - 0.012, hem_y - 0.012), 0.024, "Body",
-                        mats["tunic_dark"], subsurf=1)
+    trim = mats["trim"] if look.get("trim") else mats["tunic_dark"]
+    objs["Hem"] = torus("Hem", (0, 0, F.hem_z + 0.015), (hem_x - 0.012, hem_y - 0.012), 0.024 if not look.get("trim") else 0.03,
+                        "Body", trim, subsurf=1)
     belt_z = waist_z_belt
-    objs["Belt"] = torus("Belt", (0, 0, belt_z), (belt_x - 0.008, belt_y - 0.008), 0.022, "Body",
-                         mats["belt"], subsurf=1)
-    objs["Buckle"] = rounded_box("Buckle", (0, -(belt_y + 0.012), belt_z), (0.09, 0.03, 0.08), "Body",
-                                 mats["acorn"], subsurf=2)
-    objs["BucklePin"] = rounded_box("BucklePin", (0, -(belt_y + 0.03), belt_z), (0.014, 0.014, 0.05),
-                                    "Body", mats["acorn_dark"], subsurf=2)
+    if look.get("belt", True):
+        objs["Belt"] = torus("Belt", (0, 0, belt_z), (belt_x - 0.008, belt_y - 0.008), 0.022, "Body",
+                             mats["belt"], subsurf=1)
+        objs["Buckle"] = rounded_box("Buckle", (0, -(belt_y + 0.012), belt_z), (0.09, 0.03, 0.08), "Body",
+                                     mats["acorn"], subsurf=2)
+        objs["BucklePin"] = rounded_box("BucklePin", (0, -(belt_y + 0.03), belt_z), (0.014, 0.014, 0.05),
+                                        "Body", mats["acorn_dark"], subsurf=2)
+    if look.get("pouch"):
+        objs["Pouch"] = rounded_box("Pouch", (-(belt_x - 0.01) * 0.78, -(belt_y - 0.01) * 0.62, belt_z - 0.07),
+                                    (0.11, 0.06, 0.12), "Body", mats["acorn"], subsurf=2)
+        objs["PouchFlap"] = rounded_box("PouchFlap", (-(belt_x - 0.01) * 0.78, -(belt_y - 0.01) * 0.62 - 0.02, belt_z - 0.035),
+                                        (0.115, 0.03, 0.05), "Body", mats["acorn_dark"], subsurf=2)
+    if look.get("stars"):
+        for i, (x, z) in enumerate(((-0.12, 0.62), (0.1, 0.48), (-0.05, 0.36), (0.16, 0.3), (-0.2, 0.24), (0.03, 0.56))):
+            hx, hy = girth(z)
+            t = max(-0.9, min(0.9, x / hx))
+            objs[f"Star{i}"] = sphere(f"Star{i}", (x, -hy * math.sqrt(1 - t * t) - 0.004, z), 1.0, "Body", mats["trim"],
+                                      scale=(0.03, 0.006, 0.03), segments=8, rings=4, subsurf=0)
     for i in range(7):
         a = math.radians(-120 + 40 * i)
         base = Vector((math.sin(a) * F.chest_r * 0.72, -math.cos(a) * F.chest_r * 0.6, F.shoulder_z + 0.015))
@@ -535,7 +577,7 @@ def build_model():
         shoulder, elbow, hand = arm_points(s)
         along = (hand - elbow).normalized()
         objs[f"Cuff.{suffix}"] = torus(f"Cuff.{suffix}", hand - along * 0.1, 0.048, 0.014, "Body",
-                                       mats["tunic_dark"], axis=along, subsurf=1)
+                                       mats["trim"] if form_look().get("trim") else mats["tunic_dark"], axis=along, subsurf=1)
         # Hands: a mitten, a flattened palm with a thumb on the inner side,
         # fused into one (fingers do not read at sprite size).
         palm = sphere(f"Hand.{suffix}", hand + Vector((0, 0, -0.01)), 1.0, "Body", mats["skin"],
@@ -546,45 +588,112 @@ def build_model():
         hip, knee, ankle = leg_points(s)
         objs[f"Leg.{suffix}"] = tube(f"Leg.{suffix}", [hip, knee, ankle], [0.08, 0.064, 0.056], "Body",
                                      mats["legging"], ref=(0, 1, 0), segments=20, subsurf=1)
-        boot = sphere(f"Boot.{suffix}", (0.125 * s, -0.05, 0.085), 1.0, "Body", mats["boot"],
-                      scale=(0.1, 0.155, 0.085), subsurf=1)
-        shaft = tube(f"BootShaft.{suffix}", [(0.125 * s, -0.015, 0.06), (0.125 * s, -0.012, 0.19)], [0.075, 0.07],
-                     "Body", mats["boot"], segments=20, subsurf=1)
-        toe = tube(f"BootToe.{suffix}", [(0.125 * s, -0.16, 0.06), (0.125 * s, -0.24, 0.07), (0.125 * s, -0.27, 0.13)],
-                   [0.058, 0.038, 0.012], "Body", mats["boot"], ref=(1, 0, 0), subsurf=1)
-        objs[f"Boot.{suffix}"] = fuse(f"Boot.{suffix}", [boot, shaft, toe], mats["boot"], voxel=0.006, smooth=3)
-        objs[f"BootCuff.{suffix}"] = torus(f"BootCuff.{suffix}", (0.125 * s, -0.012, 0.19), (0.078, 0.078), 0.018,
-                                           "Body", mats["sole"], subsurf=1)
-        objs[f"Sole.{suffix}"] = sphere(f"Sole.{suffix}", (0.125 * s, -0.07, 0.026), 1.0, "Body", mats["sole"],
-                                        scale=(0.105, 0.18, 0.028), subsurf=1)
+        bs = form_look().get("boots", 1.0)
 
-    # --- A grown form's wand in the left hand (the right one waves), and
-    # the elder's beard under the mouth ---------------------------------------
-    look = FORM_LOOK.get(FORM_NAME, {})
+        def bp(x, y, z):
+            return (x, y * bs, z * bs)
+
+        boot = sphere(f"Boot.{suffix}", bp(0.125 * s, -0.05, 0.085), 1.0, "Body", mats["boot"],
+                      scale=(0.1 * bs, 0.155 * bs, 0.085 * bs), subsurf=1)
+        shaft = tube(f"BootShaft.{suffix}", [bp(0.125 * s, -0.015, 0.06), bp(0.125 * s, -0.012, 0.19)], [0.075 * bs, 0.07 * bs],
+                     "Body", mats["boot"], segments=20, subsurf=1)
+        toe = tube(f"BootToe.{suffix}", [bp(0.125 * s, -0.16, 0.06), bp(0.125 * s, -0.24, 0.07), bp(0.125 * s, -0.27, 0.13)],
+                   [0.058 * bs, 0.038 * bs, 0.012 * bs], "Body", mats["boot"], ref=(1, 0, 0), subsurf=1)
+        objs[f"Boot.{suffix}"] = fuse(f"Boot.{suffix}", [boot, shaft, toe], mats["boot"], voxel=0.006, smooth=3)
+        objs[f"BootCuff.{suffix}"] = torus(f"BootCuff.{suffix}", bp(0.125 * s, -0.012, 0.19), (0.078 * bs, 0.078 * bs), 0.018 * bs,
+                                           "Body", mats["sole"], subsurf=1)
+        objs[f"Sole.{suffix}"] = sphere(f"Sole.{suffix}", bp(0.125 * s, -0.07, 0.026), 1.0, "Body", mats["sole"],
+                                        scale=(0.105 * bs, 0.18 * bs, 0.028 * bs), subsurf=1)
+
+    # --- What a grown form carries and wears: the wand in the left hand
+    # (the right one waves), the staff, the cape with its clasp, the
+    # elder's long beard and hair -------------------------------------------
+    look = form_look()
     if look.get("wand"):
         _, _, hand = arm_points(1)
-        crystal = look["wand"] == "crystal"
-        grip = hand + Vector((0.0, -0.005, -0.11))
-        tip = hand + Vector((0.09, -0.06, 0.5 if crystal else 0.44))
-        mid = grip.lerp(tip, 0.55) + Vector((0.018 if crystal else 0.0, -0.01, 0.0))
-        objs["Wand.L"] = tube("Wand.L", [grip, mid, tip], [0.026, 0.02, 0.015], "Body", mats["acorn_dark"],
-                              ref=(0, 1, 0), segments=10, samples=10, subsurf=1)
-        glow = mats["wand_crystal"] if crystal else mats["wand_seed"]
-        objs["WandTip.L"] = sphere("WandTip.L", tip + Vector((0, 0, 0.045)), 0.05 if crystal else 0.042, "Body", glow,
-                                   scale=(0.8, 0.8, 1.4) if crystal else (1, 1, 1.1), segments=16, rings=10, subsurf=1)
-        objs["WandLeaf.L"] = leaf("WandLeaf.L", tip + Vector((-0.008, 0, -0.04)), (-0.6, -0.4, 0.5), 0.1, 0.05, "Body",
-                                  mats["leaf"])
-    if look.get("beard"):
+        staff = look["wand"] == "staff"
+        if staff:
+            grip = Vector((hand.x + 0.03, hand.y - 0.02, 0.03))
+            tip = Vector((hand.x - 0.02, hand.y - 0.03, F.head_c + F.head_r * 1.5))
+            mid = grip.lerp(tip, 0.5) + Vector((0.02, 0.0, 0.0))
+            radii = [0.024, 0.028, 0.03]
+        else:
+            grip = hand + Vector((0.0, -0.005, -0.11))
+            tip = hand + Vector((0.09, -0.06, 0.44))
+            mid = grip.lerp(tip, 0.55)
+            radii = [0.026, 0.02, 0.015]
+        objs["Wand.L"] = tube("Wand.L", [grip, mid, tip], radii, "Body", mats["acorn_dark"], ref=(0, 1, 0), segments=10,
+                              samples=10, subsurf=1)
+        glow = mats["wand_crystal"] if staff else mats["wand_seed"]
+        top = tip + Vector((0, 0, 0.08 if staff else 0.045))
+        objs["WandTip.L"] = sphere("WandTip.L", top, 0.07 if staff else 0.042, "Body", glow,
+                                   scale=(0.75, 0.75, 1.5) if staff else (1, 1, 1.1), segments=16, rings=10, subsurf=1)
+        if staff:
+            # three prongs of the root hold the crystal
+            for i in range(3):
+                a = 2 * math.pi * i / 3 + 0.4
+                arc = [tip + Vector((0, 0, -0.02)), tip + Vector((0.07 * math.cos(a), 0.07 * math.sin(a), 0.07)),
+                       top + Vector((0.035 * math.cos(a), 0.035 * math.sin(a), 0.07))]
+                objs[f"WandProng{i}.L"] = tube(f"WandProng{i}.L", arc, [0.016, 0.012, 0.006], "Body", mats["acorn_dark"],
+                                               ref=(0, 1, 0), segments=8, samples=8, subsurf=1)
+        objs["WandLeaf.L"] = leaf("WandLeaf.L", tip + Vector((-0.008, 0, -0.04 if not staff else -0.06)), (-0.6, -0.4, 0.5),
+                                  0.1 if not staff else 0.13, 0.05 if not staff else 0.065, "Body", mats["leaf"])
+    if look.get("cape"):
+        # a forest cape from the shoulders to the knees, round the back and
+        # the sides, open in front, its hood lying folded on the shoulders
+        around, rows = 40, 14
+        top_z, low_z = F.shoulder_z + 0.03, F.knee_z + 0.04
+        verts, faces = [], []
+        for i in range(around + 1):
+            theta = math.pi * (0.56 + 0.88 * i / around)
+            for j in range(rows + 1):
+                t = j / rows
+                z = top_z + (low_z - top_z) * t
+                r = (F.chest_r + 0.075) + (F.hem_r + 0.2 - F.chest_r - 0.075) * t ** 1.3
+                verts.append((r * math.sin(theta), -r * math.cos(theta) * 0.88, z))
+        for i in range(around):
+            for j in range(rows):
+                a, b = i * (rows + 1) + j, (i + 1) * (rows + 1) + j
+                faces.append((a, b, b + 1, a + 1))
+        me = bpy.data.meshes.new("Cape")
+        me.from_pydata(verts, [], faces)
+        cape = bpy.data.objects.new("Cape", me)
+        collection("Body").objects.link(cape)
+        me.materials.append(mats["cape"])
+        for poly in me.polygons:
+            poly.use_smooth = True
+        thick = cape.modifiers.new("Cloth", "SOLIDIFY")
+        thick.thickness = 0.014
+        cape.modifiers.new("Smooth", "SUBSURF").levels = 1
+        objs["Cape"] = cape
+        objs["CapeHood"] = torus("CapeHood", (0, 0.03, F.shoulder_z + 0.04), (F.chest_r + 0.06, F.chest_r * 0.8 + 0.05), 0.055,
+                                 "Body", mats["cape"], subsurf=1, arc=(-0.3, math.pi + 0.3))
+        for side in (1, -1):
+            objs[f"CapeClasp{'L' if side > 0 else 'R'}"] = sphere(f"CapeClasp{'L' if side > 0 else 'R'}",
+                                                                   (0.14 * side, -(F.chest_r * 0.72), F.shoulder_z - 0.02), 0.03,
+                                                                   "Body", mats["trim"], segments=16, rings=8, subsurf=1)
+    if look.get("beard") == "long":
+        chest_y = -(F.chest_r * 0.8 + 0.05)
         tufts = [
-            sphere("Beard0", hp(0.0, -0.25, -0.33), 1.0, "Hair", mats["hair"], scale=(0.17 * k, 0.12 * k, 0.12 * k)),
-            sphere("Beard1", hp(0.0, -0.24, -0.46), 1.0, "Hair", mats["hair"], scale=(0.12 * k, 0.1 * k, 0.11 * k)),
-            sphere("Beard2", hp(0.0, -0.22, -0.58), 1.0, "Hair", mats["hair"], scale=(0.06 * k, 0.06 * k, 0.08 * k)),
-            sphere("Beard3", hp(0.2, -0.16, -0.24), 1.0, "Hair", mats["hair"], scale=(0.07 * k, 0.08 * k, 0.1 * k)),
-            sphere("Beard4", hp(-0.2, -0.16, -0.24), 1.0, "Hair", mats["hair"], scale=(0.07 * k, 0.08 * k, 0.1 * k)),
+            sphere("Beard0", hp(0.0, -0.25, -0.33), 1.0, "Hair", mats["hair"], scale=(0.18 * k, 0.12 * k, 0.12 * k)),
+            sphere("Beard1", hp(0.2, -0.16, -0.24), 1.0, "Hair", mats["hair"], scale=(0.08 * k, 0.08 * k, 0.11 * k)),
+            sphere("Beard2", hp(-0.2, -0.16, -0.24), 1.0, "Hair", mats["hair"], scale=(0.08 * k, 0.08 * k, 0.11 * k)),
+            sphere("Beard3", (0.0, chest_y, F.shoulder_z - 0.02), 1.0, "Hair", mats["hair"], scale=(0.15, 0.08, 0.12)),
+            sphere("Beard4", (0.0, chest_y + 0.005, F.shoulder_z - 0.2), 1.0, "Hair", mats["hair"], scale=(0.12, 0.07, 0.12)),
+            sphere("Beard5", (0.0, chest_y + 0.01, F.shoulder_z - 0.36), 1.0, "Hair", mats["hair"], scale=(0.07, 0.05, 0.09)),
         ]
-        objs["Beard"] = fuse("Beard", tufts, mats["hair"], voxel=0.007, smooth=3)
+        objs["Beard"] = fuse("Beard", tufts, mats["hair"], voxel=0.008, smooth=3)
+    if look.get("hair_back"):
+        objs["HairBack"] = tube("HairBack", [hp(0.0, 0.2, 0.1), hp(0.0, 0.3, -0.25), (0.0, 0.15, F.shoulder_z - 0.18)],
+                                [0.25 * k, 0.24 * k, 0.17 * k], "Hair", mats["hair"], flatten=(1.0, 0.45), ref=(1, 0, 0),
+                                segments=20, samples=10, subsurf=1)
 
     # --- Face --------------------------------------------------------------
+    # The eyes' size and the brows' weight by form: k scales the eye and
+    # everything that sits on it, the head's own scale stays in hp().
+    head_k = k
+    k = head_k * form_look().get("eyes", 1.0)
+    brow_w = form_look().get("brows", 1.0)
     for side, suffix in ((1, "L"), (-1, "R")):
         s = side
         c = hp(EYE_C[0] * s, EYE_C[1], EYE_C[2])
@@ -616,10 +725,11 @@ def build_model():
         objs[f"LashTop.{suffix}"] = tube(f"LashTop.{suffix}", top, [0.004 * k, 0.009 * k, 0.012 * k], "Face",
                                          mats["pupil"], ref=(0, 1, 0), segments=8, samples=10, subsurf=1)
         brow = tube(f"Brow.{suffix}", [hp(0.05 * s, -0.342, 0.12), hp(0.14 * s, -0.33, 0.15), hp(0.23 * s, -0.292, 0.125)],
-                    [0.009 * k, 0.014 * k, 0.006 * k], "Face", mats["hair_dark"], ref=(0, 1, 0), segments=8,
-                    samples=8, subsurf=1)
-        add_shape_key(brow, "sad", lambda p, s=s: Vector((p.x, p.y, p.z + 0.035 * k * (1 - abs(p.x) / (0.235 * k)) - 0.015 * k)))
+                    [0.009 * head_k * brow_w, 0.014 * head_k * brow_w, 0.006 * head_k * brow_w], "Face", mats["hair_dark"],
+                    ref=(0, 1, 0), segments=8, samples=8, subsurf=1)
+        add_shape_key(brow, "sad", lambda p, s=s: Vector((p.x, p.y, p.z + 0.035 * head_k * (1 - abs(p.x) / (0.235 * head_k)) - 0.015 * head_k)))
         objs[f"Brow.{suffix}"] = brow
+    k = head_k
     mc = hp(0, -0.322, -0.145)
     mouth = sphere("Mouth", (0, 0, 0), 1.0, "Face", mats["pupil"], scale=(0.058 * k, 0.014 * k, 0.016 * k),
                    segments=24, rings=12, subsurf=1)
@@ -645,6 +755,7 @@ def build_model():
     # the nape; sideburns and two flat mounds of volume on top. All of it
     # fuses into one mass.
     cap_r = F.head_r + 0.035
+    sprout = form_look().get("hair") is False
 
     def hair_keep(p):
         n = p / cap_r
@@ -658,7 +769,7 @@ def build_model():
         edge = 0.47 - 0.12 * n.x - 0.11 * (1.0 - strand)
         return n.z > edge
 
-    cap = sphere("Hair", hc + Vector((0, 0.012, 0.015)), cap_r, "Hair", mats["hair"], scale=HEAD_SCALE,
+    cap = sphere("Hair", hc + Vector((0, 0.012, 0.015)), cap_r, "Hair", mats["hair"], scale=head_scale(),
                  segments=64, rings=40, subsurf=1, keep=hair_keep)
     # The cut sphere is an open surface; the remesh needs a closed volume,
     # so the cap gets a thickness, grown inwards into the skull.
@@ -673,11 +784,25 @@ def build_model():
                             flatten=(0.45, 1.0), ref=(0, 1, 0), samples=8, segments=16, subsurf=1))
     for i, (x, y, z, r) in enumerate(((-0.08, 0.0, 0.43, 0.12), (0.14, 0.08, 0.41, 0.09))):
         strands.append(sphere(f"Mound{i}", hp(x, y, z), r * k, "Hair", mats["hair"], scale=(1.5, 1.3, 0.55), subsurf=1))
-    objs["Hair"] = fuse("Hair", strands, mats["hair"], voxel=0.007, smooth=2)
-    # A leaf tucked into the hair above the right ear: the forest elf's mark.
-    objs["HairLeaf"] = leaf("HairLeaf", hp(-0.27, -0.14, 0.22), (-0.55, -0.45, 0.7), 0.19, 0.085, "Hair", mats["leaf"])
-    objs["HairLeafStem"] = tube("HairLeafStem", [hp(-0.24, -0.11, 0.17), hp(-0.30, -0.16, 0.25)], [0.008, 0.006],
-                                "Hair", mats["tunic_dark"], segments=8, samples=4, subsurf=0)
+    if sprout:
+        # The hatchling has no hairstyle yet: a curl on the forehead and a
+        # sprout of two leaves at the crown (it rides the hood_tip bone).
+        for strand in strands:
+            bpy.data.objects.remove(strand, do_unlink=True)
+        objs["Hair"] = tube("Hair", [hp(-0.05, -0.27, 0.27), hp(0.04, -0.3, 0.33), hp(0.09, -0.22, 0.38), hp(0.04, -0.16, 0.33)],
+                            [0.035 * k, 0.04 * k, 0.03 * k, 0.012 * k], "Hair", mats["hair"], ref=(0, 1, 0), segments=12,
+                            samples=10, subsurf=1)
+        stem = [hp(0.0, 0.0, 0.38), hp(0.02, 0.0, 0.5), hp(0.0, -0.01, 0.6)]
+        objs["SproutStem"] = tube("SproutStem", stem, [0.018 * k, 0.015 * k, 0.012 * k], "Hair", mats["tunic_dark"],
+                                  ref=(0, 1, 0), segments=8, samples=8, subsurf=1)
+        objs["SproutLeaf.L"] = leaf("SproutLeaf.L", stem[-1], (0.7, -0.2, 0.55), 0.2 * k, 0.11 * k, "Hair", mats["leaf"])
+        objs["SproutLeaf.R"] = leaf("SproutLeaf.R", stem[-1], (-0.7, -0.15, 0.6), 0.17 * k, 0.1 * k, "Hair", mats["leaf"])
+    else:
+        objs["Hair"] = fuse("Hair", strands, mats["hair"], voxel=0.007, smooth=2)
+        # A leaf tucked into the hair above the right ear: the forest elf's mark.
+        objs["HairLeaf"] = leaf("HairLeaf", hp(-0.27, -0.14, 0.22), (-0.55, -0.45, 0.7), 0.19, 0.085, "Hair", mats["leaf"])
+        objs["HairLeafStem"] = tube("HairLeafStem", [hp(-0.24, -0.11, 0.17), hp(-0.30, -0.16, 0.25)], [0.008, 0.006],
+                                    "Hair", mats["tunic_dark"], segments=8, samples=4, subsurf=0)
 
     # --- Hats (cosmetics, rendered as their own layers later) --------------
     acorn = sphere("AcornCap", hc + Vector((0, 0.02, 0.17)), F.head_r + 0.07, "Hat/acornCap", mats["acorn"],
@@ -768,12 +893,13 @@ def bones_for(form):
     """The bone table (name, head, tail, parent, deform) for a form."""
     global F
     previous, F = F, form
-    crown = F.head_c + F.head_r * HEAD_SCALE[2]
+    crown = F.head_c + F.head_r * head_scale()[2]
+    pelvis = pelvis_z()
     bones = [
         ("root", (0, 0, 0), (0, 0, 0.25), None, False),
-        ("hips", (0, 0, F.hem_z), (0, 0, F.hem_z + 0.13), "root", True),
-        ("spine", (0, 0, F.hem_z + 0.13), (0, 0, F.hem_z + 0.28), "hips", True),
-        ("chest", (0, 0, F.hem_z + 0.28), (0, 0, F.shoulder_z - 0.05), "spine", True),
+        ("hips", (0, 0, pelvis), (0, 0, pelvis + 0.13), "root", True),
+        ("spine", (0, 0, pelvis + 0.13), (0, 0, pelvis + 0.28), "hips", True),
+        ("chest", (0, 0, pelvis + 0.28), (0, 0, F.shoulder_z - 0.05), "spine", True),
         ("neck", (0, 0, F.shoulder_z - 0.05), (0, 0, F.shoulder_z + 0.10), "chest", True),
         ("head", (0, 0, F.shoulder_z + 0.10), (0, 0, crown), "neck", True),
         ("hood_tip", tuple(hp(0.0, 0.10, 0.36)), tuple(hp(0.15, 0.19, 0.60)), "head", True),
@@ -946,8 +1072,14 @@ def bind_all(arm, objs):
             bind_rigid(arm, obj, "chest")
         elif base in ("Eyelid", "Lash"):
             bind_rigid(arm, obj, f"eyelid.{side}")
-        elif base in ("Hand", "Cuff", "Wand", "WandTip", "WandLeaf"):
+        elif base in ("Hand", "Cuff", "Wand", "WandTip", "WandLeaf") or base.startswith("WandProng"):
             bind_rigid(arm, obj, f"hand.{side}")
+        elif base.startswith("Cape"):
+            bind_rigid(arm, obj, "chest")
+        elif base.startswith(("Pouch", "Star")):
+            bind_rigid(arm, obj, "hips")
+        elif base in ("SproutStem", "SproutLeaf"):
+            bind_rigid(arm, obj, "hood_tip")
         elif base in ("Boot", "BootCuff", "Sole"):
             bind_rigid(arm, obj, f"foot.{side}")
         elif base == "Body":
