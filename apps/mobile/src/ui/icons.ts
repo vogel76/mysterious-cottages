@@ -42,6 +42,7 @@ import { DownloadSimpleIcon } from 'phosphor-react-native/src/icons/DownloadSimp
 import { DropIcon } from 'phosphor-react-native/src/icons/Drop'
 import { EggIcon as PhosphorEgg } from 'phosphor-react-native/src/icons/Egg'
 import { EnvelopeSimpleIcon } from 'phosphor-react-native/src/icons/EnvelopeSimple'
+import { EnvelopeSimpleOpenIcon } from 'phosphor-react-native/src/icons/EnvelopeSimpleOpen'
 import { FacebookLogoIcon } from 'phosphor-react-native/src/icons/FacebookLogo'
 import { FireIcon } from 'phosphor-react-native/src/icons/Fire'
 import { FlashlightIcon } from 'phosphor-react-native/src/icons/Flashlight'
@@ -191,6 +192,9 @@ export const JarIcon = PhosphorJar
 export const LockIcon = LockSimpleIcon
 /* The cottage's decor edit mode. */
 export const DecorIcon = ArmchairIcon
+/* A letter from the cottages, sealed and opened. */
+export const LetterIcon = EnvelopeSimpleIcon
+export const LetterOpenIcon = EnvelopeSimpleOpenIcon
 
 /* The vocabulary as one object, checked against the shared and app-only
    roles: a missing role is a compile error. */
@@ -205,7 +209,7 @@ export const ICON_VOCABULARY = {
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
   CoffeeIcon, WatchAdIcon,
   EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon, QuestIcon, JarIcon, LockIcon,
-  DecorIcon,
+  DecorIcon, LetterIcon, LetterOpenIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

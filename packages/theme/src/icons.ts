@@ -92,6 +92,9 @@ export const MOBILE_ICON_ROLES = [
   'LockIcon',
   /* The cottage's decor edit mode. */
   'DecorIcon',
+  /* A letter from the cottages, sealed and opened. */
+  'LetterIcon',
+  'LetterOpenIcon',
 ] as const
 
 /* Roles only the site has a surface for. */

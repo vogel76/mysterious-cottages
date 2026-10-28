@@ -1,11 +1,10 @@
-import { useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { nextStreakMilestone, type ElfQuest, type ElfReward } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
-import { useContent, useElf, useProgress } from '../../providers'
+import { useElf } from '../../providers'
 import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
 import { QUEST_ICONS, elfKey } from './labels'
 
@@ -14,34 +13,17 @@ import { QUEST_ICONS, elfKey } from './labels'
    (done ones ticked) and the grain of dust for the full set; the day's
    reward as three cards face down, one of which the player turns (the
    rules hold what each card hides and remember the pick, so the sheet
-   shows the turned card and the two missed ones until tomorrow); the
-   jars on the shelf, one per cottage found with its date, newest first,
-   each opening the cottage's story (the shelf in the room keeps its one
-   render until the art has the jars); the streak with its longest and
-   the next milestone; and at the end what the ledger's figures are and
-   earn, for whoever still wonders. The content scrolls inside the sheet
-   on a short screen. */
+   shows the turned card and the two missed ones until tomorrow); the way
+   to the keepsake shelf (the jars of the cottages found, the windowsill's
+   treasures, the letters); the streak with its longest and the next
+   milestone; and at the end what the ledger's figures are and earn, for
+   whoever still wonders. The content scrolls inside the sheet on a short
+   screen. */
 
 export function ElfTodaySheet() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const router = useRouter()
   const { state, claimDailyReward } = useElf()
-  const { state: progress } = useProgress()
-  const { cottages, total } = useContent()
-  /* The cottages found as jars, newest first, named and dated. */
-  const jars = useMemo(
-    () =>
-      Object.entries(progress.found)
-        .map(([slug, find]) => ({
-          slug,
-          at: find.foundAt,
-          title: cottages.find((cottage) => cottage.slug === slug)?.title ?? slug,
-          date: new Date(find.foundAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' }),
-        }))
-        .sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)),
-    [progress.found, cottages, i18n.language],
-  )
-  const openStory = (slug: string) => router.push({ pathname: '/story/[slug]', params: { slug } })
   const quests = state?.daily.quests ?? []
   const rewards = state?.daily.rewardOptions ?? []
   const picked = state?.daily.rewardPicked ?? null
@@ -93,26 +75,16 @@ export function ElfTodaySheet() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text weight="bold" accessibilityRole="header">
-            {t('mobile:elf.todayJars')}
-          </Text>
-          <Text variant="small" tone="faint">
-            {jars.length ? t('mobile:elf.jarsLine', { count: jars.length, total }) : t('mobile:elf.jarsEmpty')}
-          </Text>
-          {jars.map((jar) => (
-            <PressableScale key={jar.slug} onPress={() => openStory(jar.slug)} accessibilityLabel={`${jar.title}, ${jar.date}`} accessibilityHint={t('mobile:elf.jarHint')} style={[styles.row, styles.jar]}>
-              <JarIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
-              <View style={styles.column}>
-                <Text numberOfLines={2}>{jar.title}</Text>
-                <Text variant="small" tone="faint">
-                  {jar.date}
-                </Text>
-              </View>
-              <NextIcon size={iconSize.sm} color={colors.inkFaint} />
-            </PressableScale>
-          ))}
-        </View>
+        <PressableScale onPress={() => router.push('/elf-shelf')} accessibilityLabel={`${t('mobile:elf.shelfOpen')}. ${t('mobile:elf.shelfOpenHint')}`} style={[styles.row, styles.link]}>
+          <JarIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
+          <View style={styles.column}>
+            <Text weight="bold">{t('mobile:elf.shelfOpen')}</Text>
+            <Text variant="small" tone="faint">
+              {t('mobile:elf.shelfOpenHint')}
+            </Text>
+          </View>
+          <NextIcon size={iconSize.sm} color={colors.inkFaint} />
+        </PressableScale>
 
         <View style={styles.section}>
           <Text weight="bold" accessibilityRole="header">
@@ -256,8 +228,8 @@ const styles = StyleSheet.create({
   rowDone: {
     opacity: 0.7,
   },
-  /* A jar is a way to its story: a row with the press feel of a list. */
-  jar: {
+  /* The way to the shelf: a row with the press feel of a list. */
+  link: {
     paddingVertical: space.xs,
     borderRadius: radius.control,
   },

@@ -24,7 +24,12 @@ import { ROOM_FILES } from './roomFiles'
 
    The scene takes its slot table from spriteSlotsFor: ./room's slots with
    the hit box of the piece actually drawn for the decor, with a little
-   slack. */
+   slack.
+
+   The manifest also holds the pieces the days bring rather than the
+   player (extraSpriteFor): the plant on the windowsill in its stages, the
+   small things the elf finds, drawn at the sill's places (SILL_OFFSETS),
+   and the letter on the floor. */
 
 type Box = { x: number; y: number; width: number; height: number }
 
@@ -56,15 +61,19 @@ export type RoomManifest = {
   floors: SurfaceEntry[]
   /* The empty room for each "wall/floor" pair, by night and by day. */
   plates: Record<string, { night: string; day?: string }>
+  /* The sill's places for the elf's finds, as x offsets from where a
+     find's render stands (the first place). */
+  sillOffsets?: number[]
   sprites: RoomSpriteEntry[]
 }
 
 export const ROOM_MANIFEST: RoomManifest = require('../../../../assets/elf/room/manifest.json')
 
-/* A sprite the scene can draw: the manifest's entry with its bundled
-   modules, the daytime one and the catalogue's close-up null where no such
-   render exists. */
-export type RoomSprite = RoomSpriteEntry & { slot: SlotId; module: number; moduleDay: number | null; moduleThumb: number | null }
+/* A render the scene can draw: the manifest's entry with its bundled
+   modules, the daytime one and the close-up null where no such render
+   exists. A sprite is one of a decor slot. */
+export type RoomPicture = RoomSpriteEntry & { module: number; moduleDay: number | null; moduleThumb: number | null }
+export type RoomSprite = RoomPicture & { slot: SlotId }
 
 function fileModule(name: string | undefined): number | null {
   if (!name) return null
@@ -73,19 +82,43 @@ function fileModule(name: string | undefined): number | null {
   return module ?? null
 }
 
-/* The manifest's sprites grouped by slot, with their modules, built once. */
-const SPRITES_BY_SLOT: ReadonlyMap<SlotId, readonly RoomSprite[]> = (() => {
-  const map = new Map<SlotId, RoomSprite[]>()
-  for (const entry of ROOM_MANIFEST.sprites) {
-    const module = fileModule(entry.file)
-    if (!isSlotId(entry.slot) || module === null) continue
-    const sprite: RoomSprite = { ...entry, slot: entry.slot, module, moduleDay: fileModule(entry.fileDay), moduleThumb: fileModule(entry.fileThumb) }
-    const list = map.get(entry.slot)
+/* The pieces the days bring, by their slot in the manifest. */
+export type ExtraSlot = 'plant' | 'sill' | 'letter'
+const EXTRA_SLOTS: readonly string[] = ['plant', 'sill', 'letter'] satisfies readonly ExtraSlot[]
+export function isExtraSlot(slot: string): slot is ExtraSlot {
+  return EXTRA_SLOTS.includes(slot)
+}
+
+/* The manifest's sprites grouped by slot, with their modules, built once:
+   the decor's and the days' apart. */
+const SPRITES_BY_SLOT = new Map<SlotId, RoomSprite[]>()
+const EXTRAS_BY_SLOT = new Map<string, RoomPicture[]>()
+for (const entry of ROOM_MANIFEST.sprites) {
+  const module = fileModule(entry.file)
+  if (module === null) continue
+  const picture: RoomPicture = { ...entry, module, moduleDay: fileModule(entry.fileDay), moduleThumb: fileModule(entry.fileThumb) }
+  if (isSlotId(entry.slot)) {
+    const sprite: RoomSprite = { ...picture, slot: entry.slot }
+    const list = SPRITES_BY_SLOT.get(entry.slot)
     if (list) list.push(sprite)
-    else map.set(entry.slot, [sprite])
+    else SPRITES_BY_SLOT.set(entry.slot, [sprite])
+  } else if (isExtraSlot(entry.slot)) {
+    const list = EXTRAS_BY_SLOT.get(entry.slot)
+    if (list) list.push(picture)
+    else EXTRAS_BY_SLOT.set(entry.slot, [picture])
   }
-  return map
-})()
+}
+
+/* The render of one of the days' pieces: the plant's stage ('stage0'..),
+   a find ('pinecone'..) at the sill's first place, the letter
+   ('envelope'); null where the renders have none. */
+export function extraSpriteFor(slot: ExtraSlot, variant: string): RoomPicture | null {
+  return EXTRAS_BY_SLOT.get(slot)?.find((picture) => picture.variant === variant) ?? null
+}
+
+/* The sill's places, as x offsets from the first; one place when the
+   manifest names none. */
+export const SILL_OFFSETS: readonly number[] = ROOM_MANIFEST.sillOffsets?.length ? ROOM_MANIFEST.sillOffsets : [0]
 
 /* The rendered sprite that stands for a decor id in a slot: the render of
    that id, the slot's default for an id without one, and null for a
@@ -170,4 +203,34 @@ export function spriteSlotsFor(decor: Decor): readonly Slot[] {
     const hit = spriteSlotBounds(slot, decor[slot.id])
     return hit ? { ...slot, hit } : slot
   })
+}
+
+/* What the days have brought into the room: the plant's stage (0..4), the
+   finds on the sill, newest first, and whether a letter waits on the
+   floor. */
+export type RoomExtras = { plantStage: number; sill: readonly string[]; letter: boolean }
+
+/* A render of the days' pieces with how far right of its box it is drawn. */
+export type PlacedPicture = { picture: RoomPicture; dx: number }
+
+/* The days' renders to draw for the extras: the plant, the finds at the
+   sill's places (as many as it has), and the letter. */
+export function extraPictures(extras: RoomExtras): { plant: RoomPicture | null; sill: PlacedPicture[]; letter: RoomPicture | null } {
+  const sill: PlacedPicture[] = []
+  extras.sill.slice(0, SILL_OFFSETS.length).forEach((item, index) => {
+    const picture = extraSpriteFor('sill', item)
+    if (picture) sill.push({ picture, dx: SILL_OFFSETS[index]! })
+  })
+  return { plant: extraSpriteFor('plant', `stage${extras.plantStage}`), sill, letter: extras.letter ? extraSpriteFor('letter', 'envelope') : null }
+}
+
+/* The box around some placed renders, widened by the slot slack; null
+   for none. */
+export function placedBounds(placed: readonly PlacedPicture[]): Bounds | null {
+  if (placed.length === 0) return null
+  const left = Math.min(...placed.map(({ picture, dx }) => picture.x + dx))
+  const top = Math.min(...placed.map(({ picture }) => picture.y))
+  const right = Math.max(...placed.map(({ picture, dx }) => picture.x + dx + picture.width))
+  const bottom = Math.max(...placed.map(({ picture }) => picture.y + picture.height))
+  return { x: left - SLOT_SLACK, y: top - SLOT_SLACK, width: right - left + 2 * SLOT_SLACK, height: bottom - top + 2 * SLOT_SLACK }
 }

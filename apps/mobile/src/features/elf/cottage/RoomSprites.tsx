@@ -3,7 +3,7 @@ import { FilterMode, Group, Image, MipmapMode, Rect, rect, useImage } from '@sho
 import type { SharedValue } from 'react-native-reanimated'
 import { PHOTO_ID, type Decor } from './catalogue'
 import { ROOM, slotsIn, type SlotZ } from './room'
-import { photoRect, roomPlateFor, roomSpriteFor, type RoomSprite } from './roomAssets'
+import { extraPictures, extraSpriteFor, photoRect, roomPlateFor, roomSpriteFor, type RoomExtras, type RoomPicture, type RoomSprite } from './roomAssets'
 
 /* The rendered room inside the room group: the plate (the empty cottage,
    fireplace and all, in the decor's wall and floor) covering the room
@@ -21,6 +21,11 @@ import { photoRect, roomPlateFor, roomSpriteFor, type RoomSprite } from './roomA
    photo id): the frame's render first, then the photo clipped to the
    picture inside it, and the render's own picture until the photo has
    decoded.
+
+   What the days bring is drawn with the furniture: the plant and the
+   finds on the windowsill right after the window, in the back layer, and
+   a waiting letter on the floor first in the front layer, before the
+   pieces nearer the camera.
 
    The plate and each sprite are rendered by night and by day, and the
    daytime picture is drawn over the night one at the opacity of the
@@ -41,6 +46,8 @@ export type RoomSpritesProps = {
   day: SharedValue<number>
   /* The latest cottage found, as a picture URI, for the frame's photo id. */
   photo?: string | null
+  /* The plant, the sill's finds and the letter; none drawn without. */
+  extras?: RoomExtras
 }
 
 /* The plate's own colours, for what stands in for it and runs under it. */
@@ -72,21 +79,37 @@ function Plate({ decor, day }: { decor: Decor; day: SharedValue<number> }) {
   )
 }
 
-function Sprite({ sprite, day }: { sprite: RoomSprite; day: SharedValue<number> }) {
+/* A render at its box, moved right by dx (a find at a later place of the sill). */
+function Sprite({ sprite, day, dx = 0 }: { sprite: RoomPicture; day: SharedValue<number>; dx?: number }) {
   const image = useImage(sprite.module)
   const dayImage = useImage(sprite.moduleDay)
   if (!image) return null
   return (
     <>
-      <Image image={image} x={sprite.x} y={sprite.y} width={sprite.width} height={sprite.height} fit="fill" sampling={SAMPLING} />
+      <Image image={image} x={sprite.x + dx} y={sprite.y} width={sprite.width} height={sprite.height} fit="fill" sampling={SAMPLING} />
       {dayImage ? (
         <Group opacity={day}>
-          <Image image={dayImage} x={sprite.x} y={sprite.y} width={sprite.width} height={sprite.height} fit="fill" sampling={SAMPLING} />
+          <Image image={dayImage} x={sprite.x + dx} y={sprite.y} width={sprite.width} height={sprite.height} fit="fill" sampling={SAMPLING} />
         </Group>
       ) : null}
     </>
   )
 }
+
+/* The plant and the finds on the sill, each place keyed by its index. */
+function SillThings({ extras, day }: { extras: RoomExtras; day: SharedValue<number> }) {
+  const { plant, sill } = extraPictures(extras)
+  return (
+    <>
+      {plant ? <Sprite sprite={plant} day={day} /> : null}
+      {sill.map(({ picture, dx }, index) => (
+        <Sprite key={`sill:${index}`} sprite={picture} day={day} dx={dx} />
+      ))}
+    </>
+  )
+}
+
+const LETTER = extraSpriteFor('letter', 'envelope')
 
 /* The expedition's photo inside the frame's render, clipped to the
    picture area and covering it; nothing until it has decoded. Shared with
@@ -102,10 +125,11 @@ export function FramedPhoto({ sprite, uri }: { sprite: RoomSprite; uri: string }
   )
 }
 
-export const RoomSprites = memo(function RoomSprites({ decor, layer, day, photo = null }: RoomSpritesProps) {
+export const RoomSprites = memo(function RoomSprites({ decor, layer, day, photo = null, extras }: RoomSpritesProps) {
   return (
     <>
       {layer === 'back' ? <Plate decor={decor} day={day} /> : null}
+      {layer === 'front' && extras?.letter && LETTER ? <Sprite sprite={LETTER} day={day} /> : null}
       {slotsIn(layer).map((slot) => {
         const sprite = roomSpriteFor(slot.id, decor[slot.id])
         if (!sprite) return null
@@ -114,6 +138,7 @@ export const RoomSprites = memo(function RoomSprites({ decor, layer, day, photo 
           <Fragment key={slot.id}>
             <Sprite sprite={sprite} day={day} />
             {framed ? <FramedPhoto sprite={sprite} uri={framed} /> : null}
+            {slot.id === 'window' && extras ? <SillThings extras={extras} day={day} /> : null}
           </Fragment>
         )
       })}

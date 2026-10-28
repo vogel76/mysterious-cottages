@@ -5,14 +5,16 @@ import { Canvas, Group, Image, useImage } from '@shopify/react-native-skia'
 import { PHOTO_ID, isSurface, type SlotId } from './cottage/catalogue'
 import { SPRITE_CHARACTERS, thumbModule } from './sprites'
 import { FramedPhoto } from './cottage/RoomSprites'
-import { roomSpriteFor, surfaceThumbFor, type RoomSprite } from './cottage/roomAssets'
+import { extraSpriteFor, isExtraSlot, roomSpriteFor, surfaceThumbFor, type ExtraSlot, type RoomSprite } from './cottage/roomAssets'
 
 /* The picture of a piece on a card of the decorating catalogue: the
    piece's catalogue render (art/blender/room.py renders every piece a
    second time close up and by day, so a card is sharp at its size) as a
    plain image, fitted into the square and centred; a wall or a floor
    shows its patch, filling the square, and a hat the elf's head wearing
-   it (the wardrobe's pictures, packed with the elf's atlas). A plain
+   it (the wardrobe's pictures, packed with the elf's atlas). The same
+   pictures show what the days brought (a find of the sill, a stage of the
+   plant, the letter) on the elf's sheets. A plain
    image, not a Skia canvas:
    a canvas per card is a surface of its own on the GPU, and the
    measurement showed a row of them in the graphics memory. Only the
@@ -26,8 +28,8 @@ const PADDING_SHARE = 0.08
 const ELF = SPRITE_CHARACTERS.elf
 
 export type ElfThumbProps = {
-  /* A place of the room, or the elf's hat. */
-  slot: SlotId | 'hat'
+  /* A place of the room, the elf's hat, or one of what the days bring. */
+  slot: SlotId | 'hat' | ExtraSlot
   id: string
   /* The side of the square, points. */
   size: number
@@ -36,8 +38,8 @@ export type ElfThumbProps = {
 }
 
 export const ElfThumb = memo(function ElfThumb({ slot, id, size, photo = null }: ElfThumbProps) {
-  if (slot === 'hat') {
-    const thumb = ELF ? thumbModule(ELF, `hat_${id}`) : null
+  if (slot === 'hat' || isExtraSlot(slot)) {
+    const thumb = slot === 'hat' ? (ELF ? thumbModule(ELF, `hat_${id}`) : null) : (extraSpriteFor(slot, id)?.moduleThumb ?? null)
     return <View style={{ width: size, height: size }}>{thumb !== null ? <CatalogueThumb module={thumb} size={size} /> : null}</View>
   }
   if (isSurface(slot)) {

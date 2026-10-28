@@ -246,7 +246,15 @@ antlers), the shelf (books, jars, seedlings), the lantern (iron, paper,
 a brass bell), the herbs under the beam (dried herbs, garlic, a
 dreamcatcher), the basket by the hearth (acorns, firewood, pumpkins),
 the corner plant (a fern, a toadstool, a stump) and the stool by the
-fire (a candle, a cauldron, a toy chest); and three walls (plaster,
+fire (a candle, a cauldron, a toy chest); the pieces the days bring
+rather than the player (`EXTRA_SLOTS`, in the manifest like the
+furniture but left out of the review plate): the pot on the windowsill
+in five stages (`plant_stage0..4`, from a seedling to a bush in flower),
+the eight small things the elf finds (`sill_<item>`, each rendered at the
+sill's first place for finds; the app moves it to the others by the
+manifest's `sillOffsets`) and the sealed letter on the floor
+(`letter_envelope`); every window has the same sill (`window_sill`, at
+`SILL_Z`, the shuttered one's flower box at its right end); and three walls (plaster,
 boards, logs) and three floors (planks, flagstones, terracotta) as
 materials of the room's own surfaces (`WALL_IDS`, `FLOOR_IDS`,
 `set_surfaces`). Everything is in the same painterly materials and the
@@ -306,7 +314,9 @@ of every pair, each sprite cropped to its box by night and as its `_day`
 twin, and the catalogue's pictures as `_thumb`, with `manifest.json`
 (version 3) carrying the plates by pair, the boxes and which piece is
 each place's default, the floor line, the rug centre, the fireplace with
-its fire and the boxes of the wall and the floor; the app draws the day
+its fire, the boxes of the wall and the floor and the sill's places
+for finds (`sillOffsets`, x offsets in plate pixels from the first, from
+`camera.json`'s `sill_offsets_px`); the app draws the day
 pictures over the night ones at the opacity of its clock's daylight.
 
 ## Adding a hat or a piece of furniture
