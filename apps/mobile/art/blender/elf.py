@@ -81,6 +81,7 @@ PALETTE = {
     "crown_yellow": "#f2c641",
     "crown_heart": "#c7861f",
     "nightcap": "#3e5a8c",
+    "wand_crystal": "#b9e6ff",
 }
 
 # The hats of the wardrobe, the catalogue's ids (cottage/catalogue.ts,
@@ -302,10 +303,28 @@ FORMS = {
     # The young elf: about three and a half heads tall, the form of the first months.
     "young": Form(head_c=1.36, head_r=0.33, shoulder_z=1.03, hem_z=0.52, chest_r=0.20, hem_r=0.255,
                   hip_z=0.58, knee_z=0.34, ear=1.0, arm=1.0),
-    # The hatchling: a bigger head on a shorter body, shorter ears and arms.
-    "baby": Form(head_c=1.12, head_r=0.36, shoulder_z=0.78, hem_z=0.40, chest_r=0.21, hem_r=0.27,
-                 hip_z=0.44, knee_z=0.26, ear=0.8, arm=0.85),
+    # The hatchling: about three quarters of the young elf, a bigger head
+    # on a short body, short ears and arms.
+    "baby": Form(head_c=0.98, head_r=0.345, shoulder_z=0.66, hem_z=0.34, chest_r=0.2, hem_r=0.25,
+                 hip_z=0.38, knee_z=0.22, ear=0.74, arm=0.76),
+    # The grown elf: taller, a smaller head on longer limbs, longer ears;
+    # it carries its own wand (FORM_LOOK).
+    "adult": Form(head_c=1.6, head_r=0.31, shoulder_z=1.25, hem_z=0.64, chest_r=0.21, hem_r=0.27,
+                  hip_z=0.70, knee_z=0.41, ear=1.12, arm=1.14),
+    # The elder: the grown elf's frame in a robe down to the boots, with
+    # silver hair, a beard and a gnarled wand with a glowing crystal.
+    "elder": Form(head_c=1.6, head_r=0.31, shoulder_z=1.25, hem_z=0.24, chest_r=0.22, hem_r=0.36,
+                  hip_z=0.70, knee_z=0.41, ear=1.18, arm=1.14),
 }
+
+# What a form wears or carries beyond its proportions: the wand ("twig"
+# or the elder's "crystal"), a beard, the colours of the hair and of the
+# tunic (the elder's is a deep blue robe).
+FORM_LOOK = {
+    "adult": {"wand": "twig"},
+    "elder": {"wand": "crystal", "beard": True, "hair": ("#dcd7cc", "#a9a296"), "tunic": ("#3f5687", "#2c3d66")},
+}
+FORM_NAME = "young"
 
 F = FORMS["young"]
 HEAD_SCALE = (1.0, 0.95, 1.08)
@@ -315,10 +334,17 @@ OUTLINE = 0.011
 
 
 def set_form(name):
-    """Select the form every builder reads; call before build_model."""
-    global F, BONES
+    """Select the form every builder reads; call before build_model. A
+    form's hair colours replace the palette's."""
+    global F, BONES, FORM_NAME
     F = FORMS[name]
+    FORM_NAME = name
     BONES = bones_for(F)
+    look = FORM_LOOK.get(name, {})
+    if look.get("hair"):
+        PALETTE["hair"], PALETTE["hair_dark"] = look["hair"]
+    if look.get("tunic"):
+        PALETTE["tunic"], PALETTE["tunic_dark"] = look["tunic"]
 
 
 def head_c():
@@ -424,6 +450,11 @@ def build_model():
         "crown_yellow": material("CrownYellow", "crown_yellow", roughness=0.7, grain=0.0),
         "crown_heart": material("CrownHeart", "crown_heart", roughness=0.6, grain=0.0),
         "nightcap": material("Nightcap", "nightcap", roughness=0.85),
+        # the wand's tip: a seed of warm light, the elder's crystal of cool light
+        "wand_seed": material("WandSeed", "crown_yellow", roughness=0.4, emission=PALETTE["crown_yellow"],
+                              emission_strength=4.0, grain=0.0),
+        "wand_crystal": material("WandCrystal", "wand_crystal", roughness=0.25, emission=PALETTE["wand_crystal"],
+                                 emission_strength=4.5, grain=0.0),
     }
     objs = {}
     hc = head_c()
@@ -526,6 +557,32 @@ def build_model():
                                            "Body", mats["sole"], subsurf=1)
         objs[f"Sole.{suffix}"] = sphere(f"Sole.{suffix}", (0.125 * s, -0.07, 0.026), 1.0, "Body", mats["sole"],
                                         scale=(0.105, 0.18, 0.028), subsurf=1)
+
+    # --- A grown form's wand in the left hand (the right one waves), and
+    # the elder's beard under the mouth ---------------------------------------
+    look = FORM_LOOK.get(FORM_NAME, {})
+    if look.get("wand"):
+        _, _, hand = arm_points(1)
+        crystal = look["wand"] == "crystal"
+        grip = hand + Vector((0.0, -0.005, -0.11))
+        tip = hand + Vector((0.09, -0.06, 0.5 if crystal else 0.44))
+        mid = grip.lerp(tip, 0.55) + Vector((0.018 if crystal else 0.0, -0.01, 0.0))
+        objs["Wand.L"] = tube("Wand.L", [grip, mid, tip], [0.026, 0.02, 0.015], "Body", mats["acorn_dark"],
+                              ref=(0, 1, 0), segments=10, samples=10, subsurf=1)
+        glow = mats["wand_crystal"] if crystal else mats["wand_seed"]
+        objs["WandTip.L"] = sphere("WandTip.L", tip + Vector((0, 0, 0.045)), 0.05 if crystal else 0.042, "Body", glow,
+                                   scale=(0.8, 0.8, 1.4) if crystal else (1, 1, 1.1), segments=16, rings=10, subsurf=1)
+        objs["WandLeaf.L"] = leaf("WandLeaf.L", tip + Vector((-0.008, 0, -0.04)), (-0.6, -0.4, 0.5), 0.1, 0.05, "Body",
+                                  mats["leaf"])
+    if look.get("beard"):
+        tufts = [
+            sphere("Beard0", hp(0.0, -0.25, -0.33), 1.0, "Hair", mats["hair"], scale=(0.17 * k, 0.12 * k, 0.12 * k)),
+            sphere("Beard1", hp(0.0, -0.24, -0.46), 1.0, "Hair", mats["hair"], scale=(0.12 * k, 0.1 * k, 0.11 * k)),
+            sphere("Beard2", hp(0.0, -0.22, -0.58), 1.0, "Hair", mats["hair"], scale=(0.06 * k, 0.06 * k, 0.08 * k)),
+            sphere("Beard3", hp(0.2, -0.16, -0.24), 1.0, "Hair", mats["hair"], scale=(0.07 * k, 0.08 * k, 0.1 * k)),
+            sphere("Beard4", hp(-0.2, -0.16, -0.24), 1.0, "Hair", mats["hair"], scale=(0.07 * k, 0.08 * k, 0.1 * k)),
+        ]
+        objs["Beard"] = fuse("Beard", tufts, mats["hair"], voxel=0.007, smooth=3)
 
     # --- Face --------------------------------------------------------------
     for side, suffix in ((1, "L"), (-1, "R")):
@@ -889,7 +946,7 @@ def bind_all(arm, objs):
             bind_rigid(arm, obj, "chest")
         elif base in ("Eyelid", "Lash"):
             bind_rigid(arm, obj, f"eyelid.{side}")
-        elif base in ("Hand", "Cuff"):
+        elif base in ("Hand", "Cuff", "Wand", "WandTip", "WandLeaf"):
             bind_rigid(arm, obj, f"hand.{side}")
         elif base in ("Boot", "BootCuff", "Sole"):
             bind_rigid(arm, obj, f"foot.{side}")
@@ -1338,6 +1395,9 @@ FRAME = {"origin": (0.0, 0.0), "feet": (0.0, 0.0, 0.0), "pixels_per_metre": floa
 # room: the app's ELF_HEIGHT_UNITS, so the room render shows the elf
 # exactly as the app does.
 ROOM_FIGURE_PX = 460
+# The young form's height (its manifest's modelHeight): ROOM_FIGURE_PX is
+# its figure, and every form is scaled the same, so each keeps its size.
+FIGURE_REFERENCE_M = 1.8144
 # Watts that put the lit front of the figure at the palette colours (the skin
 # is bright and clips first).
 LIGHT_WATTS = {"key": 540.0, "fill": 190.0, "top": 130.0}
@@ -1554,13 +1614,15 @@ def place_in_room(scene, arm, room_rig, model_height):
     foot = _common.project_to_pixels(scene, cam, rug)
     head = _common.project_to_pixels(scene, cam, rug + Vector((0, 0, 1.0)))
     pixels_per_metre = foot[1] - head[1]
-    k = ROOM_FIGURE_PX / (pixels_per_metre * model_height)
+    # one scale for every form, the young one's: a form's own height then
+    # makes it smaller or taller in the room
+    k = ROOM_FIGURE_PX / (pixels_per_metre * FIGURE_REFERENCE_M)
     arm.location = rug
     arm.scale = (k, k, k)
     FRAME["feet"] = tuple(rug)
     FRAME["pixels_per_metre"] = pixels_per_metre * k
     # the border: the figure's reach, in the room, projected and padded
-    corners = [rug + Vector((sx * 0.8 * k, -0.35 * k, z * k)) for sx in (-1, 1) for z in (-0.05, 2.75)]
+    corners = [rug + Vector((sx * 0.8 * k, -0.35 * k, z * k)) for sx in (-1, 1) for z in (-0.05, max(2.75, model_height + 0.95))]
     pts = [_common.project_to_pixels(scene, cam, c) for c in corners]
     width, height = scene.render.resolution_x, scene.render.resolution_y
     pad = 24
