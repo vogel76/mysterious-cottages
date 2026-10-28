@@ -4,7 +4,7 @@ import type { LeaderboardRow } from '@chatynkowo/api'
 import { fetchLeaderboard } from '../../lib/sync'
 import { useForeground, useProgress, useReconnect } from '../../providers'
 
-/* The leaderboard as the Ranking tab sees it. Rows are loaded once the
+/* The leaderboard as the Ranking sees it. Rows are loaded once the
    cottage total is known and refreshed quietly whenever they may have
    changed: on focus when older than a minute, on a return to the foreground,
    on reconnect, and once the seeker's pending finds have reached the account.

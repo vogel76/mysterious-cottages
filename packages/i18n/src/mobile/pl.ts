@@ -8,7 +8,6 @@ export const mobilePl = {
     atlas: 'Atlas',
     elf: 'Elf',
     kronika: 'Kronika',
-    ranking: 'Ranking',
     discover: 'Odkryj',
     discoverAria: 'Odkryj Chatynkę: wpisz kod z tabliczki, albo przytrzymaj, aby zeskanować kod QR',
     profile: 'Profil',
@@ -81,6 +80,8 @@ export const mobilePl = {
     newBadge: 'Nowa',
     progressAria: 'Postęp: {{found}} z {{total}} Chatynek',
     levelProgress: '{{found}} z {{required}} odkryć',
+    rankingCard: 'Kto odnalazł najwięcej opowieści i które miejsce zajmujesz Ty',
+    rankingCardAria: 'Otwórz ranking',
   },
   cottages: {
     title: 'Chatynki',
@@ -91,6 +92,8 @@ export const mobilePl = {
     hiddenByFilter: 'Te Chatynki są już odkryte. Pokaż wszystkie, żeby je zobaczyć.',
   },
   ranking: {
+    /* The header's title on the Kronika's stack, short beside the back button and two items. */
+    headerTitle: 'Ranking',
     showMore: 'Pokaż więcej',
     signInFailed: 'Nie udało się zalogować. Spróbuj ponownie.',
     rules: 'Zasady',
