@@ -385,12 +385,12 @@ export const mobileEn: typeof mobilePl = {
     none: 'None',
     removeHint: 'Tap again to take it off.',
     /* The wearable slots */
-    slotHat: 'Head',
     slotOutfit: 'Outfit',
     slotNeck: 'Neck',
     slotHand: 'Hand',
     slotFace: 'Face',
     /* The furniture slots of the room */
+    slotHat: 'Hat',
     slotWall: 'Walls',
     slotFloor: 'Floor',
     slotWindow: 'Window',
@@ -406,7 +406,7 @@ export const mobileEn: typeof mobilePl = {
     slotCandle: 'By the fire',
     /* The wearables */
     itemNone: 'None',
-    itemHood: 'Hood',
+    hatNone: 'No hat',
     itemAcornCap: 'Acorn cap',
     itemMushroomCap: 'Toadstool cap',
     itemFlowerCrown: 'Flower crown',

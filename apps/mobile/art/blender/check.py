@@ -73,6 +73,8 @@ def repack(args: argparse.Namespace, out_dir: str) -> None:
         command += ['--once', args.once]
     if args.lossless:
         command.append('--lossless')
+    if args.thumbs:
+        command += ['--thumbs', args.thumbs]
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
         fail(f'pack.py failed:\n{result.stdout}{result.stderr}')
@@ -90,9 +92,10 @@ def load_manifest(directory: str) -> dict:
 def compare_sheets(manifest: dict, against: str, fresh: str, tolerance: int) -> None:
     """The largest channel difference of any cell, on premultiplied pixels so a transparent pixel's hidden colour does not count."""
     worst = (0, '', 0)
-    sheets = [(layer, sheet) for layer, group in [('body', manifest)] + list(manifest.get('layers', {}).items()) for sheet in group['sheets']]
-    width, height = manifest['frameWidth'], manifest['frameHeight']
-    for layer, sheet in sheets:
+    groups = [('body', manifest)] + list(manifest.get('layers', {}).items())
+    sheets = [(layer, sheet, group.get('frameWidth', manifest['frameWidth']), group.get('frameHeight', manifest['frameHeight']))
+              for layer, group in groups for sheet in group['sheets']]
+    for layer, sheet, width, height in sheets:
         a_path, b_path = os.path.join(against, sheet['file']), os.path.join(fresh, sheet['file'])
         if not os.path.exists(a_path):
             fail(f'{a_path} is missing')
@@ -122,6 +125,7 @@ def main(argv: list[str]) -> None:
     command.add_argument('--once', default='')
     command.add_argument('--lossless', action='store_true')
     command.add_argument('--base', default='body')
+    command.add_argument('--thumbs', default=None)
     command.add_argument('--tolerance', type=int, default=24, help='the largest channel difference a cell may show')
     args = parser.parse_args(argv)
 

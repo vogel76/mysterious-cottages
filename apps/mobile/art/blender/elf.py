@@ -77,7 +77,19 @@ PALETTE = {
     "cream": "#f3e4c0",
     "ear_inner": "#e9a69a",
     "white": "#ffffff",
+    "crown_pink": "#e98aa6",
+    "crown_yellow": "#f2c641",
+    "crown_heart": "#c7861f",
+    "nightcap": "#3e5a8c",
 }
+
+# The hats of the wardrobe, the catalogue's ids (cottage/catalogue.ts,
+# WEARABLE_IDS.hat); 'none' is the bare hair, the rest are collections
+# Hat/<id> rendered as layers of their own over the body.
+HAT_IDS = ("none", "acornCap", "mushroomCap", "flowerCrown", "nightcap")
+# The room's lights while the elf stands in the room (room_scene), for the
+# daylit thumbnails.
+ROOM_LIGHTS = {}
 
 # The look: the painterly ramp (0 plain Principled, 1 pure bands), the Line
 # Art ink, the inverted-hull outline and Eevee's quality options (ray
@@ -406,6 +418,12 @@ def build_model():
         "mushroom": material("Mushroom", "mushroom", roughness=0.5),
         "cream": material("Cream", "cream", roughness=0.7),
         "ear_inner": material("EarInner", "ear_inner", roughness=0.7, grain=0.0),
+        "crown_twig": material("CrownTwig", "tunic_dark", roughness=0.8, grain=0.0),
+        "crown_pink": material("CrownPink", "crown_pink", roughness=0.7, grain=0.0),
+        "crown_white": material("CrownWhite", "cream", roughness=0.7, grain=0.0),
+        "crown_yellow": material("CrownYellow", "crown_yellow", roughness=0.7, grain=0.0),
+        "crown_heart": material("CrownHeart", "crown_heart", roughness=0.6, grain=0.0),
+        "nightcap": material("Nightcap", "nightcap", roughness=0.85),
     }
     objs = {}
     hc = head_c()
@@ -605,22 +623,22 @@ def build_model():
                                 "Hair", mats["tunic_dark"], segments=8, samples=4, subsurf=0)
 
     # --- Hats (cosmetics, rendered as their own layers later) --------------
-    acorn = sphere("AcornCap", hc + Vector((0, 0.02, 0.17)), F.head_r + 0.07, "Hat/Acorn", mats["acorn"],
+    acorn = sphere("AcornCap", hc + Vector((0, 0.02, 0.17)), F.head_r + 0.07, "Hat/acornCap", mats["acorn"],
                    scale=(1.0, 1.0, 0.78), segments=40, rings=20, subsurf=1, outline=OUTLINE,
                    keep=lambda p: p.z > -0.02)
     objs["AcornCap"] = acorn
-    objs["AcornRim"] = torus("AcornRim", hc + Vector((0, 0.02, 0.155)), F.head_r + 0.07, 0.03, "Hat/Acorn",
+    objs["AcornRim"] = torus("AcornRim", hc + Vector((0, 0.02, 0.155)), F.head_r + 0.07, 0.03, "Hat/acornCap",
                              mats["acorn_dark"], subsurf=1, outline=OUTLINE)
     objs["AcornStalk"] = tube("AcornStalk", [hc + Vector((0, 0.02, 0.50)), hc + Vector((0.04, 0.03, 0.64)),
                                              hc + Vector((0.11, 0.05, 0.72))],
-                              [0.045, 0.035, 0.03], "Hat/Acorn", mats["acorn_dark"], ref=(0, 1, 0), samples=8,
+                              [0.045, 0.035, 0.03], "Hat/acornCap", mats["acorn_dark"], ref=(0, 1, 0), samples=8,
                               subsurf=1, outline=OUTLINE)
-    mush = sphere("MushroomCap", hc + Vector((0, 0.03, 0.15)), F.head_r + 0.18, "Hat/Mushroom", mats["mushroom"],
+    mush = sphere("MushroomCap", hc + Vector((0, 0.03, 0.15)), F.head_r + 0.18, "Hat/mushroomCap", mats["mushroom"],
                   scale=(1.0, 1.0, 0.62), segments=48, rings=24, subsurf=1, outline=OUTLINE,
                   keep=lambda p: p.z > -0.04)
     objs["MushroomCap"] = mush
     objs["MushroomRim"] = torus("MushroomRim", hc + Vector((0, 0.03, 0.135)), F.head_r + 0.175, 0.035,
-                                "Hat/Mushroom", mats["cream"], subsurf=1, outline=OUTLINE)
+                                "Hat/mushroomCap", mats["cream"], subsurf=1, outline=OUTLINE)
     for i, (az, el, size) in enumerate(((-100, 50, 0.085), (-45, 70, 0.065), (20, 55, 0.075), (-150, 35, 0.06),
                                         (110, 45, 0.07), (-70, 25, 0.05), (60, 20, 0.055), (170, 65, 0.06))):
         d = Vector((math.cos(math.radians(el)) * math.sin(math.radians(az)),
@@ -628,10 +646,46 @@ def build_model():
         r = F.head_r + 0.18
         center = hc + Vector((0, 0.03, 0.15)) + Vector((d.x * r, d.y * r, d.z * r * 0.62))
         rot = d.to_track_quat("Z", "Y").to_matrix()
-        objs[f"Dot{i}"] = sphere(f"Dot{i}", center, size, "Hat/Mushroom", mats["cream"], scale=(1.0, 1.0, 0.3),
+        objs[f"Dot{i}"] = sphere(f"Dot{i}", center, size, "Hat/mushroomCap", mats["cream"], scale=(1.0, 1.0, 0.3),
                                  segments=16, rings=8, subsurf=1, rotation=rot)
-    for path in ("Hat/Acorn", "Hat/Mushroom"):
-        collection(path).hide_render = True
+    # A crown of flowers: a ring of twigs round the hair, tilted back a
+    # little, with flowers and leaves on its front half.
+    crown_c = hc + Vector((0, 0.01, 0.2 * k))
+    tilt = Matrix.Rotation(math.radians(-14), 3, "X")
+    objs["CrownRing"] = torus("CrownRing", crown_c, (F.head_r + 0.035, (F.head_r + 0.035) * 0.95), 0.016, "Hat/flowerCrown",
+                              mats["crown_twig"], axis=tilt @ Vector((0, 0, 1)), subsurf=1, outline=OUTLINE)
+    petals = ("crown_pink", "crown_white", "crown_yellow")
+    for i in range(9):
+        a = math.radians(-160 + 140 * i / 8 - 10)
+        r = F.head_r + 0.045
+        p = crown_c + tilt @ Vector((math.cos(a) * r, math.sin(a) * r * 0.95, 0.0))
+        face = (p - hc).normalized()
+        rot = face.to_track_quat("Z", "Y").to_matrix()
+        mat = mats[petals[i % 3]]
+        for j in range(5):
+            b = 2 * math.pi * j / 5
+            offset = rot @ Vector((math.cos(b) * 0.03, math.sin(b) * 0.03, 0.0))
+            objs[f"Petal{i}_{j}"] = sphere(f"Petal{i}_{j}", p + offset, 0.024, "Hat/flowerCrown", mat,
+                                           scale=(1.0, 1.0, 0.35), segments=12, rings=6, subsurf=0, rotation=rot)
+        objs[f"FlowerHeart{i}"] = sphere(f"FlowerHeart{i}", p + rot @ Vector((0, 0, 0.012)), 0.016, "Hat/flowerCrown",
+                                         mats["crown_heart"], segments=10, rings=6, subsurf=0)
+        if i % 2 == 0:
+            a2 = a + math.radians(9)
+            q = crown_c + tilt @ Vector((math.cos(a2) * r, math.sin(a2) * r * 0.95, -0.02))
+            objs[f"CrownLeaf{i}"] = leaf(f"CrownLeaf{i}", q, (q - hc).normalized() + Vector((0, 0, -0.6)), 0.09, 0.045,
+                                         "Hat/flowerCrown", mats["leaf"])
+    # A nightcap: a soft cone flopping over to the elf's left, a cream brim
+    # and a pompom at the tip.
+    cap = [hc + Vector((0, 0.02, 0.15 * k)), hc + Vector((0.02, 0.03, 0.4 * k)), hc + Vector((0.12, 0.05, 0.6 * k)),
+           hc + Vector((0.3, 0.06, 0.64 * k)), hc + Vector((0.44, 0.05, 0.52 * k))]
+    objs["Nightcap"] = tube("Nightcap", cap, [F.head_r + 0.045, 0.26 * k, 0.14 * k, 0.06 * k, 0.02], "Hat/nightcap",
+                            mats["nightcap"], ref=(0, 1, 0), samples=16, subsurf=1, outline=OUTLINE, cap_start=False)
+    objs["NightcapBrim"] = torus("NightcapBrim", hc + Vector((0, 0.02, 0.16 * k)), F.head_r + 0.05, 0.04, "Hat/nightcap",
+                                 mats["cream"], subsurf=1, outline=OUTLINE)
+    objs["NightcapPompom"] = sphere("NightcapPompom", cap[-1] + Vector((0.01, 0, -0.04)), 0.06, "Hat/nightcap",
+                                    mats["cream"], subsurf=1, outline=OUTLINE)
+    for hat in HAT_IDS[1:]:
+        collection(f"Hat/{hat}").hide_render = True
 
     # Body shape keys: squash and stretch about the hem.
     pivot = F.hem_z - 0.1
@@ -1297,10 +1351,29 @@ def contact_sheet(out_path, columns, scale, items):
 
 def set_hat(name):
     """Show one hat collection ('none' for bare hair)."""
-    for hat in ("Acorn", "Mushroom"):
-        collection(f"Hat/{hat}").hide_render = True
-    if name != "none":
-        collection(f"Hat/{name.capitalize()}").hide_render = False
+    for hat in HAT_IDS[1:]:
+        collection(f"Hat/{hat}").hide_render = hat != name
+
+
+def body_objects():
+    """The figure without its hats: the meshes on the rig outside Hat/."""
+    return [obj for obj in bpy.data.objects if obj.type == "MESH" and obj.parent is not None
+            and obj.users_collection and obj.users_collection[0].name not in HAT_IDS[1:]]
+
+
+INK_USAGE = {}
+
+
+def set_hat_pass(name):
+    """A hat's layer pass: the hat alone in the frame, the body still in the
+    scene as a holdout (it cuts the hat where it stands in front of it, an
+    ear over a brim) and drawing no ink of its own; None restores the body
+    pass, the hats hidden."""
+    for obj in body_objects():
+        INK_USAGE.setdefault(obj.name, obj.lineart.usage)
+        obj.is_holdout = name is not None
+        obj.lineart.usage = "OCCLUSION_ONLY" if name is not None else INK_USAGE[obj.name]
+    set_hat(name or "none")
 
 
 def pose(rig, clip, frame):
@@ -1337,7 +1410,7 @@ def stage_moods(scene, rig, out):
 def stage_hats(scene, rig, out):
     pose(rig, "idle", 1)
     items = []
-    for hat in ("none", "acorn", "mushroom"):
+    for hat in HAT_IDS:
         set_hat(hat)
         items.append((hat, render_still(scene, os.path.join(out, "hats", f"{hat}.png"))))
     set_hat("none")
@@ -1357,7 +1430,10 @@ def stage_lookdev(scene, rig, out):
         render_still(scene, os.path.join(folder, f"{mood}.png"))
 
 
-def stage_anims(scene, rig, out, clips):
+def stage_anims(scene, rig, out, clips, hats=False):
+    """The body layer's frames of the clips and, with hats, every hat's
+    layer of the same frames."""
+    set_hat_pass(None)
     layer_dir = os.path.join(out, "layers", "body")
     # The feet, the world origin, in frame pixels: the packer carries the
     # point through the trim and the scale, and the app places the sprite by it.
@@ -1371,7 +1447,43 @@ def stage_anims(scene, rig, out, clips):
         paths = render_frames(scene, layer_dir, clip, start, end)
         items = [(f"f{start + i}", p) for i, p in enumerate(paths) if i % 6 == 0]
         contact_sheet(os.path.join(out, f"{clip}_sheet.png"), 8, 0.4, items)
+    if hats:
+        for hat in HAT_IDS[1:]:
+            set_hat_pass(hat)
+            hat_dir = os.path.join(out, "layers", f"hat_{hat}")
+            for clip in clips:
+                rig.apply(clip)
+                start, end = rig.clips[clip]
+                render_frames(scene, hat_dir, clip, start, end)
+        set_hat_pass(None)
 
+
+def stage_thumbs(scene, rig, out):
+    """The wardrobe catalogue's pictures: the head close up in each hat,
+    the idle pose's first frame, by day, cropped by a border and scaled so
+    the longer side comes out at about 360 pixels (room.render_thumb)."""
+    import room
+    lights = ROOM_LIGHTS.get("lights")
+    if lights:
+        room.set_daylight(lights, True)
+    pose(rig, "idle", 1)
+    render = scene.render
+    saved = (render.use_border, render.use_crop_to_border, render.border_min_x, render.border_max_x,
+             render.border_min_y, render.border_max_y, render.film_transparent)
+    hc = head_c()
+    corners = [rig.arm.matrix_world @ Vector((x, 0.0, z)) for x in (-(F.head_r + 0.32), F.head_r + 0.32)
+               for z in (hc.z - F.head_r * 0.95, hc.z + F.head_r + 0.55)]
+    pixels = [_common.project_to_pixels(scene, scene.camera, c) for c in corners]
+    box = (min(p[0] for p in pixels), min(p[1] for p in pixels), max(p[0] for p in pixels), max(p[1] for p in pixels))
+    render.use_border = False
+    for hat in HAT_IDS:
+        set_hat(hat)
+        room.render_thumb(scene, box, os.path.join(out, "thumbs", f"hat_{hat}.thumb.png"), True)
+    set_hat("none")
+    (render.use_border, render.use_crop_to_border, render.border_min_x, render.border_max_x,
+     render.border_min_y, render.border_max_y, render.film_transparent) = saved
+    if lights:
+        room.set_daylight(lights, False)
 
 def stage_hero(scene, rig, out):
     """A double-size still of the wave pose (Eevee: the painterly ramp reads
@@ -1430,6 +1542,7 @@ def room_scene(samples, quality=True):
     plug.hide_render = True
     room.set_shell_hidden_from_camera(True)
     room.set_daylight(lights, False)
+    ROOM_LIGHTS["lights"] = lights
     return scene, {"camera": cam, "rug": Vector(rug_center)}
 
 
@@ -1447,7 +1560,7 @@ def place_in_room(scene, arm, room_rig, model_height):
     FRAME["feet"] = tuple(rug)
     FRAME["pixels_per_metre"] = pixels_per_metre * k
     # the border: the figure's reach, in the room, projected and padded
-    corners = [rug + Vector((sx * 0.8 * k, -0.35 * k, z * k)) for sx in (-1, 1) for z in (-0.05, 2.2)]
+    corners = [rug + Vector((sx * 0.8 * k, -0.35 * k, z * k)) for sx in (-1, 1) for z in (-0.05, 2.75)]
     pts = [_common.project_to_pixels(scene, cam, c) for c in corners]
     width, height = scene.render.resolution_x, scene.render.resolution_y
     pad = 24
@@ -1528,9 +1641,11 @@ def main():
     if "anims" in stages:
         stage_anims(scene, rig, out, ["idle", "pet"])
     if "allanims" in stages:
-        stage_anims(scene, rig, out, list(clips))
+        stage_anims(scene, rig, out, list(clips), hats="hats" in stages)
+    if "thumbs" in stages:
+        stage_thumbs(scene, rig, out)
     if "--clips" in argv:
-        stage_anims(scene, rig, out, argv[argv.index("--clips") + 1].split(","))
+        stage_anims(scene, rig, out, argv[argv.index("--clips") + 1].split(","), hats="hats" in stages)
     if "hero" in stages:
         stage_hero(scene, rig, out)
     pose(rig, "idle", 1)

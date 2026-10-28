@@ -705,19 +705,24 @@ drawn over the plate (the rug, the bed, the window, the picture, the
 shelf, the lantern, the herbs under the beam, the basket, the corner
 plant and the stool by the fire), three variants each, all rendered
 (`cottage/roomAssets.ts`); the frame also offers the photo of the latest
-cottage found once there is one. The wardrobe's five slots (hat, outfit,
-neck, hand, face) and their ids are in the same catalogue and in the
-stored outfit, but there is no wardrobe until the art pipeline renders
-the wearables as layers: the rendered elf's face and hair are baked into
-its frames, so a wearable would change nothing.
+cottage found once there is one. Of the wardrobe's five slots (hat,
+outfit, neck, hand, face), whose ids are in the same catalogue and in the
+stored outfit, the hat is rendered: each hat (an acorn cap, a toadstool,
+a crown of flowers, a nightcap, or none) is a layer of the elf's atlas,
+packed in a small grid of its own around the head and drawn over the
+body from the same frame clock (`sprites/useSpriteImages.ts`:
+`useSpriteLayer` decodes only the hat worn); the other wearables wait for
+their layers.
 
 The decorating button in the top strip turns the tab into its decorating
 mode, inside the tab (not a route: a route would unfocus the tab and
 pause the scene, and the point is the live preview). The top strip says
 what the mode is and has the way back ("Gotowe"); the care band gives
 way to the catalogue (`ElfDecorPanel.tsx`) on the tab bar: a row of
-category tabs, the walls and the floor first, then the pieces from the
-largest, and under it a row of large cards for the active category, three
+category tabs, the elf's hat first once it has hatched (the room then
+brings the elf to the middle, and the elf twirls in a hat put on), the
+walls and the floor next, then the pieces from the largest, and under it
+a row of large cards for the active category, three
 to the width, each the piece's close-up picture on a light card
 (`ElfThumb.tsx`: the catalogue render art/blender/room.py makes of every
 piece, wall and floor by day) with its name. A tap on a card places it at

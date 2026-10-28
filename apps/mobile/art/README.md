@@ -162,20 +162,27 @@ three waves from the elbow, a head tilt; 36).
 
 ```bash
 python3 art/blender/pack.py pack art/out/room/fireplace --out assets/elf/sprites/fireplace --scale 0.5
-python3 art/blender/pack.py pack-layers art/out/elf/layers --out assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave   # pnpm art:pack
-python3 art/blender/check.py pack-layers art/out/elf/layers --against assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave   # pnpm art:check
+python3 art/blender/pack.py pack-layers art/out/elf/layers --out assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave \
+    --thumbs art/out/elf/thumbs --registry src/features/elf/sprites/elfFiles.ts   # pnpm art:pack
+python3 art/blender/check.py pack-layers art/out/elf/layers --against assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave \
+    --thumbs art/out/elf/thumbs   # pnpm art:check
 ```
 
 `pack` takes one directory of frames, `pack-layers` a directory with one
 frames directory per layer (`--base body` names the layer whose sheets are
 the manifest's base). The packer trims the transparent margin common to
-every frame of the clip (of every layer, so the layers stay aligned), keeps
+every frame of the base layer, and of each overlay its own (a hat is a
+small part of the frame; the overlay's offset from the base's box goes
+into the manifest, so the layers stay aligned), keeps
 one transparent pixel around the box, scales the frames (`--scale`, with
 a premultiplied resample so the edges stay clean), lays them in reading
 order on sheets of at most 2048 by 2048 pixels, and writes WebP at
 quality 92 (`--lossless` for the exact pixels; on the soft-shaded renders
-the two are indistinguishable and the lossy sheet is a third of the size).
-Next to the sheets goes `manifest.json`:
+the two are indistinguishable and the lossy sheet is a third of the size),
+emptying the atlas directory of its old WebP files first. `--thumbs` turns
+a directory's `<name>.thumb.png` pictures into `<name>_thumb.webp`, and
+`--registry` writes the module that names every file of the atlas for
+Metro. Next to the sheets goes `manifest.json`:
 
 ```json
 {
@@ -186,7 +193,9 @@ Next to the sheets goes `manifest.json`:
   "pixelsPerMetre": 180, "modelHeight": 1.965,
   "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 7, "frames": 77 } ],
   "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
-  "layers": { "hat_pompom": { "sheets": [ { "file": "hat_pompom-1.webp", "columns": 11, "rows": 7, "frames": 77 } ] } },
+  "layers": { "hat_acornCap": { "frameWidth": 120, "frameHeight": 90, "offset": { "x": 30, "y": -12 },
+                                 "sheets": [ { "file": "hat_acornCap-1.webp", "columns": 17, "rows": 22, "frames": 252 } ] } },
+  "thumbs": { "hat_acornCap": "hat_acornCap_thumb.webp" },
   "source": { "render": { "script": "elf.py", "args": ["--stages", "still,allanims"], "width": 512, "height": 832, "orthoScale": 2.773333 }, "pack": "pack-layers --base body --scale 0.6 --fps 24 --once feed,happy,pet,wave" }
 }
 ```
@@ -302,12 +311,23 @@ pictures over the night ones at the opacity of its clock's daylight.
 
 ## Adding a hat or a piece of furniture
 
-A hat is a layer of the elf: give it objects in `elf.py`, render the same
-clips with only those objects visible into `art/out/elf/hat_<id>/`, pack
-the elf again (every layer in one go, so the grid stays shared), register
-the new sheet files in `manifest.ts`, and draw the layer with
-`LayeredSprite` when the elf wears it. The hat follows the head because it
-is rigged to the same armature and rendered through the same frames.
+A hat is a layer of the elf: give it objects in `elf.py` in a collection
+`Hat/<id>` (the id of `WEARABLE_IDS.hat` in the app's catalogue) and add
+the id to `HAT_IDS`. `pnpm art:elf` renders, after the body, every hat's
+layer of the same clips through the same frames (`set_hat_pass`: the hat
+alone, the body still in the scene as a holdout, so it cuts the hat where
+it stands in front of it, an ear over a brim, and drawing no ink of its
+own) into `art/out/elf/layers/hat_<id>/`, and the head close up in every
+hat by day for the wardrobe's cards (`stage_thumbs`) into
+`art/out/elf/thumbs/`. `pnpm art:pack` packs every layer in one go: the
+body in its own box, each hat in a small box of its own with its offset
+from the body's (`layers` in the manifest), the pictures as `_thumb`, and
+regenerates `src/features/elf/sprites/elfFiles.ts`, the registry Metro
+needs; the app draws the layer of the hat worn with `LayeredSprite`. The
+hat follows the head because it is rigged to the same armature and
+rendered through the same frames. A new hat's name goes into the
+dictionaries (`item<Id>`) and, if it is to be earned, its threshold into
+`DECOR_UNLOCKS` (`hat:<id>`).
 
 A piece of furniture is a builder in `room.py` named after its place and
 its id (`build_<slot>_<id>`, building into the collection it is handed,

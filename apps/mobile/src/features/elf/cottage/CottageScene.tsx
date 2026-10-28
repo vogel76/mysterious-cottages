@@ -6,7 +6,7 @@ import { cancelAnimation, useDerivedValue, useSharedValue, withTiming, type Shar
 import { useTranslation } from 'react-i18next'
 import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '../../../ui'
 import { PET_COOLDOWN_MS, type ElfMood, type ElfStage, type ElfStarter } from '@chatynkowo/core'
-import { SPRITE_CHARACTERS, useSpriteImages, type SpriteSource } from '../sprites'
+import { SPRITE_CHARACTERS, useSpriteImages, useSpriteLayer, type SpriteSource } from '../sprites'
 import { elfKey } from '../labels'
 import { PHOTO_ID, isSurface, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
@@ -111,6 +111,11 @@ export type CottageSceneProps = {
   /* The egg's warmth, 0..100; ignored after the hatch. */
   warmth: number
   decor: Decor
+  /* The hat the elf wears, a wardrobe id ('none' for the bare hair). */
+  hat?: string
+  /* While decorating: the room brings the elf to its band's middle (the
+     wardrobe's tab is open) instead of a place. */
+  focusElf?: boolean
   width: number
   height: number
   /* True while the tab is out of focus: no loops, no reactions. */
@@ -219,7 +224,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, sleepy, warmth, decor, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, editable },
+    { stage, starter, mood, sleeping, sleepy, warmth, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, editable },
     ref,
   ) {
     const { t } = useTranslation()
@@ -234,7 +239,8 @@ export const CottageScene = memo(
     /* The cover fit into the band between the strip above and whatever
        covers the bottom, moved towards the place being chosen for; an open
        panel shortens the band and the room follows, eased. */
-    const layout = useMemo(() => fitRoom(width, height, topInset, bottomInset, focusSlot ? slotCentre(focusSlot) : null), [width, height, topInset, bottomInset, focusSlot])
+    const focus = useMemo(() => (editing && focusElf ? { x: SPRITE_ELF_ORIGIN.x, y: SPRITE_ELF_ORIGIN.y - SPRITE_ELF_HEAD_LINE } : focusSlot ? slotCentre(focusSlot) : null), [editing, focusElf, focusSlot])
+    const layout = useMemo(() => fitRoom(width, height, topInset, bottomInset, focus), [width, height, topInset, bottomInset, focus])
     /* The drawn offset eases to the layout's; the gestures use the target at once. */
     const drawnOffsetX = useSharedValue(layout.offsetX)
     const drawnOffsetY = useSharedValue(layout.offsetY)
@@ -247,6 +253,8 @@ export const CottageScene = memo(
     /* The elf's sheets, decoded from the first mount, so they are in
        before the hatch. */
     const images = useSpriteImages(ELF_SPRITES)
+    /* The hat's layer, decoded only while it is worn. */
+    const hatLayer = useSpriteLayer(ELF_SPRITES, hat !== 'none' ? `hat_${hat}` : null)
     useEffect(() => {
       if (!__DEV__ || !images || decodeLogged) return
       decodeLogged = true
@@ -473,7 +481,7 @@ export const CottageScene = memo(
               <RoomSprites decor={decor} layer="mid" day={fire.day} />
               {hatched ? (
                 images ? (
-                  <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} manifest={ELF_SPRITES.manifest} />
+                  <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} hat={hatLayer} manifest={ELF_SPRITES.manifest} />
                 ) : null
               ) : (
                 <EggNest starter={starter} warmth={warmth} motion={motion} origin={ROOM.elfAnchor} />
@@ -482,7 +490,7 @@ export const CottageScene = memo(
               <ShootingStar progress={star} window={windowSlot} />
               <Particles particles={particles} />
               <PlateLighting sleeping={sleeping} fire={fire} reduceMotion={reduceMotion} />
-              {focusSlot && !isSurface(focusSlot.id) ? <SlotHighlight slot={focusSlot} reduceMotion={reduceMotion} /> : null}
+              {focusSlot && !focusElf && !isSurface(focusSlot.id) ? <SlotHighlight slot={focusSlot} reduceMotion={reduceMotion} /> : null}
             </Group>
           </Canvas>
         </View>

@@ -6,14 +6,19 @@
    the next, so frame i is on the first sheet whose cumulative frame count
    exceeds i. The anchor is the character's feet inside a cell, which is
    the point the scene places the sprite by. A layered character (the
-   body plus a face, a hat) keeps its overlays in `layers`, packed with the
-   very same grid, so cell i of every layer is the same moment and the
-   layers can be drawn from one frame clock.
+   body plus a hat) keeps its overlays in `layers`: each in a grid of its
+   own, cells of its own size (a hat is a small part of the frame) placed
+   at an offset from the base cell, so cell i of every layer is the same
+   moment and the layers can be drawn from one frame clock. The wardrobe's
+   pictures are in `thumbs`.
 
-   Metro only bundles files it sees in a static require, so the characters
-   are registered here by hand: the manifest and each sheet file. The
-   cottage scene draws the elf registered here and has no other way to
-   draw it, so a missing registration is an error at load. */
+   Metro only bundles files it sees in a static require; the packer
+   generates the registry of an atlas's files (pack.py --registry), and
+   the characters are registered here with it. The cottage scene draws
+   the elf registered here and has no other way to draw it, so a missing
+   registration is an error at load. */
+
+import { ATLAS_FILES as ELF_FILES } from './elfFiles'
 
 export type SpriteSheet = {
   file: string
@@ -47,8 +52,19 @@ export type SpriteManifest = {
   /* The base layer's sheets (the body). */
   sheets: SpriteSheet[]
   clips: Record<string, SpriteClip>
-  /* The overlays of a layered character, same grid as `sheets`. */
-  layers?: Record<string, { sheets: SpriteSheet[] }>
+  /* The overlays of a layered character, each in its own grid. */
+  layers?: Record<string, SpriteOverlay>
+  /* The catalogue pictures packed with the atlas, by name. */
+  thumbs?: Record<string, string>
+}
+
+/* One overlay: its cells' size and their offset from the base cell's top
+   left, in cell pixels (before the scene's scale), and its sheets. */
+export type SpriteOverlay = {
+  frameWidth: number
+  frameHeight: number
+  offset: { x: number; y: number }
+  sheets: SpriteSheet[]
 }
 
 /* A character as bundled: its manifest and the sheet files by name, as
@@ -58,23 +74,28 @@ export type SpriteSource = {
   files: Record<string, number>
 }
 
-/* The characters as bundled; the paths are relative to this file. A new
-   character or a new layer is added the same way: the manifest, then one
-   line per sheet file it names. The elf is the body alone for now, the
-   face (neutral, blinking in idle) and the hair baked in; the face and hat
-   layers follow once art/blender renders them. */
+/* The characters as bundled: the manifest and the generated registry of
+   its files. The elf is the body (its face, neutral and blinking in idle,
+   and its hair baked in) and a layer per hat of the wardrobe. */
 export const SPRITE_CHARACTERS: Record<string, SpriteSource> = {
   elf: {
     manifest: require('../../../../assets/elf/sprites/elf/manifest.json'),
-    files: {
-      'body-1.webp': require('../../../../assets/elf/sprites/elf/body-1.webp'),
-      'body-2.webp': require('../../../../assets/elf/sprites/elf/body-2.webp'),
-      'body-3.webp': require('../../../../assets/elf/sprites/elf/body-3.webp'),
-      'body-4.webp': require('../../../../assets/elf/sprites/elf/body-4.webp'),
-      'body-5.webp': require('../../../../assets/elf/sprites/elf/body-5.webp'),
-      'body-6.webp': require('../../../../assets/elf/sprites/elf/body-6.webp'),
-    },
+    files: ELF_FILES,
   },
+}
+
+/* The cell of a layer: its size and its offset from the base cell. */
+export function cellOf(manifest: SpriteManifest, layer?: string): { width: number; height: number; x: number; y: number } {
+  if (layer === undefined) return { width: manifest.frameWidth, height: manifest.frameHeight, x: 0, y: 0 }
+  const overlay = manifest.layers?.[layer]
+  if (!overlay) throw new Error(`sprite manifest has no layer "${layer}"`)
+  return { width: overlay.frameWidth, height: overlay.frameHeight, x: overlay.offset.x, y: overlay.offset.y }
+}
+
+/* The bundled module of a catalogue picture packed with the atlas. */
+export function thumbModule(source: SpriteSource, name: string): number | null {
+  const file = source.manifest.thumbs?.[name]
+  return file ? (source.files[file] ?? null) : null
 }
 
 /* The sheets of a layer; the base when no layer is named. */

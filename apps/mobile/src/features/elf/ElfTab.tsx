@@ -13,7 +13,7 @@ import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfHud, type ElfPanel } from './ElfHud'
-import { DECOR_SLOTS, ElfDecorPanel } from './ElfDecorPanel'
+import { DECOR_SLOTS, ElfDecorPanel, type CatalogueTab } from './ElfDecorPanel'
 import { ElfSpeech } from './ElfSpeech'
 import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
@@ -60,12 +60,11 @@ import { useReturnGreeting } from './useReturnGreeting'
    mean.
 
    The room is the rendered art (the Blender plate, the furniture sprites
-   and the elf's atlases, see apps/mobile/art/README.md). There is no
-   wardrobe yet: the elf's face and hair are baked into the body frames and
-   no hat layer has been rendered, so there is nothing a wearable could
-   change; the outfit the rules store waits for the art pipeline's layers.
-   The decorating panel lists only the slots whose variants are rendered,
-   and its thumbnails are the sprites themselves. The frame on the wall
+   and the elf's atlases, see apps/mobile/art/README.md). The wardrobe is
+   the hats, each a layer of the elf's atlas over the body, chosen in the
+   decorating catalogue's first tab; the other wearables the rules store
+   wait for their layers. The catalogue lists only the places whose
+   variants are rendered, with their close-up pictures. The frame on the wall
    shows the latest cottage found (its photo, from the expedition's cache,
    drawn into the frame's render) once there is one, unless the player
    picks another picture, and a tap on it opens that cottage's story.
@@ -322,14 +321,16 @@ export function ElfTab() {
     const { height } = event.nativeEvent.layout
     setPanelHeight((current) => (current === height ? current : height))
   }, [])
-  const [decorSlot, setDecorSlot] = useState<SlotId>(DECOR_SLOTS[0] ?? 'rug')
-  /* The slots the panel offers right now: the frame only once there is a
-     photo to put in it. The scene's edit mode and the panel go by the
-     same list, and the active slot never points outside it. */
+  /* The places the catalogue offers right now: the frame only once there
+     is a photo to put in it. The scene's decorating mode and the catalogue
+     go by the same list; the catalogue's tabs add the hat once the elf has
+     hatched, first, and the active tab never points outside them. */
   const editableSlots = useMemo(() => DECOR_SLOTS.filter((slot) => slot !== 'picture' || photo), [photo])
+  const catalogueTabs = useMemo<readonly CatalogueTab[]>(() => (stage === 'egg' ? editableSlots : ['hat', ...editableSlots]), [stage, editableSlots])
+  const [decorTab, setDecorTab] = useState<CatalogueTab>(catalogueTabs[0] ?? 'rug')
   useEffect(() => {
-    if (!editableSlots.includes(decorSlot)) setDecorSlot(editableSlots[0] ?? 'rug')
-  }, [editableSlots, decorSlot])
+    if (!catalogueTabs.includes(decorTab)) setDecorTab(catalogueTabs[0] ?? 'rug')
+  }, [catalogueTabs, decorTab])
   /* No elf: no panel, and nothing left to say (a new egg would otherwise
      be told the old elf's lines). */
   useEffect(() => {
@@ -358,25 +359,31 @@ export function ElfTab() {
      rendered variant) is left alone. */
   const onSelectSlot = useCallback(
     (slot: SlotId) => {
-      if (editableSlots.includes(slot)) setDecorSlot(slot)
+      if (editableSlots.includes(slot)) setDecorTab(slot)
     },
     [editableSlots],
   )
 
-  /* A piece the finds have not unlocked yet is not placed: the elf says
-     how many cottages it still takes. */
-  const { placeDecor } = elf
+  /* A piece or a hat the finds have not unlocked yet is not placed: the
+     elf says how many cottages it still takes. A hat put on, the elf
+     twirls in it; a piece placed, it turns to admire it. */
+  const { placeDecor, equip, outfit } = elf
   const onPick = useCallback(
-    (slot: SlotId, id: string) => {
-      const needed = decorFindsNeeded(slot, id, foundCount)
+    (tab: CatalogueTab, id: string) => {
+      const needed = decorFindsNeeded(tab, id, foundCount)
       if (needed > 0) {
         say(t('mobile:elf.lockedLine', { count: needed }))
         return
       }
-      placeDecor(slot, id)
-      sceneRef.current?.admireSlot(slot)
+      if (tab === 'hat') {
+        equip('hat', id)
+        sceneRef.current?.react('twirl')
+        return
+      }
+      placeDecor(tab, id)
+      sceneRef.current?.admireSlot(tab)
     },
-    [placeDecor, foundCount, say, t],
+    [placeDecor, equip, foundCount, say, t],
   )
 
   /* ---------- The elf's own voice ---------- */
@@ -588,6 +595,8 @@ export function ElfTab() {
             sleepy={sleepy}
             warmth={state.warmth}
             decor={decor}
+            hat={outfit.hat}
+            focusElf={editing && decorTab === 'hat'}
             width={size.width}
             height={size.height}
             paused={!focused}
@@ -595,7 +604,7 @@ export function ElfTab() {
             editable={editableSlots}
             topInset={hudHeight}
             bottomInset={bottomInset}
-            selectedSlot={editing ? decorSlot : null}
+            selectedSlot={editing && decorTab !== 'hat' ? decorTab : null}
             onSelectSlot={onSelectSlot}
             onPetElf={onPetElf}
             onPokeElf={onPokeElf}
@@ -653,7 +662,7 @@ export function ElfTab() {
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>
-          <ElfDecorPanel decor={decor} photo={photo} slots={editableSlots} foundCount={foundCount} activeSlot={decorSlot} onSelectSlot={setDecorSlot} onPick={onPick} onLayout={onPanelLayout} />
+          <ElfDecorPanel decor={decor} hat={outfit.hat} photo={photo} tabs={catalogueTabs} foundCount={foundCount} activeTab={decorTab} onSelectTab={setDecorTab} onPick={onPick} onLayout={onPanelLayout} />
         </Animated.View>
       )}
 

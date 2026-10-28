@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ColorMatrix, Group, Oval, Paint, RadialGradient, vec } from '@shopify/react-native-skia'
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
+import type { SkImage } from '@shopify/react-native-skia'
 import { LayeredSprite, type SpriteImages, type SpriteLayer, type SpriteManifest } from '../sprites'
 import type { PuppetMotion } from './motion'
 import { ROOM, type Bounds } from './room'
@@ -68,11 +69,13 @@ export type SpriteElfProps = {
   /* Daylight, 0 night .. 1 full day, for the lift. */
   day: SharedValue<number>
   images: SpriteImages
+  /* The hat worn, as its layer's decoded sheets; null for the bare hair. */
+  hat?: { layer: string; sheets: SkImage[] } | null
   manifest: SpriteManifest
   flipX?: boolean
 }
 
-export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origin, day, images, manifest, flipX }: SpriteElfProps) {
+export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origin, day, images, hat = null, manifest, flipX }: SpriteElfProps) {
   const { bob, squash, tilt, headTilt } = motion
   const { x, y } = origin
   const transform = useDerivedValue(
@@ -92,7 +95,7 @@ export function SpriteElf({ clip, clipKey = 0, onClipEnd, playing, motion, origi
     const k = 1 + DAY_LIFT * day.value
     return [k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, 1, 0]
   })
-  const layers = useMemo<SpriteLayer[]>(() => [{ sheets: images.body }], [images])
+  const layers = useMemo<SpriteLayer[]>(() => (hat ? [{ sheets: images.body }, { layer: hat.layer, sheets: hat.sheets }] : [{ sheets: images.body }]), [images, hat])
   const scale = useMemo(() => figureScale(manifest), [manifest])
 
   return (
