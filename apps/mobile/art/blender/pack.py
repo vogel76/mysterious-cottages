@@ -24,7 +24,7 @@ the same moment and the app draws an overlay's cell at the base cell's
 place plus the offset. --thumbs turns the <name>.thumb.png pictures of a
 directory into <name>_thumb.webp next to the sheets (the wardrobe's cards),
 and --registry writes the TypeScript module that names every file of the
-atlas for Metro (the elf's is src/features/elf/sprites/elfFiles.ts); the
+atlas for Metro (a form of the elf's is src/features/elf/sprites/<form>Files.ts); the
 atlas directory is emptied of its old WebP files first.
 
 Output: <atlas_dir>/<layer>-<n>.webp sheets (in single mode the layer is
@@ -37,6 +37,8 @@ plus manifest.json:
       "anchor": { "x": 90, "y": 250 },           // the feet inside a cell, pixels
       "fps": 24,
       "pixelsPerMetre": 180, "modelHeight": 1.965, // the render's scale after --scale, and the model's height
+      "figureUnits": 460,                         // the figure's height in the room's units (plate pixels)
+      "headUnits": 261,                           // the neck's height, the same units: above it a tap is on the head
       "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 7, "frames": 77 } ],
       "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
       "layers": { "hat_acornCap": { "frameWidth": 120, "frameHeight": 90, "offset": { "x": 30, "y": -12 }, "sheets": [ ... ] } },
@@ -48,10 +50,11 @@ plus manifest.json:
 Frame indices are global and contiguous across sheets: frame i sits on the
 first sheet whose cumulative "frames" exceeds i, in cell (i - frames before
 it), column-major by row. Every clip loops unless named in --once.
-pixelsPerMetre and modelHeight come from render.json, which the render
-script writes next to the layers (the frame, the camera's scale, the
-pixels to the metre, the model's height); the app sizes the figure from
-them instead of a constant. "source" records the render and the pack that
+pixelsPerMetre, modelHeight and the neck's height come from render.json,
+which the render script writes next to the layers (the frame, the
+camera's scale, the pixels to the metre, the model's and the neck's
+height); the app sizes the figure and places the head's line from them
+instead of a constant. "source" records the render and the pack that
 made the atlas, so check.py can prove the scripts still reproduce it.
 
 Format: WebP at quality 92 by default, which on the smoke test's soft-shaded
@@ -334,6 +337,10 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
     if render is not None:
         manifest['pixelsPerMetre'] = round(float(render['pixelsPerMetre']) * scale, 3)
         manifest['modelHeight'] = float(render['modelHeight'])
+        # the figure's height in the room's units (plate pixels), before the pack's scale
+        manifest['figureUnits'] = round(float(render['pixelsPerMetre']) * float(render['modelHeight']), 1)
+        if 'neckHeight' in render:
+            manifest['headUnits'] = round(float(render['pixelsPerMetre']) * float(render['neckHeight']), 1)
     if overlays:
         manifest['layers'] = overlays
     if thumbs_dir:

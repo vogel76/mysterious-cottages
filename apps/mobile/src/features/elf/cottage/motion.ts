@@ -3,7 +3,8 @@ import { ReduceMotion, cancelAnimation, useFrameCallback, useSharedValue, withDe
 import { EASING, SPRINGS } from '../../../ui'
 import type { ElfMood, ElfStage } from '@chatynkowo/core'
 import { EGG_HIT_BOX } from './RenderedEgg'
-import { ELF_HEIGHT_UNITS } from './SpriteElf'
+import { SPRITE_CHARACTERS } from '../sprites'
+import { figureUnits } from './SpriteElf'
 import { ROOM } from './room'
 
 /* The life of the elf figure as shared values: a set of control
@@ -250,7 +251,7 @@ type Spawn = {
 }
 
 function figureHeight(stage: ElfStage): number {
-  return stage === 'egg' ? EGG_HIT_BOX.height : ELF_HEIGHT_UNITS
+  return stage === 'egg' ? EGG_HIT_BOX.height : figureUnits(SPRITE_CHARACTERS[stage].manifest)
 }
 
 function clamp(value: number, min: number, max: number): number {

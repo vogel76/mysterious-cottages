@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import type { ElfForm } from '@chatynkowo/core'
 import { StyleSheet, View } from 'react-native'
 import { Image as PictureImage } from 'expo-image'
 import { Canvas, Group, Image, useImage } from '@shopify/react-native-skia'
@@ -11,8 +12,9 @@ import { extraSpriteFor, isExtraSlot, roomSpriteFor, surfaceThumbFor, type Extra
    piece's catalogue render (art/blender/room.py renders every piece a
    second time close up and by day, so a card is sharp at its size) as a
    plain image, fitted into the square and centred; a wall or a floor
-   shows its patch, filling the square, and a hat the elf's head wearing
-   it (the wardrobe's pictures, packed with the elf's atlas). The same
+   shows its patch, filling the square, and a hat the head of the elf's
+   form wearing it (the wardrobe's pictures, packed with each form's
+   atlas). The same
    pictures show what the days brought (a find of the sill, a stage of the
    plant, the letter) on the elf's sheets. A plain
    image, not a Skia canvas:
@@ -25,7 +27,6 @@ import { extraSpriteFor, isExtraSlot, roomSpriteFor, surfaceThumbFor, type Extra
    catalogue never offers one. */
 
 const PADDING_SHARE = 0.08
-const ELF = SPRITE_CHARACTERS.elf
 
 export type ElfThumbProps = {
   /* A place of the room, the elf's hat, or one of what the days bring. */
@@ -35,11 +36,13 @@ export type ElfThumbProps = {
   size: number
   /* The latest cottage's picture, for the frame's photo id. */
   photo?: string | null
+  /* For a hat: the elf's form, whose head wears it in the picture. */
+  form?: ElfForm
 }
 
-export const ElfThumb = memo(function ElfThumb({ slot, id, size, photo = null }: ElfThumbProps) {
+export const ElfThumb = memo(function ElfThumb({ slot, id, size, photo = null, form = 'young' }: ElfThumbProps) {
   if (slot === 'hat' || isExtraSlot(slot)) {
-    const thumb = slot === 'hat' ? (ELF ? thumbModule(ELF, `hat_${id}`) : null) : (extraSpriteFor(slot, id)?.moduleThumb ?? null)
+    const thumb = slot === 'hat' ? thumbModule(SPRITE_CHARACTERS[form], `hat_${id}`) : (extraSpriteFor(slot, id)?.moduleThumb ?? null)
     return <View style={{ width: size, height: size }}>{thumb !== null ? <CatalogueThumb module={thumb} size={size} /> : null}</View>
   }
   if (isSurface(slot)) {
