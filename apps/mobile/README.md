@@ -826,27 +826,33 @@ Galaxy Note 10+:
 | B | after every clip has played and ten minutes on the tab | `memtable.py --label B --every 60 --count 10` |
 | C | back on the Atlas for three minutes | `memtable.py --label C --every 60 --count 3` |
 
-Baseline, release build of 2026-10-26 (the sprite scene, the vector
-cottage gone, the first elf's atlas of nine sheets at 180 pixels to the
-metre; since 2026-10-27 the redesigned elf with its new clips, lit in the
-room and drawn smaller in the wider room, packs into six sheets, 3.5 MB,
-and the room's assets, nine plates by night and by day, thirty pieces
-with their day twins and the catalogue's pictures, take 2.2 MB; none of
-it re-measured):
+Measured on a release build of 2026-10-28 (the elf redesigned with its
+new clips, six sheets, 3.5 MB; the room reframed to 1000 by 1300 with
+nine plates and thirty pieces by night and by day and the catalogue's
+pictures, 2.2 MB), the owner's own state: a hatched elf, five cottages
+found, a decorated room, by day, so the day pictures are drawn over the
+night ones:
 
 | Point | PSS | native heap | graphics (GL + EGL) | Dalvik | unknown | RSS | frames |
 |---|---|---|---|---|---|---|---|
-| A, the Atlas alone after a minute | 263 MB | 91 MB | 54 MB (19 + 19) | 17 MB | 23 MB | 406 MB | |
-| B1, the Elf tab with the egg | 339 MB | 113 MB | 86 MB (19 + 19) | 19 MB | 27 MB | 499 MB | 62.3 fps, 0 dropped of 491 in 8 s |
-| B1, the elf just hatched | 493 MB | 144 MB | 212 MB (19 + 19) | 15 MB | 30 MB | 653 MB | 62.2 fps, 0 dropped of 483 |
-| B, after every clip and ten minutes on the tab | 572 MB | 179 MB | 212 MB (19 + 19) | 18 MB | 69 MB | 730 MB | 62.4 fps, 0 dropped of 481; the sleep loop 62.3 fps |
-| C, back on the Atlas for three minutes | 562 MB | 179 MB | 201 MB (31 + 31) | 18 MB | 69 MB | 720 MB | |
+| A, the Atlas alone after a minute | 236 MB | 78 MB | 49 MB (19 + 19) | 18 MB | 21 MB | 366 MB | |
+| B1, the Elf tab just entered | 486 MB | 127 MB | 234 MB (19 + 19) | 14 MB | 26 MB | 631 MB | 62.4 fps, 0 dropped of 496 in 8 s |
+| D, the decorating mode, ten categories clicked through | 501 MB | 140 MB | 219 MB (19 + 19) | 17 MB | 40 MB | 648 MB | 62.4 fps, 0 dropped of 481 |
+| B, after the reactions and ten minutes on the tab | 600 to 630 MB (670 right after the reactions) | 176 to 199 MB | 251 to 272 MB | 15 MB | 60 to 75 MB | 743 to 780 MB | a reaction 61.6 fps, 0 dropped |
+| C, back on the Atlas for three minutes | 570 MB | 172 MB | 216 MB (34 + 34) | 17 MB | 80 MB | 716 MB | |
 
-Read: the elf costs about 230 MB on hatching (the decoded sheets
-in the native heap and their copies in graphics memory, which stays at
-212 MB whatever happens afterwards) and creeps up by another 80 MB over
-ten minutes (the native heap and Hermes's 'unknown'), then levels off;
-leaving the tab gives none of the graphics memory back, as expected of
-Skia's texture cache. The frame rate is the display's at every point. The
-development client measured the same series at 787 MB on the Atlas and
-1.3 GB on the tab, which is why it is not quoted anywhere.
+Read: the tab costs about 250 MB on entering (the decoded sheets and the
+room's pictures in the native heap and their copies in graphics memory)
+and levels off some 120 MB higher after ten minutes; leaving the tab
+gives little back, as expected of Skia's texture cache. A single sample
+right after a move can sit 50 to 100 MB above its neighbours while
+images decode and the heaps are collected; the plateau is the figure to
+compare. Against the first baseline of 2026-10-26 (493 MB on hatching,
+572 MB after ten minutes, 562 MB back on the Atlas) the new cottage costs
+about 40 MB more at the plateau and nothing on entering. The catalogue's
+cards draw their pictures as plain images: a Skia canvas per card, the
+first version, was a GPU surface each and cost about 30 MB more while
+the catalogue was open. The frame rate is the display's at every point.
+The development client measures far higher (787 MB on the Atlas and
+1.3 GB on the tab in the first series), which is why it is not quoted
+anywhere.
