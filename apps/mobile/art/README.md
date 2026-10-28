@@ -57,7 +57,7 @@ art/out/                 renders, logs, .blend files (not committed)
 A build script is run as
 
 ```bash
-blender --background --python art/blender/elf.py -- art/out/elf       # pnpm art:elf
+blender --background --python art/blender/elf.py -- art/out/elf/young --form young   # pnpm art:elf (every form)
 blender --background --python art/blender/room.py -- art/out/room     # pnpm art:room
 ```
 
@@ -107,11 +107,31 @@ mass). An open surface cannot be remeshed, hence the Solidify on the
 hair cap. The belt and the hem band are measured on the torso tube
 before the sleeves join it.
 
-`elf.py` takes `--form young|baby`, `--ramp <0..1>` (0 plain Principled,
-1 cel), `--no-ink`, `--hull`, `--no-quality` and `--quick`, and its
-`lookdev` stage renders the wave pose and the four moods into
-`art/out/elf/lookdev/<look>/`, one folder per combination of flags, which
-is how the A/B sheet of a look-dev round is made. Verified on Blender
+`elf.py` takes `--form baby|young|adult|elder`, `--ramp <0..1>` (0 plain
+Principled, 1 cel), `--no-ink`, `--hull`, `--no-quality` and `--quick`,
+and its `lookdev` stage renders the wave pose and the four moods into
+`<out>/lookdev/<look>/`, one folder per combination of flags, which is how
+the A/B sheet of a look-dev round is made.
+
+The four forms are one design grown up: `FORMS` holds each one's
+proportions (the hatchling about two thirds of the young elf with a big
+head, the grown elf a head taller with a smaller head on long limbs, the
+elder the same frame in a robe to the boots) and `FORM_LOOK` what each
+wears and carries beyond them (the hatchling's sprout at the crown and
+its bigger eyes; the grown elf's cape with its hood folded on the
+shoulders, its pouch and a wand with a seed of light in the left hand,
+since the right one waves; the elder's silver hair and long beard, its
+blue robe with gold stars, hem and cuffs, and a staff with a blue
+crystal; the head's shape, the chin, the eyes, the brows and a `body`
+factor that sizes every part and joint of a small form together). The
+young elf has none of it. Every form is placed in the room at the young
+one's scale (`FIGURE_REFERENCE_M`), so each keeps its own height there,
+and a form that carries a wand or a staff gets its crop from the box its
+clips actually reach (`animated_box`) rather than the young elf's.
+`pnpm art:elf` renders every form into `art/out/elf/<form>/`, one after
+the other (about an hour each with the hats); `FORMS="adult elder" pnpm
+art:elf` renders some of them, and the pack and the check take the same
+variable. Verified on Blender
 5.2.2: the Line Art modifier type is `LINEART`, its width is `radius`, and
 Shader to RGB works in Eevee only (the hero still renders with Eevee too).
 
@@ -162,10 +182,10 @@ three waves from the elbow, a head tilt; 36).
 
 ```bash
 python3 art/blender/pack.py pack art/out/room/fireplace --out assets/elf/sprites/fireplace --scale 0.5
-python3 art/blender/pack.py pack-layers art/out/elf/layers --out assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave \
-    --thumbs art/out/elf/thumbs --registry src/features/elf/sprites/elfFiles.ts   # pnpm art:pack
-python3 art/blender/check.py pack-layers art/out/elf/layers --against assets/elf/sprites/elf --scale 0.6 --once feed,happy,pet,wave \
-    --thumbs art/out/elf/thumbs   # pnpm art:check
+python3 art/blender/pack.py pack-layers art/out/elf/young/layers --out assets/elf/sprites/young --scale 0.6 --once feed,happy,pet,wave \
+    --thumbs art/out/elf/young/thumbs --registry src/features/elf/sprites/youngFiles.ts   # pnpm art:pack (every form)
+python3 art/blender/check.py pack-layers art/out/elf/young/layers --against assets/elf/sprites/young --scale 0.6 --once feed,happy,pet,wave \
+    --thumbs art/out/elf/young/thumbs   # pnpm art:check (every form)
 ```
 
 `pack` takes one directory of frames, `pack-layers` a directory with one
@@ -191,6 +211,7 @@ Metro. Next to the sheets goes `manifest.json`:
   "anchor": { "x": 90, "y": 250 },
   "fps": 24,
   "pixelsPerMetre": 180, "modelHeight": 1.965,
+  "figureUnits": 460, "headUnits": 261,
   "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 7, "frames": 77 } ],
   "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
   "layers": { "hat_acornCap": { "frameWidth": 120, "frameHeight": 90, "offset": { "x": 30, "y": -12 },
@@ -202,10 +223,14 @@ Metro. Next to the sheets goes `manifest.json`:
 
 Frame indices are global and run on across sheets; the anchor is in cell
 pixels. `pixelsPerMetre` is the render's scale (`render.json`, which the
-render script writes next to the layers: 300 for the elf) after the pack's
-`--scale`, and with `modelHeight` it gives the figure's height in cell
-pixels, which the app scales to its room units instead of keeping a
-constant; `source` records the render and the pack that made the atlas. Only the final atlases and manifests are committed, under
+render script writes next to the layers: about 253.5 for the elf rendered
+in the room) after the pack's `--scale`, and with `modelHeight` it gives
+the figure's height in cell pixels, which the app scales to its room
+units instead of keeping a constant. `figureUnits` is that height in the
+room's units (the plate's pixels, before the pack's scale), the form's
+own size since every form is rendered at the same scale, and `headUnits`
+the neck's (the form's `shoulder_z` in `render.json`'s `neckHeight`),
+above which a tap on the figure is on the head; `source` records the render and the pack that made the atlas. Only the final atlases and manifests are committed, under
 `assets/elf/sprites/<character>/`; frames and intermediate renders stay in
 `art/out`.
 
@@ -223,9 +248,12 @@ and re-committed with it.
 ## In the app
 
 `src/features/elf/sprites` plays the atlases with Skia: `manifest.ts`
-holds the manifest type and the registry of bundled characters (Metro only
-bundles files named in a static `require`, so each new character or sheet
-is added there by hand), `useSpriteImages` decodes the sheets once,
+holds the manifest type and the registry of bundled characters, one per
+form of the elf (Metro only bundles files named in a static `require`;
+each character's files are in the registry its pack generates, the
+character itself is added there by hand), `useSpriteImages` decodes a
+body once and keeps the one shown and the one about to be (the next form,
+preloaded for the evolution's moment),
 `useSpriteClock` advances a frame index on the UI thread at the
 manifest's fps, `SpriteFrame` draws the current cell from the sheets with
 an Atlas node, `SpritePlayer` is one sprite with its own clock,
@@ -334,13 +362,13 @@ the id to `HAT_IDS`. `pnpm art:elf` renders, after the body, every hat's
 layer of the same clips through the same frames (`set_hat_pass`: the hat
 alone, the body still in the scene as a holdout, so it cuts the hat where
 it stands in front of it, an ear over a brim, and drawing no ink of its
-own) into `art/out/elf/layers/hat_<id>/`, and the head close up in every
-hat by day for the wardrobe's cards (`stage_thumbs`) into
-`art/out/elf/thumbs/`. `pnpm art:pack` packs every layer in one go: the
-body in its own box, each hat in a small box of its own with its offset
-from the body's (`layers` in the manifest), the pictures as `_thumb`, and
-regenerates `src/features/elf/sprites/elfFiles.ts`, the registry Metro
-needs; the app draws the layer of the hat worn with `LayeredSprite`. The
+own) into `art/out/elf/<form>/layers/hat_<id>/`, and the head close up
+in every hat by day for the wardrobe's cards (`stage_thumbs`) into
+`art/out/elf/<form>/thumbs/`, for every form. `pnpm art:pack` packs every
+layer of every form: the body in its own box, each hat in a small box of
+its own with its offset from the body's (`layers` in the manifest), the
+pictures as `_thumb`, and regenerates `src/features/elf/sprites/<form>Files.ts`,
+the registries Metro needs; the app draws the layer of the hat worn with `LayeredSprite`. The
 hat follows the head because it is rigged to the same armature and
 rendered through the same frames. A new hat's name goes into the
 dictionaries (`item<Id>`) and, if it is to be earned, its threshold into

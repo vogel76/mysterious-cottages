@@ -1,48 +1,36 @@
 {
   "version": 2,
-  "frameWidth": 245,
-  "frameHeight": 341,
+  "frameWidth": 183,
+  "frameHeight": 269,
   "anchor": {
-    "x": 117.6,
-    "y": 318.0
+    "x": 87.6,
+    "y": 252.0
   },
   "fps": 24,
   "sheets": [
     {
       "file": "body-1.webp",
-      "columns": 8,
-      "rows": 6,
-      "frames": 48
+      "columns": 11,
+      "rows": 7,
+      "frames": 77
     },
     {
       "file": "body-2.webp",
-      "columns": 8,
-      "rows": 6,
-      "frames": 48
+      "columns": 11,
+      "rows": 7,
+      "frames": 77
     },
     {
       "file": "body-3.webp",
-      "columns": 8,
-      "rows": 6,
-      "frames": 48
+      "columns": 11,
+      "rows": 7,
+      "frames": 77
     },
     {
       "file": "body-4.webp",
-      "columns": 8,
-      "rows": 6,
-      "frames": 48
-    },
-    {
-      "file": "body-5.webp",
-      "columns": 8,
-      "rows": 6,
-      "frames": 48
-    },
-    {
-      "file": "body-6.webp",
-      "columns": 8,
+      "columns": 11,
       "rows": 2,
-      "frames": 12
+      "frames": 21
     }
   ],
   "clips": {
@@ -82,112 +70,114 @@
       "loop": false
     }
   },
-  "pixelsPerMetre": 152.117,
-  "modelHeight": 1.8144,
+  "pixelsPerMetre": 152.116,
+  "modelHeight": 1.4689,
+  "figureUnits": 372.4,
+  "headUnits": 106.5,
   "layers": {
     "hat_acornCap": {
-      "frameWidth": 180,
-      "frameHeight": 199,
+      "frameWidth": 166,
+      "frameHeight": 194,
       "offset": {
-        "x": 36.6,
-        "y": -44.4
+        "x": 11.4,
+        "y": -7.2
       },
       "sheets": [
         {
           "file": "hat_acornCap-1.webp",
-          "columns": 11,
+          "columns": 12,
           "rows": 10,
-          "frames": 110
+          "frames": 120
         },
         {
           "file": "hat_acornCap-2.webp",
-          "columns": 11,
+          "columns": 12,
           "rows": 10,
-          "frames": 110
+          "frames": 120
         },
         {
           "file": "hat_acornCap-3.webp",
-          "columns": 11,
-          "rows": 3,
-          "frames": 32
+          "columns": 12,
+          "rows": 1,
+          "frames": 12
         }
       ]
     },
     "hat_flowerCrown": {
-      "frameWidth": 190,
-      "frameHeight": 133,
+      "frameWidth": 175,
+      "frameHeight": 131,
       "offset": {
-        "x": 32.4,
-        "y": 9.6
+        "x": 7.8,
+        "y": 45.6
       },
       "sheets": [
         {
           "file": "hat_flowerCrown-1.webp",
-          "columns": 10,
+          "columns": 11,
           "rows": 15,
-          "frames": 150
+          "frames": 165
         },
         {
           "file": "hat_flowerCrown-2.webp",
-          "columns": 10,
-          "rows": 11,
-          "frames": 102
+          "columns": 11,
+          "rows": 8,
+          "frames": 87
         }
       ]
     },
     "hat_mushroomCap": {
-      "frameWidth": 214,
-      "frameHeight": 180,
+      "frameWidth": 199,
+      "frameHeight": 177,
       "offset": {
-        "x": 18.6,
-        "y": -10.2
+        "x": -6.0,
+        "y": 25.8
       },
       "sheets": [
         {
           "file": "hat_mushroomCap-1.webp",
-          "columns": 9,
+          "columns": 10,
           "rows": 11,
-          "frames": 99
+          "frames": 110
         },
         {
           "file": "hat_mushroomCap-2.webp",
-          "columns": 9,
+          "columns": 10,
           "rows": 11,
-          "frames": 99
+          "frames": 110
         },
         {
           "file": "hat_mushroomCap-3.webp",
-          "columns": 9,
-          "rows": 6,
-          "frames": 54
+          "columns": 10,
+          "rows": 4,
+          "frames": 32
         }
       ]
     },
     "hat_nightcap": {
-      "frameWidth": 204,
-      "frameHeight": 190,
+      "frameWidth": 188,
+      "frameHeight": 186,
       "offset": {
-        "x": 38.4,
-        "y": -34.8
+        "x": 13.2,
+        "y": 1.8
       },
       "sheets": [
         {
           "file": "hat_nightcap-1.webp",
           "columns": 10,
-          "rows": 10,
-          "frames": 100
+          "rows": 11,
+          "frames": 110
         },
         {
           "file": "hat_nightcap-2.webp",
           "columns": 10,
-          "rows": 10,
-          "frames": 100
+          "rows": 11,
+          "frames": 110
         },
         {
           "file": "hat_nightcap-3.webp",
           "columns": 10,
-          "rows": 6,
-          "frames": 52
+          "rows": 4,
+          "frames": 32
         }
       ]
     }
@@ -203,6 +193,8 @@
     "render": {
       "script": "elf.py",
       "args": [
+        "--form",
+        "baby",
         "--stages",
         "still,allanims,hats,thumbs"
       ],

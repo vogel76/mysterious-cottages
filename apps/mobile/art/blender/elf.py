@@ -1689,9 +1689,10 @@ def stage_hero(scene, rig, out):
 
 def write_render_info(out, argv, model_height):
     """Writes <out>/layers/render.json: the frame, the camera's scale, the pixels
-    to the metre and the model's height, which the packer carries into the
-    manifest (so the app sizes the figure from the atlas, not from a constant,
-    and the atlas records how it was made)."""
+    to the metre, the model's height and the neck's (where the head meets the
+    body), which the packer carries into the manifest (so the app sizes the
+    figure and tells a pat on the head from a poke from the atlas, not from a
+    constant, and the atlas records how it was made)."""
     layers = os.path.join(out, "layers")
     os.makedirs(layers, exist_ok=True)
     scene = bpy.context.scene
@@ -1702,6 +1703,7 @@ def write_render_info(out, argv, model_height):
         "height": scene.render.resolution_y,
         "pixelsPerMetre": round(FRAME["pixels_per_metre"], 3),
         "modelHeight": round(model_height, 4),
+        "neckHeight": round(F.shoulder_z, 4),
     }
     with open(os.path.join(layers, "render.json"), "w", encoding="utf-8") as handle:
         json.dump(info, handle, indent=2)
@@ -1739,10 +1741,35 @@ def room_scene(samples, quality=True):
     return scene, {"camera": cam, "rug": Vector(rug_center)}
 
 
-def place_in_room(scene, arm, room_rig, model_height):
-    """Stand the elf on the rug, sized so it is ROOM_FIGURE_PX tall in the
-    plate's pixels, and crop the render to the figure (with room for the
-    hops and the arms) so the frames hold the figure alone."""
+def animated_box(scene, cam, rig, step=3):
+    """The box in plate pixels every clip's frames reach (every object,
+    hats included, as the armature poses it), sampled every few frames."""
+    lo, hi = [1e9, 1e9], [-1e9, -1e9]
+    hidden = {coll: coll.hide_render for coll in bpy.data.collections}
+    for coll in bpy.data.collections:
+        coll.hide_render = False
+    for name, (start, end) in rig.clips.items():
+        rig.apply(name)
+        for frame in range(start, end + 1, step):
+            scene.frame_set(frame)
+            depsgraph = bpy.context.evaluated_depsgraph_get()
+            for obj in rig.objs.values():
+                evaluated = obj.evaluated_get(depsgraph)
+                for corner in evaluated.bound_box:
+                    x, y = _common.project_to_pixels(scene, cam, evaluated.matrix_world @ Vector(corner))
+                    lo, hi = [min(lo[0], x), min(lo[1], y)], [max(hi[0], x), max(hi[1], y)]
+    for coll, flag in hidden.items():
+        coll.hide_render = flag
+    return lo, hi
+
+
+def place_in_room(scene, arm, room_rig, model_height, rig=None):
+    """Stand the elf on the rug at the young form's scale, so the young one
+    is ROOM_FIGURE_PX tall in the plate's pixels and every other form its
+    own height, and crop the render to the figure (with room for the hops
+    and the arms) so the frames hold the figure alone. A form that carries
+    a wand or a staff reaches further than that room: its crop also takes
+    in every frame of its clips (animated_box)."""
     cam, rug = room_rig["camera"], room_rig["rug"]
     foot = _common.project_to_pixels(scene, cam, rug)
     head = _common.project_to_pixels(scene, cam, rug + Vector((0, 0, 1.0)))
@@ -1757,6 +1784,10 @@ def place_in_room(scene, arm, room_rig, model_height):
     # the border: the figure's reach, in the room, projected and padded
     corners = [rug + Vector((sx * 0.8 * k, -0.35 * k, z * k)) for sx in (-1, 1) for z in (-0.05, max(2.75, model_height + 0.95))]
     pts = [_common.project_to_pixels(scene, cam, c) for c in corners]
+    if rig is not None and FORM_LOOK.get(FORM_NAME, {}).get("wand"):
+        bpy.context.view_layer.update()
+        lo, hi = animated_box(scene, cam, rig)
+        pts += [tuple(lo), tuple(hi)]
     width, height = scene.render.resolution_x, scene.render.resolution_y
     pad = 24
     x0 = max(0, int(min(p[0] for p in pts)) - pad)
@@ -1817,7 +1848,7 @@ def main():
         if LOOK["quality"] and not quick:
             _common.enable_quality(scene)
     else:
-        place_in_room(scene, arm, room_rig, top.z)
+        place_in_room(scene, arm, room_rig, top.z, rig)
     write_render_info(out, argv, top.z)
     print(f"[elf] form {F} look {LOOK}")
     for name, (start, end) in clips.items():

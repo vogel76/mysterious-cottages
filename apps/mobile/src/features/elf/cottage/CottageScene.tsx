@@ -5,8 +5,8 @@ import { Canvas, Circle, Group, Line, vec } from '@shopify/react-native-skia'
 import { Easing, cancelAnimation, useDerivedValue, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '../../../ui'
-import { PET_COOLDOWN_MS, type ElfMood, type ElfStage } from '@chatynkowo/core'
-import { SPRITE_CHARACTERS, useSpriteImages, useSpriteLayer, type SpriteSource } from '../sprites'
+import { PET_COOLDOWN_MS, type ElfForm, type ElfMood, type ElfStage } from '@chatynkowo/core'
+import { SPRITE_CHARACTERS, useSpriteImages, useSpriteLayer } from '../sprites'
 import { elfKey } from '../labels'
 import { PHOTO_ID, isSurface, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
@@ -19,7 +19,7 @@ import { ROOM, fitRoom, inBounds, slotAtIn, slotById, toRoom, type Slot } from '
 import { extraPictures, placedBounds, spriteSlotsFor, type RoomExtras } from './roomAssets'
 import { RoomSprites } from './RoomSprites'
 import { SlotHighlight } from './SlotHighlight'
-import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf } from './SpriteElf'
+import { SPRITE_ELF_ORIGIN, SpriteElf, figureUnits, spriteElfHeadLine, spriteElfHitBox } from './SpriteElf'
 
 /* The elf's cottage as one full-screen Skia canvas: the rendered room
    (the Blender plate and the furniture crops of the slots in three depth
@@ -85,10 +85,13 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    (roomAssets.spriteSlotsFor), and the elf's tap target is the drawn
    figure, not its atlas cell. Only the places the catalogue offers are
    tappable in the decorating mode. Over the plate, which is lit in Blender, only the fire's
-   pulse and the night tint are painted (PlateLighting). The sheets decode
-   once (useSpriteImages caches them for the app) from the moment the
-   scene mounts, egg stage included, so they are in before the hatch; the
-   room draws without the elf until they are. */
+   pulse and the night tint are painted (PlateLighting). Each form of the
+   elf is an atlas of its own, the form the tab names (the one before an
+   evolution until its moment), at its own height; its sheets decode once
+   (useSpriteImages keeps them for the app) from the moment the scene
+   mounts, the hatchling's while the egg waits, so they are in before the
+   hatch; the room draws without the elf until they are, and a new form
+   replaces the old one only once it is in. */
 
 export type CottageSceneHandle = {
   react: (kind: ReactionKind) => void
@@ -119,6 +122,9 @@ export type CottageSceneProps = {
   decor: Decor
   /* The hat the elf wears, a wardrobe id ('none' for the bare hair). */
   hat?: string
+  /* The form drawn, when it is not the stage's: the tab keeps the form
+     before an evolution until the evolution's moment shows the new one. */
+  form?: ElfForm
   /* While decorating: the room brings the elf to its band's middle (the
      wardrobe's tab is open) instead of a place. */
   focusElf?: boolean
@@ -171,16 +177,6 @@ const STAR_MS = 750
 const STAR = { fromX: 0.32, fromY: 0.22, dx: 0.32, dy: 0.14 } as const
 /* How long the egg's break takes, with reduce motion a short fade. */
 const HATCH_MS = { full: 1800, reduced: 700 } as const
-
-/* The rendered elf, as art/blender packed it. The scene has no other way
-   to draw the figure, so a missing registration is an error at load, not
-   a blank room. */
-const ELF_SPRITES: SpriteSource = elfSprites()
-function elfSprites(): SpriteSource {
-  const source = SPRITE_CHARACTERS.elf
-  if (!source) throw new Error('the elf character is not registered in SPRITE_CHARACTERS: render and pack it first (art/README.md)')
-  return source
-}
 
 /* The one-shot clip a reaction plays over the mood's loop; a kind missing
    here (a poke, a fidget, the egg's rock) leaves the baked animation
@@ -240,7 +236,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, mood, sleeping, sleepy, warmth, eggCracks = 0, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
+    { stage, form, mood, sleeping, sleepy, warmth, eggCracks = 0, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
     ref,
   ) {
     const { t } = useTranslation()
@@ -252,10 +248,27 @@ export const CottageScene = memo(
     /* While decorating, the place being chosen for: in focus, and lit
        unless it is the wall or the floor, which are the whole room. */
     const focusSlot = useMemo(() => (editing && selectedSlot ? (sceneSlots.find((slot) => slot.id === selectedSlot) ?? null) : null), [editing, selectedSlot, sceneSlots])
+    /* The elf's sheets: the form's atlas, decoded from the first mount (the
+       hatchling's while the egg waits, so it is in before the hatch); the
+       body decoded is drawn with its own atlas's manifest, and a hat of
+       another form's atlas is not drawn. */
+    const formSource = SPRITE_CHARACTERS[form ?? (stage === 'egg' ? 'baby' : stage)]
+    const images = useSpriteImages(formSource)
+    /* The hat's layer, decoded only while it is worn. */
+    const hatDecoded = useSpriteLayer(images?.source, hat !== 'none' ? `hat_${hat}` : null)
+    const hatLayer = hatDecoded && hatDecoded.source === images?.source ? hatDecoded : null
+    /* The drawn figure's height, for its tap target, and its neck's, for
+       the head's line and the room's focus on the head. */
+    const drawnManifest = (images?.source ?? formSource).manifest
+    const units = figureUnits(drawnManifest)
+    const neck = spriteElfHeadLine(drawnManifest)
     /* The cover fit into the band between the strip above and whatever
        covers the bottom, moved towards the place being chosen for; an open
        panel shortens the band and the room follows, eased. */
-    const focus = useMemo(() => (editing && focusElf ? { x: SPRITE_ELF_ORIGIN.x, y: SPRITE_ELF_ORIGIN.y - SPRITE_ELF_HEAD_LINE } : focusSlot ? slotCentre(focusSlot) : null), [editing, focusElf, focusSlot])
+    const focus = useMemo(
+      () => (editing && focusElf ? { x: SPRITE_ELF_ORIGIN.x, y: SPRITE_ELF_ORIGIN.y - neck } : focusSlot ? slotCentre(focusSlot) : null),
+      [editing, focusElf, focusSlot, neck],
+    )
     const layout = useMemo(() => fitRoom(width, height, topInset, bottomInset, focus), [width, height, topInset, bottomInset, focus])
     /* The drawn offset eases to the layout's; the gestures use the target at once. */
     const drawnOffsetX = useSharedValue(layout.offsetX)
@@ -266,11 +279,6 @@ export const CottageScene = memo(
     }, [layout.offsetX, layout.offsetY, drawnOffsetX, drawnOffsetY])
 
     const { motion, particles, react, lookAt, lookRelease, admireAt } = useCottageMotion({ stage, mood, sleeping, sleepy, reduceMotion, paused })
-    /* The elf's sheets, decoded from the first mount, so they are in
-       before the hatch. */
-    const images = useSpriteImages(ELF_SPRITES)
-    /* The hat's layer, decoded only while it is worn. */
-    const hatLayer = useSpriteLayer(ELF_SPRITES, hat !== 'none' ? `hat_${hat}` : null)
     useEffect(() => {
       if (!__DEV__ || !images || decodeLogged) return
       decodeLogged = true
@@ -306,10 +314,10 @@ export const CottageScene = memo(
     const hatched = stage !== 'egg'
     const figureOrigin = hatched ? SPRITE_ELF_ORIGIN : ROOM.elfAnchor
     /* Whether a room point lands on the figure (the elf or the egg). */
-    const figureBox = hatched ? SPRITE_ELF_HIT_BOX : EGG_HIT_BOX
+    const figureBox = useMemo(() => (hatched ? spriteElfHitBox(units) : EGG_HIT_BOX), [hatched, units])
     const hitsFigure = useCallback((point: { x: number; y: number }) => inBounds(point, figureOrigin, figureBox), [figureOrigin, figureBox])
     /* Above this line a tap on the figure lands on the head. */
-    const headLine = hatched ? SPRITE_ELF_ORIGIN.y - SPRITE_ELF_HEAD_LINE : Number.NEGATIVE_INFINITY
+    const headLine = hatched ? SPRITE_ELF_ORIGIN.y - neck : Number.NEGATIVE_INFINITY
     /* The figure's top in the view, for the bubble over its head. */
     useEffect(() => {
       onFigureTop?.({ x: layout.offsetX + figureOrigin.x * layout.scale, y: layout.offsetY + (figureOrigin.y + figureBox.y) * layout.scale })
@@ -560,7 +568,7 @@ export const CottageScene = memo(
               <RoomSprites decor={decor} layer="back" day={fire.day} photo={photo} extras={extras} />
               <RoomSprites decor={decor} layer="mid" day={fire.day} />
               {hatched && images ? (
-                <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} hat={hatLayer} manifest={ELF_SPRITES.manifest} />
+                <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} hat={hatLayer} manifest={images.source.manifest} />
               ) : null}
               {!hatched || hatching ? <RenderedEgg warmth={warmth} cracks={eggCracks} motion={motion} origin={ROOM.elfAnchor} day={fire.day} hatch={hatchProgress} still={reduceMotion} /> : null}
               <RoomSprites decor={decor} layer="front" day={fire.day} extras={extras} />

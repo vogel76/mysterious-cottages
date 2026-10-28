@@ -4,7 +4,7 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
+import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { requestNotificationPermission } from '../../lib/notifications'
 import { setReminders } from '../../lib/reminders-store'
@@ -12,6 +12,7 @@ import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
 import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
+import { SPRITE_CHARACTERS, preloadSprites } from './sprites'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import type { RoomExtras } from './cottage/roomAssets'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
@@ -110,8 +111,10 @@ const SPEECH_MS = 4000
 const HATCH_ROCK_MS = 4000
 const HATCH_TAPS = 2
 const HATCH_CHEER_DELAY_MS = 400
-/* The evolution's moment waits this long after the form is reached. */
+/* The evolution's moment waits this long after the form is reached, and
+   the new form appears at the height of its flash. */
 const EVOLVE_DELAY_MS = 400
+const EVOLVE_FLASH_MS = 900
 /* The acorn under the finger. */
 const ACORN = 44
 
@@ -288,16 +291,35 @@ export function ElfTab() {
   /* A form reached: the elf's moment in the room (it lights up in a
      spiral of sparkles), a beat after the care that earned it, before the
      card presenter brings the evolution card. Played once per form, when
-     the tab is in view. */
+     the tab is in view. Until the moment the room keeps drawing the form
+     the player saw last; the new form's atlas is decoded as soon as the
+     form is reached, and it takes the old one's place at the height of
+     the flash. */
   const evolvedTo = useRef<string | null>(null)
+  const [revealed, setRevealed] = useState<ElfForm | null>(null)
+  useEffect(() => {
+    if (pendingEvolution) preloadSprites(SPRITE_CHARACTERS[pendingEvolution])
+  }, [pendingEvolution])
   useEffect(() => {
     if (!pendingEvolution || !focused || !state?.starter || evolvedTo.current === pendingEvolution) return
+    let swap: ReturnType<typeof setTimeout> | null = null
     const timer = setTimeout(() => {
       evolvedTo.current = pendingEvolution
       sceneRef.current?.react('evolve')
+      swap = setTimeout(() => setRevealed(pendingEvolution), EVOLVE_FLASH_MS)
     }, EVOLVE_DELAY_MS)
-    return () => clearTimeout(timer)
+    /* A flash cut short (the tab left mid-moment) still reveals the new form. */
+    return () => {
+      clearTimeout(timer)
+      if (swap) {
+        clearTimeout(swap)
+        setRevealed(pendingEvolution)
+      }
+    }
   }, [pendingEvolution, focused, state?.starter])
+  const seenForm = state?.stageShown ?? null
+  const drawnForm: ElfForm | undefined =
+    stage === 'egg' ? undefined : pendingEvolution && seenForm && seenForm !== stage && revealed !== pendingEvolution ? seenForm : stage
 
   /* The latest cottage found: the frame on the wall shows its photo (from
      the expedition's picture cache when it has it, so the frame fills
@@ -680,6 +702,7 @@ export function ElfTab() {
           <CottageScene
             ref={sceneRef}
             stage={stage}
+            form={drawnForm}
             mood={mood}
             sleeping={state.sleeping}
             sleepy={sleepy}
@@ -767,7 +790,7 @@ export function ElfTab() {
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>
-          <ElfDecorPanel decor={decor} hat={outfit.hat} photo={photo} tabs={catalogueTabs} foundCount={foundCount} activeTab={decorTab} onSelectTab={setDecorTab} onPick={onPick} onLayout={onPanelLayout} />
+          <ElfDecorPanel decor={decor} hat={outfit.hat} form={drawnForm} photo={photo} tabs={catalogueTabs} foundCount={foundCount} activeTab={decorTab} onSelectTab={setDecorTab} onPick={onPick} onLayout={onPanelLayout} />
         </Animated.View>
       )}
 

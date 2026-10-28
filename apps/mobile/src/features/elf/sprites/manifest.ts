@@ -14,11 +14,17 @@
 
    Metro only bundles files it sees in a static require; the packer
    generates the registry of an atlas's files (pack.py --registry), and
-   the characters are registered here with it. The cottage scene draws
-   the elf registered here and has no other way to draw it, so a missing
-   registration is an error at load. */
+   the characters are registered here with it: one per form of the elf
+   (the hatchling, the young elf, the grown one, the elder), each its own
+   atlas with its own hats, rendered at one shared scale so each stands
+   its own height in the room (figureUnits). The cottage scene draws the
+   form registered here and has no other way to draw it. */
 
-import { ATLAS_FILES as ELF_FILES } from './elfFiles'
+import type { ElfForm } from '@chatynkowo/core'
+import { ATLAS_FILES as ADULT_FILES } from './adultFiles'
+import { ATLAS_FILES as BABY_FILES } from './babyFiles'
+import { ATLAS_FILES as ELDER_FILES } from './elderFiles'
+import { ATLAS_FILES as YOUNG_FILES } from './youngFiles'
 
 export type SpriteSheet = {
   file: string
@@ -47,6 +53,11 @@ export type SpriteManifest = {
      which the scene scales to its room units. */
   pixelsPerMetre: number
   modelHeight: number
+  /* The figure's height in the room's units (the plate's pixels): every
+     form is rendered at the same scale, so this is the form's own size. */
+  figureUnits?: number
+  /* The neck's height in the same units: above it a tap is on the head. */
+  headUnits?: number
   /* The render and the pack that made the atlas (art/README.md, "Packing"). */
   source?: { render: Record<string, unknown> | null; pack: string }
   /* The base layer's sheets (the body). */
@@ -74,14 +85,15 @@ export type SpriteSource = {
   files: Record<string, number>
 }
 
-/* The characters as bundled: the manifest and the generated registry of
-   its files. The elf is the body (its face, neutral and blinking in idle,
-   and its hair baked in) and a layer per hat of the wardrobe. */
-export const SPRITE_CHARACTERS: Record<string, SpriteSource> = {
-  elf: {
-    manifest: require('../../../../assets/elf/sprites/elf/manifest.json'),
-    files: ELF_FILES,
-  },
+/* The elf's forms as bundled: each the manifest and the generated
+   registry of its files, the body (its face, neutral and blinking in
+   idle, its hair and what the form wears and carries baked in) and a
+   layer per hat of the wardrobe. */
+export const SPRITE_CHARACTERS: Record<ElfForm, SpriteSource> = {
+  baby: { manifest: require('../../../../assets/elf/sprites/baby/manifest.json'), files: BABY_FILES },
+  young: { manifest: require('../../../../assets/elf/sprites/young/manifest.json'), files: YOUNG_FILES },
+  adult: { manifest: require('../../../../assets/elf/sprites/adult/manifest.json'), files: ADULT_FILES },
+  elder: { manifest: require('../../../../assets/elf/sprites/elder/manifest.json'), files: ELDER_FILES },
 }
 
 /* The cell of a layer: its size and its offset from the base cell. */

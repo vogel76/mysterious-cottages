@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { decorFindsNeeded } from '@chatynkowo/core'
+import { decorFindsNeeded, type ElfForm } from '@chatynkowo/core'
 import { CheckIcon, LockIcon, PressableScale, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, mapPalette, radius, space, typeScale, useReducedMotion } from '../../ui'
 import { PHOTO_ID, WEARABLE_IDS, type Decor, type SlotId } from './cottage/catalogue'
 import { RENDERED_VARIANTS, renderedVariantFor } from './cottage/roomAssets'
@@ -36,6 +36,8 @@ import { elfKey } from './labels'
 export type CatalogueTab = SlotId | 'hat'
 
 export type ElfDecorPanelProps = {
+  /* The elf's form, whose head the wardrobe's pictures show. */
+  form?: ElfForm
   decor: Decor
   /* The hat the elf wears. */
   hat: string
@@ -66,7 +68,7 @@ function cardWidth(screenWidth: number, count: number): number {
   return Math.floor((screenWidth - space.lg - (count > 3 ? 0 : space.lg) - space.sm * Math.ceil(visible - 1)) / visible)
 }
 
-export function ElfDecorPanel({ decor, hat, photo, tabs, foundCount, activeTab, onSelectTab, onPick, onLayout }: ElfDecorPanelProps) {
+export function ElfDecorPanel({ decor, hat, form, photo, tabs, foundCount, activeTab, onSelectTab, onPick, onLayout }: ElfDecorPanelProps) {
   const { t } = useTranslation()
   const { width } = useWindowDimensions()
   const wardrobe = activeTab === 'hat'
@@ -139,7 +141,7 @@ export function ElfDecorPanel({ decor, hat, photo, tabs, foundCount, activeTab, 
                 style={[styles.card, { width: card }, selected && styles.cardSelected]}
               >
                 <View style={[styles.picture, { width: thumb, height: thumb }, needed > 0 && styles.pictureLocked]}>
-                  <ElfThumb slot={activeTab} id={id} photo={photo} size={thumb} />
+                  <ElfThumb slot={activeTab} id={id} photo={photo} size={thumb} form={form} />
                 </View>
                 <Text variant="label" weight="semibold" align="center" numberOfLines={2} style={[styles.name, needed > 0 && styles.nameLocked]}>
                   {label}
