@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { decorFindsNeeded } from '@chatynkowo/core'
 import { CheckIcon, LockIcon, PressableScale, TAB_BAR_OVERHANG, Text, colors, fade, iconSize, mapPalette, radius, space, typeScale, useReducedMotion } from '../../ui'
-import { PHOTO_ID, type Decor, type SlotId } from './cottage/catalogue'
+import { PHOTO_ID, WEARABLE_IDS, type Decor, type SlotId } from './cottage/catalogue'
 import { RENDERED_VARIANTS, renderedVariantFor } from './cottage/roomAssets'
 import { ElfThumb } from './ElfThumb'
 import { elfKey } from './labels'
@@ -13,8 +13,10 @@ import { elfKey } from './labels'
    standing on the tab bar in place of the care band, inside the Elf tab
    (not a route: a route would unfocus the tab and pause the scene, and
    the point is the live preview in the room above it). A row of category
-   tabs, one per place in the room with a choice (the walls and the floor
-   first, then the pieces from the largest; the places with more than one
+   tabs: the elf's hat first once it has hatched (the room then brings the
+   elf to the middle and a tap puts the hat on), then one per place in the
+   room with a choice (the walls and the floor first, then the pieces
+   from the largest; the places with more than one
    rendered variant, the frame only once a cottage has been found), and
    under it a row of large cards for the active category,
    three to the width (a fourth peeking when there are more): the piece's
@@ -30,18 +32,23 @@ import { elfKey } from './labels'
    time. The tab owns the mode, the active category and what happens on a
    pick (the provider saves, the scene reacts). */
 
+/* A tab of the catalogue: a place of the room, or the elf's hat. */
+export type CatalogueTab = SlotId | 'hat'
+
 export type ElfDecorPanelProps = {
   decor: Decor
+  /* The hat the elf wears. */
+  hat: string
   /* The latest cottage's picture, for the frame's photo card. */
   photo: string | null
-  /* The categories on offer, as the tab decides them (the frame only with
-     a photo), in the room's order. */
-  slots: readonly SlotId[]
+  /* The tabs on offer, as the tab decides them (the hat once hatched, the
+     frame only with a photo), in the catalogue's order. */
+  tabs: readonly CatalogueTab[]
   /* The cottages found, which unlock some of the pieces. */
   foundCount: number
-  activeSlot: SlotId
-  onSelectSlot: (slot: SlotId) => void
-  onPick: (slot: SlotId, id: string) => void
+  activeTab: CatalogueTab
+  onSelectTab: (tab: CatalogueTab) => void
+  onPick: (tab: CatalogueTab, id: string) => void
   onLayout?: (event: LayoutChangeEvent) => void
 }
 
@@ -59,48 +66,50 @@ function cardWidth(screenWidth: number, count: number): number {
   return Math.floor((screenWidth - space.lg - (count > 3 ? 0 : space.lg) - space.sm * Math.ceil(visible - 1)) / visible)
 }
 
-export function ElfDecorPanel({ decor, photo, slots, foundCount, activeSlot, onSelectSlot, onPick, onLayout }: ElfDecorPanelProps) {
+export function ElfDecorPanel({ decor, hat, photo, tabs, foundCount, activeTab, onSelectTab, onPick, onLayout }: ElfDecorPanelProps) {
   const { t } = useTranslation()
   const { width } = useWindowDimensions()
-  const ids = RENDERED_VARIANTS[activeSlot].filter((id) => id !== PHOTO_ID || photo)
-  const current = renderedVariantFor(activeSlot, decor[activeSlot])
+  const wardrobe = activeTab === 'hat'
+  const ids = wardrobe ? WEARABLE_IDS.hat : RENDERED_VARIANTS[activeTab].filter((id) => id !== PHOTO_ID || photo)
+  const current = wardrobe ? hat : renderedVariantFor(activeTab, decor[activeTab])
   const reduceMotion = useReducedMotion()
   const card = cardWidth(width, ids.length)
   const thumb = card - 2 * space.sm
 
   /* The category row follows the active tab: each tab reports its x once laid out. */
   const tabStrip = useRef<ScrollView>(null)
-  const tabX = useRef<Partial<Record<SlotId, number>>>({})
-  const onTabLayout = (slot: SlotId) => (event: LayoutChangeEvent) => {
-    tabX.current[slot] = event.nativeEvent.layout.x
-    if (slot === activeSlot) tabStrip.current?.scrollTo({ x: Math.max(0, event.nativeEvent.layout.x - space.lg), animated: false })
+  const tabX = useRef<Partial<Record<CatalogueTab, number>>>({})
+  const onTabLayout = (tab: CatalogueTab) => (event: LayoutChangeEvent) => {
+    tabX.current[tab] = event.nativeEvent.layout.x
+    if (tab === activeTab) tabStrip.current?.scrollTo({ x: Math.max(0, event.nativeEvent.layout.x - space.lg), animated: false })
   }
   useEffect(() => {
-    const x = tabX.current[activeSlot]
+    const x = tabX.current[activeTab]
     if (x === undefined) return
     tabStrip.current?.scrollTo({ x: Math.max(0, x - space.lg), animated: !reduceMotion })
-  }, [activeSlot, reduceMotion])
+  }, [activeTab, reduceMotion])
 
-  /* A card is named after its id, which is also its render. */
-  const itemLabel = (id: string) => t(elfKey('item', id))
+  /* A card is named after its id, which is also its render; the bare
+     head is named as such. */
+  const itemLabel = (id: string) => (wardrobe && id === 'none' ? t('mobile:elf.hatNone') : t(elfKey('item', id)))
 
   return (
     <View style={styles.panel} onLayout={onLayout}>
       <ScrollView ref={tabStrip} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} keyboardShouldPersistTaps="handled">
-        {slots.map((slot) => {
-          const active = slot === activeSlot
+        {tabs.map((tab) => {
+          const active = tab === activeTab
           return (
             <PressableScale
-              key={slot}
-              onLayout={onTabLayout(slot)}
-              onPress={() => onSelectSlot(slot)}
+              key={tab}
+              onLayout={onTabLayout(tab)}
+              onPress={() => onSelectTab(tab)}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               pressedFill={active ? colors.accentBorder : colors.accentWash}
               style={[styles.tab, active && styles.tabActive]}
             >
               <Text variant="small" weight="semibold" style={active ? styles.tabActiveLabel : styles.ink}>
-                {t(elfKey('slot', slot))}
+                {t(elfKey('slot', tab))}
               </Text>
             </PressableScale>
           )
@@ -109,19 +118,19 @@ export function ElfDecorPanel({ decor, photo, slots, foundCount, activeSlot, onS
 
       {/* Keyed by the category: a new row fades in while the old one is
           dropped with its thumbnails. */}
-      <Animated.View key={activeSlot} entering={fade()}>
+      <Animated.View key={activeTab} entering={fade()}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cards} keyboardShouldPersistTaps="handled">
           {ids.map((id) => {
             const selected = id === current
             /* The piece in the room is the player's whatever the lock says. */
-            const needed = selected ? 0 : decorFindsNeeded(activeSlot, id, foundCount)
+            const needed = selected ? 0 : decorFindsNeeded(activeTab, id, foundCount)
             const name = itemLabel(id)
             const label = needed > 0 ? t('mobile:elf.lockedLabel', { count: needed }) : name
             return (
               <PressableScale
                 key={id}
                 onPress={() => {
-                  if (id !== current) onPick(activeSlot, id)
+                  if (id !== current) onPick(activeTab, id)
                 }}
                 scaleTo={0.95}
                 accessibilityLabel={needed > 0 ? `${name}. ${label}` : name}
@@ -130,7 +139,7 @@ export function ElfDecorPanel({ decor, photo, slots, foundCount, activeSlot, onS
                 style={[styles.card, { width: card }, selected && styles.cardSelected]}
               >
                 <View style={[styles.picture, { width: thumb, height: thumb }, needed > 0 && styles.pictureLocked]}>
-                  <ElfThumb slot={activeSlot} id={id} photo={photo} size={thumb} />
+                  <ElfThumb slot={activeTab} id={id} photo={photo} size={thumb} />
                 </View>
                 <Text variant="label" weight="semibold" align="center" numberOfLines={2} style={[styles.name, needed > 0 && styles.nameLocked]}>
                   {label}

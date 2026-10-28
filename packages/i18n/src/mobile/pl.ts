@@ -463,12 +463,12 @@ export const mobilePl = {
     none: 'Bez',
     removeHint: 'Dotknij ponownie, aby zdjąć.',
     /* The wearable slots */
-    slotHat: 'Głowa',
     slotOutfit: 'Strój',
     slotNeck: 'Szyja',
     slotHand: 'Dłoń',
     slotFace: 'Twarz',
     /* The furniture slots of the room */
+    slotHat: 'Czapka',
     slotWall: 'Ściany',
     slotFloor: 'Podłoga',
     slotWindow: 'Okno',
@@ -484,7 +484,7 @@ export const mobilePl = {
     slotCandle: 'Przy kominku',
     /* The wearables */
     itemNone: 'Bez',
-    itemHood: 'Kaptur',
+    hatNone: 'Bez czapki',
     itemAcornCap: 'Czapka z żołędzia',
     itemMushroomCap: 'Kapelusz muchomora',
     itemFlowerCrown: 'Wianek z kwiatów',

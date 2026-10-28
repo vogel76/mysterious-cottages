@@ -10,9 +10,9 @@ import type { ElfOutfit, WearableSlot } from '@chatynkowo/core'
    (art/blender/room.py) and the dictionaries name (packages/i18n, the
    item* and slot* entries of the elf group). Which of them have a
    rendered picture is roomAssets' business (RENDERED_VARIANTS lists them
-   per slot); a wearable has none yet, since the rendered elf's face and
-   hair are baked into its frames, so the wardrobe ids wait for the art
-   pipeline's layers. The stored decor
+   per slot); of the wardrobe only the hats are rendered, as layers over
+   the body (art/blender/elf.py), the other wearables wait for theirs.
+   The stored decor
    and outfit of an elf are plain maps of slot id to variant id, kept by
    the rules without knowing the slots; the provider resolves them against
    these catalogues and falls back to the slot's default for an unknown id,
@@ -79,11 +79,11 @@ export function isSlotId(value: string): value is SlotId {
 /* The wardrobe: the first id of hat and outfit is the classic look, 'none'
    leaves a slot empty. */
 export const WEARABLE_IDS: Record<WearableSlot, readonly string[]> = {
-  hat: ['hood', 'acornCap', 'mushroomCap', 'flowerCrown', 'nightcap'],
+  hat: ['none', 'acornCap', 'mushroomCap', 'flowerCrown', 'nightcap'],
   outfit: ['tunic', 'vest', 'apron', 'cloak'],
   neck: ['none', 'scarf', 'amulet'],
   hand: ['none', 'lantern', 'acorn', 'book'],
   face: ['none', 'glasses', 'freckles'],
 }
 
-export const DEFAULT_OUTFIT: ElfOutfit = { hat: 'hood', outfit: 'tunic', neck: 'none', hand: 'none', face: 'none' }
+export const DEFAULT_OUTFIT: ElfOutfit = { hat: 'none', outfit: 'tunic', neck: 'none', hand: 'none', face: 'none' }
