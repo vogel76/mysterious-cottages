@@ -1,20 +1,22 @@
 import { memo, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { Image as PictureImage } from 'expo-image'
 import { Canvas, Group, Image, useImage } from '@shopify/react-native-skia'
 import { PHOTO_ID, isSurface, type SlotId } from './cottage/catalogue'
 import { FramedPhoto } from './cottage/RoomSprites'
 import { roomSpriteFor, surfaceThumbFor, type RoomSprite } from './cottage/roomAssets'
 
-/* The picture of a piece on a card of the decorating catalogue: a Skia
-   canvas showing the piece's catalogue render (art/blender/room.py
-   renders every piece a second time close up and by day, so a card is
-   sharp at its size), fitted into the square and centred; where no such
-   render exists, the room's own crop of the piece, the very picture the
-   room draws, fitted the same way. The frame's photo id draws the latest
-   cottage's photo into the frame the way the room does; a wall or a floor
-   shows its patch, filling the square. The catalogue
-   mounts only the active category's cards, so a handful of canvases
-   exist at a time. An id without a render shows an empty square; the
+/* The picture of a piece on a card of the decorating catalogue: the
+   piece's catalogue render (art/blender/room.py renders every piece a
+   second time close up and by day, so a card is sharp at its size) as a
+   plain image, fitted into the square and centred; a wall or a floor
+   shows its patch, filling the square. A plain image, not a Skia canvas:
+   a canvas per card is a surface of its own on the GPU, and the
+   measurement showed a row of them in the graphics memory. Only the
+   frame's photo card draws on a canvas, since it lays the latest
+   cottage's photo into the frame's render the way the room does; a piece
+   without a catalogue render falls back to the same canvas with the
+   room's own crop. An id without a render shows an empty square; the
    catalogue never offers one. */
 
 const PADDING_SHARE = 0.08
@@ -46,10 +48,12 @@ export const ElfThumb = memo(function ElfThumb({ slot, id, size, photo = null }:
 
 /* The close-up render, fitted with a margin, or filling the square. */
 function CatalogueThumb({ module, size, fill = false }: { module: number; size: number; fill?: boolean }) {
-  const image = useImage(module)
   const inner = fill ? size : size * (1 - 2 * PADDING_SHARE)
-  const offset = (size - inner) / 2
-  return <Canvas style={[styles.canvas, { width: size, height: size }]}>{image ? <Image image={image} fit={fill ? 'cover' : 'contain'} x={offset} y={offset} width={inner} height={inner} /> : null}</Canvas>
+  return (
+    <View style={[styles.centre, { width: size, height: size }]}>
+      <PictureImage source={module} contentFit={fill ? 'cover' : 'contain'} style={{ width: inner, height: inner }} />
+    </View>
+  )
 }
 
 /* The room's crop of the piece, drawn at its own room box under one
@@ -74,6 +78,10 @@ function SpriteThumb({ sprite, photo, size }: { sprite: RoomSprite; photo: strin
 }
 
 const styles = StyleSheet.create({
+  centre: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   canvas: {
     backgroundColor: 'transparent',
   },
