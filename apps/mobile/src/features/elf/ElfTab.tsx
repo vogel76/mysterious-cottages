@@ -6,6 +6,8 @@ import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
+import { requestNotificationPermission } from '../../lib/notifications'
+import { setReminders } from '../../lib/reminders-store'
 import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
 import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
@@ -16,10 +18,12 @@ import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfHud, type ElfPanel } from './ElfHud'
 import { DECOR_SLOTS, ElfDecorPanel, type CatalogueTab } from './ElfDecorPanel'
 import { ElfSpeech } from './ElfSpeech'
+import { ElfCard } from './ElfCard'
 import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
 import { elfKey } from './labels'
 import { useElfCardPresenter } from './useElfCardPresenter'
+import { useReminderPrefs } from './useElfReminders'
 import { useReturnGreeting } from './useReturnGreeting'
 
 /* The Elf tab's screen: the cottage, from the first visit, with the egg
@@ -47,7 +51,9 @@ import { useReturnGreeting } from './useReturnGreeting'
    episode, and a return after half an hour away is greeted. A new player
    is shown the way by the tutorial (useElfTutorial, ElfTutorial): a few
    cards above the care band, once for the egg and once for the named
-   elf, some waiting for the move they ask for.
+   elf, some waiting for the move they ask for. In the same place, once
+   no step shows, the elf asks once whether it may let the player know
+   when something happens (the reminders, useElfReminders).
 
    Coming into view is a visit for the rules (packages/core, elf.ts): the
    day is settled, the streak counted, the quests dealt. What a visit or an
@@ -352,10 +358,37 @@ export function ElfTab() {
     flow: !state ? null : stage === 'egg' ? (hatchReady ? null : 'egg') : state.starter !== null ? 'elf' : null,
     ready: loaded && focused && panel === 'none',
   })
-  const [tutorialHeight, setTutorialHeight] = useState(0)
-  const onTutorialLayout = useCallback((event: LayoutChangeEvent) => {
+  /* The elf asks once whether it may let the player know when something
+     happens (the reminders, useElfReminders): at the egg, whose readiness
+     is the first thing worth telling, or, for an elf hatched before the
+     question existed, once it has its name; never over a tutorial step or
+     a panel. A yes asks the system too; the elf says how it went. */
+  const reminderPrefs = useReminderPrefs()
+  const askReminders = Boolean(
+    reminderPrefs.loaded && !reminderPrefs.asked && state && loaded && focused && panel === 'none' && !tutorial.step && (stage === 'egg' ? !hatchReady : state.starter !== null),
+  )
+  const answering = useRef(false)
+  const answerReminders = useCallback(
+    async (yes: boolean) => {
+      if (answering.current) return
+      answering.current = true
+      try {
+        const granted = yes ? await requestNotificationPermission(t('mobile:reminders.channel')) : false
+        await setReminders(granted)
+        say(t(!yes ? 'mobile:reminders.saidNo' : granted ? 'mobile:reminders.saidYes' : 'mobile:reminders.saidDenied'))
+      } finally {
+        answering.current = false
+      }
+    },
+    [say, t],
+  )
+
+  /* The card over the care band (the tutorial's step, or the elf's
+     question about the reminders), measured so the room is lifted. */
+  const [cardHeight, setCardHeight] = useState(0)
+  const onCardLayout = useCallback((event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout
-    setTutorialHeight((current) => (current === height ? current : height))
+    setCardHeight((current) => (current === height ? current : height))
   }, [])
 
   /* The care band's height, measured, so the room is lifted above it. */
@@ -638,7 +671,7 @@ export function ElfTab() {
   /* What covers the view's bottom, for the room's band: the care band (and
      the tutorial's card over it) or the decorating catalogue, both on the
      tab bar. */
-  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step ? tutorialHeight + space.md : 0) : tabBarHeight + panelHeight
+  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step || askReminders ? cardHeight + space.md : 0) : tabBarHeight + panelHeight
 
   return (
     <View ref={rootRef} style={styles.screen} onLayout={onLayout}>
@@ -711,9 +744,20 @@ export function ElfTab() {
       {/* The elf's line, over its head where the scene says it is. */}
       {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={hudHeight + space.sm} /> : null}
 
-      {tutorial.step && panel === 'none' ? (
+      {(tutorial.step || askReminders) && panel === 'none' ? (
         <View style={[styles.tutorial, { bottom: tabBarHeight + bandHeight + space.md }]} pointerEvents="box-none">
-          <ElfTutorial step={tutorial.step} onNext={tutorial.next} onSkip={tutorial.skip} onLayout={onTutorialLayout} />
+          {tutorial.step ? (
+            <ElfTutorial key={tutorial.step.index} step={tutorial.step} onNext={tutorial.next} onSkip={tutorial.skip} onLayout={onCardLayout} />
+          ) : (
+            <ElfCard
+              key="reminders"
+              kicker={t('mobile:reminders.askKicker')}
+              text={t(stage === 'egg' ? 'mobile:reminders.askEgg' : 'mobile:reminders.askElf')}
+              secondary={{ label: t('mobile:reminders.askNo'), onPress: () => void answerReminders(false) }}
+              primary={{ label: t('mobile:reminders.askYes'), onPress: () => void answerReminders(true) }}
+              onLayout={onCardLayout}
+            />
+          )}
         </View>
       ) : null}
 

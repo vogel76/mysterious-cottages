@@ -60,4 +60,7 @@ export const STORAGE_KEYS = {
   elf: 'chatynkowo:elf:v2',
   /* Which of the Elf tab's tutorials (the egg's, the elf's) were seen. */
   elfTutorial: 'chatynkowo:elf-tutorial:v1',
+  /* The elf's reminders (src/lib/reminders-store.ts): whether the player
+     was asked and said yes, and the hours of the last visits. */
+  elfReminders: 'chatynkowo:elf-reminders:v1',
 } as const

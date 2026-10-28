@@ -114,6 +114,13 @@
       "expo-iap",
       "expo-asset",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#d2a64d"
+        }
+      ],
+      [
         "expo-tracking-transparency",
         {
           "userTrackingPermission": "Chatynkowo asks before the ad you request whether it may be matched to your interests. Your answer changes nothing else in the app."
