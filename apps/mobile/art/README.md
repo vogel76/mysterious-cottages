@@ -253,7 +253,13 @@ in five stages (`plant_stage0..4`, from a seedling to a bush in flower),
 the eight small things the elf finds (`sill_<item>`, each rendered at the
 sill's first place for finds; the app moves it to the others by the
 manifest's `sillOffsets`) and the sealed letter on the floor
-(`letter_envelope`); every window has the same sill (`window_sill`, at
+(`letter_envelope`), and the egg before the hatch in its pieces
+(`EGG_PIECES`: the nest's back and front halves, the shell whole and
+with its two cracks, the cap and the base it breaks into along one
+zigzag, `split_u`, and its glow, an emissive shell drawn by the app in
+screen blending; no catalogue pictures, `NO_THUMB_SLOTS`), standing on the
+rug where the elf will, the point it rests on written to `camera.json`
+as `egg_base_px`; every window has the same sill (`window_sill`, at
 `SILL_Z`, the shuttered one's flower box at its right end); and three walls (plaster,
 boards, logs) and three floors (planks, flagstones, terracotta) as
 materials of the room's own surfaces (`WALL_IDS`, `FLOOR_IDS`,
@@ -316,7 +322,8 @@ twin, and the catalogue's pictures as `_thumb`, with `manifest.json`
 each place's default, the floor line, the rug centre, the fireplace with
 its fire, the boxes of the wall and the floor and the sill's places
 for finds (`sillOffsets`, x offsets in plate pixels from the first, from
-`camera.json`'s `sill_offsets_px`); the app draws the day
+`camera.json`'s `sill_offsets_px`) and the egg's rest point (`eggBase`,
+which the app rocks the egg about); the app draws the day
 pictures over the night ones at the opacity of its clock's daylight.
 
 ## Adding a hat or a piece of furniture

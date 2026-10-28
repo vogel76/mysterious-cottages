@@ -34,6 +34,10 @@
     34.5,
     69.1
   ],
+  "eggBase": [
+    500.0,
+    1022.8
+  ],
   "walls": [
     {
       "id": "plaster",
@@ -628,6 +632,94 @@
       "height": 53,
       "fileDay": "letter_envelope_day.webp",
       "fileThumb": "letter_envelope_thumb.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "nestBack",
+      "default": true,
+      "file": "egg_nestBack.webp",
+      "x": 340,
+      "y": 884,
+      "width": 324,
+      "height": 184,
+      "fileDay": "egg_nestBack_day.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "nestFront",
+      "default": false,
+      "file": "egg_nestFront.webp",
+      "x": 332,
+      "y": 912,
+      "width": 329,
+      "height": 138,
+      "fileDay": "egg_nestFront_day.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "shell",
+      "default": false,
+      "file": "egg_shell.webp",
+      "x": 404,
+      "y": 797,
+      "width": 191,
+      "height": 236,
+      "fileDay": "egg_shell_day.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "crack1",
+      "default": false,
+      "file": "egg_crack1.webp",
+      "x": 404,
+      "y": 797,
+      "width": 191,
+      "height": 236,
+      "fileDay": "egg_crack1_day.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "crack2",
+      "default": false,
+      "file": "egg_crack2.webp",
+      "x": 404,
+      "y": 797,
+      "width": 191,
+      "height": 236,
+      "fileDay": "egg_crack2_day.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "cap",
+      "default": false,
+      "file": "egg_cap.webp",
+      "x": 413,
+      "y": 795,
+      "width": 174,
+      "height": 136,
+      "fileDay": "egg_cap_day.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "base",
+      "default": false,
+      "file": "egg_base.webp",
+      "x": 404,
+      "y": 854,
+      "width": 191,
+      "height": 179,
+      "fileDay": "egg_base_day.webp"
+    },
+    {
+      "slot": "egg",
+      "variant": "glow",
+      "default": false,
+      "file": "egg_glow.webp",
+      "x": 407,
+      "y": 790,
+      "width": 186,
+      "height": 242,
+      "fileDay": "egg_glow_day.webp"
     }
   ]
 }

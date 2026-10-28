@@ -29,7 +29,9 @@ import { ROOM_FILES } from './roomFiles'
    The manifest also holds the pieces the days bring rather than the
    player (extraSpriteFor): the plant on the windowsill in its stages, the
    small things the elf finds, drawn at the sill's places (SILL_OFFSETS),
-   and the letter on the floor. */
+   the letter on the floor, and the egg before the hatch in its pieces
+   (the nest's two halves, the shell whole and cracked, its cap and base,
+   its glow), with the point it rests on (EGG_BASE). */
 
 type Box = { x: number; y: number; width: number; height: number }
 
@@ -64,6 +66,8 @@ export type RoomManifest = {
   /* The sill's places for the elf's finds, as x offsets from where a
      find's render stands (the first place). */
   sillOffsets?: number[]
+  /* Where the egg rests in its nest, plate pixels: what it rocks about. */
+  eggBase?: [number, number]
   sprites: RoomSpriteEntry[]
 }
 
@@ -83,8 +87,8 @@ function fileModule(name: string | undefined): number | null {
 }
 
 /* The pieces the days bring, by their slot in the manifest. */
-export type ExtraSlot = 'plant' | 'sill' | 'letter'
-const EXTRA_SLOTS: readonly string[] = ['plant', 'sill', 'letter'] satisfies readonly ExtraSlot[]
+export type ExtraSlot = 'plant' | 'sill' | 'letter' | 'egg'
+const EXTRA_SLOTS: readonly string[] = ['plant', 'sill', 'letter', 'egg'] satisfies readonly ExtraSlot[]
 export function isExtraSlot(slot: string): slot is ExtraSlot {
   return EXTRA_SLOTS.includes(slot)
 }
@@ -111,7 +115,8 @@ for (const entry of ROOM_MANIFEST.sprites) {
 
 /* The render of one of the days' pieces: the plant's stage ('stage0'..),
    a find ('pinecone'..) at the sill's first place, the letter
-   ('envelope'); null where the renders have none. */
+   ('envelope'), a piece of the egg ('nestBack'..); null where the renders
+   have none. */
 export function extraSpriteFor(slot: ExtraSlot, variant: string): RoomPicture | null {
   return EXTRAS_BY_SLOT.get(slot)?.find((picture) => picture.variant === variant) ?? null
 }
@@ -119,6 +124,10 @@ export function extraSpriteFor(slot: ExtraSlot, variant: string): RoomPicture | 
 /* The sill's places, as x offsets from the first; one place when the
    manifest names none. */
 export const SILL_OFFSETS: readonly number[] = ROOM_MANIFEST.sillOffsets?.length ? ROOM_MANIFEST.sillOffsets : [0]
+
+/* The point the egg rests on, plate pixels; the rug's centre when the
+   manifest has none. */
+export const EGG_BASE: { x: number; y: number } = ROOM_MANIFEST.eggBase ? { x: ROOM_MANIFEST.eggBase[0], y: ROOM_MANIFEST.eggBase[1] } : ROOM_MANIFEST.rug
 
 /* The rendered sprite that stands for a decor id in a slot: the render of
    that id, the slot's default for an id without one, and null for a

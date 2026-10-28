@@ -104,6 +104,8 @@ const SPEECH_MS = 4000
 const HATCH_ROCK_MS = 4000
 const HATCH_TAPS = 2
 const HATCH_CHEER_DELAY_MS = 400
+/* The evolution's moment waits this long after the form is reached. */
+const EVOLVE_DELAY_MS = 400
 /* The acorn under the finger. */
 const ACORN = 44
 
@@ -114,7 +116,7 @@ export function ElfTab() {
      gets no automatic content inset. */
   const tabBarHeight = useTabBarHeight()
   const elf = useElf()
-  const { state, loaded, stage, mood, decor, lastInteraction, news, away, visit, hatchReady, hatchNow } = elf
+  const { state, loaded, stage, mood, decor, lastInteraction, news, away, visit, hatchReady, hatchNow, pendingEvolution } = elf
   /* The cottages, to name the one the elf cheers about and to find the
      latest one's photo; the finds themselves and their count. */
   const { cottages } = useContent()
@@ -276,6 +278,20 @@ export function ElfTab() {
     if (wasSleeping.current && !sleeping && hatched && focused) sceneRef.current?.react('wake')
     wasSleeping.current = sleeping
   }, [state?.sleeping, hatched, focused])
+
+  /* A form reached: the elf's moment in the room (it lights up in a
+     spiral of sparkles), a beat after the care that earned it, before the
+     card presenter brings the evolution card. Played once per form, when
+     the tab is in view. */
+  const evolvedTo = useRef<string | null>(null)
+  useEffect(() => {
+    if (!pendingEvolution || !focused || !state?.starter || evolvedTo.current === pendingEvolution) return
+    const timer = setTimeout(() => {
+      evolvedTo.current = pendingEvolution
+      sceneRef.current?.react('evolve')
+    }, EVOLVE_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [pendingEvolution, focused, state?.starter])
 
   /* The latest cottage found: the frame on the wall shows its photo (from
      the expedition's picture cache when it has it, so the frame fills
@@ -474,26 +490,34 @@ export function ElfTab() {
 
   /* The hatch is the player's: once the egg is ready it rocks on its own
      every few seconds and the name block says to tap it; the first tap
-     cracks it (a word from inside), the second lets the elf out, who hops
-     with a cheer and says hello before the sheet asks for its name. */
+     cracks it (a word from inside), the second breaks it in the scene,
+     which calls back when the elf is to step out: the rules hatch it then,
+     and the elf hops with a cheer and says hello before the sheet asks for
+     its name. A tap while it breaks does nothing. */
   const cracks = useRef(0)
+  const [eggCracks, setEggCracks] = useState(0)
   useEffect(() => {
     if (!hatchReady || stage !== 'egg' || !focused || panel !== 'none') return
     cracks.current = 0
+    setEggCracks(0)
     const timer = setInterval(() => sceneRef.current?.react('egg'), HATCH_ROCK_MS)
     return () => clearInterval(timer)
   }, [hatchReady, stage, focused, panel])
   const onPetEgg = useCallback(() => {
     if (hatchReady) {
+      if (cracks.current >= HATCH_TAPS) return
       cracks.current += 1
-      sceneRef.current?.react('egg')
+      setEggCracks(cracks.current)
       if (cracks.current < HATCH_TAPS) {
+        sceneRef.current?.react('egg')
         say(t('mobile:elf.crackLine'))
         return
       }
-      hatchNow()
-      setTimeout(() => sceneRef.current?.react('cheer'), HATCH_CHEER_DELAY_MS)
-      say(t('mobile:elf.hatchHello'))
+      sceneRef.current?.hatch(() => {
+        hatchNow()
+        setTimeout(() => sceneRef.current?.react('cheer'), HATCH_CHEER_DELAY_MS)
+        say(t('mobile:elf.hatchHello'))
+      })
       return
     }
     tendEgg('rock')
@@ -623,11 +647,11 @@ export function ElfTab() {
           <CottageScene
             ref={sceneRef}
             stage={stage}
-            starter={state.starter}
             mood={mood}
             sleeping={state.sleeping}
             sleepy={sleepy}
             warmth={state.warmth}
+            eggCracks={eggCracks}
             decor={decor}
             hat={outfit.hat}
             focusElf={editing && decorTab === 'hat'}

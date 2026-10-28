@@ -2,19 +2,19 @@ import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo,
 import { View, type AccessibilityActionEvent } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Canvas, Circle, Group, Line, vec } from '@shopify/react-native-skia'
-import { cancelAnimation, useDerivedValue, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated'
+import { Easing, cancelAnimation, useDerivedValue, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '../../../ui'
-import { PET_COOLDOWN_MS, type ElfMood, type ElfStage, type ElfStarter } from '@chatynkowo/core'
+import { PET_COOLDOWN_MS, type ElfMood, type ElfStage } from '@chatynkowo/core'
 import { SPRITE_CHARACTERS, useSpriteImages, useSpriteLayer, type SpriteSource } from '../sprites'
 import { elfKey } from '../labels'
 import { PHOTO_ID, isSurface, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
-import { EGG_HIT_BOX, EggNest } from './EggNest'
 import { useFireMotion } from './fire'
 import { PlateLighting } from './Lighting'
 import { useCottageMotion, type ReactionKind } from './motion'
 import { Particles } from './Particles'
+import { EGG_HIT_BOX, HATCH_BEATS, RenderedEgg } from './RenderedEgg'
 import { ROOM, fitRoom, inBounds, slotAtIn, slotById, toRoom, type Slot } from './room'
 import { extraPictures, placedBounds, spriteSlotsFor, type RoomExtras } from './roomAssets'
 import { RoomSprites } from './RoomSprites'
@@ -75,9 +75,12 @@ import { SPRITE_ELF_HEAD_LINE, SPRITE_ELF_HIT_BOX, SPRITE_ELF_ORIGIN, SpriteElf 
    told about every reaction first, so the particles, the hop and the
    squash still play over the baked frames, and a reaction the motion
    refuses (asleep, paused, in the middle of the cheer) leaves the
-   frames alone too, so body and frames never disagree. The egg is still
-   the vector nest, drawn over the rendered rug, until the pipeline renders
-   it. The slot table (the tap targets, the glance centres and the light
+   frames alone too, so body and frames never disagree. Before the hatch
+   the egg stands at the figure's place in its nest, from the room's
+   renders too (RenderedEgg); the hatch is the scene's: the tab asks for it
+   (hatch) and is called back at the moment the elf takes the egg's place,
+   while the broken shell, the flash and the nest play out over the elf
+   that has just appeared. The slot table (the tap targets, the glance centres and the light
    of the decorating mode) comes from the rendered pieces
    (roomAssets.spriteSlotsFor), and the elf's tap target is the drawn
    figure, not its atlas cell. Only the places the catalogue offers are
@@ -98,18 +101,21 @@ export type CottageSceneHandle = {
   hitsPuppet: (viewX: number, viewY: number) => boolean
   /* The elf turns to a slot and admires what stands there. */
   admireSlot: (slot: SlotId) => void
+  /* The egg breaks: onOpen is called when the elf is to take its place
+     (the tab hatches it then), the rest of the break plays on after. */
+  hatch: (onOpen: () => void) => void
 }
 
 export type CottageSceneProps = {
   stage: ElfStage
-  /* Null until the hatch names the elf: the egg is then plain. */
-  starter: ElfStarter | null
   mood: ElfMood
   sleeping: boolean
   /* Bedtime, before the elf is tucked in: heavy lids and yawns. */
   sleepy: boolean
   /* The egg's warmth, 0..100; ignored after the hatch. */
   warmth: number
+  /* The ready egg's cracks: 0 whole, 1 after the first tap, 2 breaking. */
+  eggCracks?: number
   decor: Decor
   /* The hat the elf wears, a wardrobe id ('none' for the bare hair). */
   hat?: string
@@ -163,6 +169,8 @@ const GLANCE_MS = 900
    window's box (the curtains included: the glass is its middle). */
 const STAR_MS = 750
 const STAR = { fromX: 0.32, fromY: 0.22, dx: 0.32, dy: 0.14 } as const
+/* How long the egg's break takes, with reduce motion a short fade. */
+const HATCH_MS = { full: 1800, reduced: 700 } as const
 
 /* The rendered elf, as art/blender packed it. The scene has no other way
    to draw the figure, so a missing registration is an error at load, not
@@ -232,7 +240,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, starter, mood, sleeping, sleepy, warmth, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
+    { stage, mood, sleeping, sleepy, warmth, eggCracks = 0, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
     ref,
   ) {
     const { t } = useTranslation()
@@ -379,6 +387,33 @@ export const CottageScene = memo(
       star.value = withTiming(1, { duration: STAR_MS, easing: EASING.out })
     }, [star, paused, reduceMotion])
 
+    /* The egg's break: its progress for the egg, the timers of its beats,
+       and whether the broken egg is still on screen (it outlives the
+       hatch, which turns the figure into the elf at the open beat). */
+    const hatchProgress = useSharedValue(0)
+    const [hatching, setHatching] = useState(false)
+    const hatchTimers = useRef<ReturnType<typeof setTimeout>[]>([])
+    useEffect(() => () => hatchTimers.current.forEach(clearTimeout), [])
+    const hatch = useCallback(
+      (onOpen: () => void) => {
+        const duration = reduceMotion ? HATCH_MS.reduced : HATCH_MS.full
+        hatchTimers.current.forEach(clearTimeout)
+        setHatching(true)
+        cancelAnimation(hatchProgress)
+        hatchProgress.value = 0
+        hatchProgress.value = withTiming(1, { duration, easing: Easing.linear, reduceMotion: ReduceMotion.Never })
+        hatchTimers.current = [
+          setTimeout(() => react('hatch'), duration * HATCH_BEATS.split),
+          setTimeout(onOpen, duration * HATCH_BEATS.open),
+          setTimeout(() => {
+            hatchProgress.value = 0
+            setHatching(false)
+          }, duration + 100),
+        ]
+      },
+      [reduceMotion, hatchProgress, react],
+    )
+
     useImperativeHandle(
       ref,
       () => ({
@@ -393,8 +428,9 @@ export const CottageScene = memo(
           const centre = slotCentre(sceneSlots.find((slot) => slot.id === id) ?? slotById(id))
           admireAt(centre.x, centre.y)
         },
+        hatch,
       }),
-      [reactScene, lookAt, lookRelease, admireAt, layout, hitsFigure, sceneSlots],
+      [reactScene, lookAt, lookRelease, admireAt, layout, hitsFigure, sceneSlots, hatch],
     )
 
     /* The same pet for a screen reader's double tap: it has no point to
@@ -523,13 +559,10 @@ export const CottageScene = memo(
             <Group transform={roomTransform}>
               <RoomSprites decor={decor} layer="back" day={fire.day} photo={photo} extras={extras} />
               <RoomSprites decor={decor} layer="mid" day={fire.day} />
-              {hatched ? (
-                images ? (
-                  <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} hat={hatLayer} manifest={ELF_SPRITES.manifest} />
-                ) : null
-              ) : (
-                <EggNest starter={starter} warmth={warmth} motion={motion} origin={ROOM.elfAnchor} />
-              )}
+              {hatched && images ? (
+                <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} hat={hatLayer} manifest={ELF_SPRITES.manifest} />
+              ) : null}
+              {!hatched || hatching ? <RenderedEgg warmth={warmth} cracks={eggCracks} motion={motion} origin={ROOM.elfAnchor} day={fire.day} hatch={hatchProgress} still={reduceMotion} /> : null}
               <RoomSprites decor={decor} layer="front" day={fire.day} extras={extras} />
               <ShootingStar progress={star} window={windowSlot} />
               <Particles particles={particles} />

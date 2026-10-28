@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { ReduceMotion, cancelAnimation, useFrameCallback, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming, type SharedValue } from 'react-native-reanimated'
 import { EASING, SPRINGS } from '../../../ui'
 import type { ElfMood, ElfStage } from '@chatynkowo/core'
-import { EGG_HIT_BOX } from './EggNest'
+import { EGG_HIT_BOX } from './RenderedEgg'
 import { ELF_HEIGHT_UNITS } from './SpriteElf'
 import { ROOM } from './room'
 
 /* The life of the elf figure as shared values: a set of control
    numbers (breath, bob, squash, tilt, blink, look, lookY, mouth, glow,
-   headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin, browLift)
+   flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin,
+   browLift)
    that the sprite elf and the egg bind to their Skia transforms, and a small
    pool of particles (hearts, sparkles, bubbles, zzz, crumbs) that the
    reactions borrow. Everything moves on the UI thread through reanimated
@@ -42,12 +43,16 @@ import { ROOM } from './room'
    is only a brief blip of its particles. Paused (the tab out of focus) is the same still
    pose with no reactions, no fidgets and no zzz, so nothing runs on the UI
    thread for a scene nobody sees; the loops resume when the focus returns.
-   Asleep, the elf answers nothing but the wake, a cheer and the egg, and
+   Two reactions belong to the big moments: 'hatch' is the burst of
+   sparkles as the shell splits, and 'evolve' the elf brightening in a
+   rising spiral of sparkles before the evolution card.
+   Asleep, the elf answers nothing but the wake, a cheer, the egg and an
+   evolution, and
    neither its eyes nor its head follow a finger: the wardrobe and the
    decorating mode stay open over a sleeping elf, and a twirl or a clap
    with the eyes shut would read as a wake that never happened. */
 
-export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'cheer' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget'
+export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'hatch' | 'evolve' | 'cheer' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget'
 
 export type PuppetMotion = {
   /* 0..1 slow loop. */
@@ -68,6 +73,8 @@ export type PuppetMotion = {
   mouth: SharedValue<number>
   /* 0..1, the egg's warmth pulse / the elder's aura breath. */
   glow: SharedValue<number>
+  /* 0..1, the elf lit up (the evolution's moment). */
+  flash: SharedValue<number>
   /* Radians, the head alone around the neck. */
   headTilt: SharedValue<number>
   /* -1..1, the ears around the skull edges (opposite phases). */
@@ -178,6 +185,8 @@ const REACTION_MS: Record<Exclude<ReactionKind, 'fidget'>, number> = {
   bath: 1500,
   wake: 900,
   egg: 900,
+  hatch: 1200,
+  evolve: 2000,
   cheer: 1300,
   stroke: 500,
   poke: 650,
@@ -212,6 +221,8 @@ const REACTION_PARTICLE: Partial<Record<ReactionKind, ParticleKind>> = {
   bath: 'bubble',
   wake: 'sparkle',
   egg: 'sparkle',
+  hatch: 'sparkle',
+  evolve: 'sparkle',
   cheer: 'sparkle',
   stroke: 'heart',
   greet: 'sparkle',
@@ -294,6 +305,7 @@ export function useCottageMotion(options: Options): CottageMotion {
   const lookY = useSharedValue(0)
   const mouth = useSharedValue(0)
   const glow = useSharedValue(0)
+  const flash = useSharedValue(0)
   const headTilt = useSharedValue(0)
   const earWiggle = useSharedValue(0)
   const hoodSwing = useSharedValue(0)
@@ -312,7 +324,7 @@ export function useCottageMotion(options: Options): CottageMotion {
   const earVel = useSharedValue(0)
   const earTwitch = useSharedValue(0)
 
-  const motionRef = useRef<PuppetMotion>({ breath, bob, squash, tilt, blink, look, lookY, mouth, glow, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin, browLift })
+  const motionRef = useRef<PuppetMotion>({ breath, bob, squash, tilt, blink, look, lookY, mouth, glow, flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin, browLift })
   const optionsRef = useRef(options)
   optionsRef.current = options
   /* Until when a reaction owns the values, which one it is, and the timer
@@ -373,6 +385,7 @@ export function useCottageMotion(options: Options): CottageMotion {
       cancelAnimation(value)
     }
     cancelAnimation(earTwitch)
+    motion.flash.value = 0
     const egg = stage === 'egg'
     const sad = mood === 'misses'
     const asleep = sleeping || mood === 'asleep'
@@ -639,8 +652,8 @@ export function useCottageMotion(options: Options): CottageMotion {
     (kind: ReactionKind): boolean => {
       const { stage, reduceMotion, paused, sleeping, mood, sleepy = false } = optionsRef.current
       if (paused) return false
-      /* A sleeping elf only wakes, cheers or is rocked in its egg. */
-      if ((sleeping || mood === 'asleep') && kind !== 'wake' && kind !== 'cheer' && kind !== 'egg') return false
+      /* A sleeping elf only wakes, cheers, evolves or is rocked in its egg. */
+      if ((sleeping || mood === 'asleep') && kind !== 'wake' && kind !== 'cheer' && kind !== 'egg' && kind !== 'hatch' && kind !== 'evolve') return false
       const now = Date.now()
       const active = now < reactionUntil.current
       /* The cheer's hop is not cut short by the care reaction behind it. */
@@ -761,6 +774,29 @@ export function useCottageMotion(options: Options): CottageMotion {
           motion.glow.value = withSequence(withTiming(1, { duration: 200 }), withTiming(0.4, { duration: 500, easing: EASING.inOut }))
           const tips = [-40, 45]
           tips.forEach((dx, index) => spawn({ kind: 'sparkle', x: ox + dx, y: headY - 0.2 * height, dx: dx * 0.6, dy: -60, delay: index * 120, duration: 650, scaleFrom: 0.4, scaleTo: 0.9 }))
+          break
+        }
+        case 'hatch': {
+          /* The shell splits: a ring of sparkles bursts from the egg. */
+          for (let index = 0; index < 12; index += 1) {
+            const angle = (index / 12) * Math.PI * 2 - Math.PI / 2
+            spawn({ kind: 'sparkle', x: ox + Math.cos(angle) * 40, y: bodyY + Math.sin(angle) * 40, dx: Math.cos(angle) * 230, dy: Math.sin(angle) * 200 - 60, delay: (index % 3) * 50, duration: 1000, scaleFrom: 0.6, scaleTo: 1.4 })
+          }
+          break
+        }
+        case 'evolve': {
+          /* The elf rises on its toes and brightens while sparkles spiral
+             up around it, then settles back into its colours. */
+          cancelAnimation(motion.flash)
+          cancelAnimation(motion.squash)
+          cancelAnimation(motion.bob)
+          motion.flash.value = withSequence(withTiming(1, { duration: 900, easing: EASING.inOut }), withDelay(250, withTiming(0, { duration: 650, easing: EASING.inOut })))
+          motion.squash.value = withSequence(withTiming(1.06, { duration: 700, easing: EASING.inOut }), withDelay(450, withSpring(1, SPRINGS.settle)))
+          motion.bob.value = withSequence(withTiming(-26, { duration: 700, easing: EASING.inOut }), withDelay(450, withTiming(0, { duration: 400, easing: EASING.inOut })))
+          for (let index = 0; index < 10; index += 1) {
+            const side = index % 2 === 0 ? -1 : 1
+            spawn({ kind: 'sparkle', x: ox + side * (halfWidth + 20), y: oy - 0.1 * height - index * 0.07 * height, dx: -side * 2 * (halfWidth + 20), dy: -0.25 * height, delay: index * 110, duration: 900, sway: 18 * side, scaleFrom: 0.4, scaleTo: 1.1 })
+          }
           break
         }
         case 'cheer': {

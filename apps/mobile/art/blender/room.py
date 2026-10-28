@@ -7,7 +7,8 @@ light it like a storybook scene and render it to 2D: one full background plate,
 one empty shell plate and every swappable piece of furniture as its own
 transparent sprite rendered with the same camera and lights, each by night and
 by day, and so are what the days bring (the plant on the windowsill in its
-stages, the small things the elf finds, the letter on the floor). The app composites the sprites over the shell plate, crossfades night
+stages, the small things the elf finds, the letter on the floor) and the
+egg in its nest before the hatch, in pieces the app animates. The app composites the sprites over the shell plate, crossfades night
 and day by its clock and places the elf sprite on the rug. The elf's own frames
 are rendered inside this scene too (elf.py imports this module), so the figure
 and the room share one light, one painterly shading and one ink.
@@ -897,6 +898,14 @@ def build_materials():
     MATS["fossil_line"] = toon_material("FossilLine", "#6a5f52", roughness=0.9)
     MATS["paper_shade"] = toon_material("PaperShade", "#e2d5b6", roughness=0.9)
     MATS["seal"] = toon_material("Seal", "#a3262a", roughness=0.4)
+    MATS["egg_shell"] = toon_material("EggShell", "#f2e4c4", roughness=0.7, subsurface=0.05)
+    MATS["egg_inside"] = toon_material("EggInside", "#fff6e2", roughness=0.9)
+    MATS["egg_band"] = toon_material("EggBand", "#c99a45", roughness=0.5)
+    MATS["egg_speck"] = toon_material("EggSpeck", "#8aa36a", roughness=0.8)
+    MATS["egg_crack"] = toon_material("EggCrack", "#5a3a1e", roughness=0.9)
+    MATS["egg_glow"] = toon_material("EggGlow", "#ffd88a", emission=("#ffd88a", 1.6))
+    MATS["nest_floor"] = toon_material("NestFloor", "#3e2a18", roughness=1.0)
+    MATS["twig_light"] = toon_material("TwigLight", "#8a6a42", roughness=0.9)
     # the walls and the floors on offer (the plates are rendered for every pair)
     MATS["wall.boards"] = plank_material("WallBoards", plank_width=0.15, along="z", tint=("#8a6440", "#b08a5c"), seam_color="#3a2716", world=True)
     MATS["wall.logs"] = band_material("WallLogs", "z", 0.22, [(0.0, "#3e2716"), (0.25, "#7a5030"), (0.55, "#a07246"), (0.85, "#6a4528"), (1.0, "#3e2716")], seam_color="#24160c", seam=0.04, world=True)
@@ -1895,6 +1904,155 @@ def build_letter(coll, rug_center):
 
 
 # ----------------------------------------------------------------------------
+# The egg in its nest, on the rug where the elf will stand
+# ----------------------------------------------------------------------------
+#
+# Stills, not frames: the app rocks the egg about its base, cracks it by
+# swapping the shell for its cracked renders and hatches it by flying the
+# cap off and fading the rest, so each piece is rendered once (by night and
+# by day) like the furniture. The nest comes in two halves, the back drawn
+# before the egg and the front after it, so the egg sits in the bowl and can
+# rock inside it; the shell breaks along one zigzag (split_u) into the cap
+# and the base, which the crack lines follow too.
+
+EGG_PIECES = ("nestBack", "nestFront", "shell", "crack1", "crack2", "cap", "base", "glow")
+EGG_W, EGG_H, EGG_TAPER = 0.2, 0.265, 0.12   # half-width, half-height, the narrower top
+NEST_Z = 0.045                                # the floor of the bowl, on the rug
+NEST_R = 0.27                                 # the rim's radius
+
+
+def egg_centre(rug_center):
+    return Vector((rug_center[0], rug_center[1], NEST_Z + EGG_H * 0.75))
+
+
+def egg_base(rug_center):
+    """Where the egg rests in the bowl: the point it rocks about."""
+    c = egg_centre(rug_center)
+    return Vector((c.x, c.y, c.z - EGG_H))
+
+
+def egg_point(c, u, theta, lift=0.0):
+    """A point of the shell at height u (-1 the bottom .. 1 the top) and
+    angle theta from the front (towards the camera), positive to the right."""
+    r = EGG_W * (1 - EGG_TAPER * u) * math.sqrt(max(0.0, 1 - u * u)) + lift
+    return Vector((c.x + r * math.sin(theta), c.y - r * math.cos(theta), c.z + u * EGG_H))
+
+
+def split_u(theta, teeth=9, depth=0.09, at=0.2):
+    """The zigzag the shell breaks along, as a height u at an angle."""
+    t = (theta / (2 * math.pi)) * teeth
+    return at + depth * (abs((t % 1.0) * 2 - 1) * 2 - 1)
+
+
+def egg_shell(name, coll, c, part=None, thickness=0.0, mat=None):
+    """The shell, whole, or the cap or the base of it broken exactly along
+    the zigzag (a grid in angle and height whose edge row lies on split_u),
+    a broken part with a thickness and a paler inside."""
+    around, rows = 180, 28
+    verts, faces = [], []
+    for i in range(around):
+        theta = 2 * math.pi * i / around - math.pi
+        cut = split_u(theta) if part else 1.0
+        low, high = (cut, 1.0) if part == "cap" else (-1.0, cut)
+        for j in range(rows + 1):
+            verts.append(tuple(egg_point(c, low + (high - low) * j / rows, theta)))
+    for i in range(around):
+        for j in range(rows):
+            a, b = i * (rows + 1) + j, ((i + 1) % around) * (rows + 1) + j
+            faces.append((a, b, b + 1, a + 1))
+    me = finish_mesh(name, verts, faces, smooth=True)
+    obj = make_object(name, me, coll, mat=mat or MATS["egg_shell"])
+    if thickness:
+        me.materials.append(MATS["egg_inside"])
+        solid = obj.modifiers.new("shell", "SOLIDIFY")
+        solid.thickness = thickness
+        solid.offset = -1.0
+        solid.material_offset = 1
+        solid.material_offset_rim = 1
+    return obj
+
+
+def egg_trim(coll, c, part=None):
+    """The egg's band of gold and its green specks; with part ('cap' or
+    'base') only the ones on that side of the break."""
+    def side(u, theta):
+        return "cap" if u > split_u(theta) else "base"
+    if part in (None, "base"):
+        torus("egg.band", coll, EGG_W * (1 + EGG_TAPER * 0.05) * 0.997, 0.011, (c.x, c.y, c.z - 0.05 * EGG_H), MATS["egg_band"],
+              scale=(1, 1, 0.8), segments=64, rings=10)
+    rng = random.Random(21)
+    for k in range(14):
+        u = rng.uniform(-0.55, 0.75)
+        theta = rng.uniform(-1.4, 1.4) + (math.pi if k % 3 == 0 else 0.0)
+        if abs(u + 0.05) < 0.12 or (part is not None and side(u, theta) != part):
+            continue
+        # a dab of paint, flat against the shell
+        p = egg_point(c, u, theta, lift=-0.001)
+        dot = sphere(f"egg.speck{k}", coll, 1.0, p, MATS["egg_speck" if k % 4 else "egg_band"], scale=(0.017, 0.004, 0.013), segments=12)
+        dot.rotation_euler = (0, 0, theta + math.pi)
+
+
+def egg_crack_line(coll, c, reach):
+    """A crack along the break, across the front by reach radians each way."""
+    steps = 40
+    points = [egg_point(c, split_u(-reach + 2 * reach * i / steps), -reach + 2 * reach * i / steps, lift=0.003)
+              for i in range(steps + 1)]
+    for i in range(steps):
+        stick(f"egg.crack{i}", coll, points[i], points[i + 1], 0.0035, 0.0035, MATS["egg_crack"], segments=5)
+
+
+def build_nest(coll, rug_center, front):
+    """One half of the nest: a ring of straw with twigs woven round it, and
+    in the back half the dark bowl the egg sits in."""
+    cx, cy = rug_center[0], rug_center[1]
+    ring = torus("nest.ring", coll, NEST_R, 0.09, (cx, cy, NEST_Z + 0.075), MATS["straw"], scale=(1, 0.85, 0.85),
+                 segments=48, rings=14)
+    bm = bmesh.new()
+    bm.from_mesh(ring.data)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if (f.calc_center_median().y < 0) != front], context="FACES")
+    bm.to_mesh(ring.data)
+    bm.free()
+    if not front:
+        sphere("nest.bowl", coll, 1.0, (cx, cy, NEST_Z + 0.01), MATS["nest_floor"], scale=(NEST_R * 0.95, NEST_R * 0.8, 0.04), segments=28)
+        contact_shadow(coll, (cx, cy, 0), NEST_R + 0.14, NEST_R * 0.8 + 0.1, strength=0.55)
+    # twigs woven round the outside of the ring, some ends poking out
+    rng = random.Random(13)
+    for i in range(56):
+        a = 2 * math.pi * i / 56 + rng.uniform(-0.06, 0.06)
+        a1 = a + rng.uniform(0.3, 0.7) * (1 if i % 2 else -1)
+        r0, r1 = NEST_R + rng.uniform(0.03, 0.1), NEST_R + rng.uniform(0.02, 0.12)
+        z0, z1 = NEST_Z + rng.uniform(0.01, 0.15), NEST_Z + rng.uniform(0.01, 0.17)
+        p0 = (cx + r0 * math.cos(a), cy + r0 * math.sin(a) * 0.85, z0)
+        p1 = (cx + r1 * math.cos(a1), cy + r1 * math.sin(a1) * 0.85, z1)
+        if ((p0[1] + p1[1]) / 2 < cy) != front:
+            continue
+        stick(f"nest.twig{i}", coll, p0, p1, rng.uniform(0.008, 0.012), 0.005, MATS["bark" if i % 3 else "twig_light"], segments=6)
+
+
+def build_egg_piece(coll, piece, rug_center):
+    """One of EGG_PIECES."""
+    c = egg_centre(rug_center)
+    if piece in ("nestBack", "nestFront"):
+        build_nest(coll, rug_center, front=piece == "nestFront")
+    elif piece in ("shell", "crack1", "crack2"):
+        egg_shell("egg.shell", coll, c)
+        egg_trim(coll, c)
+        if piece != "shell":
+            egg_crack_line(coll, c, 0.5 if piece == "crack1" else 1.35)
+    elif piece == "cap":
+        egg_shell("egg.cap", coll, c, part="cap", thickness=0.008)
+        egg_trim(coll, c, "cap")
+    elif piece == "base":
+        egg_shell("egg.base", coll, c, part="base", thickness=0.008)
+        egg_trim(coll, c, "base")
+    elif piece == "glow":
+        # the shell lit from within, a little larger than the egg, drawn by
+        # the app in screen blending at the egg's warmth; no ink
+        glow = no_ink(no_shadow(egg_shell("egg.glow", coll, c, mat=MATS["egg_glow"])))
+        glow.scale = (1.04, 1.04, 1.03)
+
+
+# ----------------------------------------------------------------------------
 # Scene assembly and renders
 # ----------------------------------------------------------------------------
 
@@ -1916,6 +2074,8 @@ SLOTS = [
     ("sill", "pinecone", True), ("sill", "feather", False), ("sill", "pebble", False), ("sill", "acorn", False),
     ("sill", "mushroom", False), ("sill", "leaf", False), ("sill", "berries", False), ("sill", "fossil", False),
     ("letter", "envelope", True),
+    # the egg before the hatch, in its pieces
+    *(("egg", piece, piece == "nestBack") for piece in EGG_PIECES),
 ]
 
 # The walls and the floors on offer, the first of each the default: they
@@ -1924,7 +2084,9 @@ SLOTS = [
 # decor names.
 # The pieces the days bring rather than the player: in the manifest like
 # the furniture, but not in the review plate with the defaults.
-EXTRA_SLOTS = ("plant", "sill", "letter")
+EXTRA_SLOTS = ("plant", "sill", "letter", "egg")
+# The pieces with no catalogue picture: nobody chooses them.
+NO_THUMB_SLOTS = ("egg",)
 
 WALL_IDS = ("plaster", "boards", "logs")
 FLOOR_IDS = ("planks", "flagstones", "terracotta")
@@ -1975,6 +2137,8 @@ def build_everything(scene, quality=True):
         builders[("plant", stage)] = lambda c, index=index: build_plant(c, index)
     for item in SILL_ITEMS:
         builders[("sill", item)] = lambda c, item=item: build_sill_item(c, item)
+    for piece in EGG_PIECES:
+        builders[("egg", piece)] = lambda c, piece=piece: build_egg_piece(c, piece, rug_center)
     for slot, variant, _default in SLOTS:
         if (slot, variant) not in builders:
             builders[(slot, variant)] = globals()[f"build_{slot}_{variant.lower()}"]
@@ -2041,6 +2205,7 @@ def camera_report(scene, cam, tilt, rug_center, out_dir):
         "wall_px": box_px((-ROOM_W / 2, WALL_Y, 0.0), (ROOM_W / 2, WALL_Y, CEIL_Z)),
         # the sill's places for the finds, as offsets in plate pixels from the
         # first, where every find is rendered
+        "egg_base_px": px(tuple(egg_base(rug_center))),
         "sill_offsets_px": [round(px((sx, SILL_Y, SILL_Z))[0] - px((SILL_ITEM_X[0], SILL_Y, SILL_Z))[0], 1) for sx in SILL_ITEM_X],
         "floor_px": {"x": 0, "y": round((1 - fl.y) * h), "width": w, "height": h - round((1 - fl.y) * h)},
         # the catalogue as rendered: the pieces in slot order with their
@@ -2236,6 +2401,8 @@ def main():
         set_shell_hidden_from_camera(True)
         plug.hide_render = True
         for slot, variant, _default in SLOTS:
+            if slot in NO_THUMB_SLOTS:
+                continue
             show_slots(slot_colls, {(slot, variant)})
             box = collection_box_px(scene, cam, slot_colls[(slot, variant)])
             rendered.append(render_thumb(scene, box, os.path.join(out_dir, f"{slot}_{variant}.thumb.png"), True))
