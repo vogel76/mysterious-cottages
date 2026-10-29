@@ -807,8 +807,9 @@ picture at the opacity of the cottage clock's daylight, so the room's
 light turns with the hour (the elf's frames are night-lit; by day
 `cottage/SpriteElf.tsx` lifts them with a colour matrix that follows the
 same value). Each form of the elf is an atlas of its own
-(`assets/elf/sprites/<form>/`: the young elf's cell is 245 by 341 pixels
-per frame at about 152 pixels to the metre, rendered inside the room's
+(`assets/elf/sprites/<form>/`: each clip on sheets of its own, cut to
+its own box and placed by its offset in the form's frame of reference,
+the young elf's 245 by 341 pixels at about 152 pixels to the metre, rendered inside the room's
 own scene so the figure carries the fire's and the moon's light, the
 feet as the anchor, 24 fps; the clips idle, happy, sad, sleep, pet, feed
 and wave; the forms share one scale, so the manifest's `figureUnits`

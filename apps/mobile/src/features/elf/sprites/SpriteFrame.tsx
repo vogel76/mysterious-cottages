@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { Atlas, FilterMode, Group, MipmapMode, Skia, type SkImage } from '@shopify/react-native-skia'
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
-import { cellOf, sheetsOf, type SpriteManifest, type SpriteSheet } from './manifest'
+import { sheetsOf, type SpriteManifest, type SpriteSheet } from './manifest'
 
 /* Draws the current frame of one layer: the cell the frame clock points
    at, placed so the character's feet land on (x, y), scaled, optionally
@@ -18,8 +18,9 @@ import { cellOf, sheetsOf, type SpriteManifest, type SpriteSheet } from './manif
    because Image has no source rectangle: cutting one cell out of a sheet
    with it takes a clip and a translated image, two transforms to keep in
    step per frame, where Atlas takes the cell and the placement directly.
-   An overlay's cells are of its own size, drawn at its offset from the
-   base cell. The mirror is a static group transform around the feet; the sheets hold
+   Each sheet holds one clip's frames cut to that clip's box, so its cells
+   are of its own size, drawn at its offset in the frame of reference the
+   feet are placed by; an overlay's sheets are laid out alike. The mirror is a static group transform around the feet; the sheets hold
    the character facing the camera's left-of-centre, and the scene flips
    it to look the other way. */
 
@@ -58,17 +59,17 @@ type SheetAtlasProps = {
   sheet: SpriteSheet
   /* The global index of the sheet's first frame. */
   first: number
-  width: number
-  height: number
   frame: SharedValue<number>
+  /* Where the frame of reference's top left lands, canvas pixels. */
   left: number
   top: number
   scale: number
 }
 
-function SheetAtlas({ image, sheet, first, width, height, frame, left, top, scale }: SheetAtlasProps) {
-  const columns = sheet.columns
-  const count = sheet.frames
+function SheetAtlas({ image, sheet, first, frame, left: frameLeft, top: frameTop, scale }: SheetAtlasProps) {
+  const { columns, frames: count, frameWidth: width, frameHeight: height } = sheet
+  const left = frameLeft + sheet.offset.x * scale
+  const top = frameTop + sheet.offset.y * scale
   const sprites = useDerivedValue(() => {
     const cell = frame.value - first
     if (cell < 0 || cell >= count) return NO_CELL
@@ -80,9 +81,8 @@ function SheetAtlas({ image, sheet, first, width, height, frame, left, top, scal
 
 export const SpriteFrame = memo(function SpriteFrame({ manifest, sheets, layer, frame, x, y, scale, flipX }: SpriteFrameProps) {
   const grid = sheetsOf(manifest, layer)
-  const cell = cellOf(manifest, layer)
-  const left = x + (cell.x - manifest.anchor.x) * scale
-  const top = y + (cell.y - manifest.anchor.y) * scale
+  const left = x - manifest.anchor.x * scale
+  const top = y - manifest.anchor.y * scale
   const atlas = atlasKey(manifest)
   let first = 0
   const atlases = grid.map((sheet, index) => {
@@ -96,8 +96,6 @@ export const SpriteFrame = memo(function SpriteFrame({ manifest, sheets, layer, 
         image={image}
         sheet={sheet}
         first={start}
-        width={cell.width}
-        height={cell.height}
         frame={frame}
         left={left}
         top={top}

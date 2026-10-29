@@ -190,11 +190,16 @@ python3 art/blender/check.py pack-layers art/out/elf/young/layers --against asse
 
 `pack` takes one directory of frames, `pack-layers` a directory with one
 frames directory per layer (`--base body` names the layer whose sheets are
-the manifest's base). The packer trims the transparent margin common to
-every frame of the base layer, and of each overlay its own (a hat is a
-small part of the frame; the overlay's offset from the base's box goes
-into the manifest, so the layers stay aligned), keeps
-one transparent pixel around the box, scales the frames (`--scale`, with
+the manifest's base). The base layer's box over every frame is the
+atlas's frame of reference, the one the feet are placed in; then every
+clip of every layer is trimmed to a box of its own and laid out on sheets
+of its own (a hop with the arms up or the elder's staff swung out widens
+one clip, not all of them, and a hat is a small part of the frame), each
+sheet carrying its cell's size and its box's offset in the frame of
+reference, so the layers and the clips stay aligned; this keeps the
+decoded atlases about a third smaller than one box for every frame (the
+elder's body 109 MB instead of 163). The packer keeps
+one transparent pixel around each box, scales the frames (`--scale`, with
 a premultiplied resample so the edges stay clean), lays them in reading
 order on sheets of at most 2048 by 2048 pixels, and writes WebP at
 quality 92 (`--lossless` for the exact pixels; on the soft-shaded renders
@@ -206,23 +211,25 @@ Metro. Next to the sheets goes `manifest.json`:
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "frameWidth": 180, "frameHeight": 260,
   "anchor": { "x": 90, "y": 250 },
   "fps": 24,
   "pixelsPerMetre": 180, "modelHeight": 1.965,
   "figureUnits": 460, "headUnits": 261,
-  "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 7, "frames": 77 } ],
+  "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 3, "frames": 24,
+                "frameWidth": 150, "frameHeight": 240, "offset": { "x": 14, "y": 20 } } ],
   "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
-  "layers": { "hat_acornCap": { "frameWidth": 120, "frameHeight": 90, "offset": { "x": 30, "y": -12 },
-                                 "sheets": [ { "file": "hat_acornCap-1.webp", "columns": 17, "rows": 22, "frames": 252 } ] } },
+  "layers": { "hat_acornCap": { "sheets": [ { "file": "hat_acornCap-1.webp", "columns": 17, "rows": 2, "frames": 24,
+                                              "frameWidth": 120, "frameHeight": 90, "offset": { "x": 30, "y": -12 } } ] } },
   "thumbs": { "hat_acornCap": "hat_acornCap_thumb.webp" },
   "source": { "render": { "script": "elf.py", "args": ["--stages", "still,allanims"], "width": 512, "height": 832, "orthoScale": 2.773333 }, "pack": "pack-layers --base body --scale 0.6 --fps 24 --once feed,happy,pet,wave" }
 }
 ```
 
-Frame indices are global and run on across sheets; the anchor is in cell
-pixels. `pixelsPerMetre` is the render's scale (`render.json`, which the
+Frame indices are global and run on across sheets, a sheet holding the
+frames of one clip; the anchor and the offsets are in the frame of
+reference's pixels (`frameWidth` by `frameHeight`). `pixelsPerMetre` is the render's scale (`render.json`, which the
 render script writes next to the layers: about 253.5 for the elf rendered
 in the room) after the pack's `--scale`, and with `modelHeight` it gives
 the figure's height in cell pixels, which the app scales to its room
@@ -365,9 +372,9 @@ it stands in front of it, an ear over a brim, and drawing no ink of its
 own) into `art/out/elf/<form>/layers/hat_<id>/`, and the head close up
 in every hat by day for the wardrobe's cards (`stage_thumbs`) into
 `art/out/elf/<form>/thumbs/`, for every form. `pnpm art:pack` packs every
-layer of every form: the body in its own box, each hat in a small box of
-its own with its offset from the body's (`layers` in the manifest), the
-pictures as `_thumb`, and regenerates `src/features/elf/sprites/<form>Files.ts`,
+layer of every form: the body and each hat (`layers` in the manifest)
+clip by clip, each clip in its own box with its offset in the body's frame
+of reference, the pictures as `_thumb`, and regenerates `src/features/elf/sprites/<form>Files.ts`,
 the registries Metro needs; the app draws the layer of the hat worn with `LayeredSprite`. The
 hat follows the head because it is rigged to the same armature and
 rendered through the same frames. A new hat's name goes into the

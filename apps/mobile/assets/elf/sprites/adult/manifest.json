@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "frameWidth": 280,
   "frameHeight": 403,
   "anchor": {
@@ -10,51 +10,111 @@
   "sheets": [
     {
       "file": "body-1.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 9,
+      "rows": 4,
+      "frames": 36,
+      "frameWidth": 205,
+      "frameHeight": 359,
+      "offset": {
+        "x": 31.2,
+        "y": 37.8
+      }
     },
     {
       "file": "body-2.webp",
-      "columns": 7,
+      "columns": 8,
       "rows": 5,
-      "frames": 35
+      "frames": 36,
+      "frameWidth": 256,
+      "frameHeight": 397,
+      "offset": {
+        "x": 7.8,
+        "y": 0.0
+      }
     },
     {
       "file": "body-3.webp",
-      "columns": 7,
+      "columns": 9,
       "rows": 5,
-      "frames": 35
+      "frames": 45,
+      "frameWidth": 221,
+      "frameHeight": 356,
+      "offset": {
+        "x": 22.8,
+        "y": 42.0
+      }
     },
     {
       "file": "body-4.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 3,
+      "rows": 1,
+      "frames": 3,
+      "frameWidth": 221,
+      "frameHeight": 356,
+      "offset": {
+        "x": 22.8,
+        "y": 42.0
+      }
     },
     {
       "file": "body-5.webp",
-      "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "columns": 8,
+      "rows": 3,
+      "frames": 24,
+      "frameWidth": 248,
+      "frameHeight": 392,
+      "offset": {
+        "x": 32.4,
+        "y": 5.4
+      }
     },
     {
       "file": "body-6.webp",
       "columns": 7,
-      "rows": 5,
-      "frames": 35
+      "rows": 4,
+      "frames": 24,
+      "frameWidth": 268,
+      "frameHeight": 346,
+      "offset": {
+        "x": 0.0,
+        "y": 57.0
+      }
     },
     {
       "file": "body-7.webp",
-      "columns": 7,
+      "columns": 8,
       "rows": 5,
-      "frames": 35
+      "frames": 40,
+      "frameWidth": 247,
+      "frameHeight": 358,
+      "offset": {
+        "x": 18.0,
+        "y": 44.4
+      }
     },
     {
       "file": "body-8.webp",
-      "columns": 7,
+      "columns": 8,
       "rows": 1,
-      "frames": 7
+      "frames": 8,
+      "frameWidth": 247,
+      "frameHeight": 358,
+      "offset": {
+        "x": 18.0,
+        "y": 44.4
+      }
+    },
+    {
+      "file": "body-9.webp",
+      "columns": 9,
+      "rows": 4,
+      "frames": 36,
+      "frameWidth": 223,
+      "frameHeight": 352,
+      "offset": {
+        "x": 16.2,
+        "y": 43.2
+      }
     }
   ],
   "clips": {
@@ -100,108 +160,354 @@
   "headUnits": 349.9,
   "layers": {
     "hat_acornCap": {
-      "frameWidth": 182,
-      "frameHeight": 200,
-      "offset": {
-        "x": 54.0,
-        "y": -51.6
-      },
       "sheets": [
         {
           "file": "hat_acornCap-1.webp",
-          "columns": 11,
-          "rows": 10,
-          "frames": 110
+          "columns": 15,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 132,
+          "frameHeight": 144,
+          "offset": {
+            "x": 67.8,
+            "y": -15.6
+          }
         },
         {
           "file": "hat_acornCap-2.webp",
-          "columns": 11,
-          "rows": 10,
-          "frames": 110
+          "columns": 15,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 132,
+          "frameHeight": 194,
+          "offset": {
+            "x": 67.8,
+            "y": -51.6
+          }
         },
         {
           "file": "hat_acornCap-3.webp",
-          "columns": 11,
+          "columns": 14,
+          "rows": 4,
+          "frames": 48,
+          "frameWidth": 146,
+          "frameHeight": 118,
+          "offset": {
+            "x": 61.2,
+            "y": -10.8
+          }
+        },
+        {
+          "file": "hat_acornCap-4.webp",
+          "columns": 12,
+          "rows": 2,
+          "frames": 24,
+          "frameWidth": 167,
+          "frameHeight": 156,
+          "offset": {
+            "x": 69.0,
+            "y": -16.2
+          }
+        },
+        {
+          "file": "hat_acornCap-5.webp",
+          "columns": 12,
+          "rows": 2,
+          "frames": 24,
+          "frameWidth": 160,
+          "frameHeight": 142,
+          "offset": {
+            "x": 54.0,
+            "y": 6.0
+          }
+        },
+        {
+          "file": "hat_acornCap-6.webp",
+          "columns": 13,
+          "rows": 4,
+          "frames": 48,
+          "frameWidth": 149,
+          "frameHeight": 128,
+          "offset": {
+            "x": 66.6,
+            "y": -3.0
+          }
+        },
+        {
+          "file": "hat_acornCap-7.webp",
+          "columns": 14,
           "rows": 3,
-          "frames": 32
+          "frames": 36,
+          "frameWidth": 140,
+          "frameHeight": 115,
+          "offset": {
+            "x": 60.0,
+            "y": -7.8
+          }
         }
       ]
     },
     "hat_flowerCrown": {
-      "frameWidth": 190,
-      "frameHeight": 131,
-      "offset": {
-        "x": 49.8,
-        "y": 6.6
-      },
       "sheets": [
         {
           "file": "hat_flowerCrown-1.webp",
-          "columns": 10,
-          "rows": 15,
-          "frames": 150
+          "columns": 14,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 141,
+          "frameHeight": 59,
+          "offset": {
+            "x": 63.0,
+            "y": 61.2
+          }
         },
         {
           "file": "hat_flowerCrown-2.webp",
-          "columns": 10,
-          "rows": 11,
-          "frames": 102
+          "columns": 14,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 140,
+          "frameHeight": 127,
+          "offset": {
+            "x": 63.6,
+            "y": 6.6
+          }
+        },
+        {
+          "file": "hat_flowerCrown-3.webp",
+          "columns": 13,
+          "rows": 4,
+          "frames": 48,
+          "frameWidth": 157,
+          "frameHeight": 35,
+          "offset": {
+            "x": 57.0,
+            "y": 66.0
+          }
+        },
+        {
+          "file": "hat_flowerCrown-4.webp",
+          "columns": 11,
+          "rows": 3,
+          "frames": 24,
+          "frameWidth": 176,
+          "frameHeight": 92,
+          "offset": {
+            "x": 63.6,
+            "y": 43.2
+          }
+        },
+        {
+          "file": "hat_flowerCrown-5.webp",
+          "columns": 12,
+          "rows": 2,
+          "frames": 24,
+          "frameWidth": 167,
+          "frameHeight": 46,
+          "offset": {
+            "x": 49.8,
+            "y": 91.8
+          }
+        },
+        {
+          "file": "hat_flowerCrown-6.webp",
+          "columns": 13,
+          "rows": 4,
+          "frames": 48,
+          "frameWidth": 156,
+          "frameHeight": 38,
+          "offset": {
+            "x": 62.4,
+            "y": 75.6
+          }
+        },
+        {
+          "file": "hat_flowerCrown-7.webp",
+          "columns": 13,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 147,
+          "frameHeight": 35,
+          "offset": {
+            "x": 55.8,
+            "y": 69.0
+          }
         }
       ]
     },
     "hat_mushroomCap": {
-      "frameWidth": 215,
-      "frameHeight": 177,
-      "offset": {
-        "x": 36.0,
-        "y": -15.0
-      },
       "sheets": [
         {
           "file": "hat_mushroomCap-1.webp",
-          "columns": 9,
-          "rows": 11,
-          "frames": 99
+          "columns": 12,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 169,
+          "frameHeight": 104,
+          "offset": {
+            "x": 49.2,
+            "y": 30.6
+          }
         },
         {
           "file": "hat_mushroomCap-2.webp",
-          "columns": 9,
-          "rows": 11,
-          "frames": 99
+          "columns": 12,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 167,
+          "frameHeight": 164,
+          "offset": {
+            "x": 49.8,
+            "y": -15.0
+          }
         },
         {
           "file": "hat_mushroomCap-3.webp",
-          "columns": 9,
-          "rows": 6,
-          "frames": 54
+          "columns": 11,
+          "rows": 5,
+          "frames": 48,
+          "frameWidth": 182,
+          "frameHeight": 79,
+          "offset": {
+            "x": 43.2,
+            "y": 34.8
+          }
+        },
+        {
+          "file": "hat_mushroomCap-4.webp",
+          "columns": 10,
+          "rows": 3,
+          "frames": 24,
+          "frameWidth": 202,
+          "frameHeight": 133,
+          "offset": {
+            "x": 49.8,
+            "y": 14.4
+          }
+        },
+        {
+          "file": "hat_mushroomCap-5.webp",
+          "columns": 10,
+          "rows": 3,
+          "frames": 24,
+          "frameWidth": 196,
+          "frameHeight": 119,
+          "offset": {
+            "x": 36.0,
+            "y": 42.6
+          }
+        },
+        {
+          "file": "hat_mushroomCap-6.webp",
+          "columns": 11,
+          "rows": 5,
+          "frames": 48,
+          "frameWidth": 184,
+          "frameHeight": 97,
+          "offset": {
+            "x": 48.6,
+            "y": 37.2
+          }
+        },
+        {
+          "file": "hat_mushroomCap-7.webp",
+          "columns": 11,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 174,
+          "frameHeight": 74,
+          "offset": {
+            "x": 43.2,
+            "y": 39.6
+          }
         }
       ]
     },
     "hat_nightcap": {
-      "frameWidth": 209,
-      "frameHeight": 184,
-      "offset": {
-        "x": 55.8,
-        "y": -32.4
-      },
       "sheets": [
         {
           "file": "hat_nightcap-1.webp",
-          "columns": 9,
-          "rows": 11,
-          "frames": 99
+          "columns": 13,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 150,
+          "frameHeight": 128,
+          "offset": {
+            "x": 69.6,
+            "y": 4.8
+          }
         },
         {
           "file": "hat_nightcap-2.webp",
-          "columns": 9,
-          "rows": 11,
-          "frames": 99
+          "columns": 13,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 148,
+          "frameHeight": 179,
+          "offset": {
+            "x": 69.6,
+            "y": -32.4
+          }
         },
         {
           "file": "hat_nightcap-3.webp",
-          "columns": 9,
-          "rows": 6,
-          "frames": 54
+          "columns": 12,
+          "rows": 4,
+          "frames": 48,
+          "frameWidth": 163,
+          "frameHeight": 103,
+          "offset": {
+            "x": 63.6,
+            "y": 9.6
+          }
+        },
+        {
+          "file": "hat_nightcap-4.webp",
+          "columns": 10,
+          "rows": 3,
+          "frames": 24,
+          "frameWidth": 195,
+          "frameHeight": 139,
+          "offset": {
+            "x": 70.2,
+            "y": 5.4
+          }
+        },
+        {
+          "file": "hat_nightcap-5.webp",
+          "columns": 11,
+          "rows": 3,
+          "frames": 24,
+          "frameWidth": 180,
+          "frameHeight": 127,
+          "offset": {
+            "x": 55.8,
+            "y": 24.6
+          }
+        },
+        {
+          "file": "hat_nightcap-6.webp",
+          "columns": 11,
+          "rows": 5,
+          "frames": 48,
+          "frameWidth": 172,
+          "frameHeight": 110,
+          "offset": {
+            "x": 67.8,
+            "y": 18.6
+          }
+        },
+        {
+          "file": "hat_nightcap-7.webp",
+          "columns": 13,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 155,
+          "frameHeight": 101,
+          "offset": {
+            "x": 62.4,
+            "y": 10.8
+          }
         }
       ]
     }

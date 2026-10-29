@@ -26,12 +26,18 @@ import { ATLAS_FILES as BABY_FILES } from './babyFiles'
 import { ATLAS_FILES as ELDER_FILES } from './elderFiles'
 import { ATLAS_FILES as YOUNG_FILES } from './youngFiles'
 
+/* A sheet holds frames of one clip, cut to that clip's box: its cells'
+   size and the box's offset from the frame of reference's top left, in
+   cell pixels (before the scene's scale). */
 export type SpriteSheet = {
   file: string
   columns: number
   rows: number
-  /* Frames on this sheet; the last sheet is usually not full. */
+  /* Frames on this sheet; the last sheet of a clip is usually not full. */
   frames: number
+  frameWidth: number
+  frameHeight: number
+  offset: { x: number; y: number }
 }
 
 export type SpriteClip = {
@@ -42,10 +48,12 @@ export type SpriteClip = {
 }
 
 export type SpriteManifest = {
-  version: 2
+  version: 3
+  /* The frame of reference: the base layer's box over every frame, which
+     the sheets' offsets and the feet are given in. */
   frameWidth: number
   frameHeight: number
-  /* The feet inside a cell, pixels from its top left. */
+  /* The feet in the frame of reference, pixels from its top left. */
   anchor: { x: number; y: number }
   fps: number
   /* The render's pixels to the metre after the pack's scale, and the
@@ -63,18 +71,14 @@ export type SpriteManifest = {
   /* The base layer's sheets (the body). */
   sheets: SpriteSheet[]
   clips: Record<string, SpriteClip>
-  /* The overlays of a layered character, each in its own grid. */
+  /* The overlays of a layered character, each on sheets of its own. */
   layers?: Record<string, SpriteOverlay>
   /* The catalogue pictures packed with the atlas, by name. */
   thumbs?: Record<string, string>
 }
 
-/* One overlay: its cells' size and their offset from the base cell's top
-   left, in cell pixels (before the scene's scale), and its sheets. */
+/* One overlay (a hat): its sheets, laid out like the base's. */
 export type SpriteOverlay = {
-  frameWidth: number
-  frameHeight: number
-  offset: { x: number; y: number }
   sheets: SpriteSheet[]
 }
 
@@ -94,14 +98,6 @@ export const SPRITE_CHARACTERS: Record<ElfForm, SpriteSource> = {
   young: { manifest: require('../../../../assets/elf/sprites/young/manifest.json'), files: YOUNG_FILES },
   adult: { manifest: require('../../../../assets/elf/sprites/adult/manifest.json'), files: ADULT_FILES },
   elder: { manifest: require('../../../../assets/elf/sprites/elder/manifest.json'), files: ELDER_FILES },
-}
-
-/* The cell of a layer: its size and its offset from the base cell. */
-export function cellOf(manifest: SpriteManifest, layer?: string): { width: number; height: number; x: number; y: number } {
-  if (layer === undefined) return { width: manifest.frameWidth, height: manifest.frameHeight, x: 0, y: 0 }
-  const overlay = manifest.layers?.[layer]
-  if (!overlay) throw new Error(`sprite manifest has no layer "${layer}"`)
-  return { width: overlay.frameWidth, height: overlay.frameHeight, x: overlay.offset.x, y: overlay.offset.y }
 }
 
 /* The bundled module of a catalogue picture packed with the atlas. */
