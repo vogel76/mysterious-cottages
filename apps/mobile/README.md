@@ -942,6 +942,23 @@ just after the hatch, with the name sheet open, 503 MB (graphics 220 MB,
 the elf now drawn), a minute after naming 556 MB, and back on the Atlas
 525 MB. The egg costs about 90 MB on entering against the elf's 250, and
 the hatched elf lands where the elf's own series does.
+
+The forms were measured on a release build of 2026-10-29 (each form its
+own atlas: the hatchling's four sheets, the young elf's six, the grown
+elf's eight, the elder's thirteen, decoded 48, 82, 109 and 163 MB; the
+APK 113 MB), the same five cottages found plus eight seeded for the
+elder, the acorn cap worn. The elder entered on a cold start: the Atlas
+224 MB, the Elf tab 643 MB (graphics 399 MB), 618 to 681 MB over the
+first two minutes, 62.4 fps with none dropped. Through an evolution from
+the grown elf: 693 MB with the card open, 730 to 760 MB with the elder
+after it (graphics 410 to 440 MB, the grown elf's textures still in
+Skia's cache), 61.8 fps with none dropped, and back on the Atlas 700 MB.
+The moment itself, filmed frame by frame on the device: the elf drawn
+1.7 s after the tap, the flash at once, the first draw of the new sheets
+holding the flash at its height for about 0.4 s (the grown elf) and
+0.8 s (the elder), the new form then seen for over a second before the
+card. The elder is the costly form, about 150 MB over the young elf on
+entering, since its staff swung out in the happy clip widens every cell.
 The development client measures far higher (787 MB on the Atlas and
 1.3 GB on the tab in the first series), which is why it is not quoted
 anywhere.
