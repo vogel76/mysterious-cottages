@@ -93,8 +93,7 @@ def compare_sheets(manifest: dict, against: str, fresh: str, tolerance: int) -> 
     """The largest channel difference of any cell, on premultiplied pixels so a transparent pixel's hidden colour does not count."""
     worst = (0, '', 0)
     groups = [('body', manifest)] + list(manifest.get('layers', {}).items())
-    sheets = [(layer, sheet, group.get('frameWidth', manifest['frameWidth']), group.get('frameHeight', manifest['frameHeight']))
-              for layer, group in groups for sheet in group['sheets']]
+    sheets = [(layer, sheet, sheet['frameWidth'], sheet['frameHeight']) for layer, group in groups for sheet in group['sheets']]
     for layer, sheet, width, height in sheets:
         a_path, b_path = os.path.join(against, sheet['file']), os.path.join(fresh, sheet['file'])
         if not os.path.exists(a_path):

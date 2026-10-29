@@ -16,12 +16,14 @@ render_frames() writes them; an optional anchor.json ({"x", "y"} in those
 pixels, from write_anchor()) says where the feet are, otherwise the bottom
 centre of the trimmed box is taken. In pack-layers mode <character_dir>
 holds one such directory per layer (body, hat_acornCap, ...) with the same
-clips and frame numbers, rendered through the same frame. The base layer
-is trimmed to its own box; every overlay is trimmed to a box of its own
-(a hat is a small part of the frame) and laid out in a grid of its own,
-with the offset of its box from the base's, so cell N of every layer is
-the same moment and the app draws an overlay's cell at the base cell's
-place plus the offset. --thumbs turns the <name>.thumb.png pictures of a
+clips and frame numbers, rendered through the same frame. The base
+layer's box over every frame is the atlas's frame of reference (the feet
+are placed in it); every clip of every layer is then trimmed to a box of
+its own (a hop or a staff swung out widens one clip, not all of them, and
+a hat is a small part of the frame) and laid out on sheets of its own,
+which carry their cell's size and the offset of the clip's box from the
+frame of reference, so cell N of every layer is the same moment and the
+app draws each cell at the frame's place plus its sheet's offset. --thumbs turns the <name>.thumb.png pictures of a
 directory into <name>_thumb.webp next to the sheets (the wardrobe's cards),
 and --registry writes the TypeScript module that names every file of the
 atlas for Metro (a form of the elf's is src/features/elf/sprites/<form>Files.ts); the
@@ -32,24 +34,26 @@ called "body") of at most 2048 x 2048 pixels, frames in reading order,
 plus manifest.json:
 
     {
-      "version": 2,
-      "frameWidth": 180, "frameHeight": 260,     // one cell, after the trim and the scale
-      "anchor": { "x": 90, "y": 250 },           // the feet inside a cell, pixels
+      "version": 3,
+      "frameWidth": 180, "frameHeight": 260,     // the frame of reference, after the trim and the scale
+      "anchor": { "x": 90, "y": 250 },           // the feet in it, pixels
       "fps": 24,
       "pixelsPerMetre": 180, "modelHeight": 1.965, // the render's scale after --scale, and the model's height
       "figureUnits": 460,                         // the figure's height in the room's units (plate pixels)
       "headUnits": 261,                           // the neck's height, the same units: above it a tap is on the head
-      "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 7, "frames": 77 } ],
+      "sheets": [ { "file": "body-1.webp", "columns": 11, "rows": 3, "frames": 24,
+                    "frameWidth": 150, "frameHeight": 240, "offset": { "x": 14, "y": 20 } } ],
+                                                // a clip's frames, cut to its box: the cell and the box's place in the frame
       "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
-      "layers": { "hat_acornCap": { "frameWidth": 120, "frameHeight": 90, "offset": { "x": 30, "y": -12 }, "sheets": [ ... ] } },
-                                                // pack-layers only: the overlays, each in its own grid
+      "layers": { "hat_acornCap": { "sheets": [ ... ] } },  // pack-layers only: the overlays, sheets alike
       "thumbs": { "hat_acornCap": "hat_acornCap_thumb.webp" },  // with --thumbs
       "source": { "render": { "script": "elf.py", ... }, "pack": "pack-layers --base body --scale 0.6 ..." }
     }
 
 Frame indices are global and contiguous across sheets: frame i sits on the
 first sheet whose cumulative "frames" exceeds i, in cell (i - frames before
-it), column-major by row. Every clip loops unless named in --once.
+it), column-major by row; a sheet holds the frames of one clip only. Every
+clip loops unless named in --once.
 pixelsPerMetre, modelHeight and the neck's height come from render.json,
 which the render script writes next to the layers (the frame, the
 camera's scale, the pixels to the metre, the model's and the neck's
@@ -152,8 +156,9 @@ def opaque_box(path: str, expected: tuple[int, int] | None) -> tuple[Box | None,
         return (Box(*bbox) if bbox else None, image.size)
 
 
-def common_box(paths: list[str]) -> tuple[Box, tuple[int, int]]:
-    """The union of the opaque boxes of every frame, with the margin, clamped to the image."""
+def common_box(paths: list[str], empty: Box | None = None) -> tuple[Box, tuple[int, int]]:
+    """The union of the opaque boxes of every frame, with the margin, clamped
+    to the image; `empty` when every frame is transparent (else a failure)."""
     union: Box | None = None
     size: tuple[int, int] | None = None
     for path in paths:
@@ -162,8 +167,10 @@ def common_box(paths: list[str]) -> tuple[Box, tuple[int, int]]:
             continue
         union = box if union is None else Box(min(union.left, box.left), min(union.top, box.top),
                                               max(union.right, box.right), max(union.bottom, box.bottom))
-    if union is None or size is None:
+    if size is None or (union is None and empty is None):
         fail('every frame is fully transparent')
+    if union is None:
+        return (empty, size)
     return (Box(max(0, union.left - MARGIN), max(0, union.top - MARGIN),
                 min(size[0], union.right + MARGIN), min(size[1], union.bottom + MARGIN)), size)
 
@@ -213,24 +220,45 @@ def load_cell(path: str, box: Box, scale: float, cell: tuple[int, int]) -> Image
     return frame
 
 
-def write_sheets(paths: list[str], layer: str, box: Box, scale: float, grid: Grid, out_dir: str,
+def write_sheets(paths: list[str], layer: str, first: int, box: Box, reference: Box, scale: float, out_dir: str,
                  lossy: bool) -> list[dict]:
-    """Writes the sheets of one layer and returns their manifest entries."""
+    """Writes the sheets of one clip of a layer, numbered from `first`, and
+    returns their manifest entries: the cell's size and the offset of the
+    clip's box from the frame of reference."""
+    cell = (max(1, round(box.width * scale)), max(1, round(box.height * scale)))
+    grid = plan_grid(*cell)
+    offset = {'x': round((box.left - reference.left) * scale, 2), 'y': round((box.top - reference.top) * scale, 2)}
     entries = []
     index = 0
-    for number, (count, columns, rows) in enumerate(sheet_plan(len(paths), grid), start=1):
+    for number, (count, columns, rows) in enumerate(sheet_plan(len(paths), grid), start=first):
         sheet = Image.new('RGBA', (columns * grid.cell_width, rows * grid.cell_height), (0, 0, 0, 0))
-        for cell in range(count):
-            frame = load_cell(paths[index], box, scale, (grid.cell_width, grid.cell_height))
-            sheet.paste(frame, ((cell % grid.columns) * grid.cell_width, (cell // grid.columns) * grid.cell_height))
+        for cell_index in range(count):
+            frame = load_cell(paths[index], box, scale, cell)
+            sheet.paste(frame, ((cell_index % grid.columns) * grid.cell_width, (cell_index // grid.columns) * grid.cell_height))
             index += 1
         file = f'{layer}-{number}.webp'
         if lossy:
             sheet.save(os.path.join(out_dir, file), 'WEBP', quality=92, method=6)
         else:
             sheet.save(os.path.join(out_dir, file), 'WEBP', lossless=True, quality=100, method=6)
-        entries.append({'file': file, 'columns': columns, 'rows': rows, 'frames': count})
+        entries.append({'file': file, 'columns': columns, 'rows': rows, 'frames': count,
+                        'frameWidth': cell[0], 'frameHeight': cell[1], 'offset': offset})
     return entries
+
+
+def write_layer(clips: list[Clip], layer: str, reference: Box, scale: float, out_dir: str, lossy: bool) -> list[dict]:
+    """Every clip of a layer on sheets of its own, each cut to the clip's
+    box (a clip the layer never shows in gets a one-pixel cell)."""
+    entries: list[dict] = []
+    nothing = Box(reference.left, reference.top, reference.left + 1, reference.top + 1)
+    for clip in clips:
+        box, _size = common_box(clip.files, empty=nothing)
+        entries += write_sheets(clip.files, layer, len(entries) + 1, box, reference, scale, out_dir, lossy)
+    return entries
+
+
+def decoded_megabytes(sheets: list[dict]) -> float:
+    return sum(sheet['columns'] * sheet['frameWidth'] * sheet['rows'] * sheet['frameHeight'] * 4 for sheet in sheets) / 2 ** 20
 
 
 # ---------------------------------------------------------------------------
@@ -292,7 +320,6 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
 
     box, source_size = common_box(layer_paths(base))
     cell = (max(1, round(box.width * scale)), max(1, round(box.height * scale)))
-    grid = plan_grid(*cell)
 
     anchor = read_anchor(layer_dirs[base]) or (box.left + box.width / 2, box.bottom - MARGIN)
     anchor_x = (anchor[0] - box.left) * scale
@@ -302,22 +329,8 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
     for name in os.listdir(out_dir):
         if name.endswith('.webp'):
             os.remove(os.path.join(out_dir, name))
-    sheets_per_layer = {}
-    overlays = {}
-    for layer in clips_per_layer:
-        if layer == base:
-            sheets_per_layer[layer] = write_sheets(layer_paths(layer), layer, box, scale, grid, out_dir, lossy)
-            continue
-        own, _size = common_box(layer_paths(layer))
-        own_cell = (max(1, round(own.width * scale)), max(1, round(own.height * scale)))
-        sheets = write_sheets(layer_paths(layer), layer, own, scale, plan_grid(*own_cell), out_dir, lossy)
-        sheets_per_layer[layer] = sheets
-        overlays[layer] = {
-            'frameWidth': own_cell[0],
-            'frameHeight': own_cell[1],
-            'offset': {'x': round((own.left - box.left) * scale, 2), 'y': round((own.top - box.top) * scale, 2)},
-            'sheets': sheets,
-        }
+    sheets_per_layer = {layer: write_layer(clips, layer, box, scale, out_dir, lossy) for layer, clips in clips_per_layer.items()}
+    overlays = {layer: {'sheets': sheets} for layer, sheets in sheets_per_layer.items() if layer != base}
 
     clips = {}
     start = 0
@@ -326,7 +339,7 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
         start += len(clip.files)
 
     manifest = {
-        'version': 2,
+        'version': 3,
         'frameWidth': cell[0],
         'frameHeight': cell[1],
         'anchor': {'x': round(anchor_x, 2), 'y': round(anchor_y, 2)},
@@ -355,7 +368,8 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
 
     total = sum(len(clip.files) for clip in reference)
     print(f'pack: {total} frames x {len(layer_dirs)} layer(s), {source_size[0]}x{source_size[1]} trimmed to '
-          f'{box.width}x{box.height}, cells {cell[0]}x{cell[1]}, {len(sheets_per_layer[base])} sheet(s) per layer -> {out_dir}')
+          f'{box.width}x{box.height} (the frame {cell[0]}x{cell[1]}), {len(sheets_per_layer[base])} sheet(s) of the base, '
+          f'{decoded_megabytes(sheets_per_layer[base]):.0f} MB decoded -> {out_dir}')
     return manifest
 
 
