@@ -823,9 +823,17 @@ clip) and the hair; the hats are layers of their own on the same frame
 grid. Each form looks its own (the hatchling's sprout, the grown elf's
 cape and wand, the elder's beard, robe and staff; see art/README.md), and
 the room keeps drawing the form the player saw last until the
-evolution's moment, which decodes the new form's atlas ahead and shows
-it at the height of its flash; only the form shown and the one about to
-be stay decoded.
+evolution's moment, which shows the new form at the height of its
+flash; the new form's atlas is decoded as soon as the form is reached
+(`useUpcomingSprites`). Skia turns an encoded image into pixels on its
+first draw, on the UI thread, so the swap's first frame holds the flash
+at its height while the new sheets go up; they are not drawn ahead,
+since the GPU's texture budget cannot hold two forms' sheets at once
+(drawing both every frame made Skia evict and upload them in turn).
+Only the form shown and the one about to be stay decoded, and each atlas
+gets Skia nodes of its own, whose first cell is computed as they mount
+(a node reused for another atlas would draw one frame of the new sheet
+cut by the old grid).
 
 The egg (`cottage/RenderedEgg.tsx`) comes from the room's renders like
 the furniture: the back half of the nest, the egg, the front half over
@@ -839,8 +847,12 @@ glow and a burst of sparkles cover the moment the rules hatch the elf
 (the scene calls the tab back at that beat), and the base and the nest
 fade around the elf's feet; with reduce motion the pieces only fade.
 The evolution card waits for the elf's moment in the room (it rises,
-brightens and is circled by sparkles), which the tab plays a beat after
-the form is reached.
+brightens and is circled by sparkles) and comes once the new form has
+appeared in it; the tab plays the moment a beat after the form is
+reached, and on a tab just opened only once the elf is drawn and the
+new form's sheets are decoded (the scene tells it, `onFigureReady` and
+`onNextReady`, with a five-second fallback), so a cold start never
+flashes an empty room.
 
 The room is designed in room units (`ROOM` in `cottage/room.ts`: the
 plate's pixels, 1000 wide and 1300 tall, the floor line, the rug and the

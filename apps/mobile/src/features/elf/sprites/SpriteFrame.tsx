@@ -1,15 +1,20 @@
 import { memo } from 'react'
-import { Atlas, FilterMode, Group, MipmapMode, useRSXformBuffer, useRectBuffer, type SkImage } from '@shopify/react-native-skia'
-import type { SharedValue } from 'react-native-reanimated'
+import { Atlas, FilterMode, Group, MipmapMode, Skia, type SkImage } from '@shopify/react-native-skia'
+import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
 import { cellOf, sheetsOf, type SpriteManifest, type SpriteSheet } from './manifest'
 
 /* Draws the current frame of one layer: the cell the frame clock points
    at, placed so the character's feet land on (x, y), scaled, optionally
-   mirrored. One Atlas node per sheet, each with a one-sprite buffer: the
-   cell rectangle and the placement are Skia buffers driven by the frame
-   value, so a frame change is computed on the UI thread and touches no
-   React tree. A sheet that does not hold the current frame gets an empty
-   cell, which draws nothing. The Atlas node is used rather than Image
+   mirrored. One Atlas node per sheet, each drawing one sprite: the cell
+   rectangle and the placement are values derived from the frame value,
+   so a frame change is computed on the UI thread and touches no React
+   tree, and only the sheet that holds the frame builds a rectangle; a
+   sheet that does not hold it gets an empty cell, which draws nothing.
+   The nodes belong to one atlas (keyed by it) and their first rectangle
+   and placement are computed as they mount: a derived value changed
+   later catches up on the UI thread a frame after the image does, so a
+   node reused for another atlas (the elf reaching a new form, another
+   hat) would draw one frame of the new sheet cut by the old grid. The Atlas node is used rather than Image
    because Image has no source rectangle: cutting one cell out of a sheet
    with it takes a clip and a translated image, two transforms to keep in
    step per frame, where Atlas takes the cell and the placement directly.
@@ -34,6 +39,19 @@ export type SpriteFrameProps = {
 }
 
 const SAMPLING = { filter: FilterMode.Linear, mipmap: MipmapMode.None }
+const NO_CELL = [Skia.XYWHRect(0, 0, 0, 0)]
+
+/* A key per manifest, so each atlas gets nodes of its own. */
+const atlasKeys = new WeakMap<SpriteManifest, number>()
+let nextAtlasKey = 0
+function atlasKey(manifest: SpriteManifest): number {
+  let key = atlasKeys.get(manifest)
+  if (key === undefined) {
+    key = nextAtlasKey++
+    atlasKeys.set(manifest, key)
+  }
+  return key
+}
 
 type SheetAtlasProps = {
   image: SkImage
@@ -51,19 +69,12 @@ type SheetAtlasProps = {
 function SheetAtlas({ image, sheet, first, width, height, frame, left, top, scale }: SheetAtlasProps) {
   const columns = sheet.columns
   const count = sheet.frames
-  const sprites = useRectBuffer(1, (rect) => {
-    'worklet'
+  const sprites = useDerivedValue(() => {
     const cell = frame.value - first
-    if (cell < 0 || cell >= count) {
-      rect.setXYWH(0, 0, 0, 0)
-    } else {
-      rect.setXYWH((cell % columns) * width, Math.floor(cell / columns) * height, width, height)
-    }
+    if (cell < 0 || cell >= count) return NO_CELL
+    return [Skia.XYWHRect((cell % columns) * width, Math.floor(cell / columns) * height, width, height)]
   })
-  const transforms = useRSXformBuffer(1, (transform) => {
-    'worklet'
-    transform.set(scale, 0, left, top)
-  })
+  const transforms = useDerivedValue(() => [Skia.RSXform(scale, 0, left, top)])
   return <Atlas image={image} sprites={sprites} transforms={transforms} sampling={SAMPLING} />
 }
 
@@ -72,6 +83,7 @@ export const SpriteFrame = memo(function SpriteFrame({ manifest, sheets, layer, 
   const cell = cellOf(manifest, layer)
   const left = x + (cell.x - manifest.anchor.x) * scale
   const top = y + (cell.y - manifest.anchor.y) * scale
+  const atlas = atlasKey(manifest)
   let first = 0
   const atlases = grid.map((sheet, index) => {
     const image = sheets[index]
@@ -80,7 +92,7 @@ export const SpriteFrame = memo(function SpriteFrame({ manifest, sheets, layer, 
     if (!image) return null
     return (
       <SheetAtlas
-        key={sheet.file}
+        key={`${atlas}:${sheet.file}`}
         image={image}
         sheet={sheet}
         first={start}

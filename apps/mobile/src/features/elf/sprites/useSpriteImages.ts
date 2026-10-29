@@ -11,8 +11,8 @@ import { sheetModules, type SpriteSource } from './manifest'
    new one is in, and the caller draws the body with its own character's
    manifest. Bodies are kept for the whole app, since every scene that
    mounts would otherwise decode the same sheets again, but only two of
-   them: the one shown and the one preloadSprites named ahead of a change
-   (the evolution's moment decodes the next form while it plays); any
+   them: the one shown and the one useUpcomingSprites names ahead of a
+   change (the next form, decoded before the evolution's moment); any
    other is dropped. useSpriteLayer gives one overlay (the hat worn) with
    its character, decoded when it is asked for and not kept for the app:
    the wardrobe has several hats and only the one worn should hold memory,
@@ -57,10 +57,23 @@ function keepCurrent() {
   for (const source of [...bodies.keys()]) if (source !== shown && source !== upcoming) bodies.delete(source)
 }
 
-/* Decodes a character's body ahead of the moment it is shown. */
-export function preloadSprites(source: SpriteSource) {
-  upcoming = source
-  void bodyOf(source)
+/* A character's body decoded ahead of the moment it is shown, null until
+   it is in (and for no character). */
+export function useUpcomingSprites(source: SpriteSource | undefined): SpriteImages | null {
+  const [images, setImages] = useState<SpriteImages | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    setImages(null)
+    if (!source) return
+    upcoming = source
+    void bodyOf(source).then((body) => {
+      if (!cancelled && body) setImages({ source, body })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [source])
+  return images
 }
 
 export function useSpriteImages(source: SpriteSource | undefined): SpriteImages | null {
