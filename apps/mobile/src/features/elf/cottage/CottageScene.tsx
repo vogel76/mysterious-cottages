@@ -6,7 +6,7 @@ import { Easing, cancelAnimation, useDerivedValue, useSharedValue, withTiming, t
 import { useTranslation } from 'react-i18next'
 import { DURATIONS, EASING, ReduceMotion, useReducedMotion, withAlpha } from '../../../ui'
 import { PET_COOLDOWN_MS, type ElfForm, type ElfMood, type ElfStage } from '@chatynkowo/core'
-import { SPRITE_CHARACTERS, useSpriteImages, useSpriteLayer } from '../sprites'
+import { SPRITE_CHARACTERS, useSpriteImages, useSpriteLayer, useUpcomingSprites } from '../sprites'
 import { elfKey } from '../labels'
 import { PHOTO_ID, isSurface, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
@@ -91,7 +91,11 @@ import { SPRITE_ELF_ORIGIN, SpriteElf, figureUnits, spriteElfHeadLine, spriteElf
    (useSpriteImages keeps them for the app) from the moment the scene
    mounts, the hatchling's while the egg waits, so they are in before the
    hatch; the room draws without the elf until they are, and a new form
-   replaces the old one only once it is in. */
+   replaces the old one only once it is in. The form coming next (the
+   tab names it as soon as it is reached) is decoded ahead of its moment,
+   so the swap waits for nothing but Skia's first draw of its sheets (the
+   GPU cannot hold two forms' sheets at once, so they are not drawn
+   before). */
 
 export type CottageSceneHandle = {
   react: (kind: ReactionKind) => void
@@ -125,6 +129,10 @@ export type CottageSceneProps = {
   /* The form drawn, when it is not the stage's: the tab keeps the form
      before an evolution until the evolution's moment shows the new one. */
   form?: ElfForm
+  /* The form about to replace the drawn one, decoded ahead; told once its
+     sheets are in. */
+  nextForm?: ElfForm
+  onNextReady?: (form: ElfForm) => void
   /* While decorating: the room brings the elf to its band's middle (the
      wardrobe's tab is open) instead of a place. */
   focusElf?: boolean
@@ -154,6 +162,10 @@ export type CottageSceneProps = {
      coordinates, told on mount and whenever the layout or the figure
      changes: the speech bubble sits there. */
   onFigureTop?: (point: { x: number; y: number }) => void
+  /* Whether the elf stands drawn in the room: its form's sheets are
+     decoded (false for the egg and while a form's atlas decodes); told
+     whenever it changes, so the tab holds the evolution's moment for it. */
+  onFigureReady?: (ready: boolean) => void
   /* The latest cottage found, as a picture URI: what the frame on the
      wall shows when the decor asks for the photo. */
   photo?: string | null
@@ -236,7 +248,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, form, mood, sleeping, sleepy, warmth, eggCracks = 0, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
+    { stage, form, nextForm, onNextReady, mood, sleeping, sleepy, warmth, eggCracks = 0, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, onFigureReady, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
     ref,
   ) {
     const { t } = useTranslation()
@@ -254,6 +266,10 @@ export const CottageScene = memo(
        another form's atlas is not drawn. */
     const formSource = SPRITE_CHARACTERS[form ?? (stage === 'egg' ? 'baby' : stage)]
     const images = useSpriteImages(formSource)
+    const next = useUpcomingSprites(nextForm ? SPRITE_CHARACTERS[nextForm] : undefined)
+    useEffect(() => {
+      if (nextForm && next?.source === SPRITE_CHARACTERS[nextForm]) onNextReady?.(nextForm)
+    }, [next, nextForm, onNextReady])
     /* The hat's layer, decoded only while it is worn. */
     const hatDecoded = useSpriteLayer(images?.source, hat !== 'none' ? `hat_${hat}` : null)
     const hatLayer = hatDecoded && hatDecoded.source === images?.source ? hatDecoded : null
@@ -318,6 +334,10 @@ export const CottageScene = memo(
     const hitsFigure = useCallback((point: { x: number; y: number }) => inBounds(point, figureOrigin, figureBox), [figureOrigin, figureBox])
     /* Above this line a tap on the figure lands on the head. */
     const headLine = hatched ? SPRITE_ELF_ORIGIN.y - neck : Number.NEGATIVE_INFINITY
+    const figureReady = hatched && images?.source === formSource
+    useEffect(() => {
+      onFigureReady?.(figureReady)
+    }, [onFigureReady, figureReady])
     /* The figure's top in the view, for the bubble over its head. */
     useEffect(() => {
       onFigureTop?.({ x: layout.offsetX + figureOrigin.x * layout.scale, y: layout.offsetY + (figureOrigin.y + figureBox.y) * layout.scale })

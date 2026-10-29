@@ -2,7 +2,7 @@
    manifest, the bundled characters, the decoded sheets, one sprite or a
    layered character on a shared frame clock. */
 export { SPRITE_CHARACTERS, cellOf, clipOf, sheetModules, sheetsOf, thumbModule, type SpriteClip, type SpriteManifest, type SpriteOverlay, type SpriteSheet, type SpriteSource } from './manifest'
-export { preloadSprites, useSpriteImages, useSpriteLayer, type SpriteImages } from './useSpriteImages'
+export { useSpriteImages, useSpriteLayer, useUpcomingSprites, type SpriteImages } from './useSpriteImages'
 export { useSpriteClock, type SpriteClockOptions } from './clock'
 export { SpriteFrame, type SpriteFrameProps } from './SpriteFrame'
 export { SpritePlayer, type SpritePlayerProps } from './SpritePlayer'

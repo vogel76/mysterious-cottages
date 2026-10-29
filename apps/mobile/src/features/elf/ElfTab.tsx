@@ -12,7 +12,6 @@ import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
 import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
-import { SPRITE_CHARACTERS, preloadSprites } from './sprites'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import type { RoomExtras } from './cottage/roomAssets'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
@@ -115,6 +114,9 @@ const HATCH_CHEER_DELAY_MS = 400
    the new form appears at the height of its flash. */
 const EVOLVE_DELAY_MS = 400
 const EVOLVE_FLASH_MS = 900
+/* How long the moment waits for the elf to be drawn and the new form's
+   sheets to be decoded before it plays anyway. */
+const EVOLVE_FIGURE_WAIT_MS = 5000
 /* The acorn under the finger. */
 const ACORN = 44
 
@@ -130,7 +132,6 @@ export function ElfTab() {
      latest one's photo; the finds themselves and their count. */
   const { cottages } = useContent()
   const { foundCount, state: progress } = useProgress()
-  useElfCardPresenter()
   const router = useRouter()
   const focused = useIsFocused()
 
@@ -289,37 +290,47 @@ export function ElfTab() {
   }, [state?.sleeping, hatched, focused])
 
   /* A form reached: the elf's moment in the room (it lights up in a
-     spiral of sparkles), a beat after the care that earned it, before the
-     card presenter brings the evolution card. Played once per form, when
-     the tab is in view. Until the moment the room keeps drawing the form
-     the player saw last; the new form's atlas is decoded as soon as the
-     form is reached, and it takes the old one's place at the height of
-     the flash. */
+     spiral of sparkles), a beat after the care that earned it, or after
+     the elf is drawn when the tab has just opened, before the card
+     presenter brings the evolution card once the new form is seen.
+     Played once per form, when the tab is in view. Until the moment the
+     room keeps drawing the form the player saw last; the scene decodes
+     the new form's atlas as soon as the form is reached, the moment
+     waits for it, and it takes the old one's place at the height of the
+     flash. */
   const evolvedTo = useRef<string | null>(null)
   const [revealed, setRevealed] = useState<ElfForm | null>(null)
-  useEffect(() => {
-    if (pendingEvolution) preloadSprites(SPRITE_CHARACTERS[pendingEvolution])
-  }, [pendingEvolution])
-  useEffect(() => {
-    if (!pendingEvolution || !focused || !state?.starter || evolvedTo.current === pendingEvolution) return
-    let swap: ReturnType<typeof setTimeout> | null = null
-    const timer = setTimeout(() => {
-      evolvedTo.current = pendingEvolution
-      sceneRef.current?.react('evolve')
-      swap = setTimeout(() => setRevealed(pendingEvolution), EVOLVE_FLASH_MS)
-    }, EVOLVE_DELAY_MS)
-    /* A flash cut short (the tab left mid-moment) still reveals the new form. */
-    return () => {
-      clearTimeout(timer)
-      if (swap) {
-        clearTimeout(swap)
-        setRevealed(pendingEvolution)
-      }
-    }
-  }, [pendingEvolution, focused, state?.starter])
+  const [figureReady, setFigureReady] = useState(false)
+  const [nextReady, setNextReady] = useState<ElfForm | null>(null)
   const seenForm = state?.stageShown ?? null
   const drawnForm: ElfForm | undefined =
     stage === 'egg' ? undefined : pendingEvolution && seenForm && seenForm !== stage && revealed !== pendingEvolution ? seenForm : stage
+  const nextForm = pendingEvolution && drawnForm !== pendingEvolution ? pendingEvolution : undefined
+  const momentReady = figureReady && (nextForm === undefined || nextReady === nextForm)
+  /* The swap, once the moment has begun, happens at the flash's height
+     whatever changes meanwhile (the tab leaving, the new form's sheets
+     reported ready); only the tab's unmount drops it. */
+  const swapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (swapTimer.current) clearTimeout(swapTimer.current)
+    },
+    [],
+  )
+  useEffect(() => {
+    if (!pendingEvolution || !focused || !state?.starter || evolvedTo.current === pendingEvolution) return
+    const timer = setTimeout(
+      () => {
+        evolvedTo.current = pendingEvolution
+        sceneRef.current?.react('evolve')
+        swapTimer.current = setTimeout(() => setRevealed(pendingEvolution), EVOLVE_FLASH_MS)
+      },
+      momentReady ? EVOLVE_DELAY_MS : EVOLVE_FIGURE_WAIT_MS,
+    )
+    return () => clearTimeout(timer)
+  }, [pendingEvolution, focused, state?.starter, momentReady])
+  /* The card comes once the new form stands drawn in the room. */
+  useElfCardPresenter({ evolutionSeen: pendingEvolution !== null && revealed === pendingEvolution && figureReady })
 
   /* The latest cottage found: the frame on the wall shows its photo (from
      the expedition's picture cache when it has it, so the frame fills
@@ -703,6 +714,8 @@ export function ElfTab() {
             ref={sceneRef}
             stage={stage}
             form={drawnForm}
+            nextForm={nextForm}
+            onNextReady={setNextReady}
             mood={mood}
             sleeping={state.sleeping}
             sleepy={sleepy}
@@ -725,6 +738,7 @@ export function ElfTab() {
             onStrokeElf={onStrokeElf}
             onPetEgg={onPetEgg}
             onFigureTop={setFigureTop}
+            onFigureReady={setFigureReady}
             photo={photo}
             onPictureTap={onPictureTap}
             extras={extras}
