@@ -4,6 +4,7 @@ import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView, BottomSheetVie
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from 'expo-router'
 import { useCloseModal } from '../providers'
+import { readable, useReadablePadding } from './layout'
 import { SPRINGS } from './motion'
 import { colors, radius, space } from './tokens'
 
@@ -16,7 +17,8 @@ import { colors, radius, space } from './tokens'
    back button closes it, and the route goes back. A tap on a control while
    the keyboard is up reaches the control (the keyboard does not swallow
    it), so a form in a sheet works in one tap per step. The route itself is a
-   transparent modal with no animation of its own. */
+   transparent modal with no animation of its own. The content and the
+   footer keep to the readable column and clear of the side safe area. */
 
 export type SheetRouteProps = {
   /* Where the sheet may rest beyond its content: the top for every sheet,
@@ -70,6 +72,8 @@ export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, 
     }, []),
   )
 
+  const sides = useReadablePadding(space.lg)
+
   /* The footer's height keeps the content's end above it; the footer
      itself runs to the sheet's bottom edge (its own padding holds the
      inset), so nothing scrolls into view beneath it. */
@@ -77,15 +81,15 @@ export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, 
   const renderFooter = useCallback(
     (props: BottomSheetFooterProps) => (
       <BottomSheetFooter {...props}>
-        <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]} onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}>
-          {footer}
+        <View style={[styles.footer, sides, { paddingBottom: insets.bottom + space.md }]} onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}>
+          <View style={readable}>{footer}</View>
         </View>
       </BottomSheetFooter>
     ),
-    [footer, insets.bottom],
+    [footer, insets.bottom, sides],
   )
 
-  const content = { paddingBottom: footer ? footerHeight + space.md : insets.bottom + space.lg }
+  const content = [readable, sides, { paddingBottom: footer ? footerHeight + space.md : insets.bottom + space.lg }]
   return (
     <View style={StyleSheet.absoluteFill}>
       <BottomSheet
@@ -108,11 +112,11 @@ export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, 
         footerComponent={footer ? renderFooter : undefined}
       >
         {scroll ? (
-          <BottomSheetScrollView contentContainerStyle={[styles.content, content]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <BottomSheetScrollView contentContainerStyle={content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {children}
           </BottomSheetScrollView>
         ) : (
-          <BottomSheetView style={[styles.content, content]}>{children}</BottomSheetView>
+          <BottomSheetView style={content}>{children}</BottomSheetView>
         )}
       </BottomSheet>
     </View>
@@ -130,11 +134,7 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: colors.lineStrong,
   },
-  content: {
-    paddingHorizontal: space.lg,
-  },
   footer: {
-    paddingHorizontal: space.lg,
     paddingTop: space.md,
     borderTopWidth: 1,
     borderTopColor: colors.line,

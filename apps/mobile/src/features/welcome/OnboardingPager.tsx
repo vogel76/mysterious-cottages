@@ -11,7 +11,7 @@ import logo from '../../../assets/logo.png'
 import { announce } from '../../lib/announce'
 import { ELF_ENABLED } from '../../config'
 import { markWelcomeSeen, useBoot } from '../../providers'
-import { Button, ForwardIcon, KeyIcon, PageDots, colors, iconSize, readable, space, useTabBarHeight } from '../../ui'
+import { Button, ForwardIcon, KeyIcon, PageDots, colors, iconSize, readable, space, useReadablePadding, useTabBarHeight } from '../../ui'
 import { ElfIntro } from './ElfIntro'
 import { GuideTrail } from './GuideTrail'
 import { CreedCard, ExpeditionNotes, GuideHeading, LoreIntro, LoreQuestions, TrailPhoto } from './LoreSections'
@@ -54,6 +54,7 @@ export function OnboardingPager({ mode, code }: OnboardingPagerProps) {
   const boot = useBoot()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useTabBarHeight()
+  const sides = useReadablePadding(space.lg)
   const window = useWindowDimensions()
   const [width, setWidth] = useState(window.width)
   const [page, setPage] = useState(0)
@@ -258,7 +259,7 @@ export function OnboardingPager({ mode, code }: OnboardingPagerProps) {
         style={styles.pager}
       />
 
-      <View style={[styles.footer, { paddingBottom: footerBottom }]}>
+      <View style={[styles.footer, sides, { paddingBottom: footerBottom }]}>
         <PageDots count={PAGE_COUNT} scrollX={scrollX} pageWidth={width} />
         {/* On the last page the page's own buttons take over, and these stay
             mounted but invisible and inert: the footer keeps their real height
@@ -287,8 +288,9 @@ export function OnboardingPager({ mode, code }: OnboardingPagerProps) {
    still fits; at the default size the content fills the page, so a page
    can spread its trail or sink its buttons to the bottom. */
 function Page({ width, paddingTop, children }: { width: number; paddingTop: number; children: ReactNode }) {
+  const sides = useReadablePadding(space.lg)
   return (
-    <ScrollView style={{ width }} contentContainerStyle={[styles.page, { paddingTop }]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ width }} contentContainerStyle={[styles.page, sides, { paddingTop }]} showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>
   )
@@ -305,7 +307,6 @@ const styles = StyleSheet.create({
   page: {
     ...readable,
     flexGrow: 1,
-    paddingHorizontal: space.lg,
     paddingBottom: space.xl,
     gap: space.xl,
   },
@@ -326,7 +327,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: space.lg,
     paddingTop: space.sm,
   },
   footerActions: {

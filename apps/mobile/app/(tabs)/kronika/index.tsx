@@ -8,7 +8,7 @@ import { ELF_ENABLED } from '../../../src/config'
 import { RewardCard } from '../../../src/features/kronika/RewardCard'
 import { SupportCard } from '../../../src/features/support/SupportCard'
 import { useContent, useProgress, useElf } from '../../../src/providers'
-import { ChronicleIcon, EmptyState, LinkButton, SkeletonCard, colors, readable, space, useTabBarClearance } from '../../../src/ui'
+import { ChronicleIcon, EmptyState, LinkButton, SkeletonCard, colors, readable, space, useReadablePadding, useTabBarClearance } from '../../../src/ui'
 
 /* The Kronika tab: the collection of reward levels, earned and still locked,
    as a two-column grid under a standard native title, with the progress card
@@ -44,6 +44,7 @@ export default function KronikaScreen() {
   /* The elf's lessons next to the seals: the two loops meet here. */
   const lessons = ELF_ENABLED && elf.state?.hatched ? { name: elf.state.name, count: elf.state.findsCelebrated.length } : null
   const tabBarClearance = useTabBarClearance()
+  const sides = useReadablePadding(space.lg)
   const [refreshing, setRefreshing] = useState(false)
 
   const levels = useMemo(() => kronikaLevels(rewards.levels, state.badges), [rewards.levels, state.badges])
@@ -164,7 +165,7 @@ export default function KronikaScreen() {
         /* Android clips off-screen rows by default and a picture clipped
            while loading can stay blank once it comes into view. */
         removeClippedSubviews={false}
-        contentContainerStyle={[styles.content, readable, { paddingBottom: space.xxl + tabBarClearance }]}
+        contentContainerStyle={[styles.content, readable, sides, { paddingBottom: space.xxl + tabBarClearance }]}
         contentInsetAdjustmentBehavior="automatic"
         scrollIndicatorInsets={{ bottom: tabBarClearance }}
         ListHeaderComponent={header}
@@ -187,7 +188,6 @@ export default function KronikaScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingTop: space.lg,
-    paddingHorizontal: space.lg,
     gap: space.md,
   },
   row: {

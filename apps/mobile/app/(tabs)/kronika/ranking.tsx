@@ -10,7 +10,7 @@ import { LEADERBOARD_ROW_HEIGHT, LeaderboardRow } from '../../../src/features/ra
 import { Podium } from '../../../src/features/ranking/Podium'
 import { useLeaderboard } from '../../../src/features/ranking/useLeaderboard'
 import { useContent, useOnline, useProgress, useSession } from '../../../src/providers'
-import { Button, EmptyState, RewardIcon, ShieldIcon, SkeletonRow, Text, colors, headerRightItems, layoutLinear, readable, space, useTabBarClearance, type HeaderItemSpec } from '../../../src/ui'
+import { Button, EmptyState, RewardIcon, ShieldIcon, SkeletonRow, Text, colors, headerRightItems, layoutLinear, readable, space, useReadablePadding, useTabBarClearance, type HeaderItemSpec } from '../../../src/ui'
 
 /* The Ranking, pushed on the Kronika's stack (from the Kronika's ranking
    card, its invite once the set is complete, and the account screen): the
@@ -38,6 +38,7 @@ export default function RankingScreen() {
   const { foundCount } = useProgress()
   const account = useSession()
   const tabBarClearance = useTabBarClearance()
+  const sides = useReadablePadding(space.lg)
   const { rows, visibleRows, hasMore, loadMore, updatedAt, refreshing, error, refresh } = useLeaderboard(total)
 
   const myId = account.profile?.public_id ?? null
@@ -150,7 +151,7 @@ export default function RankingScreen() {
         onEndReachedThreshold={END_REACHED_THRESHOLD}
         contentInsetAdjustmentBehavior="automatic"
         scrollIndicatorInsets={{ bottom: tabBarClearance }}
-        contentContainerStyle={[styles.content, readable, { paddingBottom: space.xxl + tabBarClearance }]}
+        contentContainerStyle={[styles.content, readable, sides, { paddingBottom: space.xxl + tabBarClearance }]}
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         ListEmptyComponent={empty}
