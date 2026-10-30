@@ -3,7 +3,7 @@
     "name": "Chatynkowo",
     "slug": "chatynkowo",
     "scheme": "chatynkowo",
-    "version": "0.1.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -122,6 +122,12 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#d2a64d"
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Chatynkowo asks before the ad you request whether it may be matched to your interests. Your answer changes nothing else in the app."
         }
       ],
       [
