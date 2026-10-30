@@ -22,6 +22,7 @@ import {
   useCloseModal,
   useContent,
   useProgress,
+  useSession,
   useToast,
 } from '../src/providers'
 import { TabBarHeightProvider, ToastHost, colors, fonts, headerRightItems, useAppFonts } from '../src/ui'
@@ -161,6 +162,7 @@ function AppShell() {
                   <StatusBar style="light" />
                   <RootStack />
                   <BackfillToast />
+                  <NamePrompt />
                   <Toasts />
                 </SupportProvider>
               </ToastProvider>
@@ -284,6 +286,23 @@ function RootStack() {
       />
     </Stack>
   )
+}
+
+/* A sign-in that landed on an account still under the default nickname
+   (Apple shares the name once, and only if the seeker lets it) opens the
+   nickname sheet with an empty field, so the seeker names themselves
+   before the leaderboard shows them. */
+function NamePrompt() {
+  const router = useRouter()
+  const { nameRequested, settleNameRequest } = useSession()
+
+  useEffect(() => {
+    if (!nameRequested) return
+    settleNameRequest()
+    router.push({ pathname: '/nickname', params: { first: '1' } })
+  }, [nameRequested, settleNameRequest, router])
+
+  return null
 }
 
 /* A level awarded by a content update (never by a live find) joins the
