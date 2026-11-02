@@ -133,7 +133,7 @@ export const mobilePl = {
   preferences: {
     title: 'Preferencje',
     row: 'Powiadomienia i prywatność',
-    rowFooter: 'Przypomnienia od elfa, zgoda na reklamy i to, czy mogą być dopasowane do Ciebie.',
+    rowFooter: 'Przypomnienia i dźwięki elfa, zgoda na reklamy i to, czy mogą być dopasowane do Ciebie.',
     lead: 'Jedyna reklama w aplikacji to ta, o którą sam poprosisz w arkuszu wsparcia. Formularz zgody Google decyduje, czy może być dopasowana do Ciebie. Zgodę zmienisz albo cofniesz tutaj w każdej chwili, tak samo łatwo, jak ją wyrażasz.',
     adsTitle: 'Reklamy',
     consentRow: 'Zgoda na reklamy',
@@ -257,6 +257,11 @@ export const mobilePl = {
     footer: 'Elf daje znać, gdy jajko jest gotowe, przyjdzie list, urośnie roślinka albo czekają nowe zadania dnia. Najwyżej raz dziennie i nigdy w nocy; dźwięk i wibracja zależą od ustawień telefonu.',
     blocked: 'Powiadomienia są wyłączone w ustawieniach telefonu.',
     openSettings: 'Otwórz ustawienia telefonu',
+  },
+  sounds: {
+    sectionTitle: 'Dźwięki',
+    row: 'Dźwięki elfa',
+    footer: 'Elf chichocze, chrupie i pochrapuje, kiedy coś się dzieje w chatce. Dźwięki grają głośnością multimediów, nie przerywają muzyki i milkną, gdy telefon jest wyciszony albo na wibracjach.',
   },
   elf: {
     title: 'Twój Elf',

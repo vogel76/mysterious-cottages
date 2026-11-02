@@ -2,8 +2,8 @@ import { Fragment, memo } from 'react'
 import { FilterMode, Group, Image, MipmapMode, Rect, rect, useImage } from '@shopify/react-native-skia'
 import type { SharedValue } from 'react-native-reanimated'
 import { PHOTO_ID, type Decor } from './catalogue'
-import { ROOM, slotsIn, type SlotZ } from './room'
-import { extraPictures, extraSpriteFor, photoRect, roomPlateFor, roomSpriteFor, type RoomExtras, type RoomPicture, type RoomSprite } from './roomAssets'
+import { ROOM, slotsIn, type Bounds, type SlotZ } from './room'
+import { extraPictures, extraSpriteFor, photoRect, roomPlateFor, roomSpriteFor, type RoomExtras, type RoomSprite } from './roomAssets'
 
 /* The rendered room inside the room group: the plate (the empty cottage,
    fireplace and all, in the decor's wall and floor) covering the room
@@ -79,9 +79,12 @@ function Plate({ decor, day }: { decor: Decor; day: SharedValue<number> }) {
   )
 }
 
+/* A render placed in the room: its box and its night and day pictures. */
+export type PlacedPicture = Bounds & { module: number; moduleDay: number | null }
+
 /* A render at its box, moved right by dx (a find at a later place of the
    sill), its day twin over it at the daylight's opacity. */
-export function PictureSprite({ sprite, day, dx = 0 }: { sprite: RoomPicture; day: SharedValue<number>; dx?: number }) {
+export function PictureSprite({ sprite, day, dx = 0 }: { sprite: PlacedPicture; day: SharedValue<number>; dx?: number }) {
   const image = useImage(sprite.module)
   const dayImage = useImage(sprite.moduleDay)
   if (!image) return null

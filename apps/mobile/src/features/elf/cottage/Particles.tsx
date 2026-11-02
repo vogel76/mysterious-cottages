@@ -2,8 +2,8 @@ import { Group, Path, Skia, type SkPath } from '@shopify/react-native-skia'
 import { useDerivedValue } from 'react-native-reanimated'
 import { PARTICLE_KINDS, type Particle, type ParticleKind } from './motion'
 
-/* The pool of particles over the puppet: hearts, sparkles, bubbles, zzz
-   and crumbs, one Skia path per particle whose shape and colour follow the
+/* The pool of particles over the puppet: hearts, sparkles, bubbles, sleep
+   puffs and crumbs, one Skia path per particle whose shape and colour follow the
    particle's kind. Position, scale and opacity come straight from the
    shared values the motion hook animates, so a free particle (opacity 0)
    costs one invisible node and nothing per frame. The shapes are a few
@@ -22,7 +22,7 @@ const SHAPES: Record<ParticleKind, SkPath> = {
   heart: svg('M 0,10 C -12,0 -14,-12 -6,-13 C -3,-13 0,-10 0,-7 C 0,-10 3,-13 6,-13 C 14,-12 12,0 0,10 Z'),
   sparkle: svg('M 0,-14 Q 2.2,-2.2 14,0 Q 2.2,2.2 0,14 Q -2.2,2.2 -14,0 Q -2.2,-2.2 0,-14 Z'),
   bubble: svg('M 0,-13 A 13,13 0 1,1 0,13 A 13,13 0 1,1 0,-13 Z M 0,-10.5 A 10.5,10.5 0 1,0 0,10.5 A 10.5,10.5 0 1,0 0,-10.5 Z M -5,-7 A 2.4,2.4 0 1,0 -5,-2.2 A 2.4,2.4 0 1,0 -5,-7 Z'),
-  zzz: svg('M -9,-9 H 9 V -5 L -2.5,5 H 9 V 9 H -9 V 5 L 2.5,-5 H -9 Z'),
+  puff: svg('M -12,6 A 6,6 0 0,1 -11,-2 A 7,7 0 0,1 -1,-8 A 7.5,7.5 0 0,1 10,-4 A 6,6 0 0,1 12,6 Z'),
   crumb: svg('M -5,0 A 5,3.4 0 1,0 5,0 A 5,3.4 0 1,0 -5,0 Z'),
 }
 
@@ -30,7 +30,7 @@ const COLORS: Record<ParticleKind, string> = {
   heart: '#e86a7a',
   sparkle: '#ffe08a',
   bubble: '#cfe9ff',
-  zzz: '#9fc4ff',
+  puff: '#e4ecfb',
   crumb: '#7a5230',
 }
 

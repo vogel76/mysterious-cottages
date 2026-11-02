@@ -23,6 +23,7 @@ import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
 import { elfKey } from './labels'
 import { useElfCardPresenter } from './useElfCardPresenter'
+import { useElfSounds } from './useElfSounds'
 import { useReminderPrefs } from './useElfReminders'
 import { useReturnGreeting } from './useReturnGreeting'
 
@@ -134,6 +135,8 @@ export function ElfTab() {
   const { foundCount, state: progress } = useProgress()
   const router = useRouter()
   const focused = useIsFocused()
+  /* The elf's sounds while the tab is in view. */
+  const sound = useElfSounds(focused)
 
   const sceneRef = useRef<CottageSceneHandle>(null)
   const rootRef = useRef<View>(null)
@@ -371,8 +374,10 @@ export function ElfTab() {
   const unreadLetter = state ? ([...state.letters].reverse().find((letter) => !letter.read)?.n ?? null) : null
   const extras = useMemo<RoomExtras>(() => ({ plantStage, sill: sillLine ? sillLine.split(',') : [], letter: unreadLetter !== null }), [plantStage, sillLine, unreadLetter])
   const onLetterTap = useCallback(() => {
-    if (unreadLetter !== null) router.push({ pathname: '/elf-letter', params: { n: String(unreadLetter) } })
-  }, [unreadLetter, router])
+    if (unreadLetter === null) return
+    sound('letter')
+    router.push({ pathname: '/elf-letter', params: { n: String(unreadLetter) } })
+  }, [unreadLetter, router, sound])
   const onShelfTap = useCallback(() => router.push('/elf-shelf'), [router])
 
   /* ---------- The panels ---------- */
@@ -743,6 +748,7 @@ export function ElfTab() {
             onPictureTap={onPictureTap}
             extras={extras}
             onLetterTap={onLetterTap}
+            onSound={sound}
             onShelfTap={onShelfTap}
           />
         </View>

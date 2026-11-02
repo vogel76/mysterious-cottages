@@ -12,11 +12,12 @@ import { ROOM } from './room'
    flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin,
    browLift)
    that the sprite elf and the egg bind to their Skia transforms, and a small
-   pool of particles (hearts, sparkles, bubbles, zzz, crumbs) that the
+   pool of particles (hearts, sparkles, bubbles, sleep puffs, crumbs) that the
    reactions borrow. Everything moves on the UI thread through reanimated
    loops; the JS thread only starts and cancels them. The idle loops follow
    the mood (a beaming elf bounces, one that misses the player slumps, a
-   sleeping one only breathes while zzz rise every two seconds), and
+   sleeping one only breathes while sleep puffs rise every two seconds,
+   from above its head in the bed when the scene says where that is), and
    react(kind) plays a short reaction on top: it cancels the previous one,
    drives the values it needs and, once it is over, hands them back to the
    idle loops; it says whether it took the reaction, since a paused or
@@ -32,7 +33,8 @@ import { ROOM } from './room'
    the admire reaction. While awake and left alone a scheduler picks a
    small fidget every 8-15 s (an ear twitch, a yawn, a scratch, a glance at
    the fire, a shift of weight, a hum) so the elf never freezes; yawns are
-   favoured at bedtime, when sleepy lids droop to half.
+   favoured at bedtime, when sleepy lids droop to half, and the scene is
+   told which fidget it is (onFidget), so a yawn can play its own clip.
 
    A cheer (the day's quests all done, a streak milestone) outranks the
    care reaction that earned it: the tab plays it right after the care,
@@ -42,7 +44,7 @@ import { ROOM } from './room'
    heart go at most every 180 ms. With reduce motion on the puppet holds a
    still pose with a slow, shallow breath as its only loop, and a reaction
    is only a brief blip of its particles. Paused (the tab out of focus) is the same still
-   pose with no reactions, no fidgets and no zzz, so nothing runs on the UI
+   pose with no reactions, no fidgets and no puffs, so nothing runs on the UI
    thread for a scene nobody sees; the loops resume when the focus returns.
    Two reactions belong to the big moments: 'hatch' is the burst of
    sparkles as the shell splits, and 'evolve' the elf brightening in a
@@ -94,8 +96,8 @@ export type PuppetMotion = {
   browLift: SharedValue<number>
 }
 
-export type ParticleKind = 'heart' | 'sparkle' | 'bubble' | 'zzz' | 'crumb'
-export const PARTICLE_KINDS: readonly ParticleKind[] = ['heart', 'sparkle', 'bubble', 'zzz', 'crumb']
+export type ParticleKind = 'heart' | 'sparkle' | 'bubble' | 'puff' | 'crumb'
+export const PARTICLE_KINDS: readonly ParticleKind[] = ['heart', 'sparkle', 'bubble', 'puff', 'crumb']
 export const PARTICLE_POOL = 10
 
 export type Particle = {
@@ -121,7 +123,21 @@ export type CottageMotion = {
   admireAt: (x: number, y: number) => void
 }
 
-type Options = { stage: ElfStage; mood: ElfMood; sleeping: boolean; reduceMotion: boolean; paused: boolean; sleepy?: boolean }
+export type Fidget = 'earTwitch' | 'yawn' | 'scratch' | 'lookFire' | 'shiftWeight' | 'hum'
+
+type Options = {
+  stage: ElfStage
+  mood: ElfMood
+  sleeping: boolean
+  reduceMotion: boolean
+  paused: boolean
+  sleepy?: boolean
+  /* Where the sleep puffs rise from (above the head in the bed), room
+     units; above the standing figure's head without it. */
+  sleepPoint?: { x: number; y: number }
+  /* A fidget has just been picked and starts. */
+  onFidget?: (fidget: Fidget) => void
+}
 
 /* Tuning knobs of the idle loops, in milliseconds and room units. */
 const IDLE = {
@@ -153,7 +169,7 @@ const IDLE = {
   glowEggMs: 1400,
   glowElderMs: 2400,
   glowLow: 0.3,
-  zzzEveryMs: 2000,
+  puffEveryMs: 2000,
   /* Sleepy lids rest at this droop. */
   sleepyDroop: 0.6,
 } as const
@@ -203,7 +219,6 @@ const ANTICIPATION = { ms: 100, squash: 0.93 } as const
 /* Strokes let a heart go at most this often. */
 const STROKE_HEART_MS = 180
 
-type Fidget = 'earTwitch' | 'yawn' | 'scratch' | 'lookFire' | 'shiftWeight' | 'hum'
 const FIDGETS: readonly Fidget[] = ['earTwitch', 'yawn', 'scratch', 'lookFire', 'shiftWeight', 'hum']
 const FIDGET_MS: Record<Fidget, number> = { earTwitch: 600, yawn: 1500, scratch: 1700, lookFire: 2400, shiftWeight: 1300, hum: 1600 }
 /* How long the elf is left alone before the next fidget. */
@@ -700,6 +715,7 @@ export function useCottageMotion(options: Options): CottageMotion {
       }
 
       const fidget: Fidget = kind === 'fidget' ? pickFidget() : 'earTwitch'
+      if (kind === 'fidget') optionsRef.current.onFidget?.(fidget)
       const duration = kind === 'fidget' ? FIDGET_MS[fidget] : REACTION_MS[kind]
 
       if (restartTimer.current) clearTimeout(restartTimer.current)
@@ -907,14 +923,12 @@ export function useCottageMotion(options: Options): CottageMotion {
               break
             }
             case 'yawn': {
+              /* The stretch is the yawn clip's own (the scene plays it on
+                 onFidget); here only the face's values follow. */
               cancelAnimation(motion.mouth)
-              cancelAnimation(motion.squash)
               cancelAnimation(motion.lidDroop)
-              cancelAnimation(motion.headTilt)
               motion.mouth.value = withSequence(withTiming(1, { duration: 350, easing: EASING.out }), withTiming(1, { duration: 600 }), withTiming(0, { duration: 300, easing: EASING.inOut }))
-              motion.squash.value = withSequence(withTiming(0.96, { duration: 350, easing: EASING.inOut }), withTiming(0.96, { duration: 600 }), withSpring(1, SPRINGS.gentle))
               motion.lidDroop.value = withSequence(withTiming(0.5, { duration: 300 }), withTiming(0.5, { duration: 700 }), withTiming(sleepy ? IDLE.sleepyDroop : 0, { duration: 400 }))
-              motion.headTilt.value = withSequence(withTiming(-0.06, { duration: 350, easing: EASING.inOut }), withTiming(-0.06, { duration: 600 }), withTiming(0, { duration: 400, easing: EASING.inOut }))
               break
             }
             case 'scratch': {
@@ -1015,21 +1029,24 @@ export function useCottageMotion(options: Options): CottageMotion {
     }
   }, [options.stage, options.sleeping, options.mood, options.reduceMotion, options.paused, react])
 
-  /* Zzz while the elf sleeps. */
+  /* Sleep puffs while the elf sleeps, drifting up and away from the head. */
+  const sleepX = options.sleepPoint?.x
+  const sleepY = options.sleepPoint?.y
   useEffect(() => {
     const asleep = options.stage !== 'egg' && (options.sleeping || options.mood === 'asleep')
     if (!asleep || options.reduceMotion || options.paused) return
     const height = figureHeight(options.stage)
-    const { x: ox, y: oy } = ROOM.elfAnchor
+    const x = sleepX ?? ROOM.elfAnchor.x + 0.2 * height
+    const y = sleepY ?? ROOM.elfAnchor.y - 0.9 * height
     let index = 0
     const tick = () => {
       index += 1
-      spawn({ kind: 'zzz', x: ox + 0.2 * height, y: oy - 0.9 * height, dx: 60 + (index % 2) * 20, dy: -150, duration: 1900, sway: 12, scaleFrom: 0.5, scaleTo: 1.2 })
+      spawn({ kind: 'puff', x, y, dx: 50 + (index % 2) * 20, dy: -140, duration: 2100, sway: 10, scaleFrom: 0.45, scaleTo: 1.25 })
     }
     tick()
-    const interval = setInterval(tick, IDLE.zzzEveryMs)
+    const interval = setInterval(tick, IDLE.puffEveryMs)
     return () => clearInterval(interval)
-  }, [options.stage, options.sleeping, options.mood, options.reduceMotion, options.paused, spawn])
+  }, [options.stage, options.sleeping, options.mood, options.reduceMotion, options.paused, sleepX, sleepY, spawn])
 
   /* Only on unmount: the pool and cancelAll are stable, so this cleanup
      never runs for a mere re-render of the scene. */

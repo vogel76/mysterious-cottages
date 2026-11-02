@@ -63,4 +63,6 @@ export const STORAGE_KEYS = {
   /* The elf's reminders (src/lib/reminders-store.ts): whether the player
      was asked and said yes, and the hours of the last visits. */
   elfReminders: 'chatynkowo:elf-reminders:v1',
+  /* Whether the elf's sounds play (src/lib/sounds-store.ts). */
+  elfSounds: 'chatynkowo:elf-sounds:v1',
 } as const

@@ -124,7 +124,7 @@ export const mobileEn: typeof mobilePl = {
   preferences: {
     title: 'Preferences',
     row: 'Notifications and privacy',
-    rowFooter: 'The elf’s reminders, the consent to ads and whether they may be tailored to you.',
+    rowFooter: 'The elf’s reminders and sounds, the consent to ads and whether they may be tailored to you.',
     lead: 'The only ad in the app is the one you ask for yourself in the support sheet. Google\'s consent form decides whether it may be tailored to you. You can change or withdraw the consent here at any time, as easily as you give it.',
     adsTitle: 'Ads',
     consentRow: 'Consent to ads',
@@ -235,6 +235,11 @@ export const mobileEn: typeof mobilePl = {
     footer: 'The elf lets you know when the egg is ready, a letter comes, the plant grows or new quests for the day are waiting. At most once a day and never at night; the sound and the vibration follow the phone’s settings.',
     blocked: 'Notifications are turned off in the phone’s settings.',
     openSettings: 'Open the phone’s settings',
+  },
+  sounds: {
+    sectionTitle: 'Sounds',
+    row: 'The elf’s sounds',
+    footer: 'The elf giggles, munches and snores when something happens in the cottage. The sounds play at the media volume, never stop your music and keep quiet while the phone is on silent or vibrate.',
   },
   elf: {
     title: 'Your Elf',

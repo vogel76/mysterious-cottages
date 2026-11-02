@@ -12,12 +12,14 @@ import { PHOTO_ID, isSurface, type Decor, type SlotId } from './catalogue'
 import { useDayClock } from './clock'
 import { useFireMotion } from './fire'
 import { PlateLighting } from './Lighting'
-import { useCottageMotion, type ReactionKind } from './motion'
+import type { ElfSound } from '../useElfSounds'
+import { useCottageMotion, type Fidget, type ReactionKind } from './motion'
 import { Particles } from './Particles'
 import { EGG_HIT_BOX, HATCH_BEATS, RenderedEgg } from './RenderedEgg'
 import { ROOM, fitRoom, inBounds, slotAtIn, slotById, toRoom, type Slot } from './room'
-import { extraPictures, placedBounds, spriteSlotsFor, type RoomExtras } from './roomAssets'
+import { extraPictures, placedBounds, renderedVariantFor, spriteSlotsFor, type RoomExtras } from './roomAssets'
 import { RoomSprites } from './RoomSprites'
+import { SleepingElf } from './SleepingElf'
 import { SlotHighlight } from './SlotHighlight'
 import { SPRITE_ELF_ORIGIN, SpriteElf, figureUnits, spriteElfHeadLine, spriteElfHitBox } from './SpriteElf'
 
@@ -176,6 +178,8 @@ export type CottageSceneProps = {
   /* A tap on the waiting letter, and on the shelf or the sill's finds
      (the keepsake shelf). */
   onLetterTap?: () => void
+  /* A sound for what just happened to the elf (the tab plays it). */
+  onSound?: (sound: ElfSound) => void
   onShelfTap?: () => void
 }
 
@@ -196,26 +200,41 @@ const HATCH_MS = { full: 1800, reduced: 700 } as const
 const REACTION_CLIP: Partial<Record<ReactionKind, string>> = {
   pet: 'pet',
   feed: 'feed',
-  play: 'happy',
+  play: 'play',
   cheer: 'happy',
   twirl: 'happy',
-  bath: 'pet',
+  bath: 'bath',
   wake: 'wave',
   call: 'wave',
   greet: 'wave',
   admire: 'wave',
   stroke: 'pet',
 }
+/* The sound of a reaction the motion took (a pat and a stroke are silent). */
+const REACTION_SOUND: Partial<Record<ReactionKind, ElfSound>> = {
+  poke: 'poke',
+  feed: 'feed',
+  bath: 'bath',
+  play: 'play',
+  twirl: 'play',
+  wake: 'wake',
+  greet: 'wake',
+  cheer: 'cheer',
+  evolve: 'evolve',
+}
+/* A snore with every breath of sleep (motion's breathSleepMs). */
+const SNORE_EVERY_MS = 5200
 /* A stroke restarts the pat clip at most this often; the pan reports it
    on every move. */
 const STROKE_CLIP_MS = 1500
 
-/* The loop the elf plays when nothing happens to it. */
-function moodClip(mood: ElfMood, sleeping: boolean): string {
-  if (sleeping || mood === 'asleep') return 'sleep'
-  if (mood === 'misses') return 'sad'
-  return 'idle'
+/* The loop the elf plays when nothing happens to it (asleep it is in
+   its bed, and the figure on the rug only fades). */
+function moodClip(mood: ElfMood): string {
+  return mood === 'misses' ? 'sad' : 'idle'
 }
+/* How long the elf takes to go to bed or get up. */
+const BED_FADE_MS = 600
 
 let decodeLogged = false
 
@@ -248,7 +267,7 @@ function slotCentre(slot: Slot): { x: number; y: number } {
 
 export const CottageScene = memo(
   forwardRef<CottageSceneHandle, CottageSceneProps>(function CottageScene(
-    { stage, form, nextForm, onNextReady, mood, sleeping, sleepy, warmth, eggCracks = 0, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, onFigureReady, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, editable },
+    { stage, form, nextForm, onNextReady, mood, sleeping, sleepy, warmth, eggCracks = 0, decor, hat = 'none', focusElf = false, width, height, paused = false, editing = false, topInset = 0, bottomInset = 0, selectedSlot = null, onSelectSlot, onPetElf, onPokeElf, onStrokeElf, onPetEgg, onFigureTop, onFigureReady, photo = null, onPictureTap, extras, onLetterTap, onShelfTap, onSound, editable },
     ref,
   ) {
     const { t } = useTranslation()
@@ -294,7 +313,39 @@ export const CottageScene = memo(
       drawnOffsetY.value = withTiming(layout.offsetY, { duration: DURATIONS.slow, easing: EASING.inOut, reduceMotion: ReduceMotion.System })
     }, [layout.offsetX, layout.offsetY, drawnOffsetX, drawnOffsetY])
 
-    const { motion, particles, react, lookAt, lookRelease, admireAt } = useCottageMotion({ stage, mood, sleeping, sleepy, reduceMotion, paused })
+    /* Asleep, the elf lies in the bed the decor names, the form's picture
+       of it there in place of the figure on the rug. */
+    const sleeper = stage !== 'egg' ? drawnManifest.sleepers?.[renderedVariantFor('bed', decor.bed)] : undefined
+    const inBed = sleeping && sleeper !== undefined
+    const bedShown = useSharedValue(inBed ? 1 : 0)
+    useEffect(() => {
+      bedShown.value = withTiming(inBed ? 1 : 0, { duration: reduceMotion ? 0 : BED_FADE_MS, easing: EASING.inOut })
+    }, [inBed, reduceMotion, bedShown])
+    const standing = useDerivedValue(() => 1 - bedShown.value)
+    /* The egg's cracks crack, and the elf in bed snores with its breath. */
+    const cracksHeard = useRef(eggCracks)
+    useEffect(() => {
+      if (eggCracks > cracksHeard.current) onSoundRef.current?.('crack')
+      cracksHeard.current = eggCracks
+    }, [eggCracks])
+    useEffect(() => {
+      if (!inBed || paused) return
+      const timer = setInterval(() => onSoundRef.current?.('snore'), SNORE_EVERY_MS)
+      return () => clearInterval(timer)
+    }, [inBed, paused])
+    /* A yawn among the fidgets plays its clip (set once the overrides exist). */
+    const fidgetRef = useRef<(fidget: Fidget) => void>(() => undefined)
+    const onFidget = useCallback((fidget: Fidget) => fidgetRef.current(fidget), [])
+    const { motion, particles, react, lookAt, lookRelease, admireAt } = useCottageMotion({
+      stage,
+      mood,
+      sleeping,
+      sleepy,
+      reduceMotion,
+      paused,
+      sleepPoint: inBed ? sleeper.puff : undefined,
+      onFidget,
+    })
     useEffect(() => {
       if (!__DEV__ || !images || decodeLogged) return
       decodeLogged = true
@@ -314,6 +365,8 @@ export const CottageScene = memo(
     onPictureTapRef.current = onPictureTap
     const onLetterTapRef = useRef(onLetterTap)
     onLetterTapRef.current = onLetterTap
+    const onSoundRef = useRef(onSound)
+    onSoundRef.current = onSound
     const onShelfTapRef = useRef(onShelfTap)
     onShelfTapRef.current = onShelfTap
     /* Where the letter and the sill's finds take a tap, room units. */
@@ -328,12 +381,25 @@ export const CottageScene = memo(
     /* The elf stands on the rendered rug; the egg keeps the room's anchor
        in its nest. */
     const hatched = stage !== 'egg'
-    const figureOrigin = hatched ? SPRITE_ELF_ORIGIN : ROOM.elfAnchor
-    /* Whether a room point lands on the figure (the elf or the egg). */
-    const figureBox = useMemo(() => (hatched ? spriteElfHitBox(units) : EGG_HIT_BOX), [hatched, units])
+    const figureOrigin = !hatched ? ROOM.elfAnchor : inBed ? ORIGIN : SPRITE_ELF_ORIGIN
+    /* Whether a room point lands on the figure (the elf, in its bed while
+       it sleeps, or the egg). */
+    const sleeperX = sleeper?.x
+    const sleeperY = sleeper?.y
+    const sleeperWidth = sleeper?.width
+    const sleeperHeight = sleeper?.height
+    const figureBox = useMemo(
+      () =>
+        !hatched
+          ? EGG_HIT_BOX
+          : inBed && sleeperX !== undefined && sleeperY !== undefined && sleeperWidth !== undefined && sleeperHeight !== undefined
+            ? { x: sleeperX, y: sleeperY, width: sleeperWidth, height: sleeperHeight }
+            : spriteElfHitBox(units),
+      [hatched, inBed, sleeperX, sleeperY, sleeperWidth, sleeperHeight, units],
+    )
     const hitsFigure = useCallback((point: { x: number; y: number }) => inBounds(point, figureOrigin, figureBox), [figureOrigin, figureBox])
-    /* Above this line a tap on the figure lands on the head. */
-    const headLine = hatched ? SPRITE_ELF_ORIGIN.y - neck : Number.NEGATIVE_INFINITY
+    /* Above this line a tap on the standing figure lands on the head. */
+    const headLine = hatched && !inBed ? SPRITE_ELF_ORIGIN.y - neck : Number.NEGATIVE_INFINITY
     const figureReady = hatched && images?.source === formSource
     useEffect(() => {
       onFigureReady?.(figureReady)
@@ -350,7 +416,7 @@ export const CottageScene = memo(
     const [override, setOverride] = useState<{ clip: string; key: number } | null>(null)
     const overrideCount = useRef(0)
     const strokeClipAt = useRef(0)
-    const clip = override?.clip ?? moodClip(mood, sleeping)
+    const clip = override?.clip ?? moodClip(mood)
     const clipKey = override?.key ?? 0
     const onClipEnd = useCallback(() => {
       const key = clipKey
@@ -372,6 +438,8 @@ export const CottageScene = memo(
     const reactScene = useCallback(
       (kind: ReactionKind) => {
         if (!react(kind)) return
+        const sound = REACTION_SOUND[kind]
+        if (sound) onSoundRef.current?.(sound)
         if (!hatched || paused || reduceMotion) return
         const next = REACTION_CLIP[kind]
         if (!next) return
@@ -385,6 +453,13 @@ export const CottageScene = memo(
       },
       [react, hatched, paused, reduceMotion],
     )
+    fidgetRef.current = (fidget: Fidget) => {
+      if (fidget !== 'yawn' || !hatched || paused) return
+      onSoundRef.current?.('yawn')
+      if (reduceMotion) return
+      overrideCount.current += 1
+      setOverride({ clip: 'yawn', key: overrideCount.current })
+    }
     /* The glance at a touched item, and when the last stroke counted as a pet. */
     const glanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const strokePetAt = useRef(0)
@@ -431,7 +506,10 @@ export const CottageScene = memo(
         hatchProgress.value = 0
         hatchProgress.value = withTiming(1, { duration, easing: Easing.linear, reduceMotion: ReduceMotion.Never })
         hatchTimers.current = [
-          setTimeout(() => react('hatch'), duration * HATCH_BEATS.split),
+          setTimeout(() => {
+            react('hatch')
+            onSoundRef.current?.('hatch')
+          }, duration * HATCH_BEATS.split),
           setTimeout(onOpen, duration * HATCH_BEATS.open),
           setTimeout(() => {
             hatchProgress.value = 0
@@ -588,8 +666,11 @@ export const CottageScene = memo(
               <RoomSprites decor={decor} layer="back" day={fire.day} photo={photo} extras={extras} />
               <RoomSprites decor={decor} layer="mid" day={fire.day} />
               {hatched && images ? (
-                <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} hat={hatLayer} manifest={images.source.manifest} />
+                <Group opacity={standing}>
+                  <SpriteElf clip={clip} clipKey={clipKey} onClipEnd={onClipEnd} playing={!paused && !reduceMotion} motion={motion} origin={SPRITE_ELF_ORIGIN} day={fire.day} images={images} hat={hatLayer} manifest={images.source.manifest} />
+                </Group>
               ) : null}
+              {hatched && sleeper ? <SleepingElf source={images?.source ?? formSource} sleeper={sleeper} hat={hat} day={fire.day} breath={motion.breath} shown={bedShown} /> : null}
               {!hatched || hatching ? <RenderedEgg warmth={warmth} cracks={eggCracks} motion={motion} origin={ROOM.elfAnchor} day={fire.day} hatch={hatchProgress} still={reduceMotion} /> : null}
               <RoomSprites decor={decor} layer="front" day={fire.day} extras={extras} />
               <ShootingStar progress={star} window={windowSlot} />
