@@ -394,13 +394,17 @@ dictionaries (`item<Id>`) and, if it is to be earned, its threshold into
 
 Asleep, the elf lies in its bed: `pnpm art:elf-sleepers` (elf.py's
 `sleepers` stage, stills only, so it leaves `render.json` to the frames
-and skips the crop over every clip) lays each form's head on the pillow
-of each bed, on its side with the eyes shut, the body hidden under the
-bed's own cover raised over it (`room.build_sleeper`: the oak bed's quilt
-with its fold, a blanket in the hammock, moss in the nest, at the shared
-scale, so the elder's mound is bigger than the hatchling's), the bed in
-the scene as a holdout, and renders it by night and by day with every
-hat as a layer of its own, all of one bed through one crop, into
+and skips the crop over every clip) lays each form on its side in each
+bed, the head on the pillow with the eyes shut, the body to the waist
+and the top arm over the bed's own cover, which is raised over the rest
+of it from the waist to the foot of the bed (`room.build_sleeper`: the
+oak bed's quilt with its fold, a blanket in the hammock, a big leaf in
+the nest; the legs, the boots and the hem are hidden under it, a robe's
+skirt masked away, since it would run past the bed); the sleeper is
+drawn at three fifths of the standing figure (every form alike), snug in
+beds built for the room's scale rather than the elf's, with the bed in
+the scene as a holdout. It renders by night and by day with every hat as
+a layer of its own, all of one bed through one crop, into
 `art/out/elf/<form>/sleepers/` with `sleepers.json` (the crop in the
 plate's pixels and the point above the head the sleep puffs rise from).
 `pnpm art:pack` (`--sleepers`) turns them into

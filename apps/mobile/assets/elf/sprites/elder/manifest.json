@@ -699,13 +699,13 @@
   },
   "sleepers": {
     "hammock": {
-      "x": 14,
-      "y": 402,
-      "width": 276,
-      "height": 240,
+      "x": 19,
+      "y": 431,
+      "width": 267,
+      "height": 204,
       "puff": {
-        "x": 133.7,
-        "y": 474.5
+        "x": 126.2,
+        "y": 503.5
       },
       "file": "sleeper_hammock.webp",
       "fileDay": "sleeper_hammock_day.webp",
@@ -729,13 +729,13 @@
       }
     },
     "nest": {
-      "x": 15,
-      "y": 628,
-      "width": 274,
-      "height": 265,
+      "x": 37,
+      "y": 642,
+      "width": 303,
+      "height": 197,
       "puff": {
-        "x": 132.3,
-        "y": 700.7
+        "x": 130.7,
+        "y": 713.4
       },
       "file": "sleeper_nest.webp",
       "fileDay": "sleeper_nest_day.webp",
@@ -759,13 +759,13 @@
       }
     },
     "oak": {
-      "x": 0,
-      "y": 547,
-      "width": 292,
-      "height": 239,
+      "x": 16,
+      "y": 576,
+      "width": 276,
+      "height": 198,
       "puff": {
-        "x": 112.7,
-        "y": 618.7
+        "x": 111.9,
+        "y": 648.1
       },
       "file": "sleeper_oak.webp",
       "fileDay": "sleeper_oak_day.webp",

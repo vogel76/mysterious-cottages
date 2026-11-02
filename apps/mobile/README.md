@@ -826,8 +826,9 @@ squash, the tilt of the reactions) layered on top as a transform of the
 frame, so a pet or a feed still moves the whole figure; the evolution's
 moment lights the figure up through the same colour matrix. Asleep the
 elf is not on the rug but in its bed (`cottage/SleepingElf.tsx`): the
-form's picture of it there, head on the pillow under the bed's cover, by
-night and by day and with the hat worn, for the bed the decor names
+form's picture of it there, on its side with the head on the pillow and
+an arm over the bed's cover, by night and by day and with the hat worn,
+for the bed the decor names
 (the manifest's `sleepers`), fading in as the figure on the rug fades
 out, breathing with the slow breath of sleep, its picture the tap target,
 and sleep puffs (a drawn cloud, not a letter) rise from above its head. What is

@@ -1843,25 +1843,28 @@ def stage_thumbs(scene, rig, out):
     if lights:
         room.set_daylight(lights, False)
 
-# What of the elf shows above a sleeper's blanket: the head with its face,
-# hair, ears and beard (a hat is a layer of its own, as in the frames).
-HEAD_PARTS = ("Head", "Hair", "HairLeaf", "HairLeafStem", "HairBack", "Beard", "EarInner", "Eyelid", "EyeWhite",
-              "Brow", "Highlight", "HighlightSmall", "Iris", "Lash", "LashTop", "Mouth", "Pupil", "SproutLeaf",
-              "SproutStem")
+# What of the elf stays under a sleeper's cover or is set aside for the
+# night: the legs and the boots, the hem, the cape and what the form
+# carries; the head, the body down to the belt and the arms show above
+# the cover. A robe's skirt (the body's hips-weighted part) is masked
+# away too, since it would run past the foot of the bed.
+UNDER_COVER = ("Leg", "Legging", "Boot", "BootCuff", "Sole", "Hem", "Cape", "CapeHood", "Wand", "WandLeaf", "WandTip")
 SLEEP_BEDS = ("oak", "hammock", "nest")
-# The head lies on its right side on the pillow, the crown towards the
-# head of the bed, turned a little up to the room; the sleeper is drawn a
-# little smaller than the standing figure (every form alike), snug in
-# beds built for the room's scale rather than the elf's.
-SLEEP_TILT = -80.0
-SLEEP_SCALE = 0.75
+SLEEP_TIMES = (False, True)
+SLEEP_HATS = HAT_IDS[1:]
+# The sleeper lies on its right side facing the room, the head on the
+# pillow, the cover from the waist with the top arm over it; it is drawn
+# smaller than the standing figure (every form alike), snug in beds built
+# for the room's scale rather than the elf's.
+SLEEP_SCALE = 0.6
 
 
 def stage_sleepers(scene, rig, out, room_rig):
-    """The elf asleep in each bed: the head on the pillow, eyes shut, the
-    body under the bed's cover raised over it (room.build_sleeper), each
-    hat as a layer of its own, by night and by day, every picture of one
-    bed through one crop; sleepers.json gives each bed's crop in the plate's
+    """The elf asleep in each bed: on its side with the head on the pillow,
+    eyes shut, the body to the belt and the arms over the bed's cover,
+    which room.build_sleeper raises over the rest of it; each hat as a
+    layer of its own, by night and by day, every picture of one bed
+    through one crop; sleepers.json gives each bed's crop in the plate's
     pixels and the point above the head the sleep puffs rise from. The
     elf is at the young form's scale, so every form keeps its size; the
     bed is in the scene as a holdout, in front of whatever it covers."""
@@ -1875,17 +1878,40 @@ def stage_sleepers(scene, rig, out, room_rig):
     rig.blink(1, 1.0)
     rig.shape("open", 1, 0.25)
     rig.shape("smile", 1, 0.2)
+    rig.bone("chest", 1, rot=((1, 0, 0), 8.0))
+    # the head lifted by the pillow (towards the elf's left, up once it
+    # lies) and turned a little to the room
+    rig.bone("head", 1, rot=[((0, 0, 1), 12.0), ((0, 1, 0), 14.0)])
+    # the top arm over the cover, its hand resting on it; the other tucked under
+    rig.hand("L", 1, reach((0.20, -0.22, YOUNG.shoulder_z - 0.42)))
+    rig.hand("R", 1, reach((-0.05, 0.12, YOUNG.shoulder_z - 0.42)))
     rig.finish()
     pose(rig, "asleep", 1)
-    head_parts = [obj for name, obj in rig.objs.items() if name.partition(".")[0] in HEAD_PARTS]
-    under_cover = [obj for obj in body_objects() if obj not in head_parts]
+    bpy.context.view_layer.update()
+    mask = None
+    if F.hem_z < F.knee_z:
+        # a robe: its skirt masked away, first in the stack so the smoothing
+        # does not pull the cut edge (under the cover anyway)
+        body = rig.objs["Body"]
+        mask = body.modifiers.new("SleepMask", "MASK")
+        mask.vertex_group = "hips"
+        mask.invert_vertex_group = True
+        mask.threshold = 0.5
+        body.modifiers.move(len(body.modifiers) - 1, 0)
+    # where the cover begins on the body, the waist, in the armature's space
+    waist = pelvis_z() + (F.shoulder_z - pelvis_z()) * 0.35
+    under_cover = [obj for obj in body_objects() if obj.name.partition(".")[0] in UNDER_COVER
+                   or (obj.name.startswith("Star") and obj.location.z < waist)]
+    visible = [obj for obj in body_objects() if obj not in under_cover]
     hidden = {obj: obj.hide_render for obj in under_cover}
     for obj in under_cover:
         obj.hide_render = True
     saved = (arm.location.copy(), arm.rotation_euler.copy())
     b = form_look().get("body", 1.0)
-    length, depth = 0.72 * F.shoulder_z * k, 0.32 * b * k
+    thick = 2 * F.chest_r * b * k                     # the body on its side, room metres
     side = F.head_r * head_scale()[0] * k
+    cover_at = Vector((0.0, 0.0, waist))
+    run = (waist - pelvis_z()) * k + 0.12             # the cover's reach along the bed
     lights = ROOM_LIGHTS.get("lights")
     render = scene.render
     width, height = render.resolution_x, render.resolution_y
@@ -1895,11 +1921,16 @@ def stage_sleepers(scene, rig, out, room_rig):
     for bed in SLEEP_BEDS:
         coll = bpy.data.collections.new(f"Sleeper/{bed}")
         scene.collection.children.link(coll)
-        rest = room.build_sleeper(coll, bed, length, depth)
-        tilt = Matrix.Rotation(math.radians(SLEEP_TILT), 3, "Y")
-        arm.rotation_euler = tilt.to_euler()
-        # the head sinks a little into the pillow, towards the cover
-        arm.location = rest + Vector((0.1 * side, -0.02, 0.85 * side)) - tilt @ (head_c() * k)
+        pillow, along, surface, tilt_deg = room.sleeper_rest(bed)
+        tilt = Matrix.Rotation(math.radians(tilt_deg), 3, "Y")
+        yaw = Matrix.Rotation(math.atan2(along.y, along.x), 3, "Z")
+        world = yaw @ tilt
+        arm.rotation_euler = world.to_euler()
+        # the waist rests on the bed this far along from the pillow, sunk a little
+        d = (F.head_c - cover_at.z) * k * math.sin(math.radians(-tilt_deg))
+        waist_at = Vector((pillow.x + along.x * d, pillow.y + along.y * d, surface(d) + thick / 2 - 0.02))
+        arm.location = waist_at - world @ (cover_at * k)
+        room.build_sleeper(coll, bed, waist_at, along, run, thick)
         bed_coll = room_rig["slots"][("bed", bed)]
         bed_coll.hide_render = False
         replaced = [obj for obj in bed_coll.all_objects if obj.name in room.SLEEPER_REPLACES[bed]]
@@ -1913,8 +1944,8 @@ def stage_sleepers(scene, rig, out, room_rig):
         bpy.context.view_layer.update()
         print(f"[elf] sleeper {bed}: bed {len(bed_state)} objects as holdout "
               f"({sum(1 for o in bed_state if o.is_holdout)} flagged), cover {len(cover_ink)} objects")
-        corners = [obj.matrix_world @ Vector(c) for obj in head_parts + list(coll.objects) for c in obj.bound_box]
-        for hat in HAT_IDS[1:]:
+        corners = [obj.matrix_world @ Vector(c) for obj in visible + list(coll.objects) for c in obj.bound_box]
+        for hat in SLEEP_HATS:
             corners += [o.matrix_world @ Vector(c) for o in collection(f"Hat/{hat}").all_objects if o.type == "MESH"
                         for c in o.bound_box]
         pts = [_common.project_to_pixels(scene, cam, c) for c in corners]
@@ -1927,7 +1958,7 @@ def stage_sleepers(scene, rig, out, room_rig):
         puff = _common.project_to_pixels(scene, cam, above)
         info[bed] = {"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0,
                      "puff": {"x": round(puff[0], 1), "y": round(puff[1], 1)}}
-        for day in (False, True):
+        for day in SLEEP_TIMES:
             if lights:
                 room.set_daylight(lights, day)
             suffix = "_day" if day else ""
@@ -1936,7 +1967,7 @@ def stage_sleepers(scene, rig, out, room_rig):
             for obj in cover_ink:
                 obj.is_holdout = True
                 obj.lineart.usage = "OCCLUSION_ONLY"
-            for hat in HAT_IDS[1:]:
+            for hat in SLEEP_HATS:
                 set_hat_pass(hat)
                 render_still(scene, os.path.join(out, "sleepers", f"{bed}_hat_{hat}{suffix}.png"))
             set_hat_pass(None)
@@ -1959,6 +1990,8 @@ def stage_sleepers(scene, rig, out, room_rig):
     arm.scale = standing_scale
     for obj, flag in hidden.items():
         obj.hide_render = flag
+    if mask is not None:
+        rig.objs["Body"].modifiers.remove(mask)
     (render.use_border, render.use_crop_to_border, render.border_min_x, render.border_max_x,
      render.border_min_y, render.border_max_y) = border
     rig.clips.pop("asleep")
