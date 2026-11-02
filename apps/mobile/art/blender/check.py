@@ -75,6 +75,8 @@ def repack(args: argparse.Namespace, out_dir: str) -> None:
         command.append('--lossless')
     if args.thumbs:
         command += ['--thumbs', args.thumbs]
+    if args.sleepers:
+        command += ['--sleepers', args.sleepers]
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
         fail(f'pack.py failed:\n{result.stdout}{result.stderr}')
@@ -108,6 +110,15 @@ def compare_sheets(manifest: dict, against: str, fresh: str, tolerance: int) -> 
                 cell_max = max(high for _, high in difference.crop((left, top, left + width, top + height)).getextrema())
                 if cell_max > worst[0]:
                     worst = (cell_max, f'{layer}/{sheet["file"]}', index)
+    pictures = [file for sleeper in manifest.get('sleepers', {}).values()
+                for file in [sleeper['file'], sleeper['fileDay']] + [f for hat in sleeper['hats'].values() for f in hat.values()]]
+    for file in pictures:
+        with Image.open(os.path.join(against, file)) as a_image, Image.open(os.path.join(fresh, file)) as b_image:
+            if a_image.size != b_image.size:
+                fail(f'{file}: committed {a_image.size}, fresh {b_image.size}')
+            high = max(h for _, h in ImageChops.difference(a_image.convert('RGBa'), b_image.convert('RGBa')).getextrema())
+            if high > worst[0]:
+                worst = (high, file, 0)
     print(f'check: worst cell difference {worst[0]}/255 ({worst[1]} cell {worst[2]}), tolerance {tolerance}')
     if worst[0] > tolerance:
         fail('the fresh pack differs from the committed atlas beyond the tolerance: the render or the pack arguments changed')
@@ -125,6 +136,7 @@ def main(argv: list[str]) -> None:
     command.add_argument('--lossless', action='store_true')
     command.add_argument('--base', default='body')
     command.add_argument('--thumbs', default=None)
+    command.add_argument('--sleepers', default=None)
     command.add_argument('--tolerance', type=int, default=24, help='the largest channel difference a cell may show')
     args = parser.parse_args(argv)
 
