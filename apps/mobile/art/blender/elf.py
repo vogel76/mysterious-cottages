@@ -11,8 +11,9 @@ clips stored as actions; and renders review material plus the sprite frame
 sequences with an orthographic front camera.
 
 Run:
-    blender --background --python elf.py -- <out_dir> [--stages still,turntable,moods,hats,anims,allanims,hero,lookdev]
+    blender --background --python elf.py -- <out_dir> [--stages still,turntable,moods,hats,anims,allanims,hero,lookdev,sleepers]
         [--clips wave,feed] [--form young|baby] [--studio] [--ramp 0.4] [--no-ink] [--hull] [--no-quality] [--quick]
+        [--resume]   (frames already in <out_dir> are kept: a long render picks up where a crash left it)
 
 By default the elf stands on the rug of the cottage of room.py, lit by
 its fire and moon, drawn by its ink, and the frames are the room's camera
@@ -913,6 +914,9 @@ def bones_for(form):
         bones += [
             (f"ear.{sfx}", tuple(ear[0]), tuple(ear[3]), "head", True),
             (f"eyelid.{sfx}", tuple(eye), tuple(eye + Vector((0.1, 0, 0))), "head", True),
+            # What stands out of the eye (iris, pupil, highlights, the open eye's lash),
+            # shrunk away while the lid is shut, since it would poke through it.
+            (f"eyeball.{sfx}", tuple(eye), tuple(eye + Vector((0, -0.1, 0))), "head", True),
             (f"upper_arm.{sfx}", tuple(shoulder), tuple(elbow), "chest", True),
             (f"forearm.{sfx}", tuple(elbow), tuple(hand), f"upper_arm.{sfx}", True),
             (f"hand.{sfx}", tuple(hand), tuple(hand + Vector((0.02 * s, -0.06, -0.12))), f"forearm.{sfx}", True),
@@ -1073,6 +1077,8 @@ def bind_all(arm, objs):
             bind_rigid(arm, obj, "chest")
         elif base in ("Eyelid", "Lash"):
             bind_rigid(arm, obj, f"eyelid.{side}")
+        elif base in ("Iris", "Pupil", "Highlight", "HighlightSmall", "LashTop"):
+            bind_rigid(arm, obj, f"eyeball.{side}")
         elif base in ("Hand", "Cuff", "Wand", "WandTip", "WandLeaf") or base.startswith("WandProng"):
             bind_rigid(arm, obj, f"hand.{side}")
         elif base.startswith("Cape"):
@@ -1138,6 +1144,7 @@ class Rig:
         self.loops[name] = loop
         self.eases = {}
         self.mood = {"ear": 0.0, "crown": 0.0}
+        self.last_blink = (1, 0.0)
         acts = {}
         ad = self.arm.animation_data or self.arm.animation_data_create()
         acts[self.arm] = ad.action = bpy.data.actions.new(f"{name}")
@@ -1157,8 +1164,11 @@ class Rig:
                 for strip in layer.strips:
                     for bag in strip.channelbags:
                         for fc in bag.fcurves:
+                            # the eyeball is there or not, never half shrunk
+                            step = "eyeball" in fc.data_path and fc.data_path.endswith("scale")
                             for kp in fc.keyframe_points:
-                                interp, easing = self.eases.get((fc.data_path, round(kp.co.x)), ("BEZIER", "EASE_IN_OUT"))
+                                interp, easing = ("CONSTANT", "AUTO") if step else \
+                                    self.eases.get((fc.data_path, round(kp.co.x)), ("BEZIER", "EASE_IN_OUT"))
                                 kp.interpolation = interp
                                 kp.easing = easing
                             fc.update()
@@ -1249,13 +1259,39 @@ class Rig:
         pitch = max(-25.0, min(25.0, -math.degrees(math.atan2(d.z, math.hypot(d.x, d.y))))) * amount
         self.bone("head", frame, rot=[((1, 0, 0), pitch), ((0, 0, 1), yaw), ((0, 1, 0), roll)], ease=ease)
 
+    LID_SHUT = 0.75   # from this far closed the lid hides the eye
+
     def blink(self, frame, amount, ease=None):
+        """Close the lids by `amount` (keys in time order within a clip); the
+        eyeball goes from about the frame the lid crosses LID_SHUT and comes
+        back from about the frame it opens past it."""
         for side in ("L", "R"):
             self.bone(f"eyelid.{side}", frame, rot=((1, 0, 0), 180.0 * amount), ease=ease)
+        before, was = self.last_blink
+        self.last_blink = (frame, amount)
+        shut, was_shut = amount >= self.LID_SHUT, was >= self.LID_SHUT
+        if shut == was_shut and frame > 1:
+            return
+        at = frame
+        if frame > before and shut != was_shut:
+            t = (was - self.LID_SHUT) / (was - amount)
+            at = before + max(1, math.ceil(t * (frame - before)))
+        for side in ("L", "R"):
+            pb = self.arm.pose.bones[f"eyeball.{side}"]
+            pb.scale = (0.001, 0.001, 0.001) if shut else (1.0, 1.0, 1.0)
+            pb.keyframe_insert("scale", frame=at)
 
     def brows_sad(self, frame, value, ease=None):
         self.shape("sad.L", frame, value, ease)
         self.shape("sad.R", frame, value, ease)
+
+    def spin(self, frame, degrees, ease=None):
+        """Turn the whole figure about the vertical by a running angle (keyed
+        as such, so a full turn is not read back as no turn)."""
+        pb = self.arm.pose.bones["root"]
+        pb.rotation_euler = (0.0, math.radians(degrees), 0.0)
+        pb.keyframe_insert("rotation_euler", frame=frame)
+        self._ease('pose.bones["root"].rotation_euler', frame, ease)
 
     def breath(self, length, depth=0.025, lift=0.012, phase=0.0):
         """A breathing cycle over the whole clip: the chest swells, the hips lift."""
@@ -1309,10 +1345,31 @@ class Rig:
             self.bone("hood_tip", f, rot=[((1, 0, 0), -nod), ((0, 1, 0), crown_mood)])
 
 
+# The clips are authored on the young elf; these carry its points to the
+# form being built (for the young elf they change nothing).
+YOUNG = FORMS["young"]
+
+
+def reach(point):
+    """A hand's target placed on the young elf, kept the same way from the
+    shoulder on its side and scaled by the arm's length, so an arm raised
+    beside the head is raised beside the head on every form."""
+    s = 1 if point[0] >= 0 else -1
+    young = Vector((0.215 * s, -0.01, YOUNG.shoulder_z - 0.04))
+    return arm_points(s)[0] + (Vector(point) - young) * F.arm
+
+
+def at_face(point):
+    """A point placed by the young elf's head (the mouth a hand feeds, the
+    face it washes), carried to this form's head."""
+    return head_c() + (Vector(point) - Vector((0.0, 0.0, YOUNG.head_c))) * (F.head_r / YOUNG.head_r)
+
+
 def build_clips(rig):
     """Author every clip. Frame 1 is the first frame; a loop returns to it at
     length + 1, a one-shot settles into the rest pose there (so the switch
-    back to idle is not a cut). The hands are placed, the arms follow."""
+    back to idle is not a cut). The hands are placed, the arms follow; the
+    points are the young elf's, carried to the form by reach and at_face."""
     L = {s: rig.rest_head[f"hand.{s}"].copy() for s in ("L", "R")}
     camera = (0.0, -6.0, 1.45)
 
@@ -1339,7 +1396,7 @@ def build_clips(rig):
 
     # happy: 36 frames, a crouch, two hops with the arms thrown up, a settle.
     rig.begin("happy", 36, loop=False)
-    up = (0.62, -0.2, 1.42)
+    up = reach((0.62, -0.2, 1.42))
     rig.squash(1, 0.0)
     rig.squash(4, 0.16, ease="EASE_OUT")
     rig.bone("root", 4, move=(0, 0, 0))
@@ -1365,7 +1422,7 @@ def build_clips(rig):
     rig.hands(14, (up[0] - 0.02, up[1], up[2] - 0.04))
     rig.hands(22, (up[0] + 0.03, up[1] - 0.02, up[2] + 0.02))
     rig.hands(27, (up[0] - 0.02, up[1], up[2] - 0.08))
-    rig.hands(32, (0.36, -0.16, 1.1), ease="EASE_IN_OUT")
+    rig.hands(32, reach((0.36, -0.16, 1.1)), ease="EASE_IN_OUT")
     rig.hands(37, L["L"], ease="EASE_OUT")
     rig.look(1, camera)
     rig.look(10, (0, -6, 3.0), ease="EASE_OUT")
@@ -1406,21 +1463,6 @@ def build_clips(rig):
     rig.blink(25, 0.3)
     rig.finish()
 
-    # sleep: 48-frame loop, eyes closed, deep breath, the head nodding off.
-    rig.begin("sleep", 48, loop=True)
-    rig.mood.update(ear=-18.0, crown=12.0)
-    rig.breath(48, depth=0.04, lift=0.0)
-    for f in range(1, 50, 4):
-        ph = 2 * math.pi * (f - 1) / 48
-        rig.bone("hips", f, move=(0, 0, -0.03 + 0.01 * math.sin(ph)))
-        rig.bone("root", f, rot=((0, 1, 0), 1.5 * math.sin(ph)))
-        rig.bone("head", f, rot=[((1, 0, 0), 12 + 2.0 * math.sin(ph)), ((0, 1, 0), 6)])
-    rig.blink(1, 1.0)
-    rig.blink(49, 1.0)
-    rig.shape("open", 1, 0.2)
-    rig.shape("open", 49, 0.2)
-    rig.finish()
-
     # pet: 24 frames, leans into the hand, squints and smiles, springs back.
     rig.begin("pet", 24, loop=False)
     rig.mood.update(ear=8.0)
@@ -1449,7 +1491,7 @@ def build_clips(rig):
 
     # feed: 36 frames, the hands bring the food to the mouth, two bites, a happy settle.
     rig.begin("feed", 36, loop=False)
-    mouth = (0.07, -0.36, 1.12)
+    mouth = at_face((0.07, -0.36, 1.12))
     rig.hands(1, L["L"])
     rig.hands(6, mouth, ease=("BACK", "EASE_OUT"))
     rig.hands(18, (mouth[0], mouth[1] + 0.01, mouth[2] - 0.01))
@@ -1482,9 +1524,9 @@ def build_clips(rig):
     rig.begin("wave", 36, loop=False)
     high = Vector((-0.47, -0.24, 1.2))
     rig.hand("R", 1, L["R"])
-    rig.hand("R", 6, high, ease=("BACK", "EASE_OUT"))
+    rig.hand("R", 6, reach(high), ease=("BACK", "EASE_OUT"))
     for i, dx in enumerate((-0.09, 0.08, -0.09, 0.08, -0.04)):
-        rig.hand("R", 9 + 3 * i, high + Vector((dx, 0.0, 0.03 if dx < 0 else -0.02)), ease="EASE_IN_OUT")
+        rig.hand("R", 9 + 3 * i, reach(high + Vector((dx, 0.0, 0.03 if dx < 0 else -0.02))), ease="EASE_IN_OUT")
     rig.hand("R", 30, (L["R"].x - 0.06, L["R"].y - 0.05, L["R"].z + 0.12), ease="EASE_IN_OUT")
     rig.hand("R", 37, L["R"], ease="EASE_OUT")
     rig.bone("hand.R", 1, rot=((0, 1, 0), 0))
@@ -1499,6 +1541,129 @@ def build_clips(rig):
     rig.shape("smile", 4, 0.0)
     rig.shape("smile", 8, 0.9, ease="EASE_OUT")
     rig.shape("smile", 26, 0.9)
+    rig.shape("smile", 37, 0.0)
+    rig.finish()
+
+    # bath: 36 frames, both hands wash the face with the eyes shut, then the
+    # elf shakes the water off, head and body, and settles with a smile.
+    rig.begin("bath", 36, loop=False)
+    rig.mood.update(ear=-8.0)
+    face = Vector((0.13, -0.4, 1.26))
+    rig.hands(1, L["L"])
+    rig.hands(5, at_face(face), ease=("BACK", "EASE_OUT"))
+    for i in range(5):
+        lift = 0.06 if i % 2 == 0 else -0.04
+        f = 8 + 3 * i
+        rig.hand("L", f, at_face(face + Vector((0.02, 0.0, lift))), ease="EASE_IN_OUT")
+        rig.hand("R", f, at_face(Vector((-face.x - 0.02, face.y, face.z - lift))), ease="EASE_IN_OUT")
+        rig.look(f, camera, roll=6 if i % 2 == 0 else -6, ease="EASE_IN_OUT")
+    rig.hands(23, L["L"], ease="EASE_IN")
+    rig.look(1, camera)
+    rig.look(5, (0, -6, 1.2), ease="EASE_OUT")
+    for i, deg in enumerate((16, -16, 13, -10, 6, 0)):
+        f = 23 + 2 * i
+        rig.look(f, camera, roll=deg)
+        rig.bone("root", f, rot=((0, 0, 1), 0.5 * deg))
+    rig.look(37, camera)
+    rig.bone("root", 37, rot=((0, 0, 1), 0.0))
+    rig.squash(1, 0.0)
+    rig.squash(5, 0.06, ease="EASE_OUT")
+    rig.squash(22, 0.06)
+    rig.squash(25, -0.06)
+    rig.squash(29, 0.05)
+    rig.squash(33, -0.02)
+    rig.squash(37, 0.0)
+    rig.blink(1, 0.0)
+    rig.blink(5, 1.0, ease="EASE_OUT")
+    rig.blink(31, 1.0)
+    rig.blink(34, 0.0, ease="EASE_IN")
+    rig.shape("smile", 1, 0.25)
+    rig.shape("smile", 6, 0.8, ease="EASE_OUT")
+    rig.shape("smile", 31, 0.8)
+    rig.shape("open", 24, 0.0)
+    rig.shape("open", 27, 0.4, ease="EASE_OUT")
+    rig.shape("open", 31, 0.0)
+    rig.shape("smile", 34, 1.0)
+    rig.shape("smile", 37, 0.25)
+    rig.finish()
+
+    # play: 36 frames, a crouch, a spin in a hop with the arms out, a landing
+    # and a ta-da with the arms thrown up.
+    rig.begin("play", 36, loop=False)
+    rig.mood.update(ear=6.0)
+    out = reach((0.6, -0.06, 1.0))
+    up = reach((0.62, -0.2, 1.42))
+    rig.squash(1, 0.0)
+    rig.squash(4, 0.15, ease="EASE_OUT")
+    rig.squash(7, -0.1)
+    rig.squash(13, -0.02)
+    rig.squash(18, 0.15, ease="EASE_OUT")
+    rig.squash(21, -0.06)
+    rig.squash(28, 0.0)
+    rig.squash(31, 0.04)
+    rig.squash(37, 0.0)
+    rig.bone("root", 5, move=(0, 0, 0))
+    rig.bone("root", 11, move=(0, 0, 0.12), ease="EASE_OUT")
+    rig.bone("root", 17, move=(0, 0, 0.0), ease="EASE_IN")
+    rig.spin(5, 0.0)
+    rig.spin(17, 360.0, ease="EASE_IN_OUT")
+    rig.spin(37, 360.0)
+    rig.hands(1, L["L"])
+    rig.hands(4, (L["L"].x + 0.02, L["L"].y + 0.06, L["L"].z - 0.04), ease="EASE_OUT")
+    rig.hands(8, out, ease="EASE_OUT")
+    rig.hands(15, out)
+    rig.hands(18, (L["L"].x + 0.03, L["L"].y, L["L"].z + 0.04), ease="EASE_IN_OUT")
+    rig.hands(22, up, ease=("BACK", "EASE_OUT"))
+    rig.hands(29, (up[0] - 0.02, up[1], up[2] - 0.04))
+    rig.hands(37, L["L"], ease="EASE_IN_OUT")
+    rig.look(1, camera)
+    rig.look(22, camera, roll=-8, ease="EASE_OUT")
+    rig.look(30, camera, roll=-6)
+    rig.look(37, camera, ease="EASE_IN_OUT")
+    rig.shape("smile", 1, 0.25)
+    rig.shape("smile", 4, 1.0, ease="EASE_OUT")
+    rig.shape("open", 8, 0.5)
+    rig.shape("open", 16, 0.2)
+    rig.shape("open", 22, 0.8, ease="EASE_OUT")
+    rig.shape("open", 30, 0.0)
+    rig.shape("smile", 33, 1.0)
+    rig.shape("smile", 37, 0.25)
+    rig.blink(17, 0.0)
+    rig.blink(19, 0.7)
+    rig.blink(22, 0.0)
+    rig.finish()
+
+    # yawn: 36 frames, a stretch with the arms up and the head back, the
+    # mouth wide and the eyes shut, then heavy lids.
+    rig.begin("yawn", 36, loop=False)
+    rig.mood.update(ear=-10.0, crown=8.0)
+    stretch = reach((0.46, -0.08, 1.45))
+    rig.hands(1, L["L"])
+    rig.hands(9, stretch, ease=("BACK", "EASE_OUT"))
+    rig.hands(19, (stretch[0] + 0.02, stretch[1], stretch[2] + 0.02))
+    rig.hands(28, L["L"], ease="EASE_IN_OUT")
+    rig.squash(1, 0.0)
+    rig.squash(4, 0.05, ease="EASE_OUT")
+    rig.squash(10, -0.1, ease="EASE_OUT")
+    rig.squash(19, -0.08)
+    rig.squash(25, 0.06, ease="EASE_IN_OUT")
+    rig.squash(37, 0.0)
+    rig.look(1, camera)
+    rig.look(10, (0, -6, 3.2), roll=4, ease="EASE_OUT")
+    rig.look(20, (0, -6, 3.0), roll=4)
+    rig.look(28, camera, ease="EASE_IN_OUT")
+    rig.look(37, camera)
+    rig.shape("open", 4, 0.0)
+    rig.shape("open", 12, 1.0, ease="EASE_OUT")
+    rig.shape("open", 20, 0.9)
+    rig.shape("open", 25, 0.0, ease="EASE_IN")
+    rig.blink(1, 0.0)
+    rig.blink(8, 1.0, ease="EASE_OUT")
+    rig.blink(24, 1.0)
+    rig.blink(29, 0.5, ease="EASE_IN")
+    rig.blink(37, 0.0)
+    rig.shape("smile", 28, 0.0)
+    rig.shape("smile", 32, 0.4)
     rig.shape("smile", 37, 0.0)
     rig.finish()
     return rig.clips
@@ -1589,7 +1754,7 @@ def stage_turntable(scene, rig, out):
     contact_sheet(os.path.join(out, "turntable.png"), 4, 0.5, items)
 
 
-MOOD_POSES = (("ok", "idle", 1), ("happy", "happy", 10), ("sad", "sad", 13), ("sleep", "sleep", 25))
+MOOD_POSES = (("ok", "idle", 1), ("happy", "happy", 10), ("sad", "sad", 13), ("sleepy", "yawn", 14))
 
 
 def stage_moods(scene, rig, out):
@@ -1678,6 +1843,131 @@ def stage_thumbs(scene, rig, out):
     if lights:
         room.set_daylight(lights, False)
 
+# What of the elf shows above a sleeper's blanket: the head with its face,
+# hair, ears and beard (a hat is a layer of its own, as in the frames).
+HEAD_PARTS = ("Head", "Hair", "HairLeaf", "HairLeafStem", "HairBack", "Beard", "EarInner", "Eyelid", "EyeWhite",
+              "Brow", "Highlight", "HighlightSmall", "Iris", "Lash", "LashTop", "Mouth", "Pupil", "SproutLeaf",
+              "SproutStem")
+SLEEP_BEDS = ("oak", "hammock", "nest")
+# The head lies on its right side on the pillow, the crown towards the
+# head of the bed, turned a little up to the room; the sleeper is drawn a
+# little smaller than the standing figure (every form alike), snug in
+# beds built for the room's scale rather than the elf's.
+SLEEP_TILT = -80.0
+SLEEP_SCALE = 0.75
+
+
+def stage_sleepers(scene, rig, out, room_rig):
+    """The elf asleep in each bed: the head on the pillow, eyes shut, the
+    body under the bed's cover raised over it (room.build_sleeper), each
+    hat as a layer of its own, by night and by day, every picture of one
+    bed through one crop; sleepers.json gives each bed's crop in the plate's
+    pixels and the point above the head the sleep puffs rise from. The
+    elf is at the young form's scale, so every form keeps its size; the
+    bed is in the scene as a holdout, in front of whatever it covers."""
+    import room
+    cam, arm = room_rig["camera"], rig.arm
+    standing_scale = arm.scale.copy()
+    k = arm.scale.x * SLEEP_SCALE
+    arm.scale = (k, k, k)
+    rig.begin("asleep", 1, loop=True)
+    rig.mood.update(ear=-14.0, crown=8.0)
+    rig.blink(1, 1.0)
+    rig.shape("open", 1, 0.25)
+    rig.shape("smile", 1, 0.2)
+    rig.finish()
+    pose(rig, "asleep", 1)
+    head_parts = [obj for name, obj in rig.objs.items() if name.partition(".")[0] in HEAD_PARTS]
+    under_cover = [obj for obj in body_objects() if obj not in head_parts]
+    hidden = {obj: obj.hide_render for obj in under_cover}
+    for obj in under_cover:
+        obj.hide_render = True
+    saved = (arm.location.copy(), arm.rotation_euler.copy())
+    b = form_look().get("body", 1.0)
+    length, depth = 0.72 * F.shoulder_z * k, 0.32 * b * k
+    side = F.head_r * head_scale()[0] * k
+    lights = ROOM_LIGHTS.get("lights")
+    render = scene.render
+    width, height = render.resolution_x, render.resolution_y
+    border = (render.use_border, render.use_crop_to_border, render.border_min_x, render.border_max_x,
+              render.border_min_y, render.border_max_y)
+    info = {}
+    for bed in SLEEP_BEDS:
+        coll = bpy.data.collections.new(f"Sleeper/{bed}")
+        scene.collection.children.link(coll)
+        rest = room.build_sleeper(coll, bed, length, depth)
+        tilt = Matrix.Rotation(math.radians(SLEEP_TILT), 3, "Y")
+        arm.rotation_euler = tilt.to_euler()
+        # the head sinks a little into the pillow, towards the cover
+        arm.location = rest + Vector((0.1 * side, -0.02, 0.85 * side)) - tilt @ (head_c() * k)
+        bed_coll = room_rig["slots"][("bed", bed)]
+        bed_coll.hide_render = False
+        replaced = [obj for obj in bed_coll.all_objects if obj.name in room.SLEEPER_REPLACES[bed]]
+        for obj in replaced:
+            obj.hide_render = True
+        bed_state = {obj: (obj.is_holdout, obj.lineart.usage) for obj in bed_coll.all_objects if obj not in replaced}
+        for obj in bed_state:
+            obj.is_holdout = True
+            obj.lineart.usage = "OCCLUSION_ONLY"
+        cover_ink = {obj: obj.lineart.usage for obj in coll.objects}
+        bpy.context.view_layer.update()
+        print(f"[elf] sleeper {bed}: bed {len(bed_state)} objects as holdout "
+              f"({sum(1 for o in bed_state if o.is_holdout)} flagged), cover {len(cover_ink)} objects")
+        corners = [obj.matrix_world @ Vector(c) for obj in head_parts + list(coll.objects) for c in obj.bound_box]
+        for hat in HAT_IDS[1:]:
+            corners += [o.matrix_world @ Vector(c) for o in collection(f"Hat/{hat}").all_objects if o.type == "MESH"
+                        for c in o.bound_box]
+        pts = [_common.project_to_pixels(scene, cam, c) for c in corners]
+        x0, x1 = max(0, int(min(p[0] for p in pts)) - 12), min(width, int(max(p[0] for p in pts)) + 12)
+        y0, y1 = max(0, int(min(p[1] for p in pts)) - 12), min(height, int(max(p[1] for p in pts)) + 12)
+        render.use_border = render.use_crop_to_border = True
+        render.border_min_x, render.border_max_x = x0 / width, x1 / width
+        render.border_min_y, render.border_max_y = 1.0 - y1 / height, 1.0 - y0 / height
+        above = arm.matrix_world @ head_c() + Vector((0, 0, 1.1 * side))
+        puff = _common.project_to_pixels(scene, cam, above)
+        info[bed] = {"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0,
+                     "puff": {"x": round(puff[0], 1), "y": round(puff[1], 1)}}
+        for day in (False, True):
+            if lights:
+                room.set_daylight(lights, day)
+            suffix = "_day" if day else ""
+            set_hat_pass(None)
+            render_still(scene, os.path.join(out, "sleepers", f"{bed}{suffix}.png"))
+            for obj in cover_ink:
+                obj.is_holdout = True
+                obj.lineart.usage = "OCCLUSION_ONLY"
+            for hat in HAT_IDS[1:]:
+                set_hat_pass(hat)
+                render_still(scene, os.path.join(out, "sleepers", f"{bed}_hat_{hat}{suffix}.png"))
+            set_hat_pass(None)
+            for obj, usage in cover_ink.items():
+                obj.is_holdout = False
+                obj.lineart.usage = usage
+        if lights:
+            room.set_daylight(lights, False)
+        for obj, (holdout, usage) in bed_state.items():
+            obj.is_holdout = holdout
+            obj.lineart.usage = usage
+        for obj in replaced:
+            obj.hide_render = False
+        bed_coll.hide_render = True
+        # hidden, not deleted: the ink keeps pointers to the scene's objects
+        for obj in coll.objects:
+            obj.lineart.usage = "EXCLUDE"
+        coll.hide_render = True
+    arm.location, arm.rotation_euler = saved
+    arm.scale = standing_scale
+    for obj, flag in hidden.items():
+        obj.hide_render = flag
+    (render.use_border, render.use_crop_to_border, render.border_min_x, render.border_max_x,
+     render.border_min_y, render.border_max_y) = border
+    rig.clips.pop("asleep")
+    rig.loops.pop("asleep")
+    with open(os.path.join(out, "sleepers", "sleepers.json"), "w", encoding="utf-8") as handle:
+        json.dump(info, handle, indent=2)
+        handle.write("\n")
+
+
 def stage_hero(scene, rig, out):
     """A double-size still of the wave pose (Eevee: the painterly ramp reads
     the light through Shader to RGB, which Cycles cannot)."""
@@ -1698,7 +1988,7 @@ def write_render_info(out, argv, model_height):
     scene = bpy.context.scene
     info = {
         "script": "elf.py",
-        "args": argv[1:],
+        "args": [arg for arg in argv[1:] if arg != "--resume"],  # resuming changes no frame
         "width": scene.render.resolution_x,
         "height": scene.render.resolution_y,
         "pixelsPerMetre": round(FRAME["pixels_per_metre"], 3),
@@ -1738,12 +2028,13 @@ def room_scene(samples, quality=True):
     room.set_shell_hidden_from_camera(True)
     room.set_daylight(lights, False)
     ROOM_LIGHTS["lights"] = lights
-    return scene, {"camera": cam, "rug": Vector(rug_center)}
+    return scene, {"camera": cam, "rug": Vector(rug_center), "slots": slot_colls}
 
 
-def animated_box(scene, cam, rig, step=3):
+def animated_box(scene, cam, rig, step=1):
     """The box in plate pixels every clip's frames reach (every object,
-    hats included, as the armature poses it), sampled every few frames."""
+    hats included, as the armature poses it), every frame: a staff swung
+    out in a spin passes the box of the frames around it in two frames."""
     lo, hi = [1e9, 1e9], [-1e9, -1e9]
     hidden = {coll: coll.hide_render for coll in bpy.data.collections}
     for coll in bpy.data.collections:
@@ -1767,9 +2058,9 @@ def place_in_room(scene, arm, room_rig, model_height, rig=None):
     """Stand the elf on the rug at the young form's scale, so the young one
     is ROOM_FIGURE_PX tall in the plate's pixels and every other form its
     own height, and crop the render to the figure (with room for the hops
-    and the arms) so the frames hold the figure alone. A form that carries
-    a wand or a staff reaches further than that room: its crop also takes
-    in every frame of its clips (animated_box)."""
+    and the arms) so the frames hold the figure alone; the crop also takes
+    in every frame of the clips (animated_box), since a staff, a spin with
+    the arms out or a stretch reaches further than that room."""
     cam, rug = room_rig["camera"], room_rig["rug"]
     foot = _common.project_to_pixels(scene, cam, rug)
     head = _common.project_to_pixels(scene, cam, rug + Vector((0, 0, 1.0)))
@@ -1784,7 +2075,7 @@ def place_in_room(scene, arm, room_rig, model_height, rig=None):
     # the border: the figure's reach, in the room, projected and padded
     corners = [rug + Vector((sx * 0.8 * k, -0.35 * k, z * k)) for sx in (-1, 1) for z in (-0.05, max(2.75, model_height + 0.95))]
     pts = [_common.project_to_pixels(scene, cam, c) for c in corners]
-    if rig is not None and FORM_LOOK.get(FORM_NAME, {}).get("wand"):
+    if rig is not None:
         bpy.context.view_layer.update()
         lo, hi = animated_box(scene, cam, rig)
         pts += [tuple(lo), tuple(hi)]
@@ -1833,6 +2124,8 @@ def main():
         scene = setup_scene(FRAME_W, FRAME_H, samples=samples)
     else:
         scene, room_rig = room_scene(samples, quality=LOOK["quality"] and not quick)
+    if "--resume" in argv:
+        scene.render.use_overwrite = False
     objs, mats = build_model()
     arm = build_armature()
     bind_all(arm, objs)
@@ -1847,9 +2140,13 @@ def main():
             _common.add_line_art(scene, radius=LOOK["ink_radius"])
         if LOOK["quality"] and not quick:
             _common.enable_quality(scene)
-    else:
-        place_in_room(scene, arm, room_rig, top.z, rig)
-    write_render_info(out, argv, top.z)
+    # render.json describes the frames; a run of stills only leaves it be,
+    # and needs no crop over every clip
+    frames = "anims" in stages or "allanims" in stages or "--clips" in argv
+    if not studio:
+        place_in_room(scene, arm, room_rig, top.z, rig if frames else None)
+    if frames:
+        write_render_info(out, argv, top.z)
     print(f"[elf] form {F} look {LOOK}")
     for name, (start, end) in clips.items():
         print(f"[elf] clip {name}: frames {start}-{end} ({end - start + 1} frames)")
@@ -1874,6 +2171,8 @@ def main():
         stage_anims(scene, rig, out, argv[argv.index("--clips") + 1].split(","), hats="hats" in stages)
     if "hero" in stages:
         stage_hero(scene, rig, out)
+    if "sleepers" in stages:
+        stage_sleepers(scene, rig, out, room_rig)
     pose(rig, "idle", 1)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, "elf.blend"))
 

@@ -1117,8 +1117,14 @@ def build_rug_braided(coll, c):
     cylinder("rug.centre", coll, 0.11, 0.026, (c[0], c[1], 0.013), MATS["rug_rings"], outline=0.004)
 
 
+# The beds' places, shared by their builders and the sleepers' blankets.
+OAK_BED = (-1.42, -0.7, 1.02, WALL_Y)              # x0, x1, y0, y1
+HAMMOCK_ENDS = ((-1.38, 1.36, 1.2), (-0.7, 1.02, 1.1))
+NEST_CENTRE = (-1.05, 1.18)
+
+
 def build_bed_oak(coll):
-    x0, x1, y0, y1 = -1.42, -0.7, 1.02, WALL_Y
+    x0, x1, y0, y1 = OAK_BED
     wd = MATS["wood_light"]
     box_bounds("bed.frame", coll, x0, x1, y0, y1, 0.14, 0.3, wd, outline=0.006)
     for i, (x, y) in enumerate(((x0 + 0.04, y0 + 0.04), (x1 - 0.04, y0 + 0.04), (x0 + 0.04, y1 - 0.04), (x1 - 0.04, y1 - 0.04))):
@@ -1138,29 +1144,31 @@ def build_bed_oak(coll):
     contact_shadow(coll, ((x0 + x1) / 2, (y0 + y1) / 2 - 0.05, 0), (x1 - x0) / 2 + 0.12, (y1 - y0) / 2 + 0.12)
 
 
+def hammock_cloth(u, v):
+    """The hammock's cloth, u along it from the high end, v across."""
+    a, b = Vector(HAMMOCK_ENDS[0]), Vector(HAMMOCK_ENDS[1])
+    axis = b - a
+    side = Vector((-axis.y, axis.x, 0)).normalized()
+    p = a.lerp(b, u)
+    width = 0.34 * math.sin(math.pi * u) ** 0.6 + 0.02
+    sag = 0.46 * math.sin(math.pi * u)
+    w = (v - 0.5) * width
+    return (p.x + side.x * w, p.y + side.y * w, p.z - sag + 0.06 * (2 * v - 1) ** 2 * math.sin(math.pi * u))
+
+
 def build_bed_hammock(coll):
-    a = Vector((-1.38, 1.36, 1.2))
-    b = Vector((-0.7, 1.02, 1.1))
+    a = Vector(HAMMOCK_ENDS[0])
+    b = Vector(HAMMOCK_ENDS[1])
     wd = MATS["wood_light"]
     for i, p in enumerate((a, b)):
         cylinder(f"hammock.post{i}", coll, 0.035, p.z + 0.1, (p.x, p.y, (p.z + 0.1) / 2), wd, outline=0.006, segments=12)
         sphere(f"hammock.knob{i}", coll, 0.05, (p.x, p.y, p.z + 0.12), MATS["wood_pale"], outline=0.004)
         cylinder(f"hammock.foot{i}", coll, 0.16, 0.03, (p.x, p.y, 0.015), wd, outline=0.005, segments=20)
-    axis = (b - a)
-    side = Vector((-axis.y, axis.x, 0)).normalized()
-
-    def cloth(u, v):
-        p = a.lerp(b, u)
-        width = 0.34 * math.sin(math.pi * u) ** 0.6 + 0.02
-        sag = 0.46 * math.sin(math.pi * u)
-        w = (v - 0.5) * width
-        return (p.x + side.x * w, p.y + side.y * w, p.z - sag + 0.06 * (2 * v - 1) ** 2 * math.sin(math.pi * u))
-
-    grid_sheet("hammock.cloth", coll, cloth, 24, 10, (0, 0, 0), MATS["hammock"], outline=0.006)
+    grid_sheet("hammock.cloth", coll, hammock_cloth, 24, 10, (0, 0, 0), MATS["hammock"], outline=0.006)
     for i, (p, u) in enumerate(((a, 0.0), (b, 1.0))):
         for k in range(5):
             v = k / 4
-            end = Vector(cloth(0.08 if u == 0 else 0.92, v))
+            end = Vector(hammock_cloth(0.08 if u == 0 else 0.92, v))
             mid = (p + end) / 2
             d = end - p
             cylinder(f"hammock.rope{i}{k}", coll, 0.006, d.length, mid, MATS["twine"], rotation=d.to_track_quat("Z", "Y").to_euler(), segments=6)
@@ -1538,7 +1546,7 @@ def build_rug_moss(coll, c):
 
 def build_bed_nest(coll):
     """A round nest of twigs on the floor, a blanket of moss and a pillow in it."""
-    cx, cy = -1.05, 1.18
+    cx, cy = NEST_CENTRE
     torus("bed.nest", coll, 0.36, 0.11, (cx, cy, 0.11), MATS["straw"], scale=(1, 0.8, 0.9), segments=40, rings=14)
     rng = random.Random(8)
     for i in range(26):
@@ -1551,6 +1559,77 @@ def build_bed_nest(coll):
     sphere("bed.nest.moss", coll, 0.3, (cx, cy, 0.1), MATS["moss"], scale=(1, 0.78, 0.35), segments=24)
     sphere("bed.nest.pillow", coll, 0.11, (cx - 0.12, cy + 0.08, 0.2), MATS["pillow"], scale=(1.2, 0.8, 0.5), segments=16)
     contact_shadow(coll, (cx, cy, 0), 0.55, 0.45)
+
+
+# ----------------------------------------------------------------------------
+# The sleeper's blanket: where a sleeping elf's head rests in each bed, and
+# the bed's cover raised over its body (elf.py's sleepers stage)
+# ----------------------------------------------------------------------------
+
+def _smooth_edge(t, width):
+    """0 at the sheet's edge rising to 1 within `width` of it."""
+    x = max(0.0, min(1.0, t / width))
+    return x * x * (3 - 2 * x)
+
+
+def _mound(x, y, centre, radii):
+    """A soft bump, 1 at the centre easing to 0 at the ellipse (a body
+    under a cover, not a dome)."""
+    d = ((x - centre[0]) / radii[0]) ** 2 + ((y - centre[1]) / radii[1]) ** 2
+    t = max(0.0, 1.0 - d)
+    return t * t * (3 - 2 * t)
+
+
+# The bed's own cover, which a sleeper's replaces (hidden while it is drawn).
+SLEEPER_REPLACES = {"oak": ("bed.quilt", "bed.quilt.hem"), "hammock": ("hammock.cloth",), "nest": ()}
+
+
+def build_sleeper(coll, bed, length, depth):
+    """The blanket over an elf asleep in `bed` (a variant of the bed slot):
+    the bed's own cover, raised into a mound over a body `length` long from
+    the head and `depth` thick (room metres, curled up), its edges hanging
+    to the hem, in place of the cover the bed is built with
+    (SLEEPER_REPLACES). Returns the point the head rests on (the top of
+    the pillow)."""
+    if bed == "oak":
+        x0, x1, y0, y1 = OAK_BED
+        qx0, qx1, qy0, qy1 = x0 + 0.29, x1 - 0.035, y0 - 0.035, y1 - 0.02
+        run = min(length, qx1 - qx0 - 0.04)
+        centre, radii = (qx0 + 0.02 + run / 2, (y0 + y1) / 2 - 0.04), (run / 2 + 0.04, (y1 - y0) / 2 - 0.02)
+
+        def cover(u, v, lift=0.0):
+            x, y = qx0 + (qx1 - qx0) * u, qy0 + (qy1 - qy0) * v
+            top = 0.47 + depth * _mound(x, y, centre, radii) + lift
+            hang = _smooth_edge(u, 0.05) * _smooth_edge(1 - u, 0.05) * _smooth_edge(v, 0.08)
+            return (x, y, 0.37 + (top - 0.37) * hang)
+
+        grid_sheet("sleeper.quilt", coll, cover, 44, 26, (0, 0, 0), MATS["quilt"], outline=0.006)
+        grid_sheet("sleeper.fold", coll, lambda u, v: cover(0.012 + 0.05 * u, v, 0.012), 4, 26, (0, 0, 0),
+                   MATS["quilt_trim"], outline=0.004)
+        return Vector((x0 + 0.2, (y0 + y1) / 2, 0.45 + 0.13 * 0.5))
+    if bed == "hammock":
+        a, b = Vector(HAMMOCK_ENDS[0]), Vector(HAMMOCK_ENDS[1])
+        u0 = 0.32
+        u1 = min(0.92, u0 + 0.15 + length / (b - a).length)
+
+        def blanket(u, v):
+            uu = u0 + (u1 - u0) * u
+            p = Vector(hammock_cloth(uu, v))
+            bump = 1.3 * depth * max(0.0, math.sin(math.pi * u)) ** 0.6 * max(0.0, math.sin(math.pi * v)) ** 0.5
+            return (p.x, p.y, p.z + 0.02 + bump)
+
+        grid_sheet("sleeper.blanket", coll, blanket, 30, 14, (0, 0, 0), MATS["quilt"], outline=0.006)
+        # the head rests on the pillow's inner half, clear of the post
+        pillow = a * 0.75 + b * 0.25
+        return Vector((pillow.x + 0.07, pillow.y, 0.9 + 0.12 * 0.5))
+    if bed == "nest":
+        # a mound of moss on the nest's own, the nest's rim in front of its foot
+        cx, cy = NEST_CENTRE
+        rx = min(0.26, length / 2 + 0.04)
+        sphere("sleeper.moss", coll, 1.0, (cx + 0.06, cy - 0.02, 0.15), MATS["moss"], outline=0.005,
+               scale=(rx, 0.2, 0.8 * depth + 0.03), segments=32)
+        return Vector((cx - 0.12, cy + 0.08, 0.2 + 0.11 * 0.5))
+    raise ValueError(f"no sleeper for the bed {bed}")
 
 
 def build_picture_map(coll):

@@ -75,6 +75,24 @@ export type SpriteManifest = {
   layers?: Record<string, SpriteOverlay>
   /* The catalogue pictures packed with the atlas, by name. */
   thumbs?: Record<string, string>
+  /* The elf asleep in each bed (a variant of the bed slot), by night and
+     by day, with a picture per hat. */
+  sleepers?: Record<string, SpriteSleeper>
+}
+
+/* The elf asleep in one bed: the head on the pillow and the bed's cover
+   over the body, placed in the room's units (the plate's pixels), the
+   point above the head the sleep puffs rise from, and the hats' layers
+   cropped alike. */
+export type SpriteSleeper = {
+  x: number
+  y: number
+  width: number
+  height: number
+  puff: { x: number; y: number }
+  file: string
+  fileDay: string
+  hats: Record<string, { file: string; fileDay: string }>
 }
 
 /* One overlay (a hat): its sheets, laid out like the base's. */

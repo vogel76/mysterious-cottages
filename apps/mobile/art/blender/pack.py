@@ -9,7 +9,7 @@ Runs with the system Python and Pillow, not inside Blender:
 
     /usr/bin/python3 art/blender/pack.py pack <frames_dir> --out <atlas_dir> [--scale 0.5] [--fps 24] [--once wave,yawn] [--lossless]
     /usr/bin/python3 art/blender/pack.py pack-layers <character_dir> --out <atlas_dir> [--base body] [same options]
-        [--thumbs <dir>] [--registry <file.ts>]
+        [--thumbs <dir>] [--sleepers <dir>] [--registry <file.ts>]
 
 Input: <frames_dir> holds <clip>_####.png frames, all of one size, as
 render_frames() writes them; an optional anchor.json ({"x", "y"} in those
@@ -25,7 +25,9 @@ which carry their cell's size and the offset of the clip's box from the
 frame of reference, so cell N of every layer is the same moment and the
 app draws each cell at the frame's place plus its sheet's offset. --thumbs turns the <name>.thumb.png pictures of a
 directory into <name>_thumb.webp next to the sheets (the wardrobe's cards),
-and --registry writes the TypeScript module that names every file of the
+--sleepers the elf asleep in each bed (elf.py's sleepers stage: a picture
+per bed and per hat, by night and by day, with sleepers.json) into
+sleeper_<bed>[_hat_<id>][_day].webp, and --registry writes the TypeScript module that names every file of the
 atlas for Metro (a form of the elf's is src/features/elf/sprites/<form>Files.ts); the
 atlas directory is emptied of its old WebP files first.
 
@@ -47,6 +49,10 @@ plus manifest.json:
       "clips": { "idle": { "from": 0, "to": 23, "loop": true }, "wave": { "from": 24, "to": 47, "loop": false } },
       "layers": { "hat_acornCap": { "sheets": [ ... ] } },  // pack-layers only: the overlays, sheets alike
       "thumbs": { "hat_acornCap": "hat_acornCap_thumb.webp" },  // with --thumbs
+      "sleepers": { "oak": { "x": 40, "y": 600, "width": 300, "height": 200, "puff": { "x": 120, "y": 610 },
+                             "file": "sleeper_oak.webp", "fileDay": "sleeper_oak_day.webp",
+                             "hats": { "acornCap": { "file": "sleeper_oak_hat_acornCap.webp", "fileDay": ... } } } },
+                                                // with --sleepers: plate pixels, the puff above the head
       "source": { "render": { "script": "elf.py", ... }, "pack": "pack-layers --base body --scale 0.6 ..." }
     }
 
@@ -287,6 +293,27 @@ def write_thumbs(thumbs_dir: str, out_dir: str) -> dict:
     return thumbs
 
 
+def write_sleepers(sleepers_dir: str, out_dir: str) -> dict:
+    """The elf asleep in each bed: every picture as WebP, their crop (one
+    per bed, in the plate's pixels) and the puff's point from sleepers.json."""
+    with open(os.path.join(sleepers_dir, 'sleepers.json'), encoding='utf-8') as handle:
+        info = json.load(handle)
+
+    def webp(name: str) -> str:
+        file = f'sleeper_{name}.webp'
+        with Image.open(os.path.join(sleepers_dir, f'{name}.png')) as image:
+            image.convert('RGBA').save(os.path.join(out_dir, file), 'WEBP', quality=92, method=6)
+        return file
+
+    sleepers = {}
+    for bed, box in sorted(info.items()):
+        hats = sorted(name[len(f'{bed}_hat_'):-len('.png')] for name in os.listdir(sleepers_dir)
+                      if name.startswith(f'{bed}_hat_') and name.endswith('.png') and not name.endswith('_day.png'))
+        sleepers[bed] = {**box, 'file': webp(bed), 'fileDay': webp(f'{bed}_day'),
+                         'hats': {hat: {'file': webp(f'{bed}_hat_{hat}'), 'fileDay': webp(f'{bed}_hat_{hat}_day')} for hat in hats}}
+    return sleepers
+
+
 def write_registry(out_dir: str, registry: str) -> None:
     """The module that names every file of the atlas for Metro, which
     bundles only what a static require names."""
@@ -304,7 +331,8 @@ def write_registry(out_dir: str, registry: str) -> None:
 
 
 def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: float, fps: int, once: set[str],
-                lossy: bool, render: dict | None = None, command: str = '', thumbs_dir: str | None = None) -> dict:
+                lossy: bool, render: dict | None = None, command: str = '', thumbs_dir: str | None = None,
+                sleepers_dir: str | None = None) -> dict:
     """Packs one or more layers that share clips and frame numbers into one manifest."""
     if base not in layer_dirs:
         fail(f'the base layer "{base}" is not among {sorted(layer_dirs)}')
@@ -358,6 +386,8 @@ def pack_layers(layer_dirs: dict[str, str], base: str, out_dir: str, scale: floa
         manifest['layers'] = overlays
     if thumbs_dir:
         manifest['thumbs'] = write_thumbs(thumbs_dir, out_dir)
+    if sleepers_dir:
+        manifest['sleepers'] = write_sleepers(sleepers_dir, out_dir)
     manifest['source'] = {
         'render': {key: render[key] for key in ('script', 'args', 'width', 'height', 'orthoScale') if key in render} if render else None,
         'pack': command,
@@ -388,6 +418,7 @@ def main(argv: list[str]) -> None:
         if mode == 'pack-layers':
             command.add_argument('--base', default='body', help='the layer whose sheets are the manifest\'s "sheets"')
             command.add_argument('--thumbs', default=None, help='a directory of <name>.thumb.png catalogue pictures')
+            command.add_argument('--sleepers', default=None, help='the sleepers stage\'s pictures and sleepers.json')
             command.add_argument('--registry', default=None, help='the TypeScript registry to write')
     args = parser.parse_args(argv)
     once = {name.strip() for name in args.once.split(',') if name.strip()}
@@ -411,7 +442,11 @@ def main(argv: list[str]) -> None:
     thumbs = getattr(args, 'thumbs', None)
     if thumbs:
         command += ' --thumbs'
-    pack_layers(layers, base, args.out, args.scale, args.fps, once, not args.lossless, read_render(args.source), command, thumbs)
+    sleepers = getattr(args, 'sleepers', None)
+    if sleepers:
+        command += ' --sleepers'
+    pack_layers(layers, base, args.out, args.scale, args.fps, once, not args.lossless, read_render(args.source), command,
+                thumbs, sleepers)
     if getattr(args, 'registry', None):
         write_registry(args.out, args.registry)
 

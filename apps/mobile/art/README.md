@@ -170,13 +170,24 @@ the hair are not keyed by hand: when a clip is finished, `follow_through`
 samples the head's pitch and roll and the body's height over the clip
 and keys them against that velocity two frames late, so they trail a nod
 and flap on a hop, on top of a resting angle the clip sets for its mood
-(`rig.mood`, drooped ears for sad and sleep). The seven clips: idle (a
-breath, a weight shift, a glance aside, a blink; 48 frames), happy (a
-crouch, two hops with the arms thrown up, a settle; 36), sad (a slumped
-sway with a sigh; 24, loop), sleep (48, loop), pet (a lean into the
+(`rig.mood`, drooped ears for sad and a yawn). The clips are authored on
+the young elf: `reach` carries a hand's target to another form (the same
+way from the shoulder, scaled by the arm's length, so an arm raised
+beside the head is raised beside every form's head) and `at_face` a point
+by the face (the mouth a hand feeds) to the form's head. A blink past
+three quarters shrinks away what stands out of the eye (iris, pupil,
+highlights, the open eye's lash, on the `eyeball` bones, stepped, never
+half shrunk), which would otherwise poke through the shut lid. The nine
+clips: idle (a breath, a weight shift, a glance aside, a blink; 48
+frames), happy (a crouch, two hops with the arms thrown up, a settle;
+36), sad (a slumped sway with a sigh; 24, loop), pet (a lean into the
 hand with a squint; 24), feed (the hands bring the food to the mouth,
-two bites, a happy settle; 36) and wave (the arm up beside the head,
-three waves from the elbow, a head tilt; 36).
+two bites, a happy settle; 36), wave (the arm up beside the head, three
+waves from the elbow, a head tilt; 36), bath (the hands wash the face
+with the eyes shut, a shake of the water off; 36), play (a spin in a hop
+with the arms out and a ta-da; 36) and yawn (a stretch with the arms up,
+the head back and the mouth wide, then heavy lids; 36). The elf does not
+sleep standing: asleep it lies in its bed, a still of its own (below).
 
 ## Packing
 
@@ -198,7 +209,7 @@ one clip, not all of them, and a hat is a small part of the frame), each
 sheet carrying its cell's size and its box's offset in the frame of
 reference, so the layers and the clips stay aligned; this keeps the
 decoded atlases about a third smaller than one box for every frame (the
-elder's body 109 MB instead of 163). The packer keeps
+elder's body 151 MB instead of 216). The packer keeps
 one transparent pixel around each box, scales the frames (`--scale`, with
 a premultiplied resample so the edges stay clean), lays them in reading
 order on sheets of at most 2048 by 2048 pixels, and writes WebP at
@@ -380,6 +391,20 @@ hat follows the head because it is rigged to the same armature and
 rendered through the same frames. A new hat's name goes into the
 dictionaries (`item<Id>`) and, if it is to be earned, its threshold into
 `DECOR_UNLOCKS` (`hat:<id>`).
+
+Asleep, the elf lies in its bed: `pnpm art:elf-sleepers` (elf.py's
+`sleepers` stage, stills only, so it leaves `render.json` to the frames
+and skips the crop over every clip) lays each form's head on the pillow
+of each bed, on its side with the eyes shut, the body hidden under the
+bed's own cover raised over it (`room.build_sleeper`: the oak bed's quilt
+with its fold, a blanket in the hammock, moss in the nest, at the shared
+scale, so the elder's mound is bigger than the hatchling's), the bed in
+the scene as a holdout, and renders it by night and by day with every
+hat as a layer of its own, all of one bed through one crop, into
+`art/out/elf/<form>/sleepers/` with `sleepers.json` (the crop in the
+plate's pixels and the point above the head the sleep puffs rise from).
+`pnpm art:pack` (`--sleepers`) turns them into
+`sleeper_<bed>[_hat_<id>][_day].webp` and the manifest's `sleepers`.
 
 A piece of furniture is a builder in `room.py` named after its place and
 its id (`build_<slot>_<id>`, building into the collection it is handed,
