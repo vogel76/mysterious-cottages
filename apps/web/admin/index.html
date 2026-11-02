@@ -109,7 +109,7 @@
       <section class="form-pane">
         <h2>Podstawowe dane</h2>
         <p class="meta tr-hint" data-tr-only hidden>Tryb tłumaczenia: edytujesz
-          wersję językową nazwy, mieszkańca, cnoty, treści i nagrania. Kod,
+          wersję językową nazwy, mieszkańca, cnoty, listów od elfa, treści i nagrania. Kod,
           pinezka i zdjęcia są wspólne dla wszystkich języków — edytuje się je
           w polskim oryginale. Sekcję „na miejscu&rdquo; zamyka w tłumaczeniu nagłówek w danym
           języku (po angielsku: <code>## What to do when you reach the cottage?</code>).</p>
@@ -142,6 +142,20 @@
         <label class="field field--narrow" data-pl-only>
           <span>Kraj (mapa otwiera się na kraju gościa)</span>
           <select id="f-country"></select>
+        </label>
+
+        <h2>Listy od elfa</h2>
+        <p class="meta">Dwa listy, które elf z aplikacji dostaje od tej chatynki:
+          pierwszy po jej odkryciu (podpisany mieszkańcem), drugi jako zaproszenie,
+          zanim ją odkryje (podpisany nazwą chatynki). Dwa-trzy zdania; <code>{{elf}}</code>
+          wstawia imię elfa czytelnika. Puste pole zastępuje ogólny tekst z aplikacji.</p>
+        <label class="field">
+          <span>List po odkryciu (od mieszkańców)</span>
+          <textarea id="f-letter-found" rows="3" autocomplete="off"></textarea>
+        </label>
+        <label class="field">
+          <span>Zaproszenie (zanim odkryta)</span>
+          <textarea id="f-letter-invite" rows="3" autocomplete="off"></textarea>
         </label>
 
         <h2>Opowieść (audio)</h2>

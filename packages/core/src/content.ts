@@ -21,9 +21,12 @@ function plainDash(value: string) {
   return value.replace(/[—–]/g, '-')
 }
 
+/* A frontmatter value: bare, or quoted the way the admin editor writes it
+   (double quotes, with \" and \\ inside). */
 function frontmatterValue(frontmatter: string, key: string) {
-  const match = frontmatter.match(new RegExp(`^${key}:\\s*(?:"([^"]*)"|'([^']*)'|(.+))$`, 'm'))
-  return plainDash((match?.[1] ?? match?.[2] ?? match?.[3] ?? '').trim())
+  const match = frontmatter.match(new RegExp(`^${key}:\\s*(?:"((?:[^"\\\\]|\\\\.)*)"|'([^']*)'|(.+))$`, 'm'))
+  const quoted = match?.[1] !== undefined ? match[1].replace(/\\(["\\])/g, '$1') : undefined
+  return plainDash((quoted ?? match?.[2] ?? match?.[3] ?? '').trim())
 }
 
 /* The body keeps its typographic dashes: a "– " at the start of a dialogue
@@ -46,7 +49,7 @@ function splitMarkdown(raw: string) {
   return { storyMarkdown: body, arrivalMarkdown: '' }
 }
 
-export type ParsedStory = Pick<Cottage, 'title' | 'occupant' | 'virtue' | 'storyMarkdown' | 'arrivalMarkdown'>
+export type ParsedStory = Pick<Cottage, 'title' | 'occupant' | 'virtue' | 'letterFound' | 'letterInvite' | 'storyMarkdown' | 'arrivalMarkdown'>
 
 /* A cottage markdown file -> its frontmatter fields and the two text parts.
    `title` falls back to the slug so a half-written file still lists. */
@@ -56,6 +59,8 @@ export function parseStoryFile(raw: string, slug: string): ParsedStory {
     title: frontmatterValue(frontmatter, 'title') || slug,
     occupant: frontmatterValue(frontmatter, 'occupant'),
     virtue: frontmatterValue(frontmatter, 'virtue'),
+    letterFound: frontmatterValue(frontmatter, 'letterFound'),
+    letterInvite: frontmatterValue(frontmatter, 'letterInvite'),
     ...splitMarkdown(raw),
   }
 }
