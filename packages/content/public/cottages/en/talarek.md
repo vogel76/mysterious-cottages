@@ -3,6 +3,8 @@ title: Talarek
 slug: talarek
 occupant: Talarek
 virtue: stinginess
+letterFound: "I counted what your visit cost me, and it came to nothing, while the joy went up. That is a completely new kind of sum for me. Our motto is stinginess, but I am learning that not everything needs saving."
+letterInvite: "I live next to the fortress because it seems safe to me, and safe is cheap. I have one tea bag, but for guests I will brew it a second time. Give me, I mean, bring me, a moment of your time."
 ---
 
 # Talarek

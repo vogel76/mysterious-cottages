@@ -3,6 +3,8 @@ title: "Chatynka elfa Myrka"
 slug: mrok
 occupant: Myrk
 virtue: mrok
+letterFound: "Komary odprowadziły Was aż do skraju lasu i wróciły z wiadomością, że nie zaglądaliście do środka. Dobrze. Nasze hasło to „mrok”. Nie każdy go lubi, ale każdy go kiedyś potrzebuje."
+letterInvite: "W Czarnym Lesie stoi chatynka z kamieni i mchu, której żadna mapa nie trzyma na stałe. Jeśli komarów zrobi się więcej niż zwykle, nie odganiajcie ich: prowadzą. Tylko nie sprawdzajcie, kto idzie za Wami."
 ---
 
 # Chatynka elfa Myrka

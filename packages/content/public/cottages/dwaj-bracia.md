@@ -3,6 +3,8 @@ title: "Chatynka dwóch Braci"
 slug: dwaj-bracia
 occupant: "Dwaj Bracia"
 virtue: braterstwo
+letterFound: "Jeden z nas widział Was o świcie, drugi o zmierzchu, więc zostawiliśmy sobie o Was karteczkę pod kamieniem. Dziękujemy za odwiedziny. Nasze hasło to „braterstwo”, choć widzieliśmy się tylko dwa razy w życiu."
+letterInvite: "W naszej chatynce mieszka dwóch braci, bliźniaków, którzy prawie nigdy się nie spotykają. Piszemy do siebie karteczki pod kamieniem. Jeśli jedna przyfrunie do Was, to znak, żeby nas odwiedzić."
 ---
 
 # Chatynka dwóch Braci

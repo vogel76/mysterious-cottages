@@ -3,6 +3,8 @@ title: "The Cottage of the Elves Jędrzej and Franek"
 slug: alex
 occupant: "the brothers Jędrzej and Franek"
 virtue: "taking it easy"
+letterFound: "You sat with us by the Szum waterfall and nothing had to work like a mill. The water noticed and murmured a little more calmly. Our motto is taking it easy. Not everything that stops is an ending."
+letterInvite: "When our mill fell silent we walked along the Będkówka only as far as we needed and stayed under the Szum waterfall. We do not do much: we watch and listen. Come and sit for a while; that is an occupation too."
 ---
 
 # The Cottage of the Elves Jędrzej and Franek

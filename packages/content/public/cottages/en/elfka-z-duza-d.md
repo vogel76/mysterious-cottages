@@ -3,6 +3,8 @@ title: "The Cottage of the Elf-maid with a big b..."
 slug: elfka-z-duza-d
 occupant: "the Elf-maid with a big b..."
 virtue: kindness
+letterFound: "The hedgehog drank the milk, the squirrel hid the acorns, and I am still smiling because you came. If you ever lose your way, I will call you by name, barefoot, from the clearing. Our motto is kindness."
+letterInvite: "Under my cottage there is always a bowl of milk for the hedgehog and a handful of acorns for the squirrel. For guests I have something more, but it does not fit in a letter. Come by when you are near."
 ---
 
 # The Cottage of the Elf-maid with a big b...

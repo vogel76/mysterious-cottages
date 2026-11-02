@@ -3,6 +3,8 @@ title: "Oli i Zojki"
 slug: olala
 occupant: "Ola i Zojka"
 virtue: kreatywność
+letterFound: "Kot, który siedział na płocie, kiedy nas odwiedziliście, już jest w ramce z patyków i kamyków. Dziękujemy za wizytę. Nasze hasło to „kreatywność”. Inspiracja leży tam, gdzie inni widzą śmieci."
+letterInvite: "Znamy ten las jak mało kto: wiemy, gdzie rosną kurki, poziomki i najpiękniejsze paprocie, i gdzie przychodzą koty, kiedy potrzebują pomocy. Pokażemy Wam prawie wszystkie sekrety. Prawie, bo elfki nie zdradzają wszystkiego."
 ---
 
 # Oli i Zojki

@@ -3,6 +3,8 @@ title: "Chatynka Elfa Teodora"
 slug: teodor
 occupant: "Elf Teodor"
 virtue: cierpliwość
+letterFound: "Liść, który spadł, kiedy u mnie byliście, już leży w skrzyni, podpisany Waszą wizytą. Ułożę go w kręgu, a wiatr przeczyta go za rok. Nasze hasło to „cierpliwość”. Liście nie spadają szybciej, gdy się na nie patrzy."
+letterInvite: "Mam skrzynię spadających liści większą niż ja sam, a każdy liść pamięta swój rok. Chciałbym dołożyć do niej liść z dnia, w którym mnie odwiedzicie. Szukajcie chatynki Teodora."
 ---
 
 # Chatynka Elfa Teodora

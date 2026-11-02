@@ -3,6 +3,8 @@ title: "The Cottage of Tupak the Elf"
 slug: tupak
 occupant: "Tupak the Elf"
 virtue: mindfulness
+letterFound: "This morning I stomped on the oak trunk three times: once for me, once for the forest and once for you. The dragonflies in the pond remember you too. Our motto is mindfulness. The world falls asleep when nobody listens to it."
+letterInvite: "You can hear me from afar, because I stomp on an oak trunk to wake the dragonflies in the pond. If you come in the morning, I will stomp one more time, just for you. The cottage of Tupak is waiting."
 ---
 
 # The Cottage of Tupak the Elf

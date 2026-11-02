@@ -3,6 +3,8 @@ title: "Chatynka dwóch sióstr na skalnych iglicach"
 slug: skalne-iglice
 occupant: "dwie siostry Jasenna i Nieszka"
 virtue: rodzina
+letterFound: "Wiatr, który wspina się na nasze trzy białe turnie, przyniósł wieść o Waszej wizycie szybciej, niż zdążyłyśmy zejść. Skały powiedziały o Was jedno dobre słowo, a one rzadko mówią. Nasze hasło to „rodzina”."
+letterInvite: "Nasza chatynka wisi między trzema białymi turniami, a wiatr przynosi tu wieści z dalekich dolin. Znamy mowę skał. Jeśli przyjdziecie, nauczymy Was jednego słowa, bo więcej skały nie zdradzają."
 ---
 
 # Chatynka na Skalnych Iglicach
