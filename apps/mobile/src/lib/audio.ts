@@ -32,24 +32,31 @@ export type StoryPlayerOptions = {
 
 type PlayerStatus = 'unavailable' | 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'ended' | 'error'
 
-let configured: Promise<void> | null = null
+/* The app's audio session, one at a time: a story keeps playing when the
+   app goes to the background, plays on silent and takes the lock-screen
+   controls (doNotMix is what ties them to us); the elf's sounds mix with
+   whatever else is playing, never take the audio focus (nothing the
+   player listens to stops for a giggle) and keep quiet while the phone
+   is on silent or vibrate. Set on a play when the other one was last,
+   so opening a story never touches the session of whatever else is
+   playing until it plays. */
+export type AudioSession = 'story' | 'effects'
 
-/* The audio session: keep playing when the app goes to the background and
-   take the lock-screen controls (doNotMix is what ties them to us). Once
-   per process, on the first play, so opening a story never touches the
-   session of whatever else is playing. */
-function configureAudio(): Promise<void> {
-  if (!configured) {
-    configured = setAudioModeAsync({
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: 'doNotMix',
-      interruptionModeAndroid: 'doNotMix',
-    }).catch(() => {
-      configured = null
-    })
-  }
-  return configured
+const SESSIONS = {
+  story: { playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix', interruptionModeAndroid: 'doNotMix' },
+  effects: { playsInSilentMode: false, shouldPlayInBackground: false, interruptionMode: 'mixWithOthers', interruptionModeAndroid: 'mixWithOthers' },
+} as const
+
+let session: AudioSession | null = null
+let setting: Promise<void> = Promise.resolve()
+
+export function enterAudioSession(next: AudioSession): Promise<void> {
+  if (session === next) return setting
+  session = next
+  setting = setAudioModeAsync(SESSIONS[next]).catch(() => {
+    session = null
+  })
+  return setting
 }
 
 let notificationsAsked = false
@@ -190,7 +197,7 @@ export function useStoryPlayer(track: StoryTrack | null, { localUri = null }: St
       player.pause()
       return
     }
-    await configureAudio()
+    await enterAudioSession('story')
     void askForMediaNotification()
     if (status.duration > 0 && status.currentTime >= status.duration - NEAR_END_SECONDS) await player.seekTo(0)
     startPlayback()
