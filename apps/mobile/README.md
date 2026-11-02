@@ -687,12 +687,17 @@ visit after a longer absence opens the 'while you were away' card
 (`ElfAwaySheet.tsx`, presented by `useElfCardPresenter.ts` after the hatch
 sheet and the evolution card): how long it was, the finds with their
 pictures and names, the letter with the way to read it, the plant's new
-stage. A letter (`ElfLetterSheet.tsx`, the words in `letters.ts`: three
-templates for a cottage found, three for an invitation, two from the
-forest, the letter's number picking one) greets the elf by name; one from
-a cottage found names the cottage's motto, signs with its occupant and
-opens its story, an invitation keeps the motto for the visit and shows
-the cottage on the map. The keepsake shelf (`ElfShelfSheet.tsx`, from the
+stage. A letter (`ElfLetterSheet.tsx`, the words in `letters.ts`) greets
+the elf by name. A cottage's own words come with its story (the story
+file's `letterFound` and `letterInvite`, written in the site's admin
+editor, `{{elf}}` standing for the elf's name); a cottage without them
+gets the dictionary's templates (three for a cottage found, which name
+its motto, three for an invitation, the letter's number picking one). One
+from a cottage found signs with its occupant and opens its story, an
+invitation signs with the cottage's title and shows it on the map, and
+the forest writes for the season of the letter's day (spring, summer,
+autumn, winter, the December holidays, the start of the summer
+holidays), each season with a signature of its own. The keepsake shelf (`ElfShelfSheet.tsx`, from the
 shelf in the room, the finds on the sill or the day's sheet) keeps what
 the journey and the days have left: the jars of the cottages found with
 their occupants and mottos, each opening its story, the treasures of the

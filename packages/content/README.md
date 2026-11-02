@@ -46,6 +46,12 @@ only what is named.
 ## Adding content
 
 Use the `/admin/` editor; it keeps `data/cottages.json`, `private/codes.json`
-and `data/code_hashes.json` consistent. After a hand edit of
+and `data/code_hashes.json` consistent. A cottage file's frontmatter holds
+`title`, `slug`, `occupant`, `virtue` and the two letters its elves write to
+a player's elf in the mobile app: `letterFound` (after the cottage is found,
+signed by the occupant) and `letterInvite` (an invitation before, signed by
+the title), one line each, `{{elf}}` standing for the elf's name; a
+translation carries its own. The app falls back to its own templates when
+a letter is empty. After a hand edit of
 `private/codes.json`, run `pnpm codes:build` from the repository root and
 commit the regenerated `public/data/code_hashes.json`.

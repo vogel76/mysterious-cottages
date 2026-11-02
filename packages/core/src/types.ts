@@ -24,6 +24,14 @@ export type Cottage = CottageLocation & {
   title: string
   occupant: string
   virtue: string
+  /* The two letters the elves of this cottage write to a player's elf
+     (the mobile app): one after the cottage is found, signed by its
+     occupant, and an invitation before it is found, signed by its title.
+     Written in the admin editor into the story file's frontmatter; empty
+     when not written, and the app then uses its own templates. `{{elf}}`
+     stands for the elf's name. */
+  letterFound: string
+  letterInvite: string
   storyMarkdown: string
   arrivalMarkdown: string
 }

@@ -11,7 +11,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
    No server required.
 
    The editor edits exactly what the published site reads, and nothing else:
-     - cottages/<slug>.md      — title/occupant/virtue + the story markdown
+     - cottages/<slug>.md      — title/occupant/virtue, the elf's two letters + the story markdown
      - data/cottages.json      — slug, lat/lng, country, and the photo manifest
      - private/codes.json      — the secret plaque codes (+ the public hashes)
      - assets/stories/<lang>/<slug>.mp3, assets/img/cottages/<slug>/…
@@ -306,7 +306,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
   }
 
   function serializeMd(fm, body) {
-    const order = ['title', 'slug', 'occupant', 'virtue'];
+    const order = ['title', 'slug', 'occupant', 'virtue', 'letterFound', 'letterInvite'];
     const seen = new Set();
     const lines = ['---'];
     const emit = (k, v) => {
@@ -676,6 +676,8 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.title.value = tr.fm.title ?? '';
     els.occupant.value = tr.fm.occupant ?? '';
     els.virtue.value = tr.fm.virtue ?? '';
+    els.letterFound.value = tr.fm.letterFound ?? '';
+    els.letterInvite.value = tr.fm.letterInvite ?? '';
     state.mde.setMarkdown(tr.body ?? '');
     state.cleanBody = state.mde.getMarkdown();
     markClean();
@@ -685,6 +687,8 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.title.value = c.frontmatter.title ?? '';
     els.occupant.value = c.frontmatter.occupant ?? '';
     els.virtue.value = c.frontmatter.virtue ?? '';
+    els.letterFound.value = c.frontmatter.letterFound ?? '';
+    els.letterInvite.value = c.frontmatter.letterInvite ?? '';
     els.code.value = c.code ?? '';
     els.lat.value = c.lat ?? '';
     els.lng.value = c.lng ?? '';
@@ -702,6 +706,8 @@ import '@toast-ui/editor/dist/toastui-editor.css'
         slug: state.current.slug,
         occupant: els.occupant.value.trim(),
         virtue: els.virtue.value.trim(),
+        letterFound: oneLine(els.letterFound.value),
+        letterInvite: oneLine(els.letterInvite.value),
       },
       body: state.mde.getMarkdown(),
       lat: numOrNull(els.lat.value),
@@ -712,6 +718,10 @@ import '@toast-ui/editor/dist/toastui-editor.css'
       code: els.code.value.trim() || null,
     };
   }
+
+  /* A letter's frontmatter value: one line, since the frontmatter holds one
+     line per key (the textarea may wrap or hold stray line breaks). */
+  function oneLine(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
 
   function numOrNull(v) {
     if (v === '' || v == null) return null;
@@ -903,6 +913,8 @@ import '@toast-ui/editor/dist/toastui-editor.css'
         slug: c.slug,
         occupant: els.occupant.value.trim(),
         virtue: els.virtue.value.trim(),
+        letterFound: oneLine(els.letterFound.value),
+        letterInvite: oneLine(els.letterInvite.value),
       };
       const body = state.mde.getMarkdown();
       const commit = await commitChanges(
@@ -955,7 +967,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.addConfirm.disabled = true;
     const exists = new Error(`Chatynka „${slug}" już istnieje.`);
     try {
-      const fm = { title, slug, occupant: '', virtue: '' };
+      const fm = { title, slug, occupant: '', virtue: '', letterFound: '', letterInvite: '' };
       await commitChanges([
         // Both checks run against the repository as it is right now — the
         // list this tab shows may predate a cottage added from elsewhere.
@@ -1875,6 +1887,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     settings: $('#btn-settings'),
     status: $('#status-pill'),
     title: $('#f-title'), occupant: $('#f-occupant'), virtue: $('#f-virtue'), code: $('#f-code'),
+    letterFound: $('#f-letter-found'), letterInvite: $('#f-letter-invite'),
     lat: $('#f-lat'), lng: $('#f-lng'), country: $('#f-country'),
     bodyEditor: $('#f-body-editor'),
     audioPreview: $('#audio-preview'), audioFile: $('#audio-file'),
@@ -2029,7 +2042,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
     els.addSlug.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); els.addTitle.focus(); } });
     els.addTitle.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); confirmAdd(); } });
 
-    for (const id of ['title', 'occupant', 'virtue', 'code', 'lat', 'lng', 'country']) {
+    for (const id of ['title', 'occupant', 'virtue', 'letterFound', 'letterInvite', 'code', 'lat', 'lng', 'country']) {
       els[id].addEventListener('input', () => {
         markDirty();
         if (id === 'code') checkCodeUniqueness();
