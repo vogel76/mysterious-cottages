@@ -3,6 +3,8 @@ title: "Chatynka Gwerdy i Filinka"
 slug: gwerda-filinek
 occupant: "u Mocnych"
 virtue: przyjaźń
+letterFound: "Filinek widział Was w nocy ze swojego dachu, a Gwerda w dzień, więc razem widzieliśmy całą Waszą wizytę. Dziękujemy! Nasze hasło to „przyjaźń”. We dwoje widzi się cały świat."
+letterInvite: "Na dachu naszej chatynki trzyma wachtę mała puchata sowa, która wie wszystko, co dzieje się w nocy. Gwerda wie, co dzieje się w dzień. Przyjdźcie, a opowiemy Wam o Was obie połowy."
 ---
 
 # Chatynka Gwerdy i Filinka

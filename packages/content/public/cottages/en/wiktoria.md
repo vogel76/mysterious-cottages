@@ -3,6 +3,8 @@ title: "Wiktoria's Cottage"
 slug: wiktoria
 occupant: Wiktoria
 virtue: victory
+letterFound: "So much has happened in Olkusz over the centuries, and yet your visit found its way into my story. Thank you for coming. Our motto is victory, the kind that begins with the first step."
+letterInvite: "Much has happened in Olkusz over the centuries, but what happened to me is probably true magic. I would gladly tell it to you in person. Look for the cottage of Wiktoria."
 ---
 
 # Wiktoria's Cottage

@@ -3,6 +3,8 @@ title: "The Cottage of Iwo the Elf"
 slug: iwo
 occupant: "Iwo the Elf"
 virtue: hospitality
+letterFound: "The handful of nuts you were given on the steps came from the heart. Iwo lives the farthest away of all, so every guest is a holiday for him. Our motto is hospitality. Share it with someone in your own cottage."
+letterInvite: "I live where the forest meets the meadows and the air smells of raspberries. On the stone steps a handful of nuts always waits for wanderers, and with it a whisper of the wind from the valley. It is far, but worth the walk."
 ---
 
 # The Cottage of Iwo the Elf

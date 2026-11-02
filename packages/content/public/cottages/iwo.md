@@ -3,6 +3,8 @@ title: "Chatynka Elfa Iwo"
 slug: iwo
 occupant: "Elf Iwo"
 virtue: gościnność
+letterFound: "Garść orzechów, którą dostaliście na schodach, była od serca. Iwo mieszka najdalej ze wszystkich, więc każdy gość to dla niego święto. Nasze hasło to „gościnność”. Podzielcie się nim z kimś w Waszej chatce."
+letterInvite: "Mieszkam tam, gdzie las spotyka się z łąkami i pachnie malinami. Na kamiennych schodach zawsze czeka garść orzechów dla wędrowców, a do tego szept wiatru z doliny. Daleko, ale warto."
 ---
 
 # Chatynka Elfa Iwo

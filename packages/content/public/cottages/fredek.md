@@ -3,6 +3,8 @@ title: "Chatynka Elfa FERDKA I NIETOPERZA"
 slug: fredek
 occupant: "Elf Ferdek"
 virtue: cisza
+letterFound: "Dziękujemy, że przyszliście pod naszą lipę. Nietoperz obudził się specjalnie dla Was i zaśpiewał swoją melodię, a Ferdek tylko kiwał głową. Pamiętajcie nasze hasło: „cisza”. W niej słychać najwięcej."
+letterInvite: "Pod dwustuletnią lipą, w szparze między skałami, stoi chatynka z krzywym dachem. Wieczorami nietoperz gra tu kołysanki, ale tylko dla tych, którzy potrafią stać cicho. Przyjdźcie posłuchać."
 ---
 
 # Chatynka Elfa Ferdka i nietoperza

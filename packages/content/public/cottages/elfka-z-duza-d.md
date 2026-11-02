@@ -3,6 +3,8 @@ title: "Chatynka Elfki z dużą d...ą"
 slug: elfka-z-duza-d
 occupant: "Elfka z dużą d...ą"
 virtue: dobroć
+letterFound: "Jeż wypił mleko, wiewiórka schowała żołędzie, a ja wciąż się uśmiecham, że byliście. Gdybyście kiedyś zgubili drogę, zawołam Was po imieniu, boso, z polany. Nasze hasło to „dobroć”."
+letterInvite: "Pod moją chatynką zawsze stoi miska mleka dla jeża i leży garść żołędzi dla wiewiórki. Dla gości mam coś jeszcze, ale to się nie mieści w liście. Przyjdźcie, kiedy będziecie w pobliżu."
 ---
 
 # Chatynka Elfki z dużą d...ą

@@ -3,6 +3,8 @@ title: "The Cottage of FERDEK THE ELF AND THE BAT"
 slug: fredek
 occupant: "Ferdek the Elf"
 virtue: silence
+letterFound: "Thank you for coming under our linden tree. The bat woke up especially for you and sang its melody, and Ferdek just nodded along. Remember our motto: silence. That is where you hear the most."
+letterInvite: "Under a two-hundred-year-old linden, in a crack between the rocks, stands a cottage with a crooked roof. In the evenings a bat plays lullabies here, but only for those who can stand still and quiet. Come and listen."
 ---
 
 # The Cottage of Ferdek the Elf and the Bat

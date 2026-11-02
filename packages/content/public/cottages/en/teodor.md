@@ -3,6 +3,8 @@ title: "The Cottage of Teodor the Elf"
 slug: teodor
 occupant: "Teodor the Elf"
 virtue: patience
+letterFound: "The leaf that fell while you were here already lies in my chest, marked with your visit. I will lay it in the circle, and the wind will read it next year. Our motto is patience. Leaves do not fall any faster when you watch them."
+letterInvite: "I keep a chest of fallen leaves bigger than I am, and every leaf remembers its year. I would like to add to it a leaf from the day you visit me. Look for the cottage of Teodor."
 ---
 
 # The Cottage of Teodor the Elf

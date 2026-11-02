@@ -3,6 +3,8 @@ title: "The Cottage of Myrk the Elf"
 slug: mrok
 occupant: Myrk
 virtue: gloom
+letterFound: "The mosquitoes saw you to the edge of the forest and came back with the news that you did not look inside. Good. Our motto is gloom. Not everyone likes it, but everyone needs it one day."
+letterInvite: "In the Black Forest stands a cottage of stones and moss that no map keeps for long. If the mosquitoes grow thicker than usual, do not wave them away: they are leading you. Just do not check who is walking behind you."
 ---
 
 # The Cottage of Myrk the Elf

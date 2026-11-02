@@ -3,6 +3,8 @@ title: "The Cottage of Gwerda and Filinek"
 slug: gwerda-filinek
 occupant: "the Mocny family"
 virtue: friendship
+letterFound: "Filinek saw you by night from his roof and Gwerda by day, so between us we saw your whole visit. Thank you! Our motto is friendship. Two together see the whole world."
+letterInvite: "On the roof of our cottage a small fluffy owl keeps watch and knows everything that happens at night. Gwerda knows what happens by day. Come, and we will tell you about yourselves from both halves."
 ---
 
 # The Cottage of Gwerda and Filinek

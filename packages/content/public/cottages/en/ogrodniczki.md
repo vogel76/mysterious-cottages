@@ -3,6 +3,8 @@ title: "The Cottage of the Two Gardener Sisters"
 slug: ogrodniczki
 occupant: "Ola and Wiktoria"
 virtue: "heaps of happiness"
+letterFound: "The oak rustled as you left, and that means it took to you. So did we. Our motto is heaps of happiness. It grows in the garden if you water it every day."
+letterInvite: "We live in the bough of an old oak that expected nothing more and got two gardeners. Something has come into bloom in our garden and we want to show it to you. Come before it fades."
 ---
 
 # The Cottage of the Two Gardener Sisters

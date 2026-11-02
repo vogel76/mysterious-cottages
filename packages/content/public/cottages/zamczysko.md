@@ -3,6 +3,8 @@ title: "Chatynka na Górze Zamczysko"
 slug: zamczysko
 occupant: "Strażnik Góry Zamczysko"
 virtue: pamięć
+letterFound: "Góra słyszała Wasze kroki i mruczała stare pieśni, kiedy położyliście dłoń na głazie. Dziękujemy, że przyszliście cicho. Nasze hasło to „pamięć”. Kto pamięta, temu serce góry bije głośniej."
+letterInvite: "Na szczycie Góry Zamczysko skały układają się w szaniec, a w chatynce mieszkają echa dawnych bitew. Przyjdźcie cicho i połóżcie dłoń na kamieniu. Reszty nie zdradzę w liście."
 ---
 
 # Chatynka na Górze Zamczysko

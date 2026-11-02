@@ -3,6 +3,8 @@ title: "Chatynka Wiktorii"
 slug: wiktoria
 occupant: Wiktoria
 virtue: zwycięstwo
+letterFound: "Tyle się działo w Olkuszu przez wieki, a jednak Wasza wizyta trafiła do mojej historii. Dziękuję, że przyszliście. Nasze hasło to „zwycięstwo”, takie, które zaczyna się od pierwszego kroku."
+letterInvite: "W Olkuszu zdarzyło się przez wieki wiele, ale to, co przytrafiło się mnie, to już chyba prawdziwa magia. Chętnie opowiem Wam ją osobiście. Szukajcie chatynki Wiktorii."
 ---
 
 # Chatynka Wiktorii

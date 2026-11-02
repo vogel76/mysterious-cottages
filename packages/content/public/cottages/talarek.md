@@ -3,6 +3,8 @@ title: Talarek
 slug: talarek
 occupant: Talarek
 virtue: skąpstwo
+letterFound: "Policzyłem, ile kosztowała mnie Wasza wizyta, i wyszło, że nic, a radości przybyło. To dla mnie zupełnie nowy rachunek. Nasze hasło to „skąpstwo”, ale uczę się, że nie wszystko trzeba oszczędzać."
+letterInvite: "Mieszkam obok twierdzy, bo wydaje mi się bezpieczna, a bezpieczne jest tanie. Mam jedną torebkę herbaty, ale dla gości zaparzę ją drugi raz. Daj mi, to znaczy: przyjdźcie, chwilę Waszego czasu."
 ---
 
 # Talarek
