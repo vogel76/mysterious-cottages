@@ -1584,52 +1584,81 @@ def _mound(x, y, centre, radii):
 SLEEPER_REPLACES = {"oak": ("bed.quilt", "bed.quilt.hem"), "hammock": ("hammock.cloth",), "nest": ()}
 
 
-def build_sleeper(coll, bed, length, depth):
-    """The blanket over an elf asleep in `bed` (a variant of the bed slot):
-    the bed's own cover, raised into a mound over a body `length` long from
-    the head and `depth` thick (room metres, curled up), its edges hanging
-    to the hem, in place of the cover the bed is built with
-    (SLEEPER_REPLACES). Returns the point the head rests on (the top of
-    the pillow)."""
+def sleeper_rest(bed):
+    """Where a sleeping elf lies in `bed`: the top of the pillow its head
+    rests on, the unit direction along the bed from the head, the height
+    of what the body lies on `d` along from the pillow, and the angle the
+    body lies at, degrees off the vertical (the head end up)."""
     if bed == "oak":
         x0, x1, y0, y1 = OAK_BED
-        qx0, qx1, qy0, qy1 = x0 + 0.29, x1 - 0.035, y0 - 0.035, y1 - 0.02
-        run = min(length, qx1 - qx0 - 0.04)
-        centre, radii = (qx0 + 0.02 + run / 2, (y0 + y1) / 2 - 0.04), (run / 2 + 0.04, (y1 - y0) / 2 - 0.02)
+        return Vector((x0 + 0.2, (y0 + y1) / 2, 0.45 + 0.13 * 0.5)), Vector((1.0, 0.0)), (lambda d: 0.4), -70.0
+    if bed == "hammock":
+        a, b = Vector(HAMMOCK_ENDS[0]), Vector(HAMMOCK_ENDS[1])
+        axis = b - a
+        pillow = a * 0.75 + b * 0.25
+        # the body lies above the cloth's sag, the blanket over it
+        return (Vector((pillow.x + 0.05, pillow.y, 0.9 + 0.12 * 0.5)), axis.xy.normalized(),
+                (lambda d: hammock_cloth(0.25 + d / axis.length, 0.5)[2] + 0.12), -62.0)
+    if bed == "nest":
+        cx, cy = NEST_CENTRE
+        return Vector((cx - 0.12, cy + 0.08, 0.2 + 0.11 * 0.5)), Vector((1.0, 0.0)), (lambda d: 0.2), -72.0
+    raise ValueError(f"no sleeper for the bed {bed}")
+
+
+def build_sleeper(coll, bed, start, along, run, thick):
+    """The cover over an elf asleep in `bed` (a variant of the bed slot):
+    the bed's own cover, raised over a body `thick` across from `start`
+    (the waist, where it begins) for `run` along the bed, falling to the
+    bed beyond, its edges hanging to the hem, in place of the cover the
+    bed is built with (SLEEPER_REPLACES)."""
+    if bed == "oak":
+        x0, x1, y0, y1 = OAK_BED
+        qx0, qx1, qy0, qy1 = start.x - 0.03, x1 - 0.035, y0 - 0.035, y1 - 0.02
+        # raised to the foot of the bed: no body fits in a bed this short
+        centre, radii = (qx0 + 0.03, start.y), (max(run, qx1 - qx0 + 0.02), thick / 2 + 0.06)
+        depth = 0.4 + thick + 0.02 - 0.47
 
         def cover(u, v, lift=0.0):
             x, y = qx0 + (qx1 - qx0) * u, qy0 + (qy1 - qy0) * v
             top = 0.47 + depth * _mound(x, y, centre, radii) + lift
-            hang = _smooth_edge(u, 0.05) * _smooth_edge(1 - u, 0.05) * _smooth_edge(v, 0.08)
+            hang = _smooth_edge(1 - u, 0.05) * _smooth_edge(v, 0.08)
             return (x, y, 0.37 + (top - 0.37) * hang)
 
         grid_sheet("sleeper.quilt", coll, cover, 44, 26, (0, 0, 0), MATS["quilt"], outline=0.006)
         grid_sheet("sleeper.fold", coll, lambda u, v: cover(0.012 + 0.05 * u, v, 0.012), 4, 26, (0, 0, 0),
                    MATS["quilt_trim"], outline=0.004)
-        return Vector((x0 + 0.2, (y0 + y1) / 2, 0.45 + 0.13 * 0.5))
-    if bed == "hammock":
+    elif bed == "hammock":
         a, b = Vector(HAMMOCK_ENDS[0]), Vector(HAMMOCK_ENDS[1])
-        u0 = 0.32
-        u1 = min(0.92, u0 + 0.15 + length / (b - a).length)
+        axis = b - a
+        u0 = (start.xy - a.xy).dot(axis.xy) / axis.xy.length_squared - 0.02
+        u1 = 0.93
+
+        top = start.z + thick / 2 + 0.02   # the body's back at the waist, falling half a metre a metre along
 
         def blanket(u, v):
             uu = u0 + (u1 - u0) * u
             p = Vector(hammock_cloth(uu, v))
-            bump = 1.3 * depth * max(0.0, math.sin(math.pi * u)) ** 0.6 * max(0.0, math.sin(math.pi * v)) ** 0.5
-            return (p.x, p.y, p.z + 0.02 + bump)
+            bump = max(0.0, top + 0.03 - (uu - u0) * axis.length * 0.5 - hammock_cloth(uu, 0.5)[2])
+            # rounded over the body's near side, kept high over what lies behind it
+            across = max(0.0, math.sin(math.pi * v)) ** 0.35
+            if v > 0.5:
+                across = max(across, _smooth_edge(1 - v, 0.15))
+            return (p.x, p.y, p.z + 0.02 + bump * across)
 
         grid_sheet("sleeper.blanket", coll, blanket, 30, 14, (0, 0, 0), MATS["quilt"], outline=0.006)
-        # the head rests on the pillow's inner half, clear of the post
-        pillow = a * 0.75 + b * 0.25
-        return Vector((pillow.x + 0.07, pillow.y, 0.9 + 0.12 * 0.5))
-    if bed == "nest":
-        # a mound of moss on the nest's own, the nest's rim in front of its foot
-        cx, cy = NEST_CENTRE
-        rx = min(0.26, length / 2 + 0.04)
-        sphere("sleeper.moss", coll, 1.0, (cx + 0.06, cy - 0.02, 0.15), MATS["moss"], outline=0.005,
-               scale=(rx, 0.2, 0.8 * depth + 0.03), segments=32)
-        return Vector((cx - 0.12, cy + 0.08, 0.2 + 0.11 * 0.5))
-    raise ValueError(f"no sleeper for the bed {bed}")
+    elif bed == "nest":
+        # a big leaf laid over the body as a blanket, its stalk end at the
+        # waist and its tip past the feet, draped over the body's mound
+        length = min(0.5, run + 0.16)
+        width = thick + 0.14
+        centre, radii = (start.x + 0.03, start.y - 0.01), (run, thick / 2 + 0.05)
+
+        def leaf(u, v):
+            x = start.x - 0.03 + length * u
+            y = start.y - 0.01 + (v - 0.5) * width * math.sin(math.pi * (0.12 + 0.88 * u)) ** 0.7
+            return (x, y, 0.2 + 0.015 + (thick + 0.02) * _mound(x, y, centre, radii))
+
+        grid_sheet("sleeper.leaf", coll, leaf, 30, 12, (0, 0, 0), MATS["fern"], outline=0.005)
 
 
 def build_picture_map(coll):
