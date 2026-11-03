@@ -645,6 +645,16 @@ def build_model():
                                                ref=(0, 1, 0), segments=8, samples=8, subsurf=1)
         objs["WandLeaf.L"] = leaf("WandLeaf.L", tip + Vector((-0.008, 0, -0.04 if not staff else -0.06)), (-0.6, -0.4, 0.5),
                                   0.1 if not staff else 0.13, 0.05 if not staff else 0.065, "Body", mats["leaf"])
+    # The cup of the sip clip, in the right hand (the left may hold the
+    # wand): a tapered mug with a handle on the outer side, shown in that
+    # clip alone (CLIP_PROPS) and hidden in every other render.
+    _, _, right = arm_points(-1)
+    objs["Cup.R"] = tube("Cup.R", [right + Vector((0.0, -0.01, -0.035)), right + Vector((0.0, -0.01, 0.075))], [0.046 * b, 0.052 * b],
+                         "Body", mats["cream"], segments=20, samples=4, subsurf=1)
+    objs["CupHandle.R"] = torus("CupHandle.R", right + Vector((-0.06 * b, -0.01, 0.02)), 0.03 * b, 0.009 * b, "Body", mats["cream"],
+                                axis=(0, 1, 0), subsurf=1)
+    for name in ("Cup.R", "CupHandle.R"):
+        objs[name].hide_render = True
     if look.get("cape"):
         # a forest cape from the shoulders to the knees, round the back and
         # the sides, open in front, its hood lying folded on the shoulders
@@ -1079,7 +1089,7 @@ def bind_all(arm, objs):
             bind_rigid(arm, obj, f"eyelid.{side}")
         elif base in ("Iris", "Pupil", "Highlight", "HighlightSmall", "LashTop"):
             bind_rigid(arm, obj, f"eyeball.{side}")
-        elif base in ("Hand", "Cuff", "Wand", "WandTip", "WandLeaf") or base.startswith("WandProng"):
+        elif base in ("Hand", "Cuff", "Wand", "WandTip", "WandLeaf", "Cup", "CupHandle") or base.startswith("WandProng"):
             bind_rigid(arm, obj, f"hand.{side}")
         elif base.startswith("Cape"):
             bind_rigid(arm, obj, "chest")
@@ -1666,6 +1676,158 @@ def build_clips(rig):
     rig.shape("smile", 32, 0.4)
     rig.shape("smile", 37, 0.0)
     rig.finish()
+
+    # refuse: 30 frames, a polite no: the head shakes three times, the
+    # right hand pats the belly twice, the mouth closed in a small frown,
+    # then a little smile as the hand comes down.
+    rig.begin("refuse", 30, loop=False)
+    rig.mood.update(ear=-6.0)
+    belly = reach((-0.14, -0.33, YOUNG.hem_z + 0.2))
+    rig.hand("R", 1, L["R"])
+    rig.hand("R", 6, belly, ease=("BACK", "EASE_OUT"))
+    for i, dz in enumerate((-0.03, 0.02, -0.03, 0.02)):
+        rig.hand("R", 9 + 3 * i, (belly[0], belly[1], belly[2] + dz), ease="EASE_IN_OUT")
+    rig.hand("R", 24, belly)
+    rig.hand("R", 31, L["R"], ease="EASE_OUT")
+    rig.look(1, camera)
+    for i, dx in enumerate((-1.3, 1.3, -1.1, 0.9, -0.5, 0.0)):
+        rig.look(4 + 3 * i, (dx, -6.0, 1.45), ease="EASE_IN_OUT")
+    rig.look(31, camera)
+    rig.shape("open", 1, 0.0)
+    rig.shape("frown", 1, 0.0)
+    rig.shape("frown", 5, 0.45, ease="EASE_OUT")
+    rig.shape("frown", 20, 0.45)
+    rig.shape("frown", 26, 0.0)
+    rig.shape("smile", 24, 0.0)
+    rig.shape("smile", 29, 0.5)
+    rig.shape("smile", 31, 0.2)
+    rig.squash(1, 0.0)
+    for f, amount in ((10, 0.03), (13, 0.0), (16, 0.03), (19, 0.0)):
+        rig.squash(f, amount)
+    rig.blink(1, 0.0)
+    rig.blink(22, 0.0)
+    rig.blink(24, 1.0)
+    rig.blink(27, 0.0)
+    rig.finish()
+
+    # sip: 48 frames, the cup (this clip's prop) rises to the lips, the
+    # head tips back for two sips, the cup comes down to the chest and the
+    # elf sighs with its eyes shut and a smile.
+    rig.begin("sip", 48, loop=False)
+    rig.mood.update(ear=4.0)
+    lip = at_face((-0.07, -0.37, 1.15))
+    grip = (lip[0], lip[1] + 0.02, lip[2] - 0.075)
+    chest = reach((-0.18, -0.3, YOUNG.shoulder_z - 0.3))
+    rig.hand("R", 1, L["R"])
+    rig.hand("R", 8, chest, ease="EASE_OUT")
+    rig.hand("R", 14, grip, ease="EASE_IN_OUT")
+    rig.hand("R", 26, grip)
+    rig.hand("R", 33, chest, ease="EASE_IN_OUT")
+    rig.hand("R", 49, L["R"], ease="EASE_OUT")
+    rig.bone("hand.R", 1, rot=((1, 0, 0), 0.0))
+    for f, deg in ((14, 0.0), (17, -28.0), (20, -8.0), (23, -30.0), (26, 0.0)):
+        rig.bone("hand.R", f, rot=((1, 0, 0), deg), ease="EASE_IN_OUT")
+    rig.look(1, camera)
+    rig.look(8, (0, -6, 1.1), ease="EASE_OUT")
+    rig.look(14, (0, -6, 1.45))
+    rig.look(17, (0, -6, 2.2), ease="EASE_IN_OUT")
+    rig.look(26, (0, -6, 2.0))
+    rig.look(33, camera, ease="EASE_IN_OUT")
+    rig.look(49, camera)
+    rig.shape("open", 12, 0.0)
+    rig.shape("open", 15, 0.35, ease="EASE_OUT")
+    rig.shape("open", 26, 0.35)
+    rig.shape("open", 30, 0.0)
+    rig.shape("open", 33, 0.0)
+    rig.shape("open", 36, 0.5, ease="EASE_OUT")
+    rig.shape("open", 41, 0.0)
+    rig.blink(1, 0.0)
+    rig.blink(15, 1.0, ease="EASE_OUT")
+    rig.blink(40, 1.0)
+    rig.blink(44, 0.0, ease="EASE_IN")
+    rig.shape("smile", 30, 0.0)
+    rig.shape("smile", 36, 1.0, ease="EASE_OUT")
+    rig.shape("smile", 46, 1.0)
+    rig.shape("smile", 49, 0.2)
+    rig.squash(32, 0.0)
+    rig.squash(36, -0.05, ease="EASE_OUT")
+    rig.squash(42, 0.04)
+    rig.squash(49, 0.0)
+    rig.finish()
+
+    # beckon: 36 frames, the elf turns a little to its right, raises the
+    # right hand out to the side at shoulder height and beckons twice,
+    # looking at the player and then where it points.
+    rig.begin("beckon", 36, loop=False)
+    rig.mood.update(ear=6.0)
+    out_ = reach((-0.5, -0.32, YOUNG.shoulder_z - 0.02))
+    in_ = reach((-0.3, -0.36, YOUNG.shoulder_z - 0.06))
+    rig.hand("R", 1, L["R"])
+    rig.hand("R", 7, out_, ease=("BACK", "EASE_OUT"))
+    for i, p in enumerate((in_, out_, in_, out_)):
+        rig.hand("R", 11 + 4 * i, p, ease="EASE_IN_OUT")
+    rig.hand("R", 30, (L["R"].x - 0.04, L["R"].y - 0.04, L["R"].z + 0.1), ease="EASE_IN_OUT")
+    rig.hand("R", 37, L["R"], ease="EASE_OUT")
+    rig.bone("root", 1, rot=((0, 0, 1), 0.0))
+    rig.bone("root", 7, rot=((0, 0, 1), -14.0), ease="EASE_OUT")
+    rig.bone("root", 28, rot=((0, 0, 1), -14.0))
+    rig.bone("root", 37, rot=((0, 0, 1), 0.0), ease="EASE_IN_OUT")
+    rig.look(1, camera)
+    rig.look(7, (-2.0, -6.0, 1.3), ease="EASE_OUT")
+    rig.look(13, camera, ease="EASE_IN_OUT")
+    rig.look(21, (-2.0, -6.0, 1.3), ease="EASE_IN_OUT")
+    rig.look(28, camera, ease="EASE_IN_OUT")
+    rig.look(37, camera)
+    rig.shape("smile", 4, 0.0)
+    rig.shape("smile", 9, 0.9, ease="EASE_OUT")
+    rig.shape("smile", 28, 0.9)
+    rig.shape("smile", 37, 0.0)
+    rig.shape("open", 9, 0.0)
+    rig.shape("open", 12, 0.4)
+    rig.shape("open", 16, 0.0)
+    rig.squash(1, 0.0)
+    rig.squash(7, -0.04, ease="EASE_OUT")
+    rig.squash(11, 0.0)
+    rig.finish()
+
+    # greet: 36 frames, a bow: the right hand to the belly, the left out a
+    # little, the chest bends forward with the head, a hold with the eyes
+    # shut, then up with a smile.
+    rig.begin("greet", 36, loop=False)
+    rig.mood.update(ear=2.0)
+    belly = reach((-0.1, -0.3, YOUNG.hem_z + 0.25))
+    aside = reach((0.42, -0.18, YOUNG.hem_z + 0.3))
+    rig.hand("R", 1, L["R"])
+    rig.hand("L", 1, L["L"])
+    rig.hand("R", 8, belly, ease=("BACK", "EASE_OUT"))
+    rig.hand("L", 8, aside, ease="EASE_OUT")
+    rig.hand("R", 22, belly)
+    rig.hand("L", 22, aside)
+    rig.hand("R", 37, L["R"], ease="EASE_IN_OUT")
+    rig.hand("L", 37, L["L"], ease="EASE_IN_OUT")
+    rig.bone("chest", 1, rot=((1, 0, 0), 0.0))
+    rig.bone("chest", 11, rot=((1, 0, 0), 30.0), ease="EASE_IN_OUT")
+    rig.bone("chest", 20, rot=((1, 0, 0), 30.0))
+    rig.bone("chest", 30, rot=((1, 0, 0), 0.0), ease="EASE_IN_OUT")
+    rig.look(1, camera)
+    rig.look(11, (0, -6, 1.0), ease="EASE_IN_OUT")
+    rig.look(20, (0, -6, 1.0))
+    rig.look(30, camera, ease="EASE_IN_OUT")
+    rig.look(37, camera)
+    rig.shape("smile", 1, 0.3)
+    rig.shape("smile", 8, 0.8, ease="EASE_OUT")
+    rig.shape("smile", 32, 0.9)
+    rig.shape("smile", 37, 0.0)
+    rig.blink(1, 0.0)
+    rig.blink(12, 1.0, ease="EASE_OUT")
+    rig.blink(19, 1.0)
+    rig.blink(23, 0.0, ease="EASE_IN")
+    rig.squash(1, 0.0)
+    rig.squash(11, 0.04, ease="EASE_OUT")
+    rig.squash(30, 0.0)
+    rig.squash(33, -0.03)
+    rig.squash(37, 0.0)
+    rig.finish()
     return rig.clips
 
 
@@ -1788,9 +1950,24 @@ def stage_lookdev(scene, rig, out):
         render_still(scene, os.path.join(folder, f"{mood}.png"))
 
 
+# Props a clip alone shows: the sip's cup. Hidden in every other render,
+# the stills and the sleepers included.
+CLIP_PROPS = {"sip": ("Cup", "CupHandle")}
+
+
+def show_props(clip):
+    """Show the props of `clip` (None: none of them)."""
+    for obj in body_objects():
+        base = obj.name.partition(".")[0]
+        for only, props in CLIP_PROPS.items():
+            if base in props:
+                obj.hide_render = clip != only
+
+
 def stage_anims(scene, rig, out, clips, hats=False):
     """The body layer's frames of the clips and, with hats, every hat's
-    layer of the same frames."""
+    layer of the same frames; a clip's props (CLIP_PROPS) show in its
+    frames alone."""
     set_hat_pass(None)
     layer_dir = os.path.join(out, "layers", "body")
     # The feet, the world origin, in frame pixels: the packer carries the
@@ -1801,6 +1978,7 @@ def stage_anims(scene, rig, out, clips, hats=False):
         json.dump({"x": round(x - FRAME["origin"][0], 2), "y": round(y - FRAME["origin"][1], 2)}, handle)
     for clip in clips:
         rig.apply(clip)
+        show_props(clip)
         start, end = rig.clips[clip]
         paths = render_frames(scene, layer_dir, clip, start, end)
         items = [(f"f{start + i}", p) for i, p in enumerate(paths) if i % 6 == 0]
@@ -1811,9 +1989,11 @@ def stage_anims(scene, rig, out, clips, hats=False):
             hat_dir = os.path.join(out, "layers", f"hat_{hat}")
             for clip in clips:
                 rig.apply(clip)
+                show_props(clip)
                 start, end = rig.clips[clip]
                 render_frames(scene, hat_dir, clip, start, end)
         set_hat_pass(None)
+    show_props(None)
 
 
 def stage_thumbs(scene, rig, out):
@@ -1848,7 +2028,7 @@ def stage_thumbs(scene, rig, out):
 # carries; the head, the body down to the belt and the arms show above
 # the cover. A robe's skirt (the body's hips-weighted part) is masked
 # away too, since it would run past the foot of the bed.
-UNDER_COVER = ("Leg", "Legging", "Boot", "BootCuff", "Sole", "Hem", "Cape", "CapeHood", "Wand", "WandLeaf", "WandTip")
+UNDER_COVER = ("Leg", "Legging", "Boot", "BootCuff", "Sole", "Hem", "Cape", "CapeHood", "Wand", "WandLeaf", "WandTip", "Cup", "CupHandle")
 SLEEP_BEDS = ("oak", "hammock", "nest")
 SLEEP_TIMES = (False, True)
 SLEEP_HATS = HAT_IDS[1:]
