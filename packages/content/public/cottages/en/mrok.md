@@ -3,8 +3,8 @@ title: "The Cottage of Myrk the Elf"
 slug: mrok
 occupant: Myrk
 virtue: gloom
-letterFound: "I am Myrk from the Black Forest. My cottage is made of stones and moss, and the mosquitoes guard it. Today the mosquitoes led your friends to me and saw them safely back again. Our motto is: gloom. Even in the gloom you need not be afraid."
-letterInvite: "I am Myrk. I live in the Black Forest, in a cottage of stones and moss that is on no map at all. The mosquitoes lead the way to it, so there is no need to wave them away. Invite your friends to visit me, if they are brave."
+letterFound: "I am Myrk from the Black Forest. My cottage is made of stones and moss, and the mosquitoes guard it. Today the mosquitoes led you to me and saw you safely back again. Our motto is: gloom. Even in the gloom you need not be afraid."
+letterInvite: "I am Myrk. I live in the Black Forest, in a cottage of stones and moss that is on no map at all. The mosquitoes lead the way to it, so there is no need to wave them away. Come and visit me, if you are brave."
 ---
 
 # The Cottage of Myrk the Elf

@@ -3,8 +3,8 @@ title: "The Cottage of Iwo the Elf"
 slug: iwo
 occupant: "Iwo the Elf"
 virtue: hospitality
-letterFound: "I am Iwo. I live in a crooked cottage by the moat below Rabsztyn Castle. Today your friends came to see me and sat down in the grass for a while, just the way I like it. I told my friend Zofia all about them. Our motto is: hospitality. Every guest is welcome at my door."
-letterInvite: "I am Iwo and I guard the old moat below Rabsztyn Castle. My friend Zofia lives up at the castle, and we meet through a secret passage. Invite your friends to visit me. I will show them the moat and tell them what happened here long ago."
+letterFound: "I am Iwo. I live in a crooked cottage by the moat below Rabsztyn Castle. Today you came to see me and sat down in the grass for a while, just the way I like it. I told my friend Zofia all about you. Our motto is: hospitality. Every guest is welcome at my door."
+letterInvite: "I am Iwo and I guard the old moat below Rabsztyn Castle. My friend Zofia lives up at the castle, and we meet through a secret passage. Come and visit me. I will show you the moat and tell you what happened here long ago."
 ---
 
 # The Cottage of Iwo the Elf

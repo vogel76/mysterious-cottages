@@ -3,8 +3,8 @@ title: "The Cottage of Czubata and Myszka"
 slug: czubata-myszka
 occupant: "Czubata and Myszka"
 virtue: imagination
-letterFound: "We are Czubata and Myszka. We run a library where there are rustling leaves instead of books. Every leaf tells a different story. Today your friends came to visit us and borrowed one story. Our motto is: imagination. With imagination, every leaf becomes a fairy tale."
-letterInvite: "We are Czubata and Myszka. Czubata has a hairdo made of moss, and Myszka has a long tail and lots of ideas. Together we run a library of rustling leaves. Invite your friends to visit us. Everyone may borrow one rustling tale."
+letterFound: "We are Czubata and Myszka. We run a library where there are rustling leaves instead of books. Every leaf tells a different story. Today you came to visit us and borrowed one story. Our motto is: imagination. With imagination, every leaf becomes a fairy tale."
+letterInvite: "We are Czubata and Myszka. Czubata has a hairdo made of moss, and Myszka has a long tail and lots of ideas. Together we run a library of rustling leaves. Come and visit us. Everyone may borrow one rustling tale."
 ---
 
 # The Cottage of Czubata and Myszka

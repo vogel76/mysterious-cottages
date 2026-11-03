@@ -3,8 +3,8 @@ title: "The Cottage of Fredek the Lonely Elf"
 slug: samotny
 occupant: Fredek
 virtue: contemplation
-letterFound: "I am Fredek and I live alone on a high rock at the edge of the forest. I paint eyes on tree trunks and write poems on leaves. Today your friends came to visit me. They sat down beside me and we looked at the forest together. Our motto is: contemplation. It means looking calmly and enjoying what you see."
-letterInvite: "I am Fredek, an elf artist. I live on a high rock with a view of the whole forest. I paint eyes on tree trunks, so if a tree is looking at you, that is my work. Invite your friends to visit me. I will show them the most beautiful view in the forest."
+letterFound: "I am Fredek and I live alone on a high rock at the edge of the forest. I paint eyes on tree trunks and write poems on leaves. Today you came to visit me. You sat down beside me and we looked at the forest together. Our motto is: contemplation. It means looking calmly and enjoying what you see."
+letterInvite: "I am Fredek, an elf artist. I live on a high rock with a view of the whole forest. I paint eyes on tree trunks, so if a tree is looking at you, that is my work. Come and visit me. I will show you the most beautiful view in the forest."
 ---
 
 # The Lonely Elf's Cottage

@@ -3,8 +3,8 @@ title: "Halinka the Elf"
 slug: halinka
 occupant: Halinka
 virtue: "tending dreams"
-letterFound: "I am Halinka. I live on the branch of an old tree next to rocks where, people say, witches used to meet. But I am no witch; I look after dreams. Today your friends came to visit me, and one of them remembered an old dream of theirs. Our motto is: tend your dreams."
-letterInvite: "I am Halinka. I live on the branch of an old tree and look after dreams that someone gave up on too soon. I dust them off and put them on a shelf until someone comes back for them. Invite your friends to visit me. They may find a lost dream of theirs here."
+letterFound: "I am Halinka. I live on the branch of an old tree next to rocks where, people say, witches used to meet. But I am no witch; I look after dreams. Today you came to visit me, and one of you remembered an old dream. Our motto is: tend your dreams."
+letterInvite: "I am Halinka. I live on the branch of an old tree and look after dreams that someone gave up on too soon. I dust them off and put them on a shelf until someone comes back for them. Come and visit me. You may find a lost dream of yours here."
 ---
 
 # Halinka the Elf

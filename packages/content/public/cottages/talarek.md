@@ -3,8 +3,8 @@ title: Talarek
 slug: talarek
 occupant: Talarek
 virtue: skąpstwo
-letterFound: "Jestem Talarek, mały, siwy i pulchny elf. Bardzo lubię pieniądze i nie lubię ich wydawać. Dziś odwiedzili mnie Twoi przyjaciele, a ich wizyta nie kosztowała mnie ani grosza. Za to zrobiło mi się wesoło. Nasze hasło to: skąpstwo. Ale uczę się, że nie wszystko trzeba oszczędzać."
-letterInvite: "Jestem Talarek. Mieszkam obok twierdzy, bo tam jest bezpiecznie i tanio. Mam jedną torebkę herbaty, ale dla gości zaparzę ją jeszcze raz. Zaproś do mnie swoich przyjaciół. Odwiedziny nic nie kosztują."
+letterFound: "Jestem Talarek, mały, siwy i pulchny elf. Bardzo lubię pieniądze i nie lubię ich wydawać. Dziś mnie odwiedziliście, a Wasza wizyta nie kosztowała mnie ani grosza. Za to zrobiło mi się wesoło. Nasze hasło to: skąpstwo. Ale uczę się, że nie wszystko trzeba oszczędzać."
+letterInvite: "Jestem Talarek. Mieszkam obok twierdzy, bo tam jest bezpiecznie i tanio. Mam jedną torebkę herbaty, ale dla gości zaparzę ją jeszcze raz. Przyjdźcie mnie odwiedzić. Odwiedziny nic nie kosztują."
 ---
 
 # Talarek

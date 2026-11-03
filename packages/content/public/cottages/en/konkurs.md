@@ -3,8 +3,8 @@ title: "Tymelion and Matylda"
 slug: konkurs
 occupant: "Tymelion and Matylda"
 virtue: "journeys big and small"
-letterFound: "We are Tymelion and Matylda, brother and sister. Tymelion runs through the forest and jumps into every bit of water, and Matylda talks to the Moon in the evenings. Today your friends came to visit us. Tymelion put them on his list of new friends, and Matylda told the Moon about them. Our motto is: journeys big and small. What matters most is coming home with a smile."
-letterInvite: "We are Tymelion and Matylda, brother and sister. Tymelion loves journeys and jumps even into puddles, and Matylda counts the stars and talks to the Moon. Invite your friends to visit us. Each of us will show them something different."
+letterFound: "We are Tymelion and Matylda, brother and sister. Tymelion runs through the forest and jumps into every bit of water, and Matylda talks to the Moon in the evenings. Today you came to visit us. Tymelion put you on his list of new friends, and Matylda told the Moon about you. Our motto is: journeys big and small. What matters most is coming home with a smile."
+letterInvite: "We are Tymelion and Matylda, brother and sister. Tymelion loves journeys and jumps even into puddles, and Matylda counts the stars and talks to the Moon. Come and visit us. Each of us will show you something different."
 ---
 
 # Tymelion and Matylda

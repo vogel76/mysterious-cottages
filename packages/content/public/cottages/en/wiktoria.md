@@ -3,8 +3,8 @@ title: "Wiktoria's Cottage"
 slug: wiktoria
 occupant: Wiktoria
 virtue: victory
-letterFound: "I am Wiktoria. I live in Olkusz, a town where a great deal has happened over the centuries. Today your friends came to visit me. I told them my story, and they listened to the very end. Our motto is: victory. Every victory begins with the first step."
-letterInvite: "I am Wiktoria from Olkusz. Many things have happened in my town, but what happened to me is true magic. Invite your friends to visit me. I will tell them about it myself."
+letterFound: "I am Wiktoria. I live in Olkusz, a town where a great deal has happened over the centuries. Today you came to visit me. I told you my story, and you listened to the very end. Our motto is: victory. Every victory begins with the first step."
+letterInvite: "I am Wiktoria from Olkusz. Many things have happened in my town, but what happened to me is true magic. Come and visit me. I will tell you about it myself."
 ---
 
 # Wiktoria's Cottage

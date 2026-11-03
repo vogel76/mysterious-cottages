@@ -3,8 +3,8 @@ title: "Chatynka Elfa FERDKA I NIETOPERZA"
 slug: fredek
 occupant: "Elf Ferdek"
 virtue: cisza
-letterFound: "Jestem Ferdek i mieszkam w małej chatynce pod starą lipą. Dziś odwiedzili mnie Twoi przyjaciele. Siedzieli cichutko, więc mój przyjaciel nietoperz zaśpiewał im swoją kołysankę. Pozdrów ich ode mnie! Nasze hasło to: cisza. W ciszy słychać nawet szept lasu."
-letterInvite: "Jestem Ferdek. Mieszkam pod lipą, która ma już dwieście lat, w chatynce z krzywym dachem. Wieczorami przylatuje do mnie nietoperz i śpiewa kołysanki. Zaproś do mnie swoich przyjaciół. Jeśli będą cicho, nietoperz zaśpiewa także dla nich."
+letterFound: "Jestem Ferdek i mieszkam w małej chatynce pod starą lipą. Dziś mnie odwiedziliście. Siedzieliście cichutko, więc mój przyjaciel nietoperz zaśpiewał Wam swoją kołysankę. Dziękuję za odwiedziny! Nasze hasło to: cisza. W ciszy słychać nawet szept lasu."
+letterInvite: "Jestem Ferdek. Mieszkam pod lipą, która ma już dwieście lat, w chatynce z krzywym dachem. Wieczorami przylatuje do mnie nietoperz i śpiewa kołysanki. Przyjdźcie mnie odwiedzić. Jeśli będziecie cicho, nietoperz zaśpiewa także dla Was."
 ---
 
 # Chatynka Elfa Ferdka i nietoperza

@@ -3,8 +3,8 @@ title: "Boguś's Cottage"
 slug: bogus
 occupant: Boguś
 virtue: diligence
-letterFound: "I am Boguś. I live in a cottage of clay and stones in the middle of the Łabajowa Cave. Every day I clean the cave after the tourists. Today your friends came to visit me and left nothing on the ground. That is the best present for me. Our motto is: diligence. Whoever has something to do is happy."
-letterInvite: "I am Boguś. I live in a cave, where it is dark and cool, but peaceful. All day I work and clean, and the bats are my neighbours. Invite your friends to visit me. I will show them the cave."
+letterFound: "I am Boguś. I live in a cottage of clay and stones in the middle of the Łabajowa Cave. Every day I clean the cave after the tourists. Today you came to visit me and left nothing on the ground. That is the best present for me. Our motto is: diligence. Whoever has something to do is happy."
+letterInvite: "I am Boguś. I live in a cave, where it is dark and cool, but peaceful. All day I work and clean, and the bats are my neighbours. Come and visit me. I will show you the cave."
 ---
 
 # Boguś's Cottage

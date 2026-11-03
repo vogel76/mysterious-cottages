@@ -3,8 +3,8 @@ title: "Chatynka drwala Dębomira"
 slug: drwal
 occupant: Dębomir
 virtue: "siła i wytrzymałość"
-letterFound: "Jestem Dębomir, drwal. Mam wielką siekierę, ale najbardziej lubię patrzeć na drzewa, które rosną. Dziś odwiedzili mnie Twoi przyjaciele i razem patrzyliśmy na las. Nasze hasło to: siła i wytrzymałość. Prawdziwa siła to także umieć nie wycinać."
-letterInvite: "Jestem Dębomir, drwal z lasu. Nie każdy drwal ścina drzewa, ja wolę je oglądać. Czasem trzeba spojrzeć na las inaczej, żeby go zrozumieć. Zaproś do mnie swoich przyjaciół. Pokażę im moje ulubione drzewa."
+letterFound: "Jestem Dębomir, drwal. Mam wielką siekierę, ale najbardziej lubię patrzeć na drzewa, które rosną. Dziś mnie odwiedziliście i razem patrzyliśmy na las. Nasze hasło to: siła i wytrzymałość. Prawdziwa siła to także umieć nie wycinać."
+letterInvite: "Jestem Dębomir, drwal z lasu. Nie każdy drwal ścina drzewa, ja wolę je oglądać. Czasem trzeba spojrzeć na las inaczej, żeby go zrozumieć. Przyjdźcie mnie odwiedzić. Pokażę Wam moje ulubione drzewa."
 ---
 
 # Chatynka drwala

@@ -3,8 +3,8 @@ title: "Chatynka dwóch sióstr ogrodniczek"
 slug: ogrodniczki
 occupant: "Ola i Wiktoria"
 virtue: "kupa szczęścia"
-letterFound: "Jesteśmy Ola i Wiktoria, siostry ogrodniczki. Mieszkamy w konarze starego dębu i uprawiamy mały ogródek. Dziś odwiedzili nas Twoi przyjaciele, a dąb zaszumiał na ich powitanie. Nasze hasło to: kupa szczęścia. Szczęście rośnie jak kwiaty, jeśli się je podlewa."
-letterInvite: "Jesteśmy Ola i Wiktoria, siostry ogrodniczki. Mieszkamy na starym dębie, a pod nim mamy ogródek, w którym właśnie coś zakwitło. Zaproś do nas swoich przyjaciół. Pokażemy im nasze kwiaty, zanim przekwitną."
+letterFound: "Jesteśmy Ola i Wiktoria, siostry ogrodniczki. Mieszkamy w konarze starego dębu i uprawiamy mały ogródek. Dziś nas odwiedziliście, a dąb zaszumiał na Wasze powitanie. Nasze hasło to: kupa szczęścia. Szczęście rośnie jak kwiaty, jeśli się je podlewa."
+letterInvite: "Jesteśmy Ola i Wiktoria, siostry ogrodniczki. Mieszkamy na starym dębie, a pod nim mamy ogródek, w którym właśnie coś zakwitło. Przyjdźcie nas odwiedzić. Pokażemy Wam nasze kwiaty, zanim przekwitną."
 ---
 
 # Chatynka dwóch sióstr ogrodniczek

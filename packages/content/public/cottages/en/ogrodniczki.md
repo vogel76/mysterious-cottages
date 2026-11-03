@@ -3,8 +3,8 @@ title: "The Cottage of the Two Gardener Sisters"
 slug: ogrodniczki
 occupant: "Ola and Wiktoria"
 virtue: "heaps of happiness"
-letterFound: "We are Ola and Wiktoria, the gardener sisters. We live in the bough of an old oak and tend a little garden. Today your friends came to visit us, and the oak rustled to greet them. Our motto is: heaps of happiness. Happiness grows like flowers if you water it."
-letterInvite: "We are Ola and Wiktoria, the gardener sisters. We live in an old oak, and under it we have a garden where something has just come into bloom. Invite your friends to visit us. We will show them our flowers before they fade."
+letterFound: "We are Ola and Wiktoria, the gardener sisters. We live in the bough of an old oak and tend a little garden. Today you came to visit us, and the oak rustled to greet you. Our motto is: heaps of happiness. Happiness grows like flowers if you water it."
+letterInvite: "We are Ola and Wiktoria, the gardener sisters. We live in an old oak, and under it we have a garden where something has just come into bloom. Come and visit us. We will show you our flowers before they fade."
 ---
 
 # The Cottage of the Two Gardener Sisters

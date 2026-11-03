@@ -3,8 +3,8 @@ title: "Chatynka dwóch sióstr na skalnych iglicach"
 slug: skalne-iglice
 occupant: "dwie siostry Jasenna i Nieszka"
 virtue: rodzina
-letterFound: "Jesteśmy siostry Jasenna i Nieszka. Nasza chatynka wisi między trzema białymi skałami. Dziś odwiedzili nas Twoi przyjaciele, a wiatr przyniósł nam wieść o nich, zanim jeszcze weszli na górę. Nasze hasło to: rodzina. W rodzinie każdy ma kogoś, kto na niego czeka."
-letterInvite: "Jesteśmy siostry Jasenna i Nieszka. Mieszkamy wysoko, między trzema białymi skałami, a wiatr przynosi nam wieści z całej okolicy. Znamy też mowę skał. Zaproś do nas swoich przyjaciół. Nauczymy ich jednego skalnego słowa."
+letterFound: "Jesteśmy siostry Jasenna i Nieszka. Nasza chatynka wisi między trzema białymi skałami. Dziś nas odwiedziliście, a wiatr przyniósł nam wieść o Was, zanim jeszcze weszliście na górę. Nasze hasło to: rodzina. W rodzinie każdy ma kogoś, kto na niego czeka."
+letterInvite: "Jesteśmy siostry Jasenna i Nieszka. Mieszkamy wysoko, między trzema białymi skałami, a wiatr przynosi nam wieści z całej okolicy. Znamy też mowę skał. Przyjdźcie nas odwiedzić. Nauczymy Was jednego skalnego słowa."
 ---
 
 # Chatynka na Skalnych Iglicach
