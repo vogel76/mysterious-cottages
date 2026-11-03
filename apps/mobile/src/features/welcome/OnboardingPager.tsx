@@ -9,13 +9,16 @@ import { useFocusEffect, useNavigation, useRouter, type Href } from 'expo-router
 import { useTranslation } from 'react-i18next'
 import logo from '../../../assets/logo.png'
 import { announce } from '../../lib/announce'
+import { ELF_ENABLED } from '../../config'
 import { markWelcomeSeen, useBoot } from '../../providers'
 import { Button, ForwardIcon, KeyIcon, PageDots, colors, iconSize, readable, space, useTabBarHeight } from '../../ui'
+import { ElfIntro } from './ElfIntro'
 import { GuideTrail } from './GuideTrail'
 import { CreedCard, ExpeditionNotes, GuideHeading, LoreIntro, LoreQuestions, TrailPhoto } from './LoreSections'
 
-/* The onboarding: the site's lore and guide as four swipeable pages ending
-   in the two ways to begin (open the Atlas, enter a code). Every page is its
+/* The onboarding: the site's lore and guide as swipeable pages (four, and
+   one about the elf companion when the build has it) ending in the two
+   ways to begin (open the Atlas, enter a code). Every page is its
    own scroll from the top of the screen, so nothing sits above the content
    but the safe area: the logo opens the first page's own content, and the
    dots, Skip and Next share the footer, which keeps one height on every
@@ -35,8 +38,10 @@ export type OnboardingPagerProps = {
 }
 
 /* The lore; the four questions and the creed; the guide as a trail spread
-   over its page; the photo, the notes and the ways to begin. */
-const PAGE_KEYS = ['lore', 'questions', 'guide', 'begin'] as const
+   over its page; the elf, when the build has it; the photo, the notes and
+   the ways to begin. */
+type PageKey = 'lore' | 'questions' | 'guide' | 'elf' | 'begin'
+const PAGE_KEYS: readonly PageKey[] = ELF_ENABLED ? ['lore', 'questions', 'guide', 'elf', 'begin'] : ['lore', 'questions', 'guide', 'begin']
 const PAGE_COUNT = PAGE_KEYS.length
 /* How close to a page boundary (in pages) the offset must rest to count as
    landed. Android pages in whole pixels while the width is rounded dp, so
@@ -191,7 +196,7 @@ export function OnboardingPager({ mode, code }: OnboardingPagerProps) {
   const pageTop = first ? insets.top + space.xl : space.xl
   const footerBottom = (first ? insets.bottom : tabBarHeight || insets.bottom) + space.lg
 
-  const pages: Record<(typeof PAGE_KEYS)[number], ReactNode> = {
+  const pages: Record<PageKey, ReactNode> = {
     lore: (
       <>
         <Image source={logo} style={styles.logo} contentFit="contain" accessible={false} />
@@ -210,6 +215,7 @@ export function OnboardingPager({ mode, code }: OnboardingPagerProps) {
         <GuideTrail fill />
       </>
     ),
+    elf: <ElfIntro />,
     begin: (
       <>
         <TrailPhoto />
@@ -235,13 +241,13 @@ export function OnboardingPager({ mode, code }: OnboardingPagerProps) {
       <Animated.FlatList
         ref={listRef}
         data={PAGE_KEYS}
-        keyExtractor={(key: (typeof PAGE_KEYS)[number]) => key}
-        renderItem={({ item, index }: { item: (typeof PAGE_KEYS)[number]; index: number }) => (
+        keyExtractor={(key: PageKey) => key}
+        renderItem={({ item, index }: { item: PageKey; index: number }) => (
           <Page width={width} paddingTop={pageTop}>
             {pages[item]}
           </Page>
         )}
-        getItemLayout={(_data: ArrayLike<(typeof PAGE_KEYS)[number]> | null | undefined, index: number) => ({ length: width, offset: width * index, index })}
+        getItemLayout={(_data: ArrayLike<PageKey> | null | undefined, index: number) => ({ length: width, offset: width * index, index })}
         horizontal
         pagingEnabled
         bounces={false}

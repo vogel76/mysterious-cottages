@@ -157,6 +157,11 @@ export const mobileEn: typeof mobilePl = {
     appleMaps: 'Apple Maps',
     googleMaps: 'Google Maps',
   },
+    /* The page about the elf companion (src/features/welcome/ElfIntro). */
+    elfEyebrow: 'The elf in the Cottage',
+    elfTitle: 'An elf of your own',
+    elfBody1: 'A little elf is waiting for you in the app. It hatches from its egg when you set out on your first expedition and moves into its cottage on the Elf tab.',
+    elfBody2: 'Every Cottage you find brings it a lesson and a jar for its shelf, and the forest elves write it letters. Feed it, play with it and give it a bath, and it will grow along with your expeditions.',
   support: {
     eyebrow: 'Support',
     title: 'Buy the elf a coffee',

@@ -166,6 +166,11 @@ export const mobilePl = {
     appleMaps: 'Apple Maps',
     googleMaps: 'Google Maps',
   },
+    /* The page about the elf companion (src/features/welcome/ElfIntro). */
+    elfEyebrow: 'Elf w Chatynce',
+    elfTitle: 'Wasz własny elf',
+    elfBody1: 'W aplikacji czeka na Was mały elf. Wykluwa się z jajka, kiedy ruszycie na pierwszą wyprawę, i zamieszka w swojej chatce na zakładce Elf.',
+    elfBody2: 'Każda odkryta Chatynka przynosi mu lekcję i słoik na półkę, a elfy z lasu piszą do niego listy. Karmcie go, bawcie się z nim i kąpcie, a będzie rósł razem z Waszymi wyprawami.',
   /* Supporting Chatynkowo (src/features/support): the sheet with the two
      voluntary ways, a coffee for the elf (a purchase through the store)
      and a rewarded ad watched instead, and the entry in the profile.
