@@ -4,9 +4,10 @@ import { Stack, useFocusEffect, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { finalLevelId, kronikaLevels, nextLevel, requiredFinds, type RewardLevel } from '@chatynkowo/core'
 import { CollectionHeader } from '../../../src/features/kronika/CollectionHeader'
+import { ELF_ENABLED } from '../../../src/config'
 import { RewardCard } from '../../../src/features/kronika/RewardCard'
 import { SupportCard } from '../../../src/features/support/SupportCard'
-import { useContent, useProgress } from '../../../src/providers'
+import { useContent, useProgress, useElf } from '../../../src/providers'
 import { ChronicleIcon, EmptyState, LinkButton, SkeletonCard, colors, readable, space, useTabBarClearance } from '../../../src/ui'
 
 /* The Kronika tab: the collection of reward levels, earned and still locked,
@@ -39,6 +40,9 @@ export default function KronikaScreen() {
   const router = useRouter()
   const { rewards, total, status, refresh } = useContent()
   const { state, foundCount, unseenRewards, celebration, markRewardsSeen } = useProgress()
+  const elf = useElf()
+  /* The elf's lessons next to the seals: the two loops meet here. */
+  const lessons = ELF_ENABLED && elf.state?.hatched ? { name: elf.state.name, count: elf.state.findsCelebrated.length } : null
   const tabBarClearance = useTabBarClearance()
   const [refreshing, setRefreshing] = useState(false)
 
@@ -129,6 +133,7 @@ export default function KronikaScreen() {
       next={next}
       intro={rewards.treasury.intro}
       note={foundCount ? t('treasury.fallbackProgress', { found: foundCount, total }) : null}
+      lessons={lessons}
       onOpenList={openDirectory}
       onOpenRanking={openRanking}
     />

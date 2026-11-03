@@ -86,6 +86,12 @@ export const mobilePl = {
     levelProgress: '{{found}} z {{required}} odkryć',
     rankingCard: 'Kto odnalazł najwięcej opowieści i które miejsce zajmujesz Ty',
     rankingCardAria: 'Otwórz ranking',
+    /* The elf's lessons in the progress card: the cottages it has taken in. */
+    elfLessonsNone: '{{name}} nie poznał jeszcze żadnej cnoty',
+    elfLessons_one: '{{name}} poznał już {{count}} cnotę',
+    elfLessons_few: '{{name}} poznał już {{count}} cnoty',
+    elfLessons_many: '{{name}} poznał już {{count}} cnót',
+    elfLessons_other: '{{name}} poznał już {{count}} cnoty',
   },
   cottages: {
     title: 'Chatynki',

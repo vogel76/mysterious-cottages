@@ -85,6 +85,12 @@ export const mobileEn: typeof mobilePl = {
     levelProgress: '{{found}} of {{required}} finds',
     rankingCard: 'Who has found the most tales, and where you stand',
     rankingCardAria: 'Open the leaderboard',
+    /* The elf's lessons in the progress card: the cottages it has taken in. */
+    elfLessonsNone: '{{name}} has not learned a virtue yet',
+    elfLessons_one: '{{name}} has learned {{count}} virtue',
+    elfLessons_few: '{{name}} has learned {{count}} virtues',
+    elfLessons_many: '{{name}} has learned {{count}} virtues',
+    elfLessons_other: '{{name}} has learned {{count}} virtues',
   },
   cottages: {
     title: 'Cottages',
