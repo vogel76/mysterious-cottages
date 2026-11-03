@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { type ElfMood, type ElfNeedId, type ElfStage, type ElfWallet } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DecorIcon, DustIcon, EggIcon, NextIcon, PressableScale, QuestIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
-import { elfKey } from './labels'
+import { type ElfMood, type ElfNeedId, type ElfRank, type ElfStage, type ElfWallet } from '@chatynkowo/core'
+import { AcornsIcon, CrossfadeText, DecorIcon, DustIcon, EggIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
+import { durationText, useClock } from './duration'
+import { elfKey, rankKey } from './labels'
 
 /* The strip over the cottage, in the dark chrome of the Atlas's cards so
    the two full-bleed tabs read alike: two rows, and the room starts under
@@ -42,32 +42,50 @@ export type ElfHudProps = {
   questsDone: number
   rewardWaiting: boolean
   onDecorate: () => void
+  /* Opens the shop of star dust. */
+  onShop: () => void
+  /* The rank the tree gives the elf, after its form; a tap on the name
+     block opens the tree. Absent for the egg. */
+  rank: ElfRank | null
+  onTree: () => void
   /* The ledger was tapped: the day's sheet (the quests, the reward to
      pick, the streak, and what the figures mean). */
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, rank, onTree, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.topRow} pointerEvents="box-none">
-        <View style={[styles.chrome, styles.identity]} accessible accessibilityRole="header">
-          {/* The name and the form share a line, so the block stays two lines
-              tall next to the decorating button. */}
+        <PressableScale
+          onPress={onTree}
+          disabled={rank === null}
+          accessibilityRole="header"
+          accessibilityHint={rank === null ? undefined : t('mobile:elf.treeHint')}
+          pressedFill="transparent"
+          ripple={false}
+          style={[styles.chrome, styles.identity]}
+        >
+          {/* The name, the form and the rank share a line, so the block
+              stays two lines tall next to the buttons. */}
           <View style={styles.nameRow}>
             {name ? (
               <Text weight="bold" variant="compact" numberOfLines={1} style={styles.chromeInk}>
                 {name}
               </Text>
             ) : null}
-            <CrossfadeText value={t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
+            <CrossfadeText value={rank ? `${t(elfKey('stage', stage))} · ${t(rankKey(rank))}` : t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
           </View>
           <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
-        </View>
-        {/* The room can be arranged for the egg and the elf alike. The
-            button is a square as tall as the name block beside it. */}
+        </PressableScale>
+        {/* The shop of star dust, then the decorating: two squares as tall
+            as the name block beside them; the room can be arranged for the
+            egg and the elf alike. */}
+        <PressableScale onPress={onShop} accessibilityLabel={t('mobile:elf.shopOpen')} style={[styles.chrome, styles.control]}>
+          <ShopIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
+        </PressableScale>
         <PressableScale onPress={onDecorate} accessibilityLabel={t('mobile:elf.decorate')} style={[styles.chrome, styles.control]}>
           <DecorIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
         </PressableScale>
@@ -83,7 +101,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
         ripple={false}
         style={styles.ledger}
       >
-        {egg ? <EggChip hatchAt={hatchAt} /> : null}
+        {egg ? <EggChip hatchAt={hatchAt} onPress={onShop} /> : null}
         <LedgerChip Glyph={AcornsIcon} value={wallet.acorns} />
         <LedgerChip Glyph={DustIcon} value={wallet.dust} />
         <LedgerChip Glyph={StreakIcon} value={streak} />
@@ -102,40 +120,32 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
 /* The quests a day deals, as the chip counts them. */
 const QUESTS_TOTAL = 3
 
-/* The clock to the minute, for the egg's countdown: an egg's state does
-   not change on the drift, so nothing else would re-render it. Idle
-   without an egg. */
-const MINUTE_TICK_MS = 20000
+/* The egg's countdown in words (duration.ts keeps the clock). */
 function useHatchWhen(hatchAt: number | null): { when: string; due: boolean } | null {
   const { t } = useTranslation()
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (hatchAt === null) return
-    setNow(Date.now())
-    const timer = setInterval(() => setNow(Date.now()), MINUTE_TICK_MS)
-    return () => clearInterval(timer)
-  }, [hatchAt])
+  const now = useClock(hatchAt !== null)
   if (hatchAt === null) return null
   const left = hatchAt - now
   if (left <= 0) return { when: t('mobile:elf.hatchSoon'), due: true }
-  const minutes = Math.ceil(left / 60000)
-  const hours = Math.floor(minutes / 60)
-  const rest = minutes % 60
-  const time = hours > 0 ? (rest > 0 ? t('mobile:elf.durationHours', { hours, minutes: rest }) : t('mobile:elf.durationHoursOnly', { hours })) : t('mobile:elf.durationMinutes', { minutes })
-  return { when: t('mobile:elf.hatchIn', { time }), due: false }
+  return { when: t('mobile:elf.hatchIn', { time: durationText(t, left) }), due: false }
 }
 
 /* Before the hatch: the egg and how long until it hatches, first in the
-   ledger row. */
-function EggChip({ hatchAt }: { hatchAt: number }) {
+   ledger row; a tap opens the shop, where the wait can be bought off. */
+function EggChip({ hatchAt, onPress }: { hatchAt: number; onPress: () => void }) {
   const { t } = useTranslation()
   const hatch = useHatchWhen(hatchAt)
   const when = hatch?.when ?? ''
   return (
-    <View style={[styles.chrome, styles.ledgerChip]} accessible accessibilityLabel={t('mobile:elf.hatchAria', { when })}>
+    <PressableScale
+      onPress={onPress}
+      accessibilityLabel={t('mobile:elf.hatchAria', { when })}
+      accessibilityHint={hatch?.due ? undefined : t('mobile:elf.hatchSkipHint')}
+      style={[styles.chrome, styles.ledgerChip]}
+    >
       <EggIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
       <CrossfadeText value={when} variant="small" weight="bold" style={styles.chromeInk} />
-    </View>
+    </PressableScale>
   )
 }
 

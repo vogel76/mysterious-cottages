@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { BathIcon, FeedIcon, LullabyIcon, PressableScale, ProgressRing, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
-import { ELF_CARE_CAPS, ELF_CARE_NEEDS, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfStage } from '@chatynkowo/core'
+import { ELF_CARE_NEEDS, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfStage } from '@chatynkowo/core'
 import { elfKey } from './labels'
 
 /* The care actions as round buttons on a band of the HUD's chrome that
@@ -18,8 +18,9 @@ import { elfKey } from './labels'
    care sees to (fullness, joy, cleanliness): green while comfortable,
    gold once the elf would like it seen to, eased to each new value as
    the needs drift; a care's gain floats up over the button as "+25" for
-   a moment. Under each care button the dots of its daily cap (three
-   feeds, two plays, one bath), lit while they are left, so the player
+   a moment. Under each care button the dots of its charges (three
+   feeds, two plays, one bath, each back some hours after it was spent,
+   the rules say how many), lit while they are left, so the player
    sees before tapping what the day still allows. While the elf sleeps,
    or once a cap is used up, the button dims and tells assistive tech it
    is disabled, but it stays pressable: the rules refuse the action and
@@ -41,6 +42,8 @@ export type ElfActionBarProps = {
   needs: ElfNeeds
   /* How many of each care the day still allows. */
   careLeft: Record<ElfCareAction, number>
+  /* The charges each care has (the tree can add one). */
+  careCharges: Record<ElfCareAction, number>
   onCare: (id: ElfCareAction) => void
   onTendEgg: (id: ElfEggAction) => void
   onToggleSleep: () => void
@@ -56,7 +59,7 @@ type Action = {
   disabled?: boolean
   /* The need the care sees to, 0..100, for the ring. */
   need?: { id: ElfNeedId; value: number }
-  /* The daily cap and what is left of it, as dots under the button, and
+  /* The charges and what is left of them, as dots under the button, and
      the same in words for a screen reader. */
   cap?: { total: number; left: number }
   valueText?: string
@@ -80,12 +83,12 @@ const COMFORTABLE = 60
 const GAIN_SHOWN = 10
 const GAIN_MS = 1400
 
-export function ElfActionBar({ stage, sleeping, needs, careLeft, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
+export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
   const { t } = useTranslation()
   const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => {
     const needId = ELF_CARE_NEEDS[id]
     const value = needs[needId]
-    const left = careLeft[id] > 0 ? t('mobile:elf.careLeftAria', { left: careLeft[id], total: ELF_CARE_CAPS[id] }) : t('mobile:elf.careUsedAria')
+    const left = careLeft[id] > 0 ? t('mobile:elf.careLeftAria', { left: careLeft[id], total: careCharges[id] }) : t('mobile:elf.careUsedAria')
     return {
       key: id,
       Glyph,
@@ -93,7 +96,7 @@ export function ElfActionBar({ stage, sleeping, needs, careLeft, onCare, onTendE
       face: 'primary',
       disabled: sleeping || careLeft[id] === 0,
       need: { id: needId, value },
-      cap: { total: ELF_CARE_CAPS[id], left: careLeft[id] },
+      cap: { total: careCharges[id], left: careLeft[id] },
       valueText: `${t('mobile:elf.needAria', { need: t(elfKey('need', needId)), value: Math.round(value) })}. ${left}`,
       onPress: () => onCare(id),
     }
@@ -204,8 +207,8 @@ function NeedGain({ value }: { value: number }) {
   )
 }
 
-/* The day's cap under a care button: one dot per allowed use, lit while
-   it is left. The button's label already says what the dots are for. A
+/* The charges under a care button: one dot per charge, lit while it is
+   back. The button's label already says what the dots are for. A
    button without a cap keeps the row's height, so every label sits on
    the same line. */
 function CapDots({ cap }: { cap?: { total: number; left: number } }) {
@@ -348,7 +351,7 @@ const styles = StyleSheet.create({
   dotLeft: {
     backgroundColor: colors.accent,
   },
-  /* A used dot keeps its ring, so the cap stays countable. */
+  /* A spent dot keeps its ring, so the charges stay countable. */
   dotUsed: {
     backgroundColor: 'transparent',
     opacity: 0.6,

@@ -4,12 +4,13 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { careLeft, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
+import { careCharges, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, levelOf, rankOf, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { requestNotificationPermission } from '../../lib/notifications'
 import { setReminders } from '../../lib/reminders-store'
 import { content } from '../../lib/content'
 import { useContent, useElf, useForeground, useProgress } from '../../providers'
+import { useSupportLedger } from '../support/useSupportLedger'
 import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
@@ -21,6 +22,7 @@ import { ElfSpeech } from './ElfSpeech'
 import { ElfCard } from './ElfCard'
 import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
+import { durationText } from './duration'
 import { elfKey } from './labels'
 import { useElfCardPresenter } from './useElfCardPresenter'
 import { useElfSounds } from './useElfSounds'
@@ -466,6 +468,8 @@ export function ElfTab() {
 
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
   const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
+  const onShop = useCallback(() => router.push('/elf-shop'), [router])
+  const onTree = useCallback(() => router.push('/elf-tree'), [router])
   /* The day's quests, the reward to pick and what the ledger's figures
      mean: a sheet over the tab. */
   const onLedger = useCallback(() => {
@@ -490,7 +494,7 @@ export function ElfTab() {
   const { placeDecor, equip, outfit } = elf
   const onPick = useCallback(
     (tab: CatalogueTab, id: string) => {
-      const needed = decorFindsNeeded(tab, id, foundCount)
+      const needed = decorFindsNeeded(tab, id, foundCount, elf.granted)
       if (needed > 0) {
         say(t('mobile:elf.lockedLine', { count: needed }))
         return
@@ -513,11 +517,30 @@ export function ElfTab() {
     awake,
     lastInteraction,
     onGreet: () => {
-      sceneRef.current?.react('greet')
-      const letterWaits = !awayRef.current && Boolean(stateRef.current?.letters.some((letter) => !letter.read))
-      sayNext(t(letterWaits ? 'mobile:elf.letterWaiting' : 'mobile:elf.greetHint'))
+      /* An invitation waiting on the floor makes the elf beckon instead of bowing. */
+      const unread = awayRef.current ? undefined : stateRef.current?.letters.find((letter) => !letter.read)
+      sceneRef.current?.react(unread?.kind === 'invite' ? 'beckon' : 'greet')
+      sayNext(t(unread ? 'mobile:elf.letterWaiting' : 'mobile:elf.greetHint'))
     },
   })
+
+  /* The player's support, thanked with a sip: once the tab is in view and
+     the greeting is over, an awake elf drinks its coffee and says thanks
+     for every coffee or ad the ledger counts beyond what it has thanked
+     for, then remembers the count. */
+  const ledger = useSupportLedger()
+  const supportGiven = ledger.coffees + ledger.ads
+  const supportThanked = state?.supportThanked ?? 0
+  const { thankSupport } = elf
+  useEffect(() => {
+    if (!focused || !awake || greeting || supportGiven <= supportThanked) return
+    const timer = setTimeout(() => {
+      sceneRef.current?.react('sip')
+      say(t('mobile:elf.thanksLine'))
+      thankSupport(supportGiven)
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [focused, awake, greeting, supportGiven, supportThanked, thankSupport, say, t])
 
   /* A need the elf wants seen to: it turns to the player and waves, once
      per episode (the ref remembers which need was called; it clears when
@@ -601,7 +624,12 @@ export function ElfTab() {
   const onCare = useCallback(
     (id: ElfCareAction) => {
       const outcome = elf.care(id)
-      if (outcome.kind === 'refused') say(t(elfKey('guard', outcome.reason)))
+      if (outcome.kind === 'refused') {
+        sceneRef.current?.react('refuse')
+        const at = Date.now()
+        const next = outcome.reason === 'charging' && stateRef.current ? careNextAt(stateRef.current, id, at) : null
+        say(t(elfKey('guard', outcome.reason), { time: durationText(t, (next ?? at) - at) }))
+      }
       else if (outcome.kind === 'asleep') say(t('mobile:elf.asleepHint'))
       else if (outcome.kind === 'done') {
         sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
@@ -702,6 +730,7 @@ export function ElfTab() {
   /* What the day still allows of each care, for the buttons' dots. */
   const now = Date.now()
   const left = { feed: careLeft(state, 'feed', now), play: careLeft(state, 'play', now), bath: careLeft(state, 'bath', now) }
+  const charges = { feed: careCharges(state, 'feed'), play: careCharges(state, 'play'), bath: careCharges(state, 'bath') }
   const editing = panel === 'decor'
   /* Bedtime, before the elf is tucked in: heavy lids and yawns say it is
      time. Read at render: the drift re-renders the tab every few seconds. */
@@ -764,7 +793,7 @@ export function ElfTab() {
             panel has the way out. */}
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onLedger={onLedger} />
+            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} onTree={onTree} onLedger={onLedger} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (
@@ -806,11 +835,11 @@ export function ElfTab() {
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>
-          <ElfDecorPanel decor={decor} hat={outfit.hat} form={drawnForm} photo={photo} tabs={catalogueTabs} foundCount={foundCount} activeTab={decorTab} onSelectTab={setDecorTab} onPick={onPick} onLayout={onPanelLayout} />
+          <ElfDecorPanel decor={decor} hat={outfit.hat} form={drawnForm} photo={photo} tabs={catalogueTabs} foundCount={foundCount} granted={elf.granted} activeTab={decorTab} onSelectTab={setDecorTab} onPick={onPick} onLayout={onPanelLayout} />
         </Animated.View>
       )}
 

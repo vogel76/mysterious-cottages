@@ -55,7 +55,7 @@ import { ROOM } from './room'
    decorating mode stay open over a sleeping elf, and a twirl or a clap
    with the eyes shut would read as a wake that never happened. */
 
-export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'hatch' | 'evolve' | 'cheer' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget'
+export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'hatch' | 'evolve' | 'cheer' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget' | 'refuse' | 'sip' | 'beckon'
 
 export type PuppetMotion = {
   /* 0..1 slow loop. */
@@ -211,6 +211,9 @@ const REACTION_MS: Record<Exclude<ReactionKind, 'fidget'>, number> = {
   greet: 1800,
   twirl: 2000,
   admire: 1400,
+  refuse: 1250,
+  sip: 2000,
+  beckon: 1500,
 }
 
 /* The short crouch before a hop or a chew. */

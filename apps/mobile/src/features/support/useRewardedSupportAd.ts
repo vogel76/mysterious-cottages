@@ -131,3 +131,24 @@ export function useRewardedSupportAd(onRewarded: () => void): { offered: boolean
 
   return { offered: adsOffered, status, watch }
 }
+
+/* What a sheet says under its ad button: the network first, then where
+   the last request ended (the support sheet's and the elf's shop's keys
+   are the same, under mobile:support). */
+export function rewardedAdNoteKey(status: RewardedAdStatus, online: boolean | null): string | null {
+  if (online === false) return 'mobile:support.adOffline'
+  switch (status) {
+    case 'loading':
+    case 'showing':
+      return 'mobile:support.adLoading'
+    case 'unavailable':
+    case 'error':
+      return 'mobile:support.adUnavailable'
+    case 'refused':
+      return 'mobile:support.adRefused'
+    case 'dismissed':
+      return 'mobile:support.adDismissed'
+    default:
+      return null
+  }
+}

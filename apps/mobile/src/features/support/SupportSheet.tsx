@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { STORE_NAME } from '../../lib/billing'
-import { useCloseModal, useOnline, useSupport } from '../../providers'
+import { storeNoteKey, useCloseModal, useOnline, useSupport } from '../../providers'
 import { Button, CoffeeIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { DEFAULT_TIP, tipLabelKey } from './tips'
-import { useRewardedSupportAd, type RewardedAdStatus } from './useRewardedSupportAd'
+import { rewardedAdNoteKey, useRewardedSupportAd } from './useRewardedSupportAd'
 import { useSupportLedger } from './useSupportLedger'
 
 /* The support sheet (the route /support), opened by the support card
@@ -36,8 +36,8 @@ export function SupportSheet() {
   /* The default size, or the first one the store sells. */
   const chosen = tip ?? support.menu.find((item) => item.tip.id === DEFAULT_TIP)?.product.id ?? support.menu[0]?.product.id ?? null
 
-  const coffeeNote = coffeeNoteKey(support, online)
-  const adNote = adNoteKey(ad.status, online)
+  const coffeeNote = storeNoteKey(support, online)
+  const adNote = rewardedAdNoteKey(ad.status, online)
   const given = [
     ledger.coffees > 0 ? t('mobile:support.ledgerCoffees', { count: ledger.coffees }) : null,
     ledger.ads > 0 ? t('mobile:support.ledgerAds', { count: ledger.ads }) : null,
@@ -161,36 +161,6 @@ export function SupportSheet() {
       </View>
     </SheetRoute>
   )
-}
-
-/* What the coffee card says under its button: the network first, then a
-   payment the store still waits for, then the last failed attempt. */
-function coffeeNoteKey(support: ReturnType<typeof useSupport>, online: boolean | null): string | null {
-  if (online === false) return 'mobile:support.coffeeOffline'
-  if (support.pending) return 'mobile:support.coffeePending'
-  if (support.failure === 'network') return 'mobile:support.coffeeFailedNetwork'
-  if (support.failure === 'store') return 'mobile:support.coffeeFailed'
-  return null
-}
-
-/* What the ad card says under its button: the network first, then where
-   the last request ended. */
-function adNoteKey(status: RewardedAdStatus, online: boolean | null): string | null {
-  if (online === false) return 'mobile:support.adOffline'
-  switch (status) {
-    case 'loading':
-    case 'showing':
-      return 'mobile:support.adLoading'
-    case 'unavailable':
-    case 'error':
-      return 'mobile:support.adUnavailable'
-    case 'refused':
-      return 'mobile:support.adRefused'
-    case 'dismissed':
-      return 'mobile:support.adDismissed'
-    default:
-      return null
-  }
 }
 
 const styles = StyleSheet.create({

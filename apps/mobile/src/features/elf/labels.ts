@@ -1,4 +1,4 @@
-import type { ElfEvent, ElfMood, ElfNeedId, ElfStage, ElfStarter } from '@chatynkowo/core'
+import type { ElfEvent, ElfMood, ElfNeedId, ElfNodeId, ElfPath, ElfRank, ElfStage, ElfStarter } from '@chatynkowo/core'
 import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, FoundIcon, JoyIcon, LoreIcon, SleepIcon, ToyIcon, WarmIcon, type Icon } from '../../ui'
 
 /* How the elf's ids (a form, an element, a need, a mood, a quest, a
@@ -6,7 +6,7 @@ import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, FoundI
    sill, a stage of the plant) map to the copy in the "elf" group of the
    mobile dictionary and to the vocabulary's glyphs. The
    dictionary names each entry with a prefix and the id in title case
-   (stageBaby, starterEmber, needJoy, moodAsleep, wantsClean, guardCap,
+   (stageBaby, starterEmber, needJoy, moodAsleep, wantsClean, guardCharging,
    questFeedTwice, slotHat, itemAcornCap, sillPinecone), so the screens build the key
    here rather than spelling out every switch themselves. */
 
@@ -59,4 +59,19 @@ export const QUEST_ICONS: Record<ElfEvent, Icon> = {
   open: CottageIcon,
   evening: WarmIcon,
   find: FoundIcon,
+}
+
+/* The rank's name (mobile:elf.rankSpark...). */
+export function rankKey(rank: ElfRank): string {
+  return `mobile:elf.rank${titleCase(rank)}`
+}
+
+/* A path's name and a node's name or effect (mobile:elf.pathGlutton,
+   nodeGlutton1, nodeGlutton1Effect). */
+export function pathKey(path: ElfPath): string {
+  return `mobile:elf.path${titleCase(path)}`
+}
+
+export function nodeKey(id: ElfNodeId, part: 'name' | 'effect' = 'name'): string {
+  return `mobile:elf.node${titleCase(id)}${part === 'effect' ? 'Effect' : ''}`
 }

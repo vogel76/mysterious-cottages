@@ -48,6 +48,8 @@ export type ElfDecorPanelProps = {
   tabs: readonly CatalogueTab[]
   /* The cottages found, which unlock some of the pieces. */
   foundCount: number
+  /* The pieces the tree granted, free of the finds (slot:id). */
+  granted: readonly string[]
   activeTab: CatalogueTab
   onSelectTab: (tab: CatalogueTab) => void
   onPick: (tab: CatalogueTab, id: string) => void
@@ -68,13 +70,13 @@ function cardWidth(screenWidth: number, count: number): number {
   return Math.floor((screenWidth - space.lg - (count > 3 ? 0 : space.lg) - space.sm * Math.ceil(visible - 1)) / visible)
 }
 
-export function ElfDecorPanel({ decor, hat, form, photo, tabs, foundCount, activeTab, onSelectTab, onPick, onLayout }: ElfDecorPanelProps) {
+export function ElfDecorPanel({ decor, hat, form, photo, tabs, foundCount, granted, activeTab, onSelectTab, onPick, onLayout }: ElfDecorPanelProps) {
   const { t } = useTranslation()
   const { width } = useWindowDimensions()
   const wardrobe = activeTab === 'hat'
   /* What a tab offers, and how much of it the cottages found have unlocked. */
   const offered = (tab: CatalogueTab) => (tab === 'hat' ? WEARABLE_IDS.hat : RENDERED_VARIANTS[tab].filter((id) => id !== PHOTO_ID || photo))
-  const unlockedOf = (tab: CatalogueTab, pieces: readonly string[]) => pieces.filter((id) => decorFindsNeeded(tab, id, foundCount) === 0).length
+  const unlockedOf = (tab: CatalogueTab, pieces: readonly string[]) => pieces.filter((id) => decorFindsNeeded(tab, id, foundCount, granted) === 0).length
   const ids = offered(activeTab)
   const current = wardrobe ? hat : renderedVariantFor(activeTab, decor[activeTab])
   const reduceMotion = useReducedMotion()
@@ -138,7 +140,7 @@ export function ElfDecorPanel({ decor, hat, form, photo, tabs, foundCount, activ
           {ids.map((id) => {
             const selected = id === current
             /* The piece in the room is the player's whatever the lock says. */
-            const needed = selected ? 0 : decorFindsNeeded(activeTab, id, foundCount)
+            const needed = selected ? 0 : decorFindsNeeded(activeTab, id, foundCount, granted)
             const name = itemLabel(id)
             const label = needed > 0 ? t('mobile:elf.lockedLabel', { count: needed }) : name
             return (

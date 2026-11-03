@@ -18,6 +18,20 @@ import {
   pet as petElf,
   PET_COOLDOWN_MS,
   placeDecor as placeElfDecor,
+  thankSupport as thankElfSupport,
+  adsLeft as elfAdsLeft,
+  earnAdDust as earnElfAdDust,
+  addDust as addElfDust,
+  spendDust as spendElfDust,
+  recordAd as recordElfAd,
+  applySkip as applyElfSkip,
+  nextForm as elfNextForm,
+  SKIP_COST,
+  unlockNode as unlockElfNode,
+  grantedItems,
+  type ElfSkip,
+  type ElfNextForm,
+  type ElfNodeId,
   readLetter as readElfLetter,
   settleDay,
   stageOf,
@@ -141,6 +155,24 @@ export type ElfValue = {
   /* Swaps the furniture in a slot of the room; unknown ids and pieces the
      finds have not unlocked yet are ignored (the tab says why first). */
   placeDecor: (slot: SlotId, id: string) => void
+  /* The elf has thanked for the player's support up to this count of the
+     support ledger (the tab plays the sip and says so). */
+  thankSupport: (total: number) => void
+  /* Star dust, the premium currency: how many rewarded ads may still be
+     watched today (for dust or a skip), an ad watched for dust (its
+     dust, or 0 past the cap), a pack bought in the store, and a wait
+     skipped, paid in dust (SKIP_COST) or with an ad watched to the end:
+     false when there was nothing to skip or the pay fell short. */
+  adsLeft: number
+  earnAdDust: () => number
+  addDust: (amount: number) => void
+  skip: (kind: ElfSkip, pay: 'dust' | 'ad') => boolean
+  /* The form ahead and what it waits for, null for the egg and the elder. */
+  nextForm: ElfNextForm | null
+  /* A node of the tree unlocked for a point; false out of order or without one. */
+  unlockNode: (id: ElfNodeId) => boolean
+  /* The pieces the tree granted, free of the finds (slot:id). */
+  granted: string[]
   /* Picks one of the day's reward options, once a day. */
   claimDailyReward: (index: number) => void
   pendingEvolution: ElfForm | null
@@ -478,10 +510,65 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
+  const thankSupport = useCallback(
+    (total: number) => {
+      const current = stateRef.current
+      if (!current) return
+      const next = thankElfSupport(current, total)
+      if (next !== current) commit(next, true)
+    },
+    [commit],
+  )
+
+  const earnAdDust = useCallback((): number => {
+    const current = stateRef.current
+    if (!current) return 0
+    const outcome = earnElfAdDust(current, Date.now())
+    if (outcome.earned) commit(outcome.state, true)
+    return outcome.earned
+  }, [commit])
+
+  const addDust = useCallback(
+    (amount: number) => {
+      const current = stateRef.current
+      if (!current) return
+      const next = addElfDust(current, amount)
+      if (next !== current) commit(next, true)
+    },
+    [commit],
+  )
+
+  const skip = useCallback(
+    (kind: ElfSkip, pay: 'dust' | 'ad'): boolean => {
+      const current = stateRef.current
+      if (!current) return false
+      const now = Date.now()
+      const paid = pay === 'dust' ? spendElfDust(current, SKIP_COST[kind]) : recordElfAd(current, now)
+      if (!paid) return false
+      const next = applyElfSkip(paid, kind, finds.length, now)
+      if (!next) return false
+      commit(next, true)
+      return true
+    },
+    [commit, finds.length],
+  )
+
+  const unlockNode = useCallback(
+    (id: ElfNodeId): boolean => {
+      const current = stateRef.current
+      if (!current) return false
+      const next = unlockElfNode(current, id)
+      if (!next) return false
+      commit(next, true)
+      return true
+    },
+    [commit],
+  )
+
   const placeDecor = useCallback(
     (slot: SlotId, id: string) => {
       const current = stateRef.current
-      if (!current || !DECOR_IDS[slot]?.includes(id) || decorFindsNeeded(slot, id, findsRef.current.length) > 0) return
+      if (!current || !DECOR_IDS[slot]?.includes(id) || decorFindsNeeded(slot, id, findsRef.current.length, grantedItems(current)) > 0) return
       const now = Date.now()
       const { state: settled, day } = settle(current, now)
       const outcome = placeElfDecor(settled, slot, id, now)
@@ -542,6 +629,14 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       hatchNow,
       equip,
       placeDecor,
+      thankSupport,
+      adsLeft: state ? elfAdsLeft(state, now) : 0,
+      earnAdDust,
+      addDust,
+      skip,
+      nextForm: state ? elfNextForm(state, foundCount, now) : null,
+      unlockNode,
+      granted: state ? grantedItems(state) : [],
       claimDailyReward,
       pendingEvolution,
       acknowledgeEvolution,
@@ -550,7 +645,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       dismissAway,
       readLetter,
     }
-  }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+  }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
+      thankSupport, earnAdDust, addDust, skip, unlockNode, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

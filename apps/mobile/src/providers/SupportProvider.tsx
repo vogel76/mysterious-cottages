@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TIP_MENU, TIP_PRODUCT_IDS, tipForProduct, type Tip } from '../features/support/tips'
+import { TIP_MENU, TIP_PRODUCT_IDS, tipForProduct, packForProduct, DUST_PACKS, DUST_PRODUCT_IDS, type DustPack, type Tip } from '../features/support/tips'
 import { connectBilling, type BillingConnection, type BillingEvent, type StoreProduct } from '../lib/billing'
 import { recordSupport, type SupportKind } from '../lib/support-store'
 import { useForeground } from './NetworkProvider'
 import { useToast } from './ToastProvider'
+import { useElf } from './ElfProvider'
 
 /* The coffee for the elf, for the whole app: the store connection opens
    when the app starts and stays, so a purchase the store settles outside
@@ -17,6 +18,7 @@ import { useToast } from './ToastProvider'
    `onReceived` (the sheet) learn of it to close themselves. */
 
 export type CoffeeMenuItem = { tip: Tip; product: StoreProduct }
+export type DustMenuItem = { pack: DustPack; product: CoffeeMenuItem['product'] }
 
 export type CoffeeStoreStatus =
   | 'connecting'
@@ -28,6 +30,8 @@ export type SupportValue = {
   status: CoffeeStoreStatus
   /* The coffees the store sells, in the menu's order, with their prices. */
   menu: CoffeeMenuItem[]
+  /* The packs of star dust the store sells, with their prices. */
+  dustMenu: DustMenuItem[]
   /* The product being bought, while the store's sheet is up. */
   buying: string | null
   /* A purchase the store is still waiting to be paid (cash, Ask to Buy). */
@@ -48,6 +52,14 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   const toast = useToast()
   const [status, setStatus] = useState<CoffeeStoreStatus>('connecting')
   const [menu, setMenu] = useState<CoffeeMenuItem[]>([])
+  const [dustMenu, setDustMenu] = useState<DustMenuItem[]>([])
+  const elf = useElf()
+  /* A pack paid: its dust into the elf's wallet, with a toast saying so. */
+  const dustRef = useRef((dust: number) => {})
+  dustRef.current = (dust: number) => {
+    elf.addDust(dust)
+    toast.show({ tone: 'success', text: t('mobile:elf.shopDustAdded', { dust }) })
+  }
   const [buying, setBuying] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<SupportValue['failure']>(null)
@@ -70,13 +82,19 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   const onEvent = useCallback((event: BillingEvent) => {
     setBuying(null)
     switch (event.kind) {
-      case 'paid':
-        if (tipForProduct(event.productId)) {
+      case 'paid': {
+        const pack = packForProduct(event.productId)
+        if (pack) {
+          setPending(false)
+          setFailure(null)
+          dustRef.current(pack.dust)
+        } else if (tipForProduct(event.productId)) {
           setPending(false)
           setFailure(null)
           receivedRef.current('coffee')
         }
         return
+      }
       case 'pending':
         setPending(true)
         setFailure(null)
@@ -92,7 +110,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
      once it is open and on every return to the foreground. */
   useEffect(() => {
     let current = true
-    void connectBilling(TIP_PRODUCT_IDS, onEvent)
+    void connectBilling([...TIP_PRODUCT_IDS, ...DUST_PRODUCT_IDS], onEvent)
       .then((opened) => {
         if (!current) {
           opened.close()
@@ -104,6 +122,12 @@ export function SupportProvider({ children }: { children: ReactNode }) {
           return product ? [{ tip, product }] : []
         })
         setMenu(items)
+        setDustMenu(
+          DUST_PACKS.flatMap((pack) => {
+            const product = opened.products.find((candidate) => candidate.id === pack.productId)
+            return product ? [{ pack, product }] : []
+          }),
+        )
         setStatus(items.length ? 'ready' : 'unavailable')
         void opened.settleLeftovers().catch((error) => console.warn('[support] leftovers', error))
       })
@@ -124,7 +148,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
 
   const buy = useCallback((productId: string) => {
     const opened = connection.current
-    if (!opened || !tipForProduct(productId)) return
+    if (!opened || (!tipForProduct(productId) && !packForProduct(productId))) return
     setFailure(null)
     setBuying(productId)
     void opened.buy(productId)
@@ -140,8 +164,8 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<SupportValue>(
-    () => ({ status, menu, buying, pending, failure, buy, receiveAd, onReceived }),
-    [status, menu, buying, pending, failure, buy, receiveAd, onReceived],
+    () => ({ status, menu, dustMenu, buying, pending, failure, buy, receiveAd, onReceived }),
+    [status, menu, dustMenu, buying, pending, failure, buy, receiveAd, onReceived],
   )
 
   return <SupportContext.Provider value={value}>{children}</SupportContext.Provider>
@@ -151,4 +175,14 @@ export function useSupport(): SupportValue {
   const value = useContext(SupportContext)
   if (!value) throw new Error('useSupport must be used within SupportProvider')
   return value
+}
+
+/* What a sheet says under a store button: the network first, then a
+   payment the store still waits for, then the last failed attempt. */
+export function storeNoteKey(support: SupportValue, online: boolean | null): string | null {
+  if (online === false) return 'mobile:support.coffeeOffline'
+  if (support.pending) return 'mobile:support.coffeePending'
+  if (support.failure === 'network') return 'mobile:support.coffeeFailedNetwork'
+  if (support.failure === 'store') return 'mobile:support.coffeeFailed'
+  return null
 }

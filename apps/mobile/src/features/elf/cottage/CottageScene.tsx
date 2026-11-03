@@ -206,9 +206,12 @@ const REACTION_CLIP: Partial<Record<ReactionKind, string>> = {
   bath: 'bath',
   wake: 'wave',
   call: 'wave',
-  greet: 'wave',
+  greet: 'greet',
   admire: 'wave',
   stroke: 'pet',
+  refuse: 'refuse',
+  sip: 'sip',
+  beckon: 'beckon',
 }
 /* The sound of a reaction the motion took (a pat and a stroke are silent). */
 const REACTION_SOUND: Partial<Record<ReactionKind, ElfSound>> = {
@@ -221,6 +224,9 @@ const REACTION_SOUND: Partial<Record<ReactionKind, ElfSound>> = {
   greet: 'wake',
   cheer: 'cheer',
   evolve: 'evolve',
+  refuse: 'refuse',
+  sip: 'sip',
+  beckon: 'beckon',
 }
 /* A snore with every breath of sleep (motion's breathSleepMs). */
 const SNORE_EVERY_MS = 5200
@@ -442,7 +448,9 @@ export const CottageScene = memo(
         if (sound) onSoundRef.current?.(sound)
         if (!hatched || paused || reduceMotion) return
         const next = REACTION_CLIP[kind]
-        if (!next) return
+        /* A form whose atlas lacks the clip (packed before the clip
+           existed) keeps its idle rather than throwing in the clock. */
+        if (!next || !(next in drawnManifest.clips)) return
         if (kind === 'stroke') {
           const now = Date.now()
           if (now - strokeClipAt.current < STROKE_CLIP_MS) return
@@ -451,7 +459,7 @@ export const CottageScene = memo(
         overrideCount.current += 1
         setOverride({ clip: next, key: overrideCount.current })
       },
-      [react, hatched, paused, reduceMotion],
+      [react, hatched, paused, reduceMotion, drawnManifest],
     )
     fidgetRef.current = (fidget: Fidget) => {
       if (fidget !== 'yawn' || !hatched || paused) return

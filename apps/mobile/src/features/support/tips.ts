@@ -34,3 +34,30 @@ export function tipForProduct(productId: string): Tip | undefined {
 export function tipLabelKey(id: TipId): string {
   return `mobile:support.tip${id.charAt(0).toUpperCase()}${id.slice(1)}`
 }
+
+/* The packs of star dust the stores sell, consumable products like the
+   coffees (the same ids in both consoles); the dust they hold reaches the
+   elf's wallet through the elf provider when a pack is paid. */
+export type DustPackId = 'small' | 'regular' | 'large'
+
+export type DustPack = {
+  id: DustPackId
+  productId: string
+  dust: number
+}
+
+export const DUST_PACKS: readonly DustPack[] = [
+  { id: 'small', productId: 'dust_small', dust: 60 },
+  { id: 'regular', productId: 'dust_regular', dust: 150 },
+  { id: 'large', productId: 'dust_large', dust: 400 },
+]
+
+export const DUST_PRODUCT_IDS: readonly string[] = DUST_PACKS.map((pack) => pack.productId)
+
+export function packLabelKey(id: DustPackId): string {
+  return `mobile:elf.shopPack${id.charAt(0).toUpperCase()}${id.slice(1)}`
+}
+
+export function packForProduct(productId: string): DustPack | undefined {
+  return DUST_PACKS.find((pack) => pack.productId === productId)
+}
