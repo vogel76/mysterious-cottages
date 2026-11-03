@@ -3,8 +3,8 @@ title: "Chatynka Zofii z Rabsztyna"
 slug: zofia
 occupant: Zofia
 virtue: skromność
-letterFound: "Zamek Rabsztyn najeżdżano i palono, a mnie odwiedzono z uśmiechem, i to jest nowość w jego historii. Dziękuję za wizytę. Nasze hasło to „skromność”. Nawet na zamku nie trzeba zadzierać nosa."
-letterInvite: "Mieszkam pod zamkiem Rabsztyn, który widział już najazdy i pożary, ale takich dziwów jak pewnej zimy jeszcze nie. Przyjdźcie, to pokażę Wam, co się tu wydarzyło. Zamek nie zdradzi, a ja tak."
+letterFound: "Zamek Rabsztyn przez wieki najeżdżano i palono, a Twoi przyjaciele przyszli tu z uśmiechem, i to jest w jego historii nowość. Pozdrów ich ode mnie. Nasze hasło brzmi: „skromność”. Nawet na zamku nie trzeba zadzierać nosa."
+letterInvite: "Mieszkam pod zamkiem Rabsztyn, który widział już najazdy i pożary, ale takich dziwów jak pewnej zimy jeszcze nie. Niech Twoi przyjaciele przyjdą, a pokażę im, co się tu wydarzyło. Zamek nie zdradzi, ja tak."
 ---
 
 # Chatynka Zofii z Rabsztyna

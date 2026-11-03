@@ -3,8 +3,8 @@ title: "Chatynka Czubatej i Myszki"
 slug: czubata-myszka
 occupant: "Czubata i Myszka"
 virtue: wyobraźnia
-letterFound: "Liść, którego szumu słuchaliście, jest teraz wypożyczony na Wasze imię, a Myszka już wymyśliła ciąg dalszy. Oddać go można tylko nową opowieścią. Nasze hasło to „wyobraźnia”."
-letterInvite: "Prowadzimy małą bibliotekę szeleszczących liści, a każdy liść to jedna opowieść. Myszka ma listę pomysłów dłuższą niż ogonek. Przyjdźcie posłuchać szumu, to się liczy jak wypożyczenie."
+letterFound: "Liść, którego szumu słuchali Twoi przyjaciele, jest teraz wypożyczony na ich imię, a Myszka już wymyśliła ciąg dalszy. Oddać go można tylko nową opowieścią. Nasze hasło brzmi: „wyobraźnia”."
+letterInvite: "Prowadzimy małą bibliotekę szeleszczących liści, a każdy liść to jedna opowieść. Myszka ma listę pomysłów dłuższą niż własny ogonek. Niech Twoi przyjaciele przyjdą posłuchać szumu, to liczy się jak wypożyczenie książki."
 ---
 
 # Chatynka Czubatej i Myszki

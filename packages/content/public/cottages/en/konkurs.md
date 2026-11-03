@@ -3,8 +3,8 @@ title: "Tymelion and Matylda"
 slug: konkurs
 occupant: "Tymelion and Matylda"
 virtue: "journeys big and small"
-letterFound: "Tymelion added your name to his list of new friends, and Matylda told the Moon about you, who reportedly had a good laugh. Our motto is journeys big and small. What matters is coming home with a smile."
-letterInvite: "A brother and sister live here: Tymelion jumps into every water, even the puddle he named the micro-ocean, and Matylda talks to the Moon at night. Come, and each of us will show you a different world."
+letterFound: "Tymelion added your friends to his list of new acquaintances, and Matylda told the Moon about them, who reportedly had a good laugh. Our motto is journeys big and small. What matters most is coming home with a smile."
+letterInvite: "A brother and sister live here: Tymelion jumps into every water, even the puddle he named the micro-ocean, and Matylda talks to the Moon at night. Let your friends come, and each of us will show them a different world."
 ---
 
 # Tymelion and Matylda

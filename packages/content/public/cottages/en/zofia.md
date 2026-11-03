@@ -3,8 +3,8 @@ title: "The Cottage of Zofia of Rabsztyn"
 slug: zofia
 occupant: Zofia
 virtue: modesty
-letterFound: "Rabsztyn Castle was raided and burned, and I was visited with a smile, which is new in its history. Thank you for the visit. Our motto is modesty. Even at a castle there is no need to turn up your nose."
-letterInvite: "I live below Rabsztyn Castle, which has seen raids and fires, but never wonders like the ones of a certain winter. Come and I will show you what happened here. The castle will not tell, but I will."
+letterFound: "For centuries Rabsztyn Castle was raided and burned, and your friends came here with a smile, which is something new in its history. Give them my regards. Our motto is modesty. Even at a castle there is no need to turn up your nose."
+letterInvite: "I live below Rabsztyn Castle, which has seen raids and fires, but never wonders like those of a certain winter. Let your friends come and I will show them what happened here. The castle will not tell; I will."
 ---
 
 # The Cottage of Zofia of Rabsztyn

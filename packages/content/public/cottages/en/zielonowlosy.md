@@ -3,8 +3,8 @@ title: "The Green-Haired Elf's Cottage"
 slug: zielonowlosy
 occupant: "the Green-Haired Elf"
 virtue: respect
-letterFound: "The pond was especially green that day, and with us that is a good sign. Thank you for leaving nothing behind but footprints. Our motto is respect, for the places that cannot defend themselves."
-letterInvite: "Deep in the forest lies a pond with water so green that the moss looks at it with envy. The elf who lives beside it got the colour of his hair back here and has kept the place tidy ever since. Come, only without plastic."
+letterFound: "The pond was especially green that day, and with us that is a good sign. Your friends left nothing behind but footprints, and for that I thank them. Our motto is respect, above all for the places that cannot defend themselves."
+letterInvite: "Deep in the forest lies a pond with water so green that the moss looks at it with envy. The elf who lives beside it got the colour of his hair back from that water and has kept the place tidy ever since. Send your friends, only without plastic."
 ---
 
 # The Green-Haired Elf's Cottage

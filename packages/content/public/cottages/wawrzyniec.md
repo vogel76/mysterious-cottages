@@ -3,8 +3,8 @@ title: "Chatynka Wawrzyńca"
 slug: wawrzyniec
 occupant: Wawrzyniec
 virtue: "starość to radość"
-letterFound: "Bobry pytały po Waszej wizycie, kim byli ci goście, co tak miło machali. Powiedziałem, że przyjaciele. Nasze hasło to „starość to radość”. Mam z kim pływać i z kim się śmiać."
-letterInvite: "Nie wiadomo skąd przyszły do mnie bobry i postanowiły zostać, a ja w końcu mam z kim pływać. Pokażę Wam ich tamę, jeśli przyjdziecie o zmierzchu. Chatynka Wawrzyńca jest nad samą wodą."
+letterFound: "Po odwiedzinach Twoich przyjaciół bobry pytały, kim byli ci goście, co tak miło machali. Powiedziałem, że to nasi przyjaciele. Nasze hasło brzmi: „starość to radość”. Mam z kim pływać i z kim się śmiać."
+letterInvite: "Nie wiadomo skąd przywędrowały do mnie bobry i postanowiły zostać, więc w końcu mam z kim pływać. Pokażę Twoim przyjaciołom ich tamę, jeśli przyjdą o zmierzchu. Chatynka Wawrzyńca stoi tuż nad wodą."
 ---
 
 # Chatynka Wawrzyńca

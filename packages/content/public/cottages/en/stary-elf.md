@@ -3,8 +3,8 @@ title: "The Cottage of Janusz the Old Elf"
 slug: stary-elf
 occupant: Janusz
 virtue: wisdom
-letterFound: "You came to see me at my new place, close to the cave at Januszówka, while I am still settling in. Thank you for the visit. Our motto is wisdom. It comes with the springs you no longer count."
-letterInvite: "I remember the first snow on the old clearing and I have more springs than I can count. I have moved closer to the cave at Januszówka; the echo answers more slowly here, just right for an old elf. Come whenever you like."
+letterFound: "Your friends visited me at my new place already, by the cave at Januszówka, though I am still settling in. It was good to have them. Our motto is wisdom. It comes with the springs one no longer counts."
+letterInvite: "I remember the first snow on the old clearing, and I have more springs than I can count. I have moved closer to the cave at Januszówka; the echo answers more slowly here, just right for an old elf. Send your friends whenever they like."
 ---
 
 # The Old Elf's Cottage
