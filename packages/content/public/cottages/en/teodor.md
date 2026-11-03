@@ -3,8 +3,8 @@ title: "The Cottage of Teodor the Elf"
 slug: teodor
 occupant: "Teodor the Elf"
 virtue: patience
-letterFound: "I put down my hoe when I saw that you left no litter behind, and I did not even grumble. The rock in my house did not stir either, which with her is a sign of approval. Our motto is patience. A forest grows more slowly than a skier goes down, but it grows."
-letterInvite: "In my youth I skied down as fast as the wind; today I live on a hill next to an old ski lift, in a house built around a rock, because the rock was here first. Come, and I will show you how to build a future around the forest."
+letterFound: "When your friends visited me they left not a single scrap of paper behind, so I did not even grumble. The rock in my house did not stir either, and with her that is a sign of approval. Our motto is patience. A forest grows more slowly than a skier goes down, but it grows."
+letterInvite: "In my young days I skied down as fast as the wind; today I live on a hill by an old ski lift, in a house built around a rock, because the rock was here first. Send your friends over and I will show them how to look after the forest."
 ---
 
 # The Cottage of Teodor the Elf

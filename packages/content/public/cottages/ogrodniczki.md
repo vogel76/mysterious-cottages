@@ -3,8 +3,8 @@ title: "Chatynka dwóch sióstr ogrodniczek"
 slug: ogrodniczki
 occupant: "Ola i Wiktoria"
 virtue: "kupa szczęścia"
-letterFound: "Dąb zaszumiał, kiedy odchodziliście, a to znaczy, że Was polubił. My też. Nasze hasło to „kupa szczęścia”. Rośnie w ogródku, jeśli się je codziennie podlewa."
-letterInvite: "Mieszkamy w konarze starego dębu, który niczego się już nie spodziewał, a dostał dwie ogrodniczki. Coś nam w ogródku zakwitło i chcemy Wam to pokazać. Przyjdźcie, zanim przekwitnie."
+letterFound: "Kiedy Twoi przyjaciele odchodzili, dąb zaszumiał, a to znaczy, że ich polubił. My też. Nasze hasło brzmi: „kupa szczęścia”. Rośnie w ogródku, jeśli podlewa się je codziennie."
+letterInvite: "Mieszkamy w konarze starego dębu, który niczego już się nie spodziewał, a dostał dwie ogrodniczki. Coś nam w ogródku zakwitło i chcemy to pokazać Twoim przyjaciołom. Niech przyjdą, zanim przekwitnie."
 ---
 
 # Chatynka dwóch sióstr ogrodniczek

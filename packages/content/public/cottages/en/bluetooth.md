@@ -3,8 +3,8 @@ title: Harald
 slug: bluetooth
 occupant: Harald
 virtue: diplomacy
-letterFound: "The seagulls noticed you first and checked at once whether you had anything to eat. I apologise on their behalf and thank you for visiting my stone. Our motto is diplomacy. Even with seagulls you have to know how to get along."
-letterInvite: "I once united peoples, and today I live on a great stone by the sea, feed the seagulls and cormorants and look at the island opposite. Why that island, I will tell you on the spot. The wind here has a mind of its own."
+letterFound: "The seagulls noticed your friends first and checked at once whether they had anything to eat. I apologise for them and send my regards to the guests of my stone. Our motto is diplomacy. Even with seagulls you have to know how to get along."
+letterInvite: "I once united peoples; today I live on a great stone by the sea, feed the seagulls and cormorants and look at the island opposite. Why that island of all islands, I will tell your friends on the spot. The wind here has a mind of its own."
 ---
 
 # Harald

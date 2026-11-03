@@ -3,8 +3,8 @@ title: "Chatynka Elfa Iwo"
 slug: iwo
 occupant: "Elf Iwo"
 virtue: gościnność
-letterFound: "Siedziałem w trawie przy fosie i widziałem, jak zatrzymaliście się na chwilę, zamiast tylko przelecieć obok. Zofia już o tym wie, mamy swoje tajne przejście. Nasze hasło to „gościnność”. Pod zamkiem Rabsztyn drzwi są zawsze uchylone."
-letterInvite: "Mieszkam w krzywej chatynce na skraju starej fosy pod zamkiem Rabsztyn i pilnuję jej, oficjalnie. Nieoficjalnie siedzę w trawie i podpowiadam ludziom, żeby się na chwilę zatrzymali, bo tu działo się więcej niż w niejednym filmie. Przyjdźcie, zatrzymajcie się."
+letterFound: "Twoi przyjaciele zatrzymali się na chwilę nad naszą fosą, zamiast przebiec obok, a to u nas cenimy najbardziej. Zofia już o nich wie, mamy przecież tajne przejście. Nasze hasło brzmi: „gościnność”. Pod Rabsztynem drzwi są zawsze uchylone."
+letterInvite: "Mieszkam w krzywej chatynce nad starą fosą pod zamkiem Rabsztyn i pilnuję jej, przynajmniej oficjalnie. Po cichu siedzę w trawie i szepczę ludziom, żeby się na chwilę zatrzymali, bo tu działo się więcej niż w niejednej bajce. Przyślij do mnie swoich przyjaciół."
 ---
 
 # Chatynka Elfa Iwo

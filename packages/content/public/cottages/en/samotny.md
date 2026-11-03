@@ -3,8 +3,8 @@ title: "The Cottage of Fredek the Lonely Elf"
 slug: samotny
 occupant: Fredek
 virtue: contemplation
-letterFound: "You sat beside me and said nothing, and it was the best conversation I have had in a long time. If you saw eyes on the tree trunks along the way, that was my work. Our motto is contemplation."
-letterInvite: "On a high rock at the edge of a quiet forest lives an elf who paints calm eyes on tree trunks and writes poems on leaves. He likes guests who can keep silent. The view is worth it."
+letterFound: "Your friends sat down beside me and said nothing, and it was the best conversation I have had in a long time. If they saw eyes on the tree trunks along the way, that was my work. Our motto is contemplation."
+letterInvite: "On a high rock at the edge of a quiet forest lives an elf who paints calm eyes on tree trunks and writes poems on leaves. He likes guests who can keep quiet for a while. Send your friends, if only for the view."
 ---
 
 # The Lonely Elf's Cottage

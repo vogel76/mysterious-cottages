@@ -3,8 +3,8 @@ title: "The Cottage That Invites"
 slug: zaprasza
 occupant: "the Cottage That Invites"
 virtue: invitation
-letterFound: "The door opened by itself as you passed, and for the first time in a long while I answered in a whisper. Thank you for sitting down on the doorstep. Our motto is invitation. Someone has to begin."
-letterInvite: "I am the cottage that looks for guests by itself: my door opens slightly when someone with a good heart passes by. A very shy elf lives in me. Sit down on the doorstep and quietly say hello."
+letterFound: "The door opened by itself as your friends walked past, and for the first time in a long while I answered in a whisper. It was good that they sat down on the doorstep. Our motto is invitation. Someone has to begin."
+letterInvite: "I am the cottage that looks for guests by itself: my door opens a little when someone with a good heart passes by. A very shy elf lives in me. Let your friends sit down on the doorstep and quietly say hello."
 ---
 
 # The Cottage That Invites

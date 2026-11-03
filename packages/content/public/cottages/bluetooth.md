@@ -3,8 +3,8 @@ title: Harald
 slug: bluetooth
 occupant: Harald
 virtue: dyplomacja
-letterFound: "Mewy zauważyły Was pierwsze i od razu sprawdziły, czy macie coś do jedzenia. Przepraszam w ich imieniu i dziękuję za wizytę na moim kamieniu. Nasze hasło to „dyplomacja”. Z mewami też trzeba umieć się dogadać."
-letterInvite: "Kiedyś jednoczyłem ludy, a dziś mieszkam na wielkim kamieniu nad morzem, karmię mewy i kormorany i patrzę na wyspę naprzeciwko. Dlaczego akurat na tę wyspę, opowiem Wam na miejscu. Wiatr tu ma własne zdanie."
+letterFound: "Mewy zauważyły Twoich przyjaciół pierwsze i od razu sprawdziły, czy mają coś do jedzenia. Przepraszam za nie i pozdrawiam gości mojego kamienia. Nasze hasło brzmi: „dyplomacja”. Z mewami też trzeba umieć się dogadać."
+letterInvite: "Kiedyś jednoczyłem ludy, a dziś mieszkam na wielkim kamieniu nad morzem, karmię mewy i kormorany i patrzę na wyspę naprzeciwko. Dlaczego akurat na tę, opowiem Twoim przyjaciołom na miejscu. Wiatr ma tu własne zdanie."
 ---
 
 # Harald

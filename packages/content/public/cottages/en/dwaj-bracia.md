@@ -3,8 +3,8 @@ title: "The Cottage of the Two Brothers"
 slug: dwaj-bracia
 occupant: "the Two Brothers"
 virtue: brotherhood
-letterFound: "One of us saw you at dawn and the other at dusk, so we left each other a note about you under the stone. Thank you for the visit. Our motto is brotherhood, though we have met only twice in our lives."
-letterInvite: "In our cottage live two brothers, twins, who almost never meet. We write each other notes under a stone. If one of them flutters your way, take it as a sign to visit us."
+letterFound: "One of us saw your friends at dawn and the other at dusk, so we left each other a note about them under the stone. Kind guests. Our motto is brotherhood, though we ourselves have met only twice in our lives."
+letterInvite: "Two brothers live in our cottage, twins who almost never meet. We write each other notes and hide them under a stone. If one of them flutters your way on the wind, take it as a sign to come and visit us."
 ---
 
 # The Cottage of the Two Brothers
