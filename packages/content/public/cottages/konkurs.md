@@ -3,8 +3,8 @@ title: "Tymelion i Matylda"
 slug: konkurs
 occupant: "Tymelion i Matylda"
 virtue: "podróże małe i duże"
-letterFound: "Tymelion dopisał Twoich przyjaciół do listy nowych znajomych, a Matylda opowiedziała o nich Księżycowi, który podobno się uśmiał. Nasze hasło brzmi: „podróże małe i duże”. Najważniejsze, żeby wracać do domu z uśmiechem."
-letterInvite: "Mieszka tu rodzeństwo: Tymelion wskakuje do każdej wody, nawet do kałuży, którą nazwał mikrooceanem, a Matylda rozmawia nocami z Księżycem. Niech Twoi przyjaciele przyjdą, każde z nas pokaże im inny świat."
+letterFound: "Jesteśmy Tymelion i Matylda, brat i siostra. Tymelion biega po lesie i skacze do każdej wody, a Matylda wieczorami rozmawia z Księżycem. Dziś odwiedzili nas Twoi przyjaciele. Tymelion zapisał ich na listę nowych znajomych, a Matylda opowiedziała o nich Księżycowi. Nasze hasło to: podróże małe i duże. Najważniejsze, żeby wracać do domu z uśmiechem."
+letterInvite: "Jesteśmy Tymelion i Matylda, brat i siostra. Tymelion kocha podróże i wskakuje nawet do kałuż, a Matylda liczy gwiazdy i rozmawia z Księżycem. Zaproś do nas swoich przyjaciół. Każde z nas pokaże im coś innego."
 ---
 
 # Tymelion i Matylda

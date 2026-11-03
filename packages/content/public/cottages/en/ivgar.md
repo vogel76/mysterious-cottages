@@ -3,8 +3,8 @@ title: Ivgar
 slug: ivgar
 occupant: Ivgar
 virtue: Perseverance
-letterFound: "The way to me is not an easy one, and your friends made it all the same, and that is what I will remember. Give them my regards. Our motto is perseverance. Step by step, all the way to the doorstep."
-letterInvite: "I live in a place you do not reach by accident. Whoever keeps going once knows why the walk was worth it. Let your friends look for the cottage of Ivgar; they will know it by the way it does not bend in the wind."
+letterFound: "I am Ivgar. My cottage stands in a place that is hard to reach. Today your friends walked all the way to me, step by step, and did not give up on the way. I am proud of them. Our motto is: perseverance. Whoever does not give up reaches the goal."
+letterInvite: "I am Ivgar. I live far away, where the wind blows, and the road to me is long. But whoever reaches me knows it was worth it. Invite your friends to visit me. Let them not give up on the way."
 ---
 
 # Ivgar

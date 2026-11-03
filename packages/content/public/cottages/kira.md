@@ -3,8 +3,8 @@ title: "Chatynka Kiry"
 slug: kira
 occupant: Kira
 virtue: niezdecydowanie
-letterFound: "Chciałam podziękować Twoim przyjaciołom od razu, potem jutro, potem wcale, a w końcu piszę teraz. Fajnie, że byli! Nasze hasło brzmi: „niezdecydowanie”. Czasem wystarczy po prostu być sobą."
-letterInvite: "Nie wiem, czy zaprosić Twoich przyjaciół na herbatę, czy na kompot, więc przygotuję jedno i drugie. Albo nie. Niech przyjdą i zdecydują za mnie, u Kiry zawsze jest wesoło."
+letterFound: "Jestem Kira. Długo nie mogłam się zdecydować, czy napisać do Ciebie dziś, czy jutro, i w końcu piszę dzisiaj. Odwiedzili mnie Twoi przyjaciele i bardzo się z tego cieszę. Nasze hasło to: niezdecydowanie. Ale jedno wiem na pewno: najlepiej być po prostu sobą."
+letterInvite: "Jestem Kira. Nie umiem się zdecydować, czy poczęstować gości herbatą, czy kompotem, więc zawsze przygotowuję jedno i drugie. Zaproś do mnie swoich przyjaciół. Niech wybiorą za mnie."
 ---
 
 # Chatynka Kiry

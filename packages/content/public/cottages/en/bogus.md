@@ -3,8 +3,8 @@ title: "Boguś's Cottage"
 slug: bogus
 occupant: Boguś
 virtue: diligence
-letterFound: "After your friends there was nothing to clean up, and with me that is the highest praise. The bats walked on tiptoe, because I happened to be napping. Our motto is diligence, as long as there is a reason to get up in the morning."
-letterInvite: "I shaped my cottage out of clay and stones right in the middle of the Łabajowa Cave, because here at least the neighbours never drill. Every day I clean up after people, so if your friends come and leave nothing behind, they will be my favourite guests."
+letterFound: "I am Boguś. I live in a cottage of clay and stones in the middle of the Łabajowa Cave. Every day I clean the cave after the tourists. Today your friends came to visit me and left nothing on the ground. That is the best present for me. Our motto is: diligence. Whoever has something to do is happy."
+letterInvite: "I am Boguś. I live in a cave, where it is dark and cool, but peaceful. All day I work and clean, and the bats are my neighbours. Invite your friends to visit me. I will show them the cave."
 ---
 
 # Boguś's Cottage

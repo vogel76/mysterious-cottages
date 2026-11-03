@@ -3,8 +3,8 @@ title: "The Cottage of Dębomir the Woodcutter"
 slug: drwal
 occupant: Dębomir
 virtue: "strength and endurance"
-letterFound: "Dębomir put down his axe when he saw your friends, and that does not happen often. They looked at the forest differently from most people. Our motto is strength and endurance. It takes the most of both to sometimes cut nothing at all."
-letterInvite: "I am a woodcutter, but what I like most is looking at the trees I left standing. Sometimes you have to look differently at what is around you to understand it. Send your friends and I will show them what I mean."
+letterFound: "I am Dębomir, the woodcutter. I have a big axe, but what I like most is watching trees grow. Today your friends came to visit me and we looked at the forest together. Our motto is: strength and endurance. True strength also means knowing when not to cut."
+letterInvite: "I am Dębomir, the woodcutter of the forest. Not every woodcutter cuts down trees; I prefer to look at them. Sometimes you have to look at the forest differently to understand it. Invite your friends to visit me. I will show them my favourite trees."
 ---
 
 # The Woodcutter's Cottage

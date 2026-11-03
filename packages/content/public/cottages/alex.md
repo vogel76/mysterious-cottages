@@ -3,8 +3,8 @@ title: "Chatynka Elfów Jędrzeja i Franka"
 slug: alex
 occupant: "bracia Jędrzej i Franek"
 virtue: wyluzowani
-letterFound: "Twoi przyjaciele posiedzieli z nami nad Szumem i nic nie musiało działać jak w młynie. Woda to zauważyła i szumiała trochę spokojniej. Nasze hasło brzmi: „bądźcie wyluzowani”. Nie wszystko, co się zatrzymuje, jest końcem."
-letterInvite: "Kiedy nasz młyn ucichł, poszliśmy wzdłuż Będkówki tylko kawałek i zostaliśmy pod wodospadem Szum. Nie robimy wiele: patrzymy i słuchamy. Niech Twoi przyjaciele przyjdą posiedzieć, to też jest zajęcie."
+letterFound: "Jesteśmy Jędrzej i Franek, bracia znad wodospadu Szum. Dawniej mieszkaliśmy przy młynie, ale kiedy młyn ucichł, przenieśliśmy się nad wodospad. Dziś odwiedzili nas Twoi przyjaciele i posiedzieli z nami, słuchając wody. Nasze hasło to: bądźcie wyluzowani. Nie wszystko musi się spieszyć."
+letterInvite: "Jesteśmy Jędrzej i Franek. Mieszkamy pod wodospadem Szum nad rzeką Będkówką. Nie robimy wiele: patrzymy na wodę i słuchamy, jak szumi. Zaproś do nas swoich przyjaciół. Posiedzimy razem nad wodospadem."
 ---
 
 # Chatynka Elfów Jędrzeja i Franka

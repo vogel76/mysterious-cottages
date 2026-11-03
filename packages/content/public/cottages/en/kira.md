@@ -3,8 +3,8 @@ title: "Kira's Cottage"
 slug: kira
 occupant: Kira
 virtue: indecision
-letterFound: "I wanted to thank your friends right away, then tomorrow, then not at all, and in the end I am writing now. It was great that they came! Our motto is indecision. Sometimes it is enough to simply be yourself."
-letterInvite: "I cannot decide whether to invite your friends for tea or for juice, so I will make both. Or neither. Let them come and decide for me; it is always cheerful at Kira's."
+letterFound: "I am Kira. For a long time I could not decide whether to write to you today or tomorrow, and in the end I am writing today. Your friends came to visit me and I am very happy about it. Our motto is: indecision. But one thing I know for sure: it is best to simply be yourself."
+letterInvite: "I am Kira. I cannot decide whether to offer guests tea or juice, so I always make both. Invite your friends to visit me. Let them choose for me."
 ---
 
 # Kira's Cottage

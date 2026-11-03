@@ -3,8 +3,8 @@ title: "The Cottage on Zamczysko Hill"
 slug: zamczysko
 occupant: "the Guardian of Zamczysko Hill"
 virtue: remembrance
-letterFound: "The hill heard your friends coming and hummed its old songs when they laid a hand on the boulder. They came up quietly, the way one should. Remember our motto: remembrance. For those who remember, the heart of the hill beats louder."
-letterInvite: "At the top of Zamczysko Hill the rocks form a rampart, and the cottage is full of echoes of old battles. Let your friends come quietly and lay a hand on the stone. The rest I will not give away in a letter."
+letterFound: "I am the Guardian of Zamczysko Hill. My cottage stands right at the top, among the rocks. Today your friends climbed up here and laid their hands on the big stone. Then the hill hummed its old song for them. Our motto is: remembrance. Whoever remembers can hear the heart of the hill beating."
+letterInvite: "I am the Guardian of Zamczysko Hill. I live at the top, where the rocks stand like the wall of an old castle. When it is quiet, the stones hum the songs of knights. Invite your friends to visit me. Let them climb the hill and listen."
 ---
 
 # The Cottage on Zamczysko Hill

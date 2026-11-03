@@ -3,8 +3,8 @@ title: "Mikołaj's Cottage"
 slug: minizoo
 occupant: "Mikołaj and the cows Basia and Krysia"
 virtue: love
-letterFound: "Basia and Krysia mooed goodbye, and Mikołaj waved to your friends until they vanished round the bend. Give them the regards of our whole little zoo. Our motto is love: for animals, for people and for this place."
-letterInvite: "I live here with two cows, Basia and Krysia, and you are probably wondering why. I will tell your friends in person, and the cows will add their part in their own way. Let them come to the cottage of Mikołaj."
+letterFound: "I am Mikołaj. I live in a cottage together with two cows, Basia and Krysia. Today your friends came to visit us, and Basia and Krysia said goodbye with a loud moo. Our motto is: love. We love animals, people and our place in the forest."
+letterInvite: "I am Mikołaj. I live with two cows, Basia and Krysia, and I keep a little zoo. You are probably wondering why an elf lives with cows. Invite your friends to visit me. I will tell them the story, and the cows will moo."
 ---
 
 # Mikołaj's Cottage

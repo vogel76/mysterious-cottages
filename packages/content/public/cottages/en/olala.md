@@ -3,8 +3,8 @@ title: "Ola and Zojka's Cottage"
 slug: olala
 occupant: "Ola and Zojka"
 virtue: creativity
-letterFound: "The cat that sat on the fence while your friends visited us is already in a frame of twigs and pebbles. Give them our regards. Our motto is creativity. Ideas lie where others see rubbish."
-letterInvite: "We know this forest like few others: where the chanterelles, the wild strawberries and the most beautiful ferns grow, and where the cats go when they need help. We will show your friends almost all its secrets. Almost, because elves never give everything away."
+letterFound: "We are Ola and Zojka. Ola is an artist who makes pictures out of twigs, pebbles and old newspapers, and we both love cats very much. Today your friends came to visit us and stroked our cat on the fence. Our motto is: creativity. With an idea, even a twig becomes a work of art."
+letterInvite: "We are Ola and Zojka. We know the forest like the back of our hand: we know where the wild strawberries, the chanterelles and the ferns grow. We also have many cats who come to us for help. Invite your friends to visit us. We will show them our forest secrets."
 ---
 
 # Ola and Zojka's Cottage

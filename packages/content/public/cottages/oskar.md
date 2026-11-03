@@ -3,8 +3,8 @@ title: PIEKARNIA
 slug: oskar
 occupant: "Oskar Marta i TEODOR"
 virtue: WOLNOŚĆ
-letterFound: "Chleb, który pachniał, kiedy Twoi przyjaciele weszli do piekarni, był prosto z pieca, a Teodor pokazał im palcem na mapie zupełnie przypadkowe miejsce. Pozdrów ich od nas. Nasze hasło brzmi: „wolność”. Zawsze można ruszyć dalej."
-letterInvite: "Zbieraliśmy miejsca, zapachy i historie z całego świata, aż zatrzymaliśmy się tam, gdzie pachnie świeżym chlebem. Nie na zawsze, na teraz. Niech Twoi przyjaciele przyjdą, póki piec jest ciepły, a Teodor wybierze im na mapie następny cel."
+letterFound: "Jesteśmy Oskar, Marta i mały Teodor. Mamy piekarnię, w której codziennie pachnie świeży chleb. Dziś odwiedzili nas Twoi przyjaciele, a Teodor pokazał im na mapie, dokąd chciałby pojechać. Nasze hasło to: wolność. Zawsze można ruszyć w nową podróż."
+letterInvite: "Jesteśmy Oskar, Marta i mały Teodor. Zwiedziliśmy pół świata, a teraz mieszkamy w piekarni, bo nic nie pachnie tak dobrze jak świeży chleb. Zaproś do nas swoich przyjaciół. Poczęstujemy ich ciepłą bułką."
 ---
 
 # Oskar Marta i Teo
