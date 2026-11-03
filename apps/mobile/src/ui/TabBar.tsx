@@ -80,8 +80,12 @@ export function TabBar({ state, descriptors, navigation, insets, discover }: Tab
   /* The same press contract as the navigator's own bar: a tab press the
      layout may listen to (and prevent), then the switch; a long press is
      only announced. */
-  const tabs = state.routes.map((route, index) => {
-    const focused = index === state.index
+  /* A route the layout hid from the bar (expo-router's href: null, the elf
+     left out of a build, which the router turns into a hidden item style)
+     has no tab, like in the navigator's own bar. */
+  const shown = state.routes.filter((route) => StyleSheet.flatten(descriptors[route.key].options.tabBarItemStyle)?.display !== 'none')
+  const tabs = shown.map((route) => {
+    const focused = state.routes[state.index]?.key === route.key
     const onPress = () => {
       const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true })
       if (!focused && !event.defaultPrevented) navigation.dispatch({ ...CommonActions.navigate(route), target: state.key })

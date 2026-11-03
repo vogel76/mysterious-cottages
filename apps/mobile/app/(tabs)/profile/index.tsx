@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { SITE_ORIGIN, SOCIAL_LINKS } from '@chatynkowo/core'
 import { AccountSection } from '../../../src/features/profile/AccountSection'
+import { ELF_ENABLED } from '../../../src/config'
 import { useElf } from '../../../src/providers'
 import { SupportCard } from '../../../src/features/support/SupportCard'
 import { LANGUAGES, setLanguage, toLanguage } from '../../../src/i18n'
@@ -77,14 +78,18 @@ export default function ProfileScreen() {
         </SettingsSection>
       ),
     },
-    {
-      key: 'elf',
-      node: (
-        <SettingsSection title={t('mobile:elf.title')} footer={t('mobile:elf.resetFooter')}>
-          <SettingsRow icon={<ElfIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />} label={t('mobile:elf.startOver')} tone="danger" disabled={!elf.state} onPress={confirmElfReset} />
-        </SettingsSection>
-      ),
-    },
+    ...(ELF_ENABLED
+      ? [
+          {
+            key: 'elf',
+            node: (
+              <SettingsSection title={t('mobile:elf.title')} footer={t('mobile:elf.resetFooter')}>
+                <SettingsRow icon={<ElfIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />} label={t('mobile:elf.startOver')} tone="danger" disabled={!elf.state} onPress={confirmElfReset} />
+              </SettingsSection>
+            ),
+          },
+        ]
+      : []),
     {
       key: 'lore',
       node: (
