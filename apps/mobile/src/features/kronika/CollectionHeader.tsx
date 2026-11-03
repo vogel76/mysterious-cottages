@@ -21,17 +21,21 @@ export type CollectionHeaderProps = {
   intro: string
   /* Plain fallback shown when there is no intro. */
   note: string | null
+  /* The elf's lessons, the cottages it has taken in, once it has hatched;
+     null without the elf. */
+  lessons: { name: string; count: number } | null
   /* Opens the list of every cottage, found and still waiting. */
   onOpenList: () => void
   /* Opens the Ranking. */
   onOpenRanking: () => void
 }
 
-export function CollectionHeader({ found, total, next, intro, note, onOpenList, onOpenRanking }: CollectionHeaderProps) {
+export function CollectionHeader({ found, total, next, intro, note, lessons, onOpenList, onOpenRanking }: CollectionHeaderProps) {
   const { t } = useTranslation()
   /* Nothing to say about levels until the cottages are known. */
   const quest = total <= 0 ? null : next ? t('quest.nextLevel', { name: next.level.name, count: next.remaining }) : t('quest.allFound')
   const progress = t('mobile:atlas.progress', { found, total })
+  const lessonsLine = lessons ? (lessons.count ? t('mobile:kronika.elfLessons', { name: lessons.name, count: lessons.count }) : t('mobile:kronika.elfLessonsNone', { name: lessons.name })) : null
 
   return (
     <View style={styles.header}>
@@ -43,7 +47,7 @@ export function CollectionHeader({ found, total, next, intro, note, onOpenList, 
       </View>
       <PressableScale
         onPress={onOpenList}
-        accessibilityLabel={[t('mobile:kronika.progressAria', { found, total }), quest, t('mobile:kronika.openListAria')].filter(Boolean).join('. ')}
+        accessibilityLabel={[t('mobile:kronika.progressAria', { found, total }), quest, lessonsLine, t('mobile:kronika.openListAria')].filter(Boolean).join('. ')}
         style={styles.card}
       >
         <ProgressRing size={RING_SIZE} value={found} max={total} label={String(found)} />
@@ -52,6 +56,11 @@ export function CollectionHeader({ found, total, next, intro, note, onOpenList, 
           {quest ? (
             <Text variant="small" tone="soft">
               {quest}
+            </Text>
+          ) : null}
+          {lessonsLine ? (
+            <Text variant="small" tone="soft">
+              {lessonsLine}
             </Text>
           ) : null}
         </View>
