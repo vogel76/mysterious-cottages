@@ -25,6 +25,12 @@ export const APPLE_SIGN_IN: boolean = process.env.EXPO_PUBLIC_APPLE_SIGN_IN !== 
    that has no sign-in configured; no account call reaches the backend. */
 export const ACCOUNT_PREVIEW: boolean = process.env.EXPO_PUBLIC_ACCOUNT_PREVIEW === '1'
 
+/* The elf companion (src/features/elf): "0" leaves it out of the build,
+   for a release or a cohort without it: no Elf tab, no reminders, no page
+   about it in the welcome and the guide, no lesson count in the Kronika,
+   no way to start it over on the profile. Unset, the elf is in. */
+export const ELF_ENABLED: boolean = process.env.EXPO_PUBLIC_ELF_ENABLED !== '0'
+
 /* Supporting Chatynkowo (src/features/support), both ways voluntary and
    unlocking nothing. The coffee is a store purchase and needs nothing
    here: the product ids are in src/features/support/tips.ts, the prices

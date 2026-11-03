@@ -3,6 +3,7 @@ import { Tabs, type BottomTabBarProps, type BottomTabNavigationOptions } from 'e
 import { useRouter, useSegments } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useCelebrationPresenter } from '../../src/features/atlas/useCelebrationPresenter'
+import { ELF_ENABLED } from '../../src/config'
 import { useElfReminders } from '../../src/features/elf/useElfReminders'
 import { useBoot, useElf, useProgress, useToast } from '../../src/providers'
 import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../../src/ui'
@@ -46,14 +47,15 @@ export default function TabsLayout() {
     <>
       <CelebrationPresenter />
       <PendingHref />
-      <ElfReminders />
+      {ELF_ENABLED ? <ElfReminders /> : null}
       <Tabs
         backBehavior="initialRoute"
         tabBar={(props: BottomTabBarProps) => <TabBar {...props} discover={discover} />}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.page } }}
       >
         <Tabs.Screen name="index" options={{ title: t('mobile:tabs.atlas'), tabBarIcon: tabIcon(TAB_ICONS.index.Glyph) }} />
-        <Tabs.Screen name="elf" options={{ title: t('mobile:tabs.elf'), tabBarIcon: tabIcon(TAB_ICONS.elf.Glyph), tabBarBadge: badge(elfWaiting) }} />
+        {/* Without the elf the route stays (the files are there) but leaves the bar and takes no link. */}
+        <Tabs.Screen name="elf" options={{ title: t('mobile:tabs.elf'), tabBarIcon: tabIcon(TAB_ICONS.elf.Glyph), tabBarBadge: badge(elfWaiting), href: ELF_ENABLED ? undefined : null }} />
         <Tabs.Screen
           name="kronika"
           options={{ title: t('mobile:tabs.kronika'), tabBarIcon: tabIcon(TAB_ICONS.kronika.Glyph), tabBarBadge: badge(unseenRewards.length) }}
