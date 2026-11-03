@@ -3,6 +3,8 @@ title: "Elf Pazurek"
 slug: pazurek
 occupant: "Elf Pazurek"
 virtue: "weterynarz zwierząt leśnych"
+letterFound: "Znaleźliście mój nowy domek między skałami, a to znaczy, że Wam zaufałem. Byliście cicho, więc jeż, który dochodził do siebie w cieniu, nawet się nie obudził. Nasze hasło to „weterynarz zwierząt leśnych”. Kto potrafi być w lesie gościem, a nie burzą, ma u mnie zawsze otwarte drzwi."
+letterInvite: "W wąwozie, gdzie echo wraca trzy razy, stoją dwa domki: stary, rozebrany przez ludzi na pamiątki, i nowy, wciśnięty między skały tak, że trzeba bystrego oka. Jeśli przyjdziecie cicho, bez stukania kamieniami, może zobaczycie, jak opatruję komuś skrzydło."
 ---
 
 # Elf Pazurek

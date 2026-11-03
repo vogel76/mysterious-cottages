@@ -3,8 +3,8 @@ title: "Chatynka Elfa Iwo"
 slug: iwo
 occupant: "Elf Iwo"
 virtue: gościnność
-letterFound: "Garść orzechów, którą dostaliście na schodach, była od serca. Iwo mieszka najdalej ze wszystkich, więc każdy gość to dla niego święto. Nasze hasło to „gościnność”. Podzielcie się nim z kimś w Waszej chatce."
-letterInvite: "Mieszkam tam, gdzie las spotyka się z łąkami i pachnie malinami. Na kamiennych schodach zawsze czeka garść orzechów dla wędrowców, a do tego szept wiatru z doliny. Daleko, ale warto."
+letterFound: "Siedziałem w trawie przy fosie i widziałem, jak zatrzymaliście się na chwilę, zamiast tylko przelecieć obok. Zofia już o tym wie, mamy swoje tajne przejście. Nasze hasło to „gościnność”. Pod zamkiem Rabsztyn drzwi są zawsze uchylone."
+letterInvite: "Mieszkam w krzywej chatynce na skraju starej fosy pod zamkiem Rabsztyn i pilnuję jej, oficjalnie. Nieoficjalnie siedzę w trawie i podpowiadam ludziom, żeby się na chwilę zatrzymali, bo tu działo się więcej niż w niejednym filmie. Przyjdźcie, zatrzymajcie się."
 ---
 
 # Chatynka Elfa Iwo
