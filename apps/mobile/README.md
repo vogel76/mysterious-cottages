@@ -1004,7 +1004,21 @@ entering, since its staff swung out in the happy clip widened every cell
 of that atlas; the clips have had boxes of their own since, and the
 atlases of 2026-11-02 (nine clips with bath, play and yawn, the
 sleepers) decode to 51, 81, 109 and 151 MB, the elder's a third under
-the measured one. They are not measured on a device yet.
+the measured one. Measured on a release build of 2026-11-03 (these
+atlases, the sounds, the elf's letters and the sleepers in; the acorn
+cap worn; a cold start each), the Atlas alone after a minute sits at
+252 to 257 MB; the young elf's tab enters at 595 MB (graphics 291 MB),
+reaches 682 MB right after every reaction and 626 to 668 MB over the
+next three minutes, and the Atlas after it holds 592 to 608 MB; the
+elder's tab enters at 679 MB (graphics 376 MB), 728 MB after the
+reactions, 716 to 763 MB over three minutes, the Atlas after it 674 to
+690 MB; 62 fps with none dropped at every point. Against the series of
+October the young elf's entry is about 110 MB higher and the elder's
+about the same, while both settle 40 to 80 MB higher once every clip has
+played: a clip's own sheets are drawn, and kept by Skia, only once it
+plays, so the tab's cost now grows with what the elf has done rather
+than arriving whole on entry; the hat's layer and the sounds' players
+(a decoded buffer each) are in these numbers and not in October's.
 The development client measures far higher (787 MB on the Atlas and
 1.3 GB on the tab in the first series), which is why it is not quoted
 anywhere.
