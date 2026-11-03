@@ -3,8 +3,8 @@ title: "Chatynka Elfa Teodora"
 slug: teodor
 occupant: "Elf Teodor"
 virtue: cierpliwość
-letterFound: "Kiedy Twoi przyjaciele byli u mnie, nie zostawili po sobie ani jednego papierka, więc nawet nie burknąłem. Skała w moim domu też się nie ruszyła, a u niej to znak zadowolenia. Nasze hasło brzmi: „cierpliwość”. Las rośnie wolniej, niż narciarz zjeżdża, ale rośnie."
-letterInvite: "Za młodu zjeżdżałem na nartach z prędkością wiatru, a dziś mieszkam na górce przy starym wyciągu, w domu zbudowanym wokół skały, bo ona była tu pierwsza. Przyślij swoich przyjaciół, pokażę im, jak dbać o las."
+letterFound: "Jestem Teodor. Kiedyś jeździłem na nartach, a dziś mieszkam na górce obok starego wyciągu, w domu zbudowanym wokół skały. Dziś odwiedzili mnie Twoi przyjaciele. Nie zostawili po sobie żadnych śmieci, więc bardzo ich polubiłem. Nasze hasło to: cierpliwość. Las rośnie powoli, ale rośnie."
+letterInvite: "Jestem Teodor, stary elf narciarz. Mieszkam na górce przy starym wyciągu. W moim domu stoi wielka skała, bo była tu pierwsza i nie chciałem jej wyprosić. Zaproś do mnie swoich przyjaciół. Pokażę im skałę i opowiem, jak dbać o las."
 ---
 
 # Chatynka Elfa Teodora

@@ -3,8 +3,8 @@ title: "Chatynka Elfa Tupaka"
 slug: tupak
 occupant: "Elf Tupak"
 virtue: uważność
-letterFound: "Dziś rano zatupałem w dębowy pień trzy razy: za siebie, za las i za Twoich przyjaciół, którzy mnie odwiedzili. Ważki w sadzawce też ich zapamiętały. Nasze hasło brzmi: „uważność”. Świat zasypia, kiedy nikt go nie słucha."
-letterInvite: "Słychać mnie z daleka, bo tupię w dębowy pień, żeby obudzić ważki w sadzawce. Jeśli Twoi przyjaciele przyjdą rano, zatupię raz więcej, specjalnie dla nich. Chatynka Tupaka czeka."
+letterFound: "Jestem Tupak. Co rano tupię w dębowy pień, żeby obudzić ważki nad sadzawką. Dziś zatupałem jeszcze raz, specjalnie dla Twoich przyjaciół, bo przyszli mnie odwiedzić. Ważki zatańczyły im nad głowami. Nasze hasło to: uważność. Kto uważnie patrzy i słucha, widzi więcej."
+letterInvite: "Jestem Tupak. Mieszkam obok sadzawki, w której śpią ważki. Co rano budzę je, tupiąc w dębowy pień: raz za siebie, raz za las i raz za kogoś, kto jest smutny. Zaproś do mnie swoich przyjaciół. Zatupię także dla nich."
 ---
 
 # Chatynka Elfa Tupaka

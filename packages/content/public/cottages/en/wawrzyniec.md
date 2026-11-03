@@ -3,8 +3,8 @@ title: "Wawrzyniec's Cottage"
 slug: wawrzyniec
 occupant: Wawrzyniec
 virtue: "old age is a joy"
-letterFound: "After your friends visited, the beavers asked who those guests were who waved so nicely. I told them: our friends. Our motto is old age is a joy. I have someone to swim with and someone to laugh with."
-letterInvite: "From nowhere the beavers wandered over to me and decided to stay, so at last I have someone to swim with. I will show your friends their dam if they come at dusk. The cottage of Wawrzyniec stands right by the water."
+letterFound: "I am Wawrzyniec. I live by the water together with a family of beavers who moved in not long ago. Today your friends came to visit me and waved to the beavers, and the beavers waved back with their tails. Our motto is: old age is a joy. It is never too late to play."
+letterInvite: "I am Wawrzyniec, an old elf from the waterside. Beavers have just moved in next to me, and at last I have someone to swim with. Invite your friends to visit me. I will show them the dam the beavers built."
 ---
 
 # Wawrzyniec's Cottage

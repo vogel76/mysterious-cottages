@@ -3,8 +3,8 @@ title: "chatynka Mikołaja"
 slug: minizoo
 occupant: "Mikołaj i krówy Basia i Krysia"
 virtue: miłość
-letterFound: "Basia i Krysia muczały na pożegnanie, a Mikołaj machał Twoim przyjaciołom, aż zniknęli za zakrętem. Pozdrów ich od całego naszego małego zoo. Nasze hasło brzmi: „miłość”, do zwierząt, do ludzi i do tego miejsca."
-letterInvite: "Mieszkam tu z dwiema krowami, Basią i Krysią, i pewnie zastanawiasz się dlaczego. Opowiem to Twoim przyjaciołom osobiście, a krowy dopowiedzą po swojemu. Niech przyjdą do chatynki Mikołaja."
+letterFound: "Jestem Mikołaj. Mieszkam w chatynce razem z dwiema krowami, Basią i Krysią. Dziś odwiedzili nas Twoi przyjaciele, a Basia i Krysia pożegnały ich głośnym muczeniem. Nasze hasło to: miłość. Kochamy zwierzęta, ludzi i nasze miejsce w lesie."
+letterInvite: "Jestem Mikołaj. Mieszkam z dwiema krowami, Basią i Krysią, i mam małe zoo. Pewnie zastanawiasz się, dlaczego elf mieszka z krowami. Zaproś do mnie swoich przyjaciół. Opowiem im tę historię, a krowy pomuczą."
 ---
 
 # chatynka Mikołaja

@@ -3,8 +3,8 @@ title: "Halinka the Elf"
 slug: halinka
 occupant: Halinka
 virtue: "tending dreams"
-letterFound: "As your friends were leaving, one of them remembered an old dream. That was not the witches, that was me at work. Our motto is tending dreams. A dusted-off dream waits on the shelf until someone reaches for it."
-letterInvite: "Magic carried my cottage onto the bough of an old tree, right next to the witches' rocks, though I know no spells at all. I look after dreams abandoned too soon. If your friends have lost one, let them come; it may be lying on my shelf."
+letterFound: "I am Halinka. I live on the branch of an old tree next to rocks where, people say, witches used to meet. But I am no witch; I look after dreams. Today your friends came to visit me, and one of them remembered an old dream of theirs. Our motto is: tend your dreams."
+letterInvite: "I am Halinka. I live on the branch of an old tree and look after dreams that someone gave up on too soon. I dust them off and put them on a shelf until someone comes back for them. Invite your friends to visit me. They may find a lost dream of theirs here."
 ---
 
 # Halinka the Elf

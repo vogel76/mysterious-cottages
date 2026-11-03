@@ -3,8 +3,8 @@ title: "Chatynka, która zaprasza"
 slug: zaprasza
 occupant: "Chatynka, która zaprasza"
 virtue: zaproszenie
-letterFound: "Drzwi uchyliły się same, kiedy Twoi przyjaciele przechodzili obok, a ja pierwszy raz od dawna odpowiedziałem szeptem. Dobrze, że usiedli na progu. Nasze hasło brzmi: „zaproszenie”. Ktoś musi zacząć pierwszy."
-letterInvite: "Jestem chatynką, która sama szuka gości: moje drzwi uchylają się, gdy przechodzi ktoś z dobrym sercem. Mieszka we mnie bardzo nieśmiały elf. Niech Twoi przyjaciele usiądą na progu i powiedzą cicho „cześć”."
+letterFound: "Jestem chatynka, która sama zaprasza gości. Kiedy obok przechodzi ktoś z dobrym sercem, moje drzwi same się uchylają. Dziś uchyliły się dla Twoich przyjaciół, a nieśmiały elf, który we mnie mieszka, szepnął im „cześć”. Nasze hasło to: zaproszenie. Ktoś zawsze musi zacząć pierwszy."
+letterInvite: "Jestem chatynka, która sama zaprasza gości. Mieszka we mnie bardzo nieśmiały elf, który nigdy nie mówi pierwszy. Ale kiedy ktoś usiądzie na moim progu i cicho powie „cześć”, elf odpowiada szeptem. Zaproś do mnie swoich przyjaciół."
 ---
 
 # Chatynka, która zaprasza

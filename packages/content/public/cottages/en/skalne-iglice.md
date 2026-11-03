@@ -3,8 +3,8 @@ title: "The Cottage of the Two Sisters on the Rock Spires"
 slug: skalne-iglice
 occupant: "the sisters Jasenna and Nieszka"
 virtue: family
-letterFound: "The wind that climbs our three white crags brought news of your friends faster than we could climb down. The rocks said one good word about them, and they rarely speak. Our motto is family."
-letterInvite: "Our cottage hangs between three white crags, and the wind brings news here from distant valleys. We know the speech of the rocks. Let your friends come and we will teach them one word, because the rocks give away no more."
+letterFound: "We are the sisters Jasenna and Nieszka. Our cottage hangs between three white rocks. Today your friends came to visit us, and the wind brought us news of them before they had even climbed up. Our motto is: family. In a family, everyone has someone waiting for them."
+letterInvite: "We are the sisters Jasenna and Nieszka. We live high up, between three white rocks, and the wind brings us news from all around. We also know the language of the rocks. Invite your friends to visit us. We will teach them one rock word."
 ---
 
 # The Cottage on the Rock Spires

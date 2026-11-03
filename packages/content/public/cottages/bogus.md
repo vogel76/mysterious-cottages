@@ -3,8 +3,8 @@ title: "Chatynka Bogusia"
 slug: bogus
 occupant: Boguś
 virtue: pracowitość
-letterFound: "Po Twoich przyjaciołach nie było czego sprzątać, a u mnie to największa pochwała. Nietoperze chodziły na palcach, bo akurat drzemałem. Nasze hasło brzmi: „pracowitość”, póki rano jest po co wstawać."
-letterInvite: "Ulepiłem chatynkę z gliny i kamieni w samym środku Jaskini Łabajowej, bo tu przynajmniej sąsiedzi nie wiercą. Codziennie sprzątam po ludziach, więc jeśli Twoi przyjaciele przyjdą i niczego nie zostawią, będą moimi ulubionymi gośćmi."
+letterFound: "Jestem Boguś. Mieszkam w chatynce z gliny i kamieni w środku Jaskini Łabajowej. Codziennie sprzątam jaskinię po turystach. Dziś odwiedzili mnie Twoi przyjaciele i niczego nie zostawili na ziemi. To dla mnie najlepszy prezent. Nasze hasło to: pracowitość. Kto ma co robić, ten jest szczęśliwy."
+letterInvite: "Jestem Boguś. Mieszkam w jaskini, gdzie jest ciemno i chłodno, ale za to spokojnie. Cały dzień pracuję i sprzątam, a nietoperze są moimi sąsiadami. Zaproś do mnie swoich przyjaciół. Pokażę im jaskinię."
 ---
 
 # Chatynka Bogusia

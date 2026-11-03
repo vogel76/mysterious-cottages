@@ -3,8 +3,8 @@ title: "Chatynka Elfki z dużą d...ą"
 slug: elfka-z-duza-d
 occupant: "Elfka z dużą d...ą"
 virtue: dobroć
-letterFound: "Jeż wypił mleko, wiewiórka schowała żołędzie, a ja do dziś uśmiecham się na myśl o Twoich przyjaciołach. Gdyby kiedyś zgubili drogę, wyjdę boso na polanę i zawołam ich po imieniu. Nasze hasło brzmi: „dobroć”."
-letterInvite: "Pod moją chatynką zawsze stoi miska mleka dla jeża i leży garść żołędzi dla wiewiórki. Dla gości mam coś jeszcze, ale to nie zmieści się w liście. Przyślij swoich przyjaciół, kiedy będą w pobliżu."
+letterFound: "Jestem Elfka, która ma bardzo duże serce. Pod moją chatynką zawsze stoi miska mleka dla jeża i leży garść żołędzi dla wiewiórki. Dziś odwiedzili mnie Twoi przyjaciele i pogłaskali jeża. Bardzo się ucieszyłam. Nasze hasło to: dobroć. Dobre serce zawsze znajdzie drogę do domu."
+letterInvite: "Jestem Elfka, która ma bardzo duże serce. Pod moją chatynką karmię jeża i wiewiórkę, a kiedy ktoś zgubi drogę w lesie, wołam go po imieniu. Zaproś do mnie swoich przyjaciół. Jeż bardzo lubi gości."
 ---
 
 # Chatynka Elfki z dużą d...ą

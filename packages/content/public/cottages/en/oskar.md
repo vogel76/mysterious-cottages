@@ -3,8 +3,8 @@ title: PIEKARNIA
 slug: oskar
 occupant: "Oskar, Marta and TEODOR"
 virtue: FREEDOM
-letterFound: "The bread your friends smelled as they came into the bakery was fresh from the oven, and Teodor pointed out a completely random spot on the map for them. Give them our regards. Our motto is freedom. You can always move on."
-letterInvite: "We collected places, scents and stories from all over the world until we stopped where it smells of fresh bread. Not forever, for now. Let your friends come while the oven is warm, and Teodor will pick their next destination on the map."
+letterFound: "We are Oskar, Marta and little Teodor. We have a bakery where fresh bread smells wonderful every day. Today your friends came to visit us, and Teodor showed them on the map where he would like to travel. Our motto is: freedom. You can always set off on a new journey."
+letterInvite: "We are Oskar, Marta and little Teodor. We have travelled half the world, and now we live in a bakery, because nothing smells as good as fresh bread. Invite your friends to visit us. We will treat them to a warm roll."
 ---
 
 # Oskar, Marta and Teo

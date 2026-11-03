@@ -3,8 +3,8 @@ title: "Chatynka Elfa Strzały"
 slug: straznik-zamku
 occupant: "Strażnik Zamku Bydlin"
 virtue: wierność
-letterFound: "Brzęk zbroi, który słyszeli nocą Twoi przyjaciele, to ja ćwiczyłem pamięć. Nie strzegę murów, tylko opowieści, i ich odwiedziny też dołożyłem do zbioru. Nasze hasło brzmi: „wierność”."
-letterInvite: "Moja chatynka stoi tuż przy ruinach prawdziwego zamku. Nocami ćwiczę tu pamięć, bo każdy zamek, który upadł, kiedyś wyrasta na nowo jako opowieść. Przyślij swoich przyjaciół, usłyszą jedną od początku."
+letterFound: "Jestem Strażnik Zamku. Moja chatynka stoi przy ruinach prawdziwego zamku. Nocą ćwiczę w zbroi, żeby nie zapomnieć dawnych opowieści. Dziś odwiedzili mnie Twoi przyjaciele i posłuchali jednej z nich. Nasze hasło to: wierność. Wierny przyjaciel pamięta o Tobie zawsze."
+letterInvite: "Jestem Strażnik Zamku. Mieszkam obok starych murów, a nocą słychać u mnie brzęk zbroi, bo ćwiczę pamięć. Nie pilnuję zamku, tylko jego opowieści. Zaproś do mnie swoich przyjaciół. Opowiem im historię zamku od samego początku."
 ---
 
 # Chatynka Strażnika Zamku

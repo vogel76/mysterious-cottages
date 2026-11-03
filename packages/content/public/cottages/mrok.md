@@ -3,8 +3,8 @@ title: "Chatynka elfa Myrka"
 slug: mrok
 occupant: Myrk
 virtue: mrok
-letterFound: "Komary odprowadziły Twoich przyjaciół aż na skraj lasu i wróciły z wieścią, że nie zaglądali do środka. Dobrze. Nasze hasło brzmi: „mrok”. Nie każdy go lubi, ale każdy go kiedyś potrzebuje."
-letterInvite: "W Czarnym Lesie stoi chatynka z kamieni i mchu, której żadna mapa nie potrafi utrzymać w miejscu. Jeśli komarów zrobi się więcej niż zwykle, niech Twoi przyjaciele ich nie odganiają, bo one prowadzą. I niech nie sprawdzają, kto idzie za nimi."
+letterFound: "Jestem Myrk z Czarnego Lasu. Moja chatynka jest z kamieni i mchu, a pilnują jej komary. Dziś komary przyprowadziły do mnie Twoich przyjaciół i odprowadziły ich bezpiecznie z powrotem. Nasze hasło to: mrok. W mroku też można się nie bać."
+letterInvite: "Jestem Myrk. Mieszkam w Czarnym Lesie, w chatynce z kamieni i mchu, której nie ma na żadnej mapie. Prowadzą do niej komary, więc nie trzeba ich odganiać. Zaproś do mnie swoich przyjaciół, jeśli są odważni."
 ---
 
 # Chatynka elfa Myrka

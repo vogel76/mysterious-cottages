@@ -3,8 +3,8 @@ title: "Chatynka Zielonowłosego"
 slug: zielonowlosy
 occupant: "Elf Zielonowłosy"
 virtue: szacunek
-letterFound: "Staw był tego dnia wyjątkowo zielony, a u nas to dobry znak. Twoi przyjaciele nie zostawili po sobie nic prócz śladów stóp i za to im dziękuję. Nasze hasło brzmi: „szacunek”, zwłaszcza dla miejsc, które same nie potrafią się bronić."
-letterInvite: "W głębi lasu leży staw o wodzie tak zielonej, że mech patrzy na nią z zazdrością. Mieszka przy nim elf, któremu ta woda przywróciła kolor włosów, i od tamtej pory pilnuje tu porządku. Przyślij swoich przyjaciół, tylko bez plastiku."
+letterFound: "Jestem Elf Zielonowłosy. Mieszkam przy stawie o zielonej wodzie, która kiedyś przywróciła kolor moim włosom. Dziś odwiedzili mnie Twoi przyjaciele i nie zostawili nad stawem żadnego śmiecia. Dziękuję im za to. Nasze hasło to: szacunek. Las trzeba szanować, bo sam nie umie się obronić."
+letterInvite: "Jestem Elf Zielonowłosy. Mieszkam nad stawem, który ma najbardziej zieloną wodę w całym lesie. Pilnuję, żeby nikt nie zostawiał tu śmieci. Zaproś do mnie swoich przyjaciół. Pokażę im mój zielony staw."
 ---
 
 # Chatynka Zielonowłosego

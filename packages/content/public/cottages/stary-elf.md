@@ -3,8 +3,8 @@ title: "Chatynka Starego Elfa Janusza"
 slug: stary-elf
 occupant: Janusz
 virtue: mądrość
-letterFound: "Twoi przyjaciele odwiedzili mnie już w nowym miejscu, przy jaskini na Januszówce, choć wciąż się tu urządzam. Miło było ich gościć. Nasze hasło brzmi: „mądrość”. Przychodzi z wiosnami, których się już nie liczy."
-letterInvite: "Pamiętam pierwszy śnieg na starej polanie i mam więcej wiosen, niż umiem policzyć. Przeniosłem się bliżej jaskini na Januszówce, tu echo odpowiada wolniej, w sam raz dla starego elfa. Przyślij swoich przyjaciół, kiedy zechcą."
+letterFound: "Jestem Janusz, stary elf. Mam tyle wiosen, że już ich nie liczę. Niedawno przeniosłem się bliżej jaskini na Januszówce. Dziś odwiedzili mnie tam Twoi przyjaciele. Miło było ich gościć. Nasze hasło to: mądrość. Mądry elf słucha więcej, niż mówi."
+letterInvite: "Jestem Janusz, stary elf. Pamiętam pierwszy śnieg na tej polanie, a teraz mieszkam blisko jaskini na Januszówce. Lubię gości i zawsze mam dla nich czas. Zaproś do mnie swoich przyjaciół. Opowiem im, jak wyglądał las dawno temu."
 ---
 
 # Chatynka Starego Elfa

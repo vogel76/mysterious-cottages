@@ -3,8 +3,8 @@ title: "Chatynka Samotnego Elfa Fredka"
 slug: samotny
 occupant: Fredek
 virtue: kontemplacja
-letterFound: "Twoi przyjaciele usiedli obok mnie i nic nie mówili, a to była najlepsza rozmowa od dawna. Jeśli po drodze widzieli oczy na pniach drzew, to moja robota. Nasze hasło brzmi: „kontemplacja”."
-letterInvite: "Na wysokiej skale, na skraju cichego lasu, mieszka elf, który maluje spokojne oczy na pniach drzew i pisze wiersze na liściach. Lubi gości, którzy potrafią pomilczeć. Przyślij swoich przyjaciół, choćby dla samego widoku."
+letterFound: "Jestem Fredek i mieszkam sam na wysokiej skale na skraju lasu. Maluję oczy na pniach drzew i piszę wiersze na liściach. Dziś odwiedzili mnie Twoi przyjaciele. Usiedli obok mnie i razem patrzyliśmy na las. Nasze hasło to: kontemplacja. To znaczy: patrzeć spokojnie i cieszyć się tym, co się widzi."
+letterInvite: "Jestem Fredek, elf artysta. Mieszkam na wysokiej skale, z której widać cały las. Maluję oczy na pniach drzew, więc jeśli jakieś drzewo na Ciebie patrzy, to moja robota. Zaproś do mnie swoich przyjaciół. Pokażę im najpiękniejszy widok w lesie."
 ---
 
 # Chatynka Samotnego Elfa
