@@ -9,5 +9,5 @@ export { ContentProvider, useContent, type ContentStatus, type ContentValue } fr
 export { ProgressProvider, useProgress, type ProgressValue } from './ProgressProvider'
 export { ElfProvider, useElf, type ElfNews, type ElfValue } from './ElfProvider'
 export { ToastProvider, useToast, type ToastOptions, type ToastTone } from './ToastProvider'
-export { SupportProvider, useSupport, type CoffeeMenuItem, type CoffeeStoreStatus, type SupportValue } from './SupportProvider'
+export { SupportProvider, useSupport, type CoffeeMenuItem, type CoffeeStoreStatus, type SupportValue, storeNoteKey } from './SupportProvider'
 export { useCloseModal } from './useCloseModal'

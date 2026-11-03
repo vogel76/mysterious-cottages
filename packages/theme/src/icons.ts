@@ -65,6 +65,13 @@ export const MOBILE_ICON_ROLES = [
   'InfoIcon',
   /* The arrow of the nearest-cottage beacon, turned to the heading. */
   'BearingIcon',
+  /* The elf's shop of star dust on its bar. */
+  'ShopIcon',
+  /* The three paths of the elf's tree of development: the glutton, the
+     prankster, the tracker. */
+  'PathGluttonIcon',
+  'PathPranksterIcon',
+  'PathTrackerIcon',
   /* Supporting Chatynkowo (apps/mobile/src/features/support): a coffee
      for the elf, a rewarded ad watched instead. */
   'CoffeeIcon',

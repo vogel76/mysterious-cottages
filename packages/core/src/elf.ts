@@ -126,6 +126,18 @@ export type ElfDecor = Record<string, string>
 export type ElfCareAction = 'feed' | 'play' | 'bath'
 export const ELF_CARE_ACTIONS: readonly ElfCareAction[] = ['feed', 'play', 'bath']
 
+/* The tree of development: three paths of four nodes each, unlocked in
+   order with the points the levels give (see "Experience" below). */
+export type ElfPath = 'glutton' | 'prankster' | 'tracker'
+export const ELF_PATHS: readonly ElfPath[] = ['glutton', 'prankster', 'tracker']
+export type ElfNodeId = `${ElfPath}${1 | 2 | 3 | 4}`
+export const ELF_TREE: Record<ElfPath, readonly ElfNodeId[]> = {
+  glutton: ['glutton1', 'glutton2', 'glutton3', 'glutton4'],
+  prankster: ['prankster1', 'prankster2', 'prankster3', 'prankster4'],
+  tracker: ['tracker1', 'tracker2', 'tracker3', 'tracker4'],
+}
+export type ElfRank = 'spark' | 'forester' | 'warden' | 'sage' | 'legend'
+
 export type ElfEggAction = 'warm' | 'rock'
 export const ELF_EGG_ACTIONS: readonly ElfEggAction[] = ['warm', 'rock']
 
@@ -169,9 +181,6 @@ export type ElfDaily = {
      or null while the pick is still open. */
   rewardOptions: ElfReward[]
   rewardPicked: number | null
-  feed: number
-  play: number
-  bath: number
 }
 
 export type ElfState = {
@@ -224,6 +233,23 @@ export type ElfState = {
      the schedule has delivered or passed. */
   letters: ElfLetter[]
   lettersSent: number
+  /* How much of the player's support (coffees and ads, as the support
+     ledger counts them) the elf has thanked for, with its sip. */
+  supportThanked: number
+  /* The charges of each care spent and not yet back (the moments they
+     were spent; each returns CARE[id].recharge later). */
+  care: Record<ElfCareAction, number[]>
+  /* The hatch bought before its hour (the moment it was bought), or null. */
+  hatchReadyAt: number | null
+  /* The days bought towards the next form, added to the days since the
+     egg appeared. */
+  daysBonus: number
+  /* The rewarded ads watched on a day (the day's cap, DUST.adCap): for
+     dust or for a skip alike. */
+  ads: { day: string; count: number }
+  /* The experience gathered (XP) and the nodes of the tree unlocked. */
+  xp: number
+  nodes: ElfNodeId[]
 }
 
 /* ---------- The numbers ---------- */
@@ -241,11 +267,33 @@ const EVENING_FROM_HOUR = 18
 /* A woken elf dozes off again after this long, while it is night. */
 const DOZE_MS = 10 * 60 * 1000
 
-const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; cap: number }> = {
-  feed: { need: 'fullness', gain: 25, cap: 3 },
-  play: { need: 'joy', gain: 30, cap: 2 },
-  bath: { need: 'clean', gain: 60, cap: 1 },
+/* Each care has a few charges; a charge spent comes back after its
+   recharge (milliseconds), so three meals at once wait four hours
+   together. */
+const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; charges: number; recharge: number }> = {
+  feed: { need: 'fullness', gain: 25, charges: 3, recharge: 4 * 60 * 60 * 1000 },
+  play: { need: 'joy', gain: 30, charges: 2, recharge: 6 * 60 * 60 * 1000 },
+  bath: { need: 'clean', gain: 60, charges: 1, recharge: 12 * 60 * 60 * 1000 },
 }
+/* The care as the tree has it: the glutton's bigger meals and extra
+   meal, the prankster's extra game, the tracker's quicker charges. */
+function careSpec(state: ElfState, id: ElfCareAction): { need: ElfNeedId; gain: number; charges: number; recharge: number } {
+  const base = CARE[id]
+  const has = (node: ElfNodeId) => state.nodes.includes(node)
+  return {
+    need: base.need,
+    gain: id === 'feed' && has('glutton2') ? base.gain + 10 : base.gain,
+    charges: base.charges + ((id === 'feed' && has('glutton3')) || (id === 'play' && has('prankster3')) ? 1 : 0),
+    recharge: has('tracker3') ? base.recharge * 0.75 : base.recharge,
+  }
+}
+
+/* The drift as the tree has it: a need eases half as fast with its node. */
+function needTauDays(state: ElfState, need: ElfNeedId): number {
+  const slower = (need === 'fullness' && state.nodes.includes('glutton1')) || (need === 'joy' && state.nodes.includes('prankster1'))
+  return NEED_TAU_DAYS[need] * (slower ? 1.5 : 1)
+}
+
 /* The pieces the finds unlock, by slot and id: a piece stays locked in
    the decorating catalogue until this many cottages are found. Every
    place keeps one choice besides its default free from the start, so a
@@ -276,13 +324,16 @@ export const DECOR_UNLOCKS: Record<string, number> = {
 
 /* How many more cottages a piece needs before it can be placed; 0 when it
    is free. */
-export function decorFindsNeeded(slot: string, id: string, finds: number): number {
+export function decorFindsNeeded(slot: string, id: string, finds: number, granted: readonly string[] = []): number {
+  if (granted.includes(`${slot}:${id}`)) return 0
   return Math.max(0, (DECOR_UNLOCKS[`${slot}:${id}`] ?? 0) - finds)
 }
 
 /* How many times a day each care is welcome, for the buttons to show,
    and which need each care answers, for the app to name the gain. */
-export const ELF_CARE_CAPS: Record<ElfCareAction, number> = { feed: CARE.feed.cap, play: CARE.play.cap, bath: CARE.bath.cap }
+export function careCharges(state: ElfState, id: ElfCareAction): number {
+  return careSpec(state, id).charges
+}
 export const ELF_CARE_NEEDS: Record<ElfCareAction, ElfNeedId> = { feed: CARE.feed.need, play: CARE.play.need, bath: CARE.bath.need }
 /* A feed is refused at this fullness, with no penalty. */
 const FULL_AT = 90
@@ -481,7 +532,7 @@ function dealRewards(day: string, name: string): ElfReward[] {
 }
 
 function freshDaily(day: string, name: string, hatched: boolean): ElfDaily {
-  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, feed: 0, play: 0, bath: 0 }
+  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null }
 }
 
 /* ---------- A new elf and a stored one ---------- */
@@ -514,7 +565,19 @@ export function newElf(now: number): ElfState {
     collection: {},
     letters: [],
     lettersSent: 0,
+    supportThanked: 0,
+    care: { feed: [], play: [], bath: [] },
+    hatchReadyAt: null,
+    daysBonus: 0,
+    ads: { day: '', count: 0 },
+    xp: 0,
+    nodes: [],
   }
+}
+
+function normalizeAds(raw: unknown): { day: string; count: number } {
+  const record = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+  return { day: typeof record.day === 'string' ? record.day : '', count: count(record.count) }
 }
 
 function normalizeQuest(raw: unknown): ElfQuest | null {
@@ -544,10 +607,14 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
     bonusGranted: raw.bonusGranted === true,
     rewardOptions: rewards.length === 3 ? rewards : fresh.rewardOptions,
     rewardPicked: typeof raw.rewardPicked === 'number' && raw.rewardPicked >= 0 && raw.rewardPicked < 3 ? Math.floor(raw.rewardPicked) : null,
-    feed: count(raw.feed),
-    play: count(raw.play),
-    bath: count(raw.bath),
   }
+}
+
+/* The charges spent per care: only the moments survive. */
+function normalizeCare(raw: unknown): Record<ElfCareAction, number[]> {
+  const record = isRecord(raw) ? raw : {}
+  const moments = (value: unknown) => (Array.isArray(value) ? value.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry)) : [])
+  return { feed: moments(record.feed), play: moments(record.play), bath: moments(record.bath) }
 }
 
 function isSillItem(value: string): value is ElfSillItem {
@@ -615,6 +682,13 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     collection: normalizeCollection(raw.collection),
     letters: Array.isArray(raw.letters) ? raw.letters.map(normalizeLetter).filter((letter): letter is ElfLetter => letter !== null).slice(-LETTERS_KEPT) : [],
     lettersSent: count(raw.lettersSent),
+    supportThanked: count(raw.supportThanked),
+    care: normalizeCare(raw.care),
+    hatchReadyAt: typeof raw.hatchReadyAt === 'number' ? raw.hatchReadyAt : null,
+    daysBonus: count(raw.daysBonus),
+    ads: normalizeAds(raw.ads),
+    xp: count(raw.xp),
+    nodes: stringList(raw.nodes).filter(isNodeId),
   }
   const outfit = stringRecord(raw.outfit, WEARABLE_SLOT_IDS) as Partial<ElfOutfit> | undefined
   const decor = stringRecord(raw.decor)
@@ -661,7 +735,7 @@ export function applyElapsed(state: ElfState, now: number): ElfState {
   const needs = { ...state.needs }
   for (const need of ELF_NEEDS) {
     const distance = needs[need] - NEED_FLOOR
-    needs[need] = distance > 0 ? NEED_FLOOR + distance * Math.exp(-effectiveHours / (NEED_TAU_DAYS[need] * 24)) : needs[need]
+    needs[need] = distance > 0 ? NEED_FLOOR + distance * Math.exp(-effectiveHours / (needTauDays(state, need) * 24)) : needs[need]
   }
   return { ...state, needs, sleeping: isAsleepAt(state, now), last: now }
 }
@@ -689,12 +763,17 @@ export function moodOf(state: ElfState, now: number): ElfMood {
 
 /* ---------- The forms ---------- */
 
+/* The elf's days: since the egg appeared, plus the days bought with dust. */
+function elfDays(state: ElfState, now: number): number {
+  return daysBetween(state.eggAppearedAt, now) + state.daysBonus
+}
+
 /* The elf's form from the cottages found and the days since the egg
    appeared: an egg until it hatches, the baby from the hatch, the next
    forms by finds with time, or by time alone, the elder by both only. */
 export function stageOf(state: ElfState, finds: number, now: number): ElfStage {
   if (!state.hatched) return 'egg'
-  const days = daysBetween(state.eggAppearedAt, now)
+  const days = elfDays(state, now)
   if (finds >= FORMS.elder.finds && days >= FORMS.elder.days) return 'elder'
   if ((finds >= FORMS.adult.finds && days >= FORMS.adult.days) || days >= FORMS.adult.daysAlone) return 'adult'
   if ((finds >= FORMS.young.finds && days >= FORMS.young.days) || days >= FORMS.young.daysAlone) return 'young'
@@ -710,6 +789,29 @@ export function pendingForm(state: ElfState, finds: number, now: number): ElfFor
 
 export function markFormShown(state: ElfState, form: ElfForm): ElfState {
   return state.stageShown === form ? state : { ...state, stageShown: form }
+}
+
+/* The form after the current one and what it still waits for: the days
+   on the shortest route open now (0 when it is due), or null when every
+   route needs more cottages first, and the cottages the finds route
+   still needs. Null for the egg and the elder. */
+export type ElfNextForm = { form: ElfForm; days: number | null; finds: number }
+
+export function nextForm(state: ElfState, finds: number, now: number): ElfNextForm | null {
+  const stage = stageOf(state, finds, now)
+  if (stage === 'egg' || stage === 'elder') return null
+  const form: ElfForm = stage === 'baby' ? 'young' : stage === 'young' ? 'adult' : 'elder'
+  const spec: { finds: number; days: number; daysAlone?: number } = FORMS[form]
+  const days = elfDays(state, now)
+  const routes = [finds >= spec.finds ? spec.days - days : null, spec.daysAlone === undefined ? null : spec.daysAlone - days].filter((left): left is number => left !== null)
+  return { form, days: routes.length ? Math.max(0, Math.min(...routes)) : null, finds: Math.max(0, spec.finds - finds) }
+}
+
+/* The days the next form still waits for, bought: null when there is
+   nothing to buy (no form ahead, one that needs cottages, one due). */
+export function growNow(state: ElfState, finds: number, now: number): ElfState | null {
+  const next = nextForm(state, finds, now)
+  return next && next.days !== null && next.days > 0 ? { ...state, daysBonus: state.daysBonus + next.days } : null
 }
 
 /* ---------- The day ---------- */
@@ -787,7 +889,7 @@ function settleAbsence(previous: ElfState, state: ElfState, today: string, finds
   const days = Math.max(1, calendarDaysBetween(previous.lastVisitDay, today))
   const found: ElfSillItem[] = []
   const [y, m, d] = today.split('-').map(Number)
-  for (let back = 0; back < Math.min(days, SILL_FINDS_MAX); back += 1) {
+  for (let back = 0; back < Math.min(days + (state.nodes.includes('tracker1') ? 1 : 0), SILL_FINDS_MAX); back += 1) {
     const date = new Date(y!, m! - 1, d! - back)
     found.push(sillFindOn(dayKey(date.getTime()), state.name))
   }
@@ -842,12 +944,13 @@ function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boo
   const continues = state.lastVisitDay === yesterday
   const streak = continues ? state.streak + 1 : 1
   const streakLost = !continues && state.lastVisitDay !== null && state.streak > 1 ? state.streak : null
-  const milestoneDust = STREAK_MILESTONES[streak] ?? 0
+  const milestoneDust = (STREAK_MILESTONES[streak] ?? 0) * (state.nodes.includes('tracker2') ? 2 : 1)
   const next: ElfState = {
     ...state,
     lastVisitDay: day,
     streak,
     bestStreak: Math.max(state.bestStreak, streak),
+    xp: state.xp + (continues ? XP.streakDay : 0),
     /* A deal already made for this day (a fresh elf's, a find credited to
        it before the first visit) is kept. */
     daily: state.daily.day === day ? state.daily : freshDaily(day, state.name, state.hatched),
@@ -870,16 +973,23 @@ function recordEvent(state: ElfState, event: ElfEvent): { state: ElfState; compl
     const progress = Math.min(quest.target, quest.progress + 1)
     const done = progress >= quest.target
     if (done) {
-      completed.push({ id: quest.id, acorns: quest.acorns, dust: quest.dust })
-      acorns += quest.acorns
-      dust += quest.dust
+      const pay = { id: quest.id, acorns: questAcorns(state, quest.acorns), dust: quest.dust }
+      completed.push(pay)
+      acorns += pay.acorns
+      dust += pay.dust
     }
     return { ...quest, progress, done }
   })
   if (!changed) return { state, completed, setBonus: false }
   const setBonus = !state.daily.bonusGranted && quests.every((quest) => quest.done)
   const wallet = { acorns: state.wallet.acorns + acorns, dust: state.wallet.dust + dust + (setBonus ? QUEST_SET_DUST : 0) }
-  return { state: { ...state, daily: { ...state.daily, quests, bonusGranted: state.daily.bonusGranted || setBonus }, wallet }, completed, setBonus }
+  const xp = state.xp + completed.length * XP.quest + (setBonus ? XP.questSet : 0)
+  return { state: { ...state, daily: { ...state.daily, quests, bonusGranted: state.daily.bonusGranted || setBonus }, wallet, xp }, completed, setBonus }
+}
+
+/* A quest's acorns as the tree pays them: half as much again for the prankster. */
+function questAcorns(state: ElfState, acorns: number): number {
+  return state.nodes.includes('prankster2') ? Math.ceil(acorns * 1.5) : acorns
 }
 
 /* The cottages found go to the day's quests: a find on the day the state
@@ -897,7 +1007,7 @@ function creditFinds(state: ElfState, finds: readonly ElfFind[], today: string):
     if (current.findsCredited.includes(find.slug)) continue
     const day = dayKey(find.at)
     if (day > current.daily.day && day >= today) continue
-    current = { ...current, findsCredited: [...current.findsCredited, find.slug] }
+    current = { ...current, findsCredited: [...current.findsCredited, find.slug], xp: current.xp + XP.find }
     if (day === current.daily.day) {
       const recorded = recordEvent(current, 'find')
       current = recorded.state
@@ -905,7 +1015,7 @@ function creditFinds(state: ElfState, finds: readonly ElfFind[], today: string):
       setBonus = setBonus || recorded.setBonus
     } else if (day > current.daily.day && isWeekend(day)) {
       const spec = QUEST_POOL.find((entry) => entry.id === 'findOne')!
-      const pay = { id: spec.id, acorns: spec.acorns, dust: spec.dust ?? 0 }
+      const pay = { id: spec.id, acorns: questAcorns(current, spec.acorns), dust: spec.dust ?? 0 }
       current = { ...current, wallet: { acorns: current.wallet.acorns + pay.acorns, dust: current.wallet.dust + pay.dust } }
       completed.push(pay)
     }
@@ -986,9 +1096,9 @@ export function nextStreakMilestone(streak: number): { days: number; dust: numbe
 
 /* ---------- Care ---------- */
 
-/* Why a care action was refused: the day's cap for it is used up, or a
+/* Why a care action was refused: no charge of it is back yet, or a
    belly too full for another feed. */
-export type CareRefusal = 'cap' | 'full'
+export type CareRefusal = 'charging' | 'full'
 
 export type CareOutcome =
   | { kind: 'done'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean }
@@ -996,25 +1106,44 @@ export type CareOutcome =
   | { kind: 'asleep' }
   | { kind: 'egg' }
 
-/* A care action: refused while the elf sleeps, past the day's cap, or (a
-   feed) on a full belly; otherwise the need rises and the quests hear of it. */
+/* The charges of a care spent and not yet back at a moment (a moment
+   from the future, after a clock change, counts as spent now). */
+function spentCharges(state: ElfState, id: ElfCareAction, now: number): number[] {
+  const { recharge } = careSpec(state, id)
+  return state.care[id].filter((at) => now - at < recharge)
+}
+
+/* A care action: refused while the elf sleeps, with no charge back yet,
+   or (a feed) on a full belly; otherwise the need rises, a charge is
+   spent and the quests hear of it. */
 export function performCare(state: ElfState, id: ElfCareAction, now: number): CareOutcome {
   if (!state.hatched) return { kind: 'egg' }
   const current = ensureDay(applyElapsed(state, now), now).state
   if (current.sleeping) return { kind: 'asleep' }
-  const spec = CARE[id]
-  if (current.daily[id] >= spec.cap) return { kind: 'refused', reason: 'cap' }
+  const spec = careSpec(current, id)
+  const spent = spentCharges(current, id, now)
+  if (spent.length >= spec.charges) return { kind: 'refused', reason: 'charging' }
   if (id === 'feed' && current.needs.fullness >= FULL_AT) return { kind: 'refused', reason: 'full' }
   const needs = { ...current.needs, [spec.need]: clamp(current.needs[spec.need] + spec.gain) }
-  const cared: ElfState = { ...current, needs, daily: { ...current.daily, [id]: current.daily[id] + 1 }, lastInteraction: now }
+  const cared: ElfState = { ...current, needs, care: { ...current.care, [id]: [...spent, now] }, lastInteraction: now }
   const recorded = recordEvent(cared, id)
   return { kind: 'done', ...recorded }
 }
 
-/* How many of each care the day still allows. */
+/* How many charges of a care are back. */
 export function careLeft(state: ElfState, id: ElfCareAction, now: number): number {
-  const current = ensureDay(state, now).state
-  return Math.max(0, CARE[id].cap - current.daily[id])
+  return Math.max(0, careSpec(state, id).charges - spentCharges(state, id, now).length)
+}
+
+/* When the next charge of a care is back; null with none spent. */
+export function careNextAt(state: ElfState, id: ElfCareAction, now: number): number | null {
+  const spent = spentCharges(state, id, now)
+  return spent.length ? Math.min(...spent.map((at) => Math.min(at, now))) + careSpec(state, id).recharge : null
+}
+
+/* Every charge of a care back at once (a refill bought). */
+export function refillCare(state: ElfState, id: ElfCareAction): ElfState {
+  return state.care[id].length ? { ...state, care: { ...state.care, [id]: [] } } : state
 }
 
 export type PetOutcome = { kind: 'petted'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } | { kind: 'asleep' } | { kind: 'egg' }
@@ -1043,18 +1172,29 @@ export function tendEgg(state: ElfState, id: ElfEggAction, now: number): EggOutc
   return recordEvent(tended, 'egg')
 }
 
-/* When the egg hatches on its own, for a countdown; null once hatched. */
+/* When the egg hatches on its own (or, bought, at once), for a
+   countdown; null once hatched. */
 export function hatchAt(state: ElfState): number | null {
-  return state.hatched ? null : state.eggAppearedAt + HATCH_AFTER_MS
+  if (state.hatched) return null
+  const natural = state.eggAppearedAt + HATCH_AFTER_MS
+  return state.hatchReadyAt === null ? natural : Math.min(natural, state.hatchReadyAt)
 }
 
 /* The egg is ready to hatch six hours after it appeared, or the moment a
    cottage is found while it waits (a find from before it appeared is the
    expedition's past and does not count: a veteran gets the egg's wait
-   like everyone). The hatch itself is the player's: the app calls hatch
-   when the player cracks the ready egg. */
+   like everyone), or at once when the wait was bought. The hatch itself
+   is the player's: the app calls hatch when the player cracks the ready
+   egg. */
 export function hatchDue(state: ElfState, now: number, finds: readonly ElfFind[]): boolean {
-  return !state.hatched && (finds.some((find) => find.at >= state.eggAppearedAt) || now - state.eggAppearedAt >= HATCH_AFTER_MS)
+  const at = hatchAt(state)
+  return at !== null && (finds.some((find) => find.at >= state.eggAppearedAt) || now >= at)
+}
+
+/* The egg's wait bought: ready from now on. */
+export function skipHatch(state: ElfState, now: number): ElfState | null {
+  const at = hatchAt(state)
+  return at === null || at <= now ? null : { ...state, hatchReadyAt: now }
 }
 
 /* The hatched elf named and given its element by the player; the app
@@ -1117,6 +1257,121 @@ export function placeDecor(state: ElfState, slotId: string, id: string, now: num
   return recordEvent({ ...current, decor: { ...current.decor, [slotId]: id }, lastInteraction: now }, 'decor')
 }
 
+/* ---------- Star dust as the premium currency ---------- */
+
+/* What the dust is earned and spent in: a rewarded ad pays `ad` dust,
+   and any ad (for dust or for a skip) counts towards `adCap` a day; the
+   skips cost their price (the hatch before its hour, a care's charges
+   before their time, a form before its days), or one ad; the store's
+   packs (the app's product ids) add what they say. */
+export const DUST = { ad: 5, adCap: 3, hatchSkip: 20, careRefill: 5, growNow: 30 } as const
+
+/* The waits that can be bought, and what each costs in dust. */
+export type ElfSkip = 'hatch' | ElfCareAction | 'grow'
+export const ELF_SKIPS: readonly ElfSkip[] = ['hatch', 'feed', 'play', 'bath', 'grow']
+export const SKIP_COST: Record<ElfSkip, number> = { hatch: DUST.hatchSkip, feed: DUST.careRefill, play: DUST.careRefill, bath: DUST.careRefill, grow: DUST.growNow }
+
+/* How many rewarded ads may still be watched today. */
+export function adsLeft(state: ElfState, now: number): number {
+  return state.ads.day === dayKey(now) ? Math.max(0, DUST.adCap - state.ads.count) : DUST.adCap
+}
+
+/* An ad watched to the end, counted against the day's cap; null past it. */
+export function recordAd(state: ElfState, now: number): ElfState | null {
+  if (adsLeft(state, now) <= 0) return null
+  const day = dayKey(now)
+  return { ...state, ads: { day, count: (state.ads.day === day ? state.ads.count : 0) + 1 } }
+}
+
+/* An ad watched for dust: its dust, within the day's cap. */
+export function earnAdDust(state: ElfState, now: number): { state: ElfState; earned: number } {
+  const counted = recordAd(state, now)
+  return counted ? { state: addDust(counted, DUST.ad), earned: DUST.ad } : { state, earned: 0 }
+}
+
+/* A wait skipped (paid for already, in dust or with an ad): the state
+   without it, or null when there was nothing to skip. */
+export function applySkip(state: ElfState, kind: ElfSkip, finds: number, now: number): ElfState | null {
+  if (kind === 'hatch') return skipHatch(state, now)
+  if (kind === 'grow') return growNow(state, finds, now)
+  return careLeft(state, kind, now) >= careSpec(state, kind).charges ? null : refillCare(state, kind)
+}
+
+/* Dust bought as a pack (or granted), any amount. */
+export function addDust(state: ElfState, amount: number): ElfState {
+  return amount > 0 ? { ...state, wallet: { ...state.wallet, dust: state.wallet.dust + amount } } : state
+}
+
+/* Dust spent on a skip: the state with less, or null when there is not enough. */
+export function spendDust(state: ElfState, cost: number): ElfState | null {
+  return state.wallet.dust >= cost ? { ...state, wallet: { ...state.wallet, dust: state.wallet.dust - cost } } : null
+}
+
+/* ---------- Experience, levels, the tree and the ranks ---------- */
+
+/* What experience comes from: a cottage found (the most), a quest done,
+   the full set, each day a streak goes on. */
+export const XP = { find: 40, quest: 8, questSet: 15, streakDay: 5 } as const
+
+/* The experience a level starts at: 0, 40, 120, 240, 400, 600... (each
+   level forty more than the last), so the early levels come fast and the
+   later ones ask for the cottages. */
+export function xpForLevel(level: number): number {
+  return 20 * (level - 1) * level
+}
+
+export function levelOf(xp: number): number {
+  return Math.max(1, Math.floor((1 + Math.sqrt(1 + xp / 5)) / 2))
+}
+
+/* The rank by level, for the elf's name and the ranking. */
+export function rankOf(level: number): ElfRank {
+  if (level >= 12) return 'legend'
+  if (level >= 9) return 'sage'
+  if (level >= 6) return 'warden'
+  if (level >= 3) return 'forester'
+  return 'spark'
+}
+
+/* Every level past the first gives a point; a node costs one. */
+export function pointsLeft(state: ElfState): number {
+  return Math.max(0, levelOf(state.xp) - 1 - state.nodes.length)
+}
+
+function isNodeId(value: string): value is ElfNodeId {
+  return ELF_PATHS.some((path) => (ELF_TREE[path] as readonly string[]).includes(value))
+}
+
+/* The pieces the last node of each path grants, free of the finds. */
+const TREE_ITEMS: Partial<Record<ElfNodeId, string>> = { glutton4: 'candle:cauldron', prankster4: 'bed:hammock', tracker4: 'picture:antlers' }
+
+export function grantedItems(state: ElfState): string[] {
+  return state.nodes.flatMap((node) => (TREE_ITEMS[node] ? [TREE_ITEMS[node]!] : []))
+}
+
+/* Where a node stands: owned, open (the next of its path, whether or
+   not a point is at hand) or locked behind an earlier one. */
+export type ElfNodeStatus = 'owned' | 'open' | 'locked'
+
+export function nodeStatus(state: ElfState, id: ElfNodeId): ElfNodeStatus {
+  if (state.nodes.includes(id)) return 'owned'
+  const path = ELF_PATHS.find((candidate) => (ELF_TREE[candidate] as readonly string[]).includes(id))!
+  const index = ELF_TREE[path].indexOf(id)
+  return index === 0 || state.nodes.includes(ELF_TREE[path][index - 1]!) ? 'open' : 'locked'
+}
+
+/* A node unlocked for a point: null without a point or out of order. */
+export function unlockNode(state: ElfState, id: ElfNodeId): ElfState | null {
+  if (pointsLeft(state) <= 0 || nodeStatus(state, id) !== 'open') return null
+  return { ...state, nodes: [...state.nodes, id] }
+}
+
+/* The elf has thanked for the player's support up to `total` (the
+   support ledger's count); the thanks itself is the app's sip. */
+export function thankSupport(state: ElfState, total: number): ElfState {
+  return total > state.supportThanked ? { ...state, supportThanked: total } : state
+}
+
 /* ---------- Reminders ---------- */
 
 /* What the app may tell the player while it is closed, as a reaction to
@@ -1176,10 +1431,8 @@ export function elfReminders(state: ElfState, now: number, finds: readonly ElfFi
   const [y, m, d] = today.split('-').map(Number)
   const dayAt = (offset: number) => dayKey(new Date(y!, m! - 1, d! + offset).getTime())
   /* The egg: at the moment it is ready. */
-  if (!state.hatched) {
-    const ready = state.eggAppearedAt + HATCH_AFTER_MS
-    if (ready > now) candidates.push({ at: outOfQuiet(ready), kind: 'egg', quests: false })
-  }
+  const ready = hatchAt(state)
+  if (ready !== null && ready > now) candidates.push({ at: outOfQuiet(ready), kind: 'egg', quests: false })
   const visitedToday = lastVisit === today
   for (let offset = 0; offset <= REMINDER_HORIZON_DAYS; offset += 1) {
     const day = dayAt(offset)

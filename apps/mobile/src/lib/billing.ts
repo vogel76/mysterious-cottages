@@ -97,6 +97,15 @@ function report(error: PurchaseError, listener: Listener): void {
   }
 }
 
+/* A product the store can sell: Play Billing 8 answers for every id asked
+   for, an id it does not know (a product not created or not active in the
+   console) as an entry with the status "not-found" and no price, so the
+   status and the price decide, not the entry. */
+function sellable(product: StoreProduct): boolean {
+  const status = 'productStatusAndroid' in product ? product.productStatusAndroid : null
+  return Boolean(product.displayPrice) && (status == null || status === 'ok')
+}
+
 export type BillingConnection = {
   /* The products the store knows among the ids asked for, in the order
      asked for; empty when the store has none of them. */
@@ -134,7 +143,7 @@ export async function connectBilling(productIds: readonly string[], listener: Li
     const connected = await initConnection()
     if (!connected) throw new Error('store connection refused')
     const known = ((await fetchProducts({ skus: [...productIds], type: 'in-app' })) ?? []) as StoreProduct[]
-    const products = productIds.map((id) => known.find((product) => product.id === id)).filter((product): product is StoreProduct => Boolean(product))
+    const products = productIds.map((id) => known.find((product) => product.id === id && sellable(product))).filter((product): product is StoreProduct => Boolean(product))
     return {
       products,
       settleLeftovers: async () => {

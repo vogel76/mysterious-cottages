@@ -75,6 +75,10 @@ import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck'
 import { SignOutIcon as PhosphorSignOut } from 'phosphor-react-native/src/icons/SignOut'
 import { ShootingStarIcon } from 'phosphor-react-native/src/icons/ShootingStar'
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
+import { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront'
+import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife'
+import { ConfettiIcon } from 'phosphor-react-native/src/icons/Confetti'
+import { CompassIcon } from 'phosphor-react-native/src/icons/Compass'
 import { SpeakerHighIcon } from 'phosphor-react-native/src/icons/SpeakerHigh'
 import { SpeakerSlashIcon } from 'phosphor-react-native/src/icons/SpeakerSlash'
 import { SunIcon } from 'phosphor-react-native/src/icons/Sun'
@@ -189,6 +193,12 @@ export const JarIcon = PhosphorJar
 export const LockIcon = LockSimpleIcon
 /* The cottage's decor edit mode. */
 export const DecorIcon = ArmchairIcon
+/* The elf's shop of star dust. */
+export const ShopIcon = StorefrontIcon
+/* The paths of the elf's tree of development. */
+export const PathGluttonIcon = ForkKnifeIcon
+export const PathPranksterIcon = ConfettiIcon
+export const PathTrackerIcon = CompassIcon
 /* A letter from the cottages, sealed and opened. */
 export const LetterIcon = EnvelopeSimpleIcon
 export const LetterOpenIcon = EnvelopeSimpleOpenIcon
@@ -205,7 +215,7 @@ export const ICON_VOCABULARY = {
   ShareIcon, TorchIcon, TorchOffIcon, InfoIcon,
   CoffeeIcon, WatchAdIcon,
   EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon, QuestIcon, JarIcon, LockIcon,
-  DecorIcon, LetterIcon, LetterOpenIcon,
+  DecorIcon, ShopIcon, PathGluttonIcon, PathPranksterIcon, PathTrackerIcon, LetterIcon, LetterOpenIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */
