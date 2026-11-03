@@ -157,17 +157,17 @@ export const mobileEn: typeof mobilePl = {
   welcome: {
     skip: 'Skip',
     pageAria: 'Page {{index}} of {{total}}',
+    /* The page about the elf companion (src/features/welcome/ElfIntro). */
+    elfEyebrow: 'The elf in the Cottage',
+    elfTitle: 'An elf of your own',
+    elfBody1: 'A little elf is waiting for you in the app. It hatches from its egg when you set out on your first expedition and moves into its cottage on the Elf tab.',
+    elfBody2: 'Every Cottage you find brings it a lesson and a jar for its shelf, and the forest elves write it letters. Feed it, play with it and give it a bath, and it will grow along with your expeditions.',
   },
   navigate: {
     chooseApp: 'Navigate with',
     appleMaps: 'Apple Maps',
     googleMaps: 'Google Maps',
   },
-    /* The page about the elf companion (src/features/welcome/ElfIntro). */
-    elfEyebrow: 'The elf in the Cottage',
-    elfTitle: 'An elf of your own',
-    elfBody1: 'A little elf is waiting for you in the app. It hatches from its egg when you set out on your first expedition and moves into its cottage on the Elf tab.',
-    elfBody2: 'Every Cottage you find brings it a lesson and a jar for its shelf, and the forest elves write it letters. Feed it, play with it and give it a bath, and it will grow along with your expeditions.',
   support: {
     eyebrow: 'Support',
     title: 'Buy the elf a coffee',
@@ -493,6 +493,8 @@ export const mobileEn: typeof mobilePl = {
     lockedLabel_few: 'Discover {{count}} more Cottages',
     lockedLabel_many: 'Discover {{count}} more Cottages',
     lockedLabel_other: 'Discover {{count}} more Cottages',
+    /* A tab of the decorating catalogue: how many of its pieces the finds have unlocked. */
+    catalogueTabAria: '{{name}}: {{unlocked}} of {{total}} unlocked',
     lockedLine_one: '{{count}} more Cottage and it is ours!',
     lockedLine_few: '{{count}} more Cottages and it is ours!',
     lockedLine_many: '{{count}} more Cottages and it is ours!',

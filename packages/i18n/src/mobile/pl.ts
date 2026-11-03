@@ -166,17 +166,17 @@ export const mobilePl = {
   welcome: {
     skip: 'Pomiń',
     pageAria: 'Strona {{index}} z {{total}}',
+    /* The page about the elf companion (src/features/welcome/ElfIntro). */
+    elfEyebrow: 'Elf w Chatynce',
+    elfTitle: 'Wasz własny elf',
+    elfBody1: 'W aplikacji czeka na Was mały elf. Wykluwa się z jajka, kiedy ruszycie na pierwszą wyprawę, i zamieszka w swojej chatce na zakładce Elf.',
+    elfBody2: 'Każda odkryta Chatynka przynosi mu lekcję i słoik na półkę, a elfy z lasu piszą do niego listy. Karmcie go, bawcie się z nim i kąpcie, a będzie rósł razem z Waszymi wyprawami.',
   },
   navigate: {
     chooseApp: 'Nawiguj w',
     appleMaps: 'Apple Maps',
     googleMaps: 'Google Maps',
   },
-    /* The page about the elf companion (src/features/welcome/ElfIntro). */
-    elfEyebrow: 'Elf w Chatynce',
-    elfTitle: 'Wasz własny elf',
-    elfBody1: 'W aplikacji czeka na Was mały elf. Wykluwa się z jajka, kiedy ruszycie na pierwszą wyprawę, i zamieszka w swojej chatce na zakładce Elf.',
-    elfBody2: 'Każda odkryta Chatynka przynosi mu lekcję i słoik na półkę, a elfy z lasu piszą do niego listy. Karmcie go, bawcie się z nim i kąpcie, a będzie rósł razem z Waszymi wyprawami.',
   /* Supporting Chatynkowo (src/features/support): the sheet with the two
      voluntary ways, a coffee for the elf (a purchase through the store)
      and a rewarded ad watched instead, and the entry in the profile.
@@ -540,6 +540,8 @@ export const mobilePl = {
     lockedLabel_few: 'Odkryj jeszcze {{count}} Chatynki',
     lockedLabel_many: 'Odkryj jeszcze {{count}} Chatynek',
     lockedLabel_other: 'Odkryj jeszcze {{count}} Chatynek',
+    /* A tab of the decorating catalogue: how many of its pieces the finds have unlocked. */
+    catalogueTabAria: '{{name}}: odblokowane {{unlocked}} z {{total}}',
     lockedLine_one: 'Jeszcze {{count}} Chatynka i będzie nasze!',
     lockedLine_few: 'Jeszcze {{count}} Chatynki i będzie nasze!',
     lockedLine_many: 'Jeszcze {{count}} Chatynek i będzie nasze!',

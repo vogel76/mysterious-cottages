@@ -188,7 +188,7 @@ app/                     expo-router routes
   _layout.tsx            fonts and the bootstrap behind the splash, the providers, the root native Stack:
                          welcome and (tabs) behind Stack.Protected guards, the sheets and modals on top
   welcome.tsx            the onboarding pager (the lore; the four questions and the creed; the guide as a trail;
-                         the photo, the notes and the two ways to begin), first launch only
+                         the elf, when the build has it; the photo, the notes and the two ways to begin), first launch only
   (tabs)/_layout.tsx     the tab bar (src/ui/TabBar.tsx): Atlas / Elf on the left, Kronika / Profile on the right of a
                          raised gold centre button that opens the code sheet (long press: the scanner); the button
                          would stay centred with an odd number of tabs too (each half of the bar shares its width
@@ -228,7 +228,8 @@ app/                     expo-router routes
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
-  config.ts              EXPO_PUBLIC_* with production defaults (including the account preview flag), storage keys
+  config.ts              EXPO_PUBLIC_* with production defaults (including the account preview flag and the elf's
+                         flag, EXPO_PUBLIC_ELF_ENABLED, "0" leaving the elf out of a build), storage keys
   i18n/                  the i18next instance: "translation" + "mobile" namespaces, device locale, remembered choice
   ui/                    the interface layer: tokens, fonts, icons (plus the tab glyphs and the native header symbols), motion
                          tokens, Text, Button/LinkButton/IconButton on PressableScale, Screen, ContentImage (expo-image),
@@ -640,6 +641,17 @@ streak with its next milestone, and what the figures are and earn; what
 an action earned the elf says in its bubble. The shop the dust is for
 comes later.
 
+The elf reaches two places outside its tab: the onboarding pager (the
+welcome of a fresh install and the profile's "How to play") carries a
+page about it, and the Kronika's progress card says how many virtues
+the elf has learned, the cottages it has taken in (`findsCelebrated`),
+which is where the two loops meet. `EXPO_PUBLIC_ELF_ENABLED=0` leaves
+the elf out of a build: the Elf tab leaves the bar and takes no link,
+no reminder is scheduled, the pager has no elf page, the Kronika no
+count and the profile no way to start the elf over; the elf's code and
+state stay in the app untouched, so a later build with the flag unset
+finds them.
+
 The rules (`packages/core`, `elf.ts`: pure functions over an immutable
 state with the moment injected, so a simulation can run a year in a
 second) are paced in days, not minutes: an absence never punishes, it
@@ -771,7 +783,8 @@ mode, inside the tab (not a route: a route would unfocus the tab and
 pause the scene, and the point is the live preview). The top strip says
 what the mode is and has the way back ("Gotowe"); the care band gives
 way to the catalogue (`ElfDecorPanel.tsx`) on the tab bar: a row of
-category tabs, the elf's hat first once it has hatched (the room then
+category tabs, each with the count of its pieces the finds have unlocked
+("Łóżko 2/3"), the elf's hat first once it has hatched (the room then
 brings the elf to the middle, and the elf twirls in a hat put on), the
 walls and the floor next, then the pieces from the largest, and under it
 a row of large cards for the active category, three

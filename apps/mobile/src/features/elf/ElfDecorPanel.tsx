@@ -72,7 +72,10 @@ export function ElfDecorPanel({ decor, hat, form, photo, tabs, foundCount, activ
   const { t } = useTranslation()
   const { width } = useWindowDimensions()
   const wardrobe = activeTab === 'hat'
-  const ids = wardrobe ? WEARABLE_IDS.hat : RENDERED_VARIANTS[activeTab].filter((id) => id !== PHOTO_ID || photo)
+  /* What a tab offers, and how much of it the cottages found have unlocked. */
+  const offered = (tab: CatalogueTab) => (tab === 'hat' ? WEARABLE_IDS.hat : RENDERED_VARIANTS[tab].filter((id) => id !== PHOTO_ID || photo))
+  const unlockedOf = (tab: CatalogueTab, pieces: readonly string[]) => pieces.filter((id) => decorFindsNeeded(tab, id, foundCount) === 0).length
+  const ids = offered(activeTab)
   const current = wardrobe ? hat : renderedVariantFor(activeTab, decor[activeTab])
   const reduceMotion = useReducedMotion()
   const card = cardWidth(width, ids.length)
@@ -100,6 +103,9 @@ export function ElfDecorPanel({ decor, hat, form, photo, tabs, foundCount, activ
       <ScrollView ref={tabStrip} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} keyboardShouldPersistTaps="handled">
         {tabs.map((tab) => {
           const active = tab === activeTab
+          const name = t(elfKey('slot', tab))
+          const pieces = offered(tab)
+          const unlocked = unlockedOf(tab, pieces)
           return (
             <PressableScale
               key={tab}
@@ -107,12 +113,19 @@ export function ElfDecorPanel({ decor, hat, form, photo, tabs, foundCount, activ
               onPress={() => onSelectTab(tab)}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
+              accessibilityLabel={t('mobile:elf.catalogueTabAria', { name, unlocked, total: pieces.length })}
               pressedFill={active ? colors.accentBorder : colors.accentWash}
               style={[styles.tab, active && styles.tabActive]}
             >
-              <Text variant="small" weight="semibold" style={active ? styles.tabActiveLabel : styles.ink}>
-                {t(elfKey('slot', tab))}
-              </Text>
+              <View style={styles.tabInner}>
+                <Text variant="small" weight="semibold" style={active ? styles.tabActiveLabel : styles.ink}>
+                  {name}
+                </Text>
+                {/* The collection's count: how many of the tab's pieces the finds have unlocked. */}
+                <Text variant="small" style={active ? styles.tabActiveCount : styles.tabCount}>
+                  {unlocked}/{pieces.length}
+                </Text>
+              </View>
             </PressableScale>
           )
         })}
@@ -199,6 +212,18 @@ const styles = StyleSheet.create({
   },
   tabActiveLabel: {
     color: colors.accentInk,
+  },
+  tabInner: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: space.xs,
+  },
+  tabCount: {
+    color: colors.inkFaint,
+  },
+  tabActiveCount: {
+    color: colors.accentInk,
+    opacity: 0.8,
   },
   cards: {
     flexDirection: 'row',
