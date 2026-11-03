@@ -3,8 +3,8 @@ title: "Chatynka Wawrzyńca"
 slug: wawrzyniec
 occupant: Wawrzyniec
 virtue: "starość to radość"
-letterFound: "Jestem Wawrzyniec. Mieszkam nad wodą razem z rodziną bobrów, które niedawno się tu sprowadziły. Dziś odwiedzili mnie Twoi przyjaciele i pomachali bobrom, a bobry pomachały ogonami. Nasze hasło to: starość to radość. Na zabawę nigdy nie jest za późno."
-letterInvite: "Jestem Wawrzyniec, stary elf znad wody. Niedawno zamieszkały obok mnie bobry i w końcu mam z kim pływać. Zaproś do mnie swoich przyjaciół. Pokażę im tamę, którą zbudowały bobry."
+letterFound: "Jestem Wawrzyniec. Mieszkam nad wodą razem z rodziną bobrów, które niedawno się tu sprowadziły. Dziś mnie odwiedziliście i pomachaliście bobrom, a bobry pomachały ogonami. Nasze hasło to: starość to radość. Na zabawę nigdy nie jest za późno."
+letterInvite: "Jestem Wawrzyniec, stary elf znad wody. Niedawno zamieszkały obok mnie bobry i w końcu mam z kim pływać. Przyjdźcie mnie odwiedzić. Pokażę Wam tamę, którą zbudowały bobry."
 ---
 
 # Chatynka Wawrzyńca

@@ -3,8 +3,8 @@ title: "The Cottage of FERDEK THE ELF AND THE BAT"
 slug: fredek
 occupant: "Ferdek the Elf"
 virtue: silence
-letterFound: "I am Ferdek and I live in a little cottage under an old linden tree. Today your friends came to visit me. They sat very quietly, so my friend the bat sang them his lullaby. Say hello to them from me! Our motto is: silence. In silence you can hear even the forest whisper."
-letterInvite: "I am Ferdek. I live under a linden tree that is two hundred years old, in a cottage with a crooked roof. In the evenings a bat flies to me and sings lullabies. Invite your friends to visit me. If they are quiet, the bat will sing for them too."
+letterFound: "I am Ferdek and I live in a little cottage under an old linden tree. Today you came to visit me. You sat very quietly, so my friend the bat sang you his lullaby. Thank you for coming! Our motto is: silence. In silence you can hear even the forest whisper."
+letterInvite: "I am Ferdek. I live under a linden tree that is two hundred years old, in a cottage with a crooked roof. In the evenings a bat flies to me and sings lullabies. Come and visit me. If you are quiet, the bat will sing for you too."
 ---
 
 # The Cottage of Ferdek the Elf and the Bat

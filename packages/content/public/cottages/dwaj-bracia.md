@@ -3,8 +3,8 @@ title: "Chatynka dwóch Braci"
 slug: dwaj-bracia
 occupant: "Dwaj Bracia"
 virtue: braterstwo
-letterFound: "Jesteśmy dwaj bracia bliźniacy i mieszkamy w jednej chatynce. Jeden z nas wstaje o świcie, a drugi o zmierzchu, dlatego piszemy do siebie karteczki i chowamy je pod kamieniem. Dziś obaj napisaliśmy o Twoich przyjaciołach, bo nas odwiedzili. Nasze hasło to: braterstwo. Brat zawsze pamięta o bracie."
-letterInvite: "Jesteśmy dwaj bracia bliźniacy. Jeden z nas lubi poranki, a drugi wieczory, więc rzadko się widujemy i piszemy do siebie karteczki. Zaproś do nas swoich przyjaciół. Jeden z nas na pewno będzie w domu."
+letterFound: "Jesteśmy dwaj bracia bliźniacy i mieszkamy w jednej chatynce. Jeden z nas wstaje o świcie, a drugi o zmierzchu, dlatego piszemy do siebie karteczki i chowamy je pod kamieniem. Dziś obaj napisaliśmy o Was, bo nas odwiedziliście. Nasze hasło to: braterstwo. Brat zawsze pamięta o bracie."
+letterInvite: "Jesteśmy dwaj bracia bliźniacy. Jeden z nas lubi poranki, a drugi wieczory, więc rzadko się widujemy i piszemy do siebie karteczki. Przyjdźcie nas odwiedzić. Jeden z nas na pewno będzie w domu."
 ---
 
 # Chatynka dwóch Braci

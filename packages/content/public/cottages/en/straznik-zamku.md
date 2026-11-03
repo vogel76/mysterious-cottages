@@ -3,8 +3,8 @@ title: "The Cottage of Strzała the Elf"
 slug: straznik-zamku
 occupant: "the Guardian of Bydlin Castle"
 virtue: loyalty
-letterFound: "I am the Castle Guardian. My cottage stands by the ruins of a real castle. At night I practise in my armour so that I never forget the old stories. Today your friends came to visit me and listened to one of them. Our motto is: loyalty. A loyal friend always remembers you."
-letterInvite: "I am the Castle Guardian. I live next to the old walls, and at night you can hear my armour clink, because I practise remembering. I do not guard the castle, only its stories. Invite your friends to visit me. I will tell them the story of the castle from the very beginning."
+letterFound: "I am the Castle Guardian. My cottage stands by the ruins of a real castle. At night I practise in my armour so that I never forget the old stories. Today you came to visit me and listened to one of them. Our motto is: loyalty. A loyal friend always remembers."
+letterInvite: "I am the Castle Guardian. I live next to the old walls, and at night you can hear my armour clink, because I practise remembering. I do not guard the castle, only its stories. Come and visit me. I will tell you the story of the castle from the very beginning."
 ---
 
 # The Castle Guardian's Cottage

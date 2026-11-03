@@ -3,8 +3,8 @@ title: Harald
 slug: bluetooth
 occupant: Harald
 virtue: diplomacy
-letterFound: "I am Harald. I was once a great king, and today I live on a big stone by the sea and feed the seagulls. Today your friends came to visit me, and the seagulls checked at once whether they had anything to eat. Our motto is: diplomacy. It means getting along with everyone, even seagulls."
-letterInvite: "I am Harald. I live on a big stone by the sea together with seagulls and cormorants. Every day I look at the little island opposite, because someone I like very much lives there. Invite your friends to visit me. I will tell them who lives on the island."
+letterFound: "I am Harald. I was once a great king, and today I live on a big stone by the sea and feed the seagulls. Today you came to visit me, and the seagulls checked at once whether you had anything to eat. Our motto is: diplomacy. It means getting along with everyone, even seagulls."
+letterInvite: "I am Harald. I live on a big stone by the sea together with seagulls and cormorants. Every day I look at the little island opposite, because someone I like very much lives there. Come and visit me. I will tell you who lives on the island."
 ---
 
 # Harald

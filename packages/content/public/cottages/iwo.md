@@ -3,8 +3,8 @@ title: "Chatynka Elfa Iwo"
 slug: iwo
 occupant: "Elf Iwo"
 virtue: gościnność
-letterFound: "Jestem Iwo. Mieszkam w krzywej chatynce nad fosą pod zamkiem Rabsztyn. Dziś przyszli do mnie Twoi przyjaciele i usiedli na chwilę w trawie, tak jak lubię. Opowiedziałem o nich mojej przyjaciółce Zofii. Nasze hasło to: gościnność. Każdy gość jest u mnie mile widziany."
-letterInvite: "Jestem Iwo i pilnuję starej fosy pod zamkiem Rabsztyn. Moja przyjaciółka Zofia mieszka na zamku, a my spotykamy się tajnym przejściem. Zaproś do mnie swoich przyjaciół. Pokażę im fosę i opowiem, co się tu kiedyś działo."
+letterFound: "Jestem Iwo. Mieszkam w krzywej chatynce nad fosą pod zamkiem Rabsztyn. Dziś przyszliście do mnie i usiedliście na chwilę w trawie, tak jak lubię. Opowiedziałem o Was mojej przyjaciółce Zofii. Nasze hasło to: gościnność. Każdy gość jest u mnie mile widziany."
+letterInvite: "Jestem Iwo i pilnuję starej fosy pod zamkiem Rabsztyn. Moja przyjaciółka Zofia mieszka na zamku, a my spotykamy się tajnym przejściem. Przyjdźcie mnie odwiedzić. Pokażę Wam fosę i opowiem, co się tu kiedyś działo."
 ---
 
 # Chatynka Elfa Iwo

@@ -3,8 +3,8 @@ title: "Oli i Zojki"
 slug: olala
 occupant: "Ola i Zojka"
 virtue: kreatywność
-letterFound: "Jesteśmy Ola i Zojka. Ola jest artystką i robi obrazki z patyków, kamyków i starych gazet, a obie bardzo kochamy koty. Dziś odwiedzili nas Twoi przyjaciele i pogłaskali naszego kota na płocie. Nasze hasło to: kreatywność. Z pomysłem nawet patyk staje się dziełem sztuki."
-letterInvite: "Jesteśmy Ola i Zojka. Znamy las jak własną kieszeń: wiemy, gdzie rosną poziomki, kurki i paprocie. Mamy też dużo kotów, które przychodzą do nas po pomoc. Zaproś do nas swoich przyjaciół. Pokażemy im nasze leśne sekrety."
+letterFound: "Jesteśmy Ola i Zojka. Ola jest artystką i robi obrazki z patyków, kamyków i starych gazet, a obie bardzo kochamy koty. Dziś nas odwiedziliście i pogłaskaliście naszego kota na płocie. Nasze hasło to: kreatywność. Z pomysłem nawet patyk staje się dziełem sztuki."
+letterInvite: "Jesteśmy Ola i Zojka. Znamy las jak własną kieszeń: wiemy, gdzie rosną poziomki, kurki i paprocie. Mamy też dużo kotów, które przychodzą do nas po pomoc. Przyjdźcie nas odwiedzić. Pokażemy Wam nasze leśne sekrety."
 ---
 
 # Oli i Zojki

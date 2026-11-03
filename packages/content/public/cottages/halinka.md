@@ -3,8 +3,8 @@ title: "Elfka Halinka"
 slug: halinka
 occupant: Halinka
 virtue: "pielęgnuje marzenia"
-letterFound: "Jestem Halinka. Mieszkam na gałęzi starego drzewa obok skał, o których ludzie mówią, że spotykały się tam czarownice. Ale ja nie jestem czarownicą, ja opiekuję się marzeniami. Dziś odwiedzili mnie Twoi przyjaciele i jeden z nich przypomniał sobie swoje dawne marzenie. Nasze hasło to: pielęgnuj swoje marzenia."
-letterInvite: "Jestem Halinka. Mieszkam na gałęzi starego drzewa i opiekuję się marzeniami, które ktoś porzucił za wcześnie. Odkurzam je i odkładam na półkę, aż ktoś po nie wróci. Zaproś do mnie swoich przyjaciół. Może znajdą u mnie swoje zgubione marzenie."
+letterFound: "Jestem Halinka. Mieszkam na gałęzi starego drzewa obok skał, o których ludzie mówią, że spotykały się tam czarownice. Ale ja nie jestem czarownicą, ja opiekuję się marzeniami. Dziś mnie odwiedziliście i ktoś z Was przypomniał sobie swoje dawne marzenie. Nasze hasło to: pielęgnuj swoje marzenia."
+letterInvite: "Jestem Halinka. Mieszkam na gałęzi starego drzewa i opiekuję się marzeniami, które ktoś porzucił za wcześnie. Odkurzam je i odkładam na półkę, aż ktoś po nie wróci. Przyjdźcie mnie odwiedzić. Może znajdziecie u mnie swoje zgubione marzenie."
 ---
 
 # Elfka Halinka

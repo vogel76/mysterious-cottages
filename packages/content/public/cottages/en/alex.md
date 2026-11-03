@@ -3,8 +3,8 @@ title: "The Cottage of the Elves Jędrzej and Franek"
 slug: alex
 occupant: "the brothers Jędrzej and Franek"
 virtue: "taking it easy"
-letterFound: "We are Jędrzej and Franek, the brothers from the Szum waterfall. We used to live by a mill, but when the mill fell silent, we moved to the waterfall. Today your friends came to visit us and sat with us, listening to the water. Our motto is: take it easy. Not everything has to hurry."
-letterInvite: "We are Jędrzej and Franek. We live under the Szum waterfall on the Będkówka river. We do not do much: we watch the water and listen to it rush. Invite your friends to visit us. We will sit by the waterfall together."
+letterFound: "We are Jędrzej and Franek, the brothers from the Szum waterfall. We used to live by a mill, but when the mill fell silent, we moved to the waterfall. Today you came to visit us and sat with us, listening to the water. Our motto is: take it easy. Not everything has to hurry."
+letterInvite: "We are Jędrzej and Franek. We live under the Szum waterfall on the Będkówka river. We do not do much: we watch the water and listen to it rush. Come and visit us. We will sit by the waterfall together."
 ---
 
 # The Cottage of the Elves Jędrzej and Franek

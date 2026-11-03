@@ -3,8 +3,8 @@ title: "The Cottage of Tupak the Elf"
 slug: tupak
 occupant: "Tupak the Elf"
 virtue: mindfulness
-letterFound: "I am Tupak. Every morning I stomp on an oak trunk to wake the dragonflies by the pond. Today I stomped one more time, especially for your friends, because they came to visit me. The dragonflies danced above their heads. Our motto is: mindfulness. Whoever looks and listens carefully sees more."
-letterInvite: "I am Tupak. I live next to a pond where the dragonflies sleep. Every morning I wake them by stomping on an oak trunk: once for me, once for the forest and once for someone who is sad. Invite your friends to visit me. I will stomp for them too."
+letterFound: "I am Tupak. Every morning I stomp on an oak trunk to wake the dragonflies by the pond. Today I stomped one more time, especially for you, because you came to visit me. The dragonflies danced above your heads. Our motto is: mindfulness. Whoever looks and listens carefully sees more."
+letterInvite: "I am Tupak. I live next to a pond where the dragonflies sleep. Every morning I wake them by stomping on an oak trunk: once for me, once for the forest and once for someone who is sad. Come and visit me. I will stomp for you too."
 ---
 
 # The Cottage of Tupak the Elf

@@ -3,8 +3,8 @@ title: "The Cottage of the Two Sisters on the Rock Spires"
 slug: skalne-iglice
 occupant: "the sisters Jasenna and Nieszka"
 virtue: family
-letterFound: "We are the sisters Jasenna and Nieszka. Our cottage hangs between three white rocks. Today your friends came to visit us, and the wind brought us news of them before they had even climbed up. Our motto is: family. In a family, everyone has someone waiting for them."
-letterInvite: "We are the sisters Jasenna and Nieszka. We live high up, between three white rocks, and the wind brings us news from all around. We also know the language of the rocks. Invite your friends to visit us. We will teach them one rock word."
+letterFound: "We are the sisters Jasenna and Nieszka. Our cottage hangs between three white rocks. Today you came to visit us, and the wind brought us news of you before you had even climbed up. Our motto is: family. In a family, everyone has someone waiting for them."
+letterInvite: "We are the sisters Jasenna and Nieszka. We live high up, between three white rocks, and the wind brings us news from all around. We also know the language of the rocks. Come and visit us. We will teach you one rock word."
 ---
 
 # The Cottage on the Rock Spires

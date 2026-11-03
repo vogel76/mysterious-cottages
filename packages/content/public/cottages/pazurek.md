@@ -3,8 +3,8 @@ title: "Elf Pazurek"
 slug: pazurek
 occupant: "Elf Pazurek"
 virtue: "weterynarz zwierząt leśnych"
-letterFound: "Jestem Pazurek, leśny weterynarz. Opatruję ptakom skrzydła i wyjmuję jeżom kolce z łapek. Dziś odwiedzili mnie Twoi przyjaciele. Byli cichutko, więc chory jeż mógł spokojnie spać. Nasze hasło to: weterynarz zwierząt leśnych. Każde zwierzę zasługuje na opiekę."
-letterInvite: "Jestem Pazurek, leśny weterynarz. Mieszkam w wąwozie między skałami, gdzie leczę ptaki, jeże i sarenki. Mój domek jest dobrze schowany, więc trzeba mieć bystre oko. Zaproś do mnie swoich przyjaciół. Jeśli będą cicho, może zobaczą, jak opatruję ptaka."
+letterFound: "Jestem Pazurek, leśny weterynarz. Opatruję ptakom skrzydła i wyjmuję jeżom kolce z łapek. Dziś mnie odwiedziliście. Byliście cichutko, więc chory jeż mógł spokojnie spać. Nasze hasło to: weterynarz zwierząt leśnych. Każde zwierzę zasługuje na opiekę."
+letterInvite: "Jestem Pazurek, leśny weterynarz. Mieszkam w wąwozie między skałami, gdzie leczę ptaki, jeże i sarenki. Mój domek jest dobrze schowany, więc trzeba mieć bystre oko. Przyjdźcie mnie odwiedzić. Jeśli będziecie cicho, może zobaczycie, jak opatruję ptaka."
 ---
 
 # Elf Pazurek

@@ -3,8 +3,8 @@ title: Talarek
 slug: talarek
 occupant: Talarek
 virtue: stinginess
-letterFound: "I am Talarek, a small, grey-haired, plump elf. I like money very much and I do not like spending it. Today your friends came to visit me, and their visit did not cost me a penny. But it made me cheerful. Our motto is: stinginess. But I am learning that not everything needs saving."
-letterInvite: "I am Talarek. I live next to the fortress, because it is safe and cheap there. I have one tea bag, but for guests I will brew it one more time. Invite your friends to visit me. A visit costs nothing."
+letterFound: "I am Talarek, a small, grey-haired, plump elf. I like money very much and I do not like spending it. Today you came to visit me, and your visit did not cost me a penny. But it made me cheerful. Our motto is: stinginess. But I am learning that not everything needs saving."
+letterInvite: "I am Talarek. I live next to the fortress, because it is safe and cheap there. I have one tea bag, but for guests I will brew it one more time. Come and visit me. A visit costs nothing."
 ---
 
 # Talarek

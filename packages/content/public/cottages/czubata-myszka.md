@@ -3,8 +3,8 @@ title: "Chatynka Czubatej i Myszki"
 slug: czubata-myszka
 occupant: "Czubata i Myszka"
 virtue: wyobraźnia
-letterFound: "Jesteśmy Czubata i Myszka. Prowadzimy bibliotekę, w której zamiast książek są szeleszczące liście. Każdy liść opowiada inną historię. Dziś odwiedzili nas Twoi przyjaciele i wypożyczyli jedną opowieść. Nasze hasło to: wyobraźnia. Z wyobraźnią każdy liść staje się bajką."
-letterInvite: "Jesteśmy Czubata i Myszka. Czubata ma fryzurę z mchu, a Myszka długi ogonek i mnóstwo pomysłów. Razem prowadzimy bibliotekę szeleszczących liści. Zaproś do nas swoich przyjaciół. Każdy może wypożyczyć jedną szeleszczącą bajkę."
+letterFound: "Jesteśmy Czubata i Myszka. Prowadzimy bibliotekę, w której zamiast książek są szeleszczące liście. Każdy liść opowiada inną historię. Dziś nas odwiedziliście i wypożyczyliście jedną opowieść. Nasze hasło to: wyobraźnia. Z wyobraźnią każdy liść staje się bajką."
+letterInvite: "Jesteśmy Czubata i Myszka. Czubata ma fryzurę z mchu, a Myszka długi ogonek i mnóstwo pomysłów. Razem prowadzimy bibliotekę szeleszczących liści. Przyjdźcie nas odwiedzić. Każdy może wypożyczyć jedną szeleszczącą bajkę."
 ---
 
 # Chatynka Czubatej i Myszki

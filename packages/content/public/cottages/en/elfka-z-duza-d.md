@@ -3,8 +3,8 @@ title: "The Cottage of the Elf-maid with a big b..."
 slug: elfka-z-duza-d
 occupant: "the Elf-maid with a big b..."
 virtue: kindness
-letterFound: "I am the Elf-maid with a very big heart. Under my cottage there is always a bowl of milk for the hedgehog and a handful of acorns for the squirrel. Today your friends came to visit me and stroked the hedgehog. I was so happy. Our motto is: kindness. A kind heart always finds its way home."
-letterInvite: "I am the Elf-maid with a very big heart. Under my cottage I feed a hedgehog and a squirrel, and when someone gets lost in the forest, I call them by name. Invite your friends to visit me. The hedgehog loves guests."
+letterFound: "I am the Elf-maid with a very big heart. Under my cottage there is always a bowl of milk for the hedgehog and a handful of acorns for the squirrel. Today you came to visit me and stroked the hedgehog. I was so happy. Our motto is: kindness. A kind heart always finds its way home."
+letterInvite: "I am the Elf-maid with a very big heart. Under my cottage I feed a hedgehog and a squirrel, and when someone gets lost in the forest, I call them by name. Come and visit me. The hedgehog loves guests."
 ---
 
 # The Cottage of the Elf-maid with a big b...

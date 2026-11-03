@@ -3,8 +3,8 @@ title: "The Cottage of Teodor the Elf"
 slug: teodor
 occupant: "Teodor the Elf"
 virtue: patience
-letterFound: "I am Teodor. I used to be a skier, and today I live on a hill next to an old ski lift, in a house built around a rock. Today your friends came to visit me. They left no litter behind, so I liked them very much. Our motto is: patience. A forest grows slowly, but it grows."
-letterInvite: "I am Teodor, an old elf who used to ski. I live on a hill by an old ski lift. There is a big rock inside my house, because the rock was here first and I did not want to send it away. Invite your friends to visit me. I will show them the rock and tell them how to look after the forest."
+letterFound: "I am Teodor. I used to be a skier, and today I live on a hill next to an old ski lift, in a house built around a rock. Today you came to visit me. You left no litter behind, so I liked you very much. Our motto is: patience. A forest grows slowly, but it grows."
+letterInvite: "I am Teodor, an old elf who used to ski. I live on a hill by an old ski lift. There is a big rock inside my house, because the rock was here first and I did not want to send it away. Come and visit me. I will show you the rock and tell you how to look after the forest."
 ---
 
 # The Cottage of Teodor the Elf

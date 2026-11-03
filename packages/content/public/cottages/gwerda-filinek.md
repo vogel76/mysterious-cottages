@@ -3,8 +3,8 @@ title: "Chatynka Gwerdy i Filinka"
 slug: gwerda-filinek
 occupant: "u Mocnych"
 virtue: przyjaźń
-letterFound: "Jesteśmy Gwerda i Filinek. Gwerda to elfka, a Filinek to mała puchata sowa, która czuwa na dachu naszej chatynki. Dziś odwiedzili nas Twoi przyjaciele. Gwerda widziała ich w dzień, a Filinek w nocy, więc widzieliśmy ich razem. Nasze hasło to: przyjaźń. We dwoje widać cały świat."
-letterInvite: "Jesteśmy Gwerda i Filinek, elfka i mała sowa. Gwerda wie, co dzieje się w dzień, a Filinek wie, co dzieje się w nocy. Zaproś do nas swoich przyjaciół. Opowiemy im o lesie w dzień i w nocy."
+letterFound: "Jesteśmy Gwerda i Filinek. Gwerda to elfka, a Filinek to mała puchata sowa, która czuwa na dachu naszej chatynki. Dziś nas odwiedziliście. Gwerda widziała Was w dzień, a Filinek w nocy, więc widzieliśmy Was razem. Nasze hasło to: przyjaźń. We dwoje widać cały świat."
+letterInvite: "Jesteśmy Gwerda i Filinek, elfka i mała sowa. Gwerda wie, co dzieje się w dzień, a Filinek wie, co dzieje się w nocy. Przyjdźcie nas odwiedzić. Opowiemy Wam o lesie w dzień i w nocy."
 ---
 
 # Chatynka Gwerdy i Filinka
