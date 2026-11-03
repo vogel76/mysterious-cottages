@@ -3,8 +3,8 @@ title: "The Cottage of Iwo the Elf"
 slug: iwo
 occupant: "Iwo the Elf"
 virtue: hospitality
-letterFound: "The handful of nuts you were given on the steps came from the heart. Iwo lives the farthest away of all, so every guest is a holiday for him. Our motto is hospitality. Share it with someone in your own cottage."
-letterInvite: "I live where the forest meets the meadows and the air smells of raspberries. On the stone steps a handful of nuts always waits for wanderers, and with it a whisper of the wind from the valley. It is far, but worth the walk."
+letterFound: "I was sitting in the grass by the moat and saw you stop for a moment instead of just rushing past. Zofia already knows; we have our secret passage. Our motto is hospitality. Below Rabsztyn Castle the door is always ajar."
+letterInvite: "I live in a crooked cottage at the edge of the old moat below Rabsztyn Castle and guard it, officially. Unofficially I sit in the grass and tell people to stop for a moment, because more happened here than in many a film. Come and stop for a while."
 ---
 
 # The Cottage of Iwo the Elf
