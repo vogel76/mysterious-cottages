@@ -127,7 +127,14 @@ factor that sizes every part and joint of a small form together). The
 young elf has none of it. Every form is placed in the room at the young
 one's scale (`FIGURE_REFERENCE_M`), so each keeps its own height there,
 and a form that carries a wand or a staff gets its crop from the box its
-clips actually reach (`animated_box`) rather than the young elf's.
+clips actually reach (`animated_box`) rather than the young elf's. That
+box is the union over every clip the script defines, whatever `--clips`
+renders, so a new clip can widen a form's frame: the frames rendered
+later then differ in size from the kept ones (the adult's grew 5 px on
+the right with the four clips of November 2026), and since the growth is
+on the right and the bottom only, with the anchor unchanged, the kept
+frames are padded with transparent pixels to the new size rather than
+re-rendered (the old border already carried 24 px beyond the old reach).
 `pnpm art:elf` renders every form into `art/out/elf/<form>/`, one after
 the other (about an hour each with the hats); `FORMS="adult elder" pnpm
 art:elf` renders some of them, and the pack and the check take the same
@@ -185,9 +192,19 @@ hand with a squint; 24), feed (the hands bring the food to the mouth,
 two bites, a happy settle; 36), wave (the arm up beside the head, three
 waves from the elbow, a head tilt; 36), bath (the hands wash the face
 with the eyes shut, a shake of the water off; 36), play (a spin in a hop
-with the arms out and a ta-da; 36) and yawn (a stretch with the arms up,
-the head back and the mouth wide, then heavy lids; 36). The elf does not
-sleep standing: asleep it lies in its bed, a still of its own (below).
+with the arms out and a ta-da; 36), yawn (a stretch with the arms up,
+the head back and the mouth wide, then heavy lids; 36), refuse (a polite
+no: three shakes of the head and two pats on the belly with a small
+frown; 30), sip (the cup rises to the lips, two sips with the head back,
+the cup down and a sigh with a smile; 48), beckon (a turn to the side,
+the arm out at shoulder height beckoning twice, a look at the player and
+where it points; 36) and greet (a bow: the hand to the belly, the chest
+forward with the eyes shut, then up with a smile; 36). The sip's cup
+(`Cup.R` and its handle, in the right hand, bound to it like the wand) is
+a prop of that clip alone: `CLIP_PROPS` names the props a clip shows,
+and the animation stage hides them in every other render, the stills,
+the hats' pictures and the sleepers included. The elf does not sleep
+standing: asleep it lies in its bed, a still of its own (below).
 
 ## Packing
 

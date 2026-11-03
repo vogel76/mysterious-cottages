@@ -26,8 +26,8 @@
     "art:elf-sleepers": "for form in ${FORMS:-baby young adult elder}; do blender --background --python art/blender/elf.py -- art/out/elf/$form --form $form --stages sleepers || exit 1; done",
     "art:room": "blender --background --python art/blender/room.py -- art/out/room",
     "art:room-pack": "python3 art/blender/room_sheet.py art/out/room --pack assets/elf/room --registry src/features/elf/cottage/roomFiles.ts",
-    "art:pack": "for form in ${FORMS:-baby young adult elder}; do python3 art/blender/pack.py pack-layers art/out/elf/$form/layers --out assets/elf/sprites/$form --scale 0.6 --once bath,feed,happy,pet,play,wave,yawn --thumbs art/out/elf/$form/thumbs --sleepers art/out/elf/$form/sleepers --registry src/features/elf/sprites/${form}Files.ts || exit 1; done",
-    "art:check": "for form in ${FORMS:-baby young adult elder}; do python3 art/blender/check.py pack-layers art/out/elf/$form/layers --against assets/elf/sprites/$form --scale 0.6 --once bath,feed,happy,pet,play,wave,yawn --thumbs art/out/elf/$form/thumbs --sleepers art/out/elf/$form/sleepers || exit 1; done"
+    "art:pack": "for form in ${FORMS:-baby young adult elder}; do python3 art/blender/pack.py pack-layers art/out/elf/$form/layers --out assets/elf/sprites/$form --scale 0.6 --once bath,beckon,feed,greet,happy,pet,play,refuse,sip,wave,yawn --thumbs art/out/elf/$form/thumbs --sleepers art/out/elf/$form/sleepers --registry src/features/elf/sprites/${form}Files.ts || exit 1; done",
+    "art:check": "for form in ${FORMS:-baby young adult elder}; do python3 art/blender/check.py pack-layers art/out/elf/$form/layers --against assets/elf/sprites/$form --scale 0.6 --once bath,beckon,feed,greet,happy,pet,play,refuse,sip,wave,yawn --thumbs art/out/elf/$form/thumbs --sleepers art/out/elf/$form/sleepers || exit 1; done"
   },
   "dependencies": {
     "@chatynkowo/api": "workspace:*",
