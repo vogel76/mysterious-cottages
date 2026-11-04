@@ -28,6 +28,7 @@ import {
   nextForm as elfNextForm,
   SKIP_COST,
   unlockNode as unlockElfNode,
+  buyItem as buyElfItem,
   grantedItems,
   type ElfSkip,
   type ElfNextForm,
@@ -171,7 +172,9 @@ export type ElfValue = {
   nextForm: ElfNextForm | null
   /* A node of the tree unlocked for a point; false out of order or without one. */
   unlockNode: (id: ElfNodeId) => boolean
-  /* The pieces the tree granted, free of the finds (slot:id). */
+  /* A piece of the shop bought for dust: false without the dust or when it is not on sale. */
+  buyItem: (slot: string, id: string) => boolean
+  /* The pieces the tree granted or the shop sold, free of the finds (slot:id). */
   granted: string[]
   /* Picks one of the day's reward options, once a day. */
   claimDailyReward: (index: number) => void
@@ -564,6 +567,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     },
     [commit],
   )
+  const buyItem = useCallback(
+    (slot: string, id: string): boolean => {
+      const current = stateRef.current
+      if (!current) return false
+      const next = buyElfItem(current, slot, id, findsRef.current.length)
+      if (!next) return false
+      commit(next, true)
+      return true
+    },
+    [commit],
+  )
 
   const placeDecor = useCallback(
     (slot: SlotId, id: string) => {
@@ -636,6 +650,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       skip,
       nextForm: state ? elfNextForm(state, foundCount, now) : null,
       unlockNode,
+      buyItem,
       granted: state ? grantedItems(state) : [],
       claimDailyReward,
       pendingEvolution,
@@ -646,7 +661,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       readLetter,
     }
   }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, unlockNode, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

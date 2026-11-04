@@ -1,12 +1,14 @@
 import { useCallback, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, hatchAt, SKIP_COST, type ElfCareAction, type ElfSkip } from '@chatynkowo/core'
-import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport } from '../../providers'
+import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, hatchAt, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
+import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport, useToast } from '../../providers'
 import { Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { packLabelKey } from '../support/tips'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
+import { isSlotId } from './cottage/catalogue'
 import { durationText, useClock } from './duration'
+import { ElfThumb } from './ElfThumb'
 import { elfKey } from './labels'
 
 /* The shop of star dust (the route /elf-shop), from the shop button on
@@ -17,12 +19,16 @@ import { elfKey } from './labels'
    sells beside the coffees and credits on payment), then the skips of the
    waiting the rules allow (the egg before its hour, a care's charges
    before their time, the next form before its days), each for its dust
-   (SKIP_COST) or for one ad, which counts towards the same daily cap; the
-   furniture and outfits for dust come later, so their card only says so.
-   A skip bought closes the sheet, so the player sees the egg ready, the
-   charges back or the elf grow in the room. The store's receipt reaches
-   the wallet through the provider (a toast says how much), the ad's
-   through the elf provider, right here, with a line under the button. */
+   (SKIP_COST) or for one ad, which counts towards the same daily cap,
+   and last the furniture and hats the finds still lock (shopItems: the
+   unlock table's entries the player has neither reached, been granted by
+   the tree nor bought), each with its catalogue thumbnail, the cottages
+   it still needs and its price in dust. A skip bought closes the sheet,
+   so the player sees the egg ready, the charges back or the elf grow in
+   the room; a piece bought stays, with a toast pointing at the decorating
+   panel. The store's receipt reaches the wallet through the provider (a
+   toast says how much), the ad's through the elf provider, right here,
+   with a line under the button. */
 
 type AdFor = 'dust' | ElfSkip
 
@@ -31,7 +37,8 @@ export function ElfShopSheet() {
   const online = useOnline()
   const close = useCloseModal()
   const support = useSupport()
-  const { state, stage, adsLeft, earnAdDust, skip, nextForm } = useElf()
+  const { state, stage, finds, adsLeft, earnAdDust, skip, nextForm, buyItem } = useElf()
+  const toast = useToast()
   const [earned, setEarned] = useState(0)
   const now = useClock(true)
 
@@ -55,6 +62,10 @@ export function ElfShopSheet() {
     if (skip(kind, 'dust')) close()
   }
   const adAllowed = ad.offered && online !== false && adsLeft > 0
+  const items = state ? shopItems(state, finds.length) : []
+  const buy = (item: ElfShopItem, name: string) => {
+    if (buyItem(item.slot, item.id)) toast.show({ tone: 'success', text: t('mobile:elf.shopItemBought', { name }) })
+  }
 
   /* The skips on offer right now, in the order of the elf's life. */
   const skips: { kind: ElfSkip; title: string; detail: string; open: boolean }[] = []
@@ -251,14 +262,59 @@ export function ElfShopSheet() {
           <Text variant="heading" accessibilityRole="header">
             {t('mobile:elf.shopItemsTitle')}
           </Text>
-          <Text variant="small" tone="faint">
-            {t('mobile:elf.shopItemsSoon')}
+          <Text variant="small" tone="soft">
+            {t('mobile:elf.shopItemsLead')}
           </Text>
+          {items.length === 0 ? (
+            <Text variant="small" tone="faint">
+              {t('mobile:elf.shopItemsAll')}
+            </Text>
+          ) : (
+            items.map((item) => {
+              /* The rules' table names the app's catalogue; a slot it does not know is not shown. */
+              const slot = item.slot === 'hat' ? 'hat' : isSlotId(item.slot) ? item.slot : null
+              if (!slot) return null
+              const name = t(elfKey('item', item.id))
+              const short = dust < item.cost
+              return (
+                <View key={`${item.slot}:${item.id}`} style={styles.row}>
+                  <View style={styles.thumb}>
+                    <ElfThumb slot={slot} id={item.id} size={THUMB} form={stage === 'egg' ? undefined : stage} />
+                  </View>
+                  <View style={styles.rowWords}>
+                    <Text weight="bold" numberOfLines={1}>
+                      {name}
+                    </Text>
+                    <Text variant="small" tone="soft">
+                      {t(elfKey('slot', slot))} · {t('mobile:elf.shopItemFinds', { count: item.finds })}
+                    </Text>
+                    {short ? (
+                      <Text variant="small" tone="faint">
+                        {t('mobile:elf.shopPayShort')}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Button
+                    variant="primary"
+                    disabled={short}
+                    accessibilityLabel={t('mobile:elf.shopItemBuyAria', { name, cost: item.cost })}
+                    icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
+                    onPress={() => buy(item, name)}
+                  >
+                    {t('mobile:elf.shopPayDust', { cost: item.cost })}
+                  </Button>
+                </View>
+              )
+            })
+          )}
         </View>
       </View>
     </SheetRoute>
   )
 }
+
+/* The side of a piece's thumbnail in the items card, points. */
+const THUMB = 56
 
 function careTitleKey(id: ElfCareAction): string {
   return `mobile:elf.shopSkip${id.charAt(0).toUpperCase()}${id.slice(1)}`
@@ -308,6 +364,12 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: radius.control,
     backgroundColor: colors.pageRaised,
+  },
+  thumb: {
+    width: THUMB,
+    height: THUMB,
+    borderRadius: radius.control,
+    overflow: 'hidden',
   },
   rowWords: {
     flex: 1,
