@@ -4,7 +4,7 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { archetypeOf, careCharges, peddlerFresh, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, levelOf, rankOf, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
+import { archetypeOf, badgesToClaim, careCharges, peddlerFresh, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, levelOf, rankOf, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { requestNotificationPermission } from '../../lib/notifications'
 import { setReminders } from '../../lib/reminders-store'
@@ -817,7 +817,7 @@ export function ElfTab() {
             panel has the way out. */}
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} onActivities={onActivities} activitiesFresh={peddlerFresh(state, Date.now())} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} archetype={archetypeOf(state)} onTree={onTree} onLedger={onLedger} />
+            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} onActivities={onActivities} activitiesFresh={peddlerFresh(state, Date.now()) || badgesToClaim(state).length > 0} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} archetype={archetypeOf(state)} onTree={onTree} onLedger={onLedger} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (
