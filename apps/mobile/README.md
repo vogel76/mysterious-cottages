@@ -238,6 +238,8 @@ app/                     expo-router routes
                          rounds a day, a round paying acorns by its points and experience
   elf-peddler.tsx        the travelling peddler: three wares a day for acorns, each once (a care's charges back, a round
                          more in the games, a grain of dust, a trick under its price); a sheet from the activities hub
+  elf-badges.tsx         the badges: fifteen things done often enough, each with a bar and a reward to take; a sheet
+                         from the activities hub
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
@@ -788,6 +790,20 @@ what was bought, the hub's row counts what is left in the basket, and
 the activities button on the bar carries a dot while the basket holds
 something unbought, the day's small reason to look in.
 
+The badges (`/elf-badges`, `ElfBadgesSheet.tsx`; `ELF_BADGES`,
+`badgeProgress`, `badgeStatus`, `claimBadge` in the rules) are fifteen
+things done often enough: ten and a hundred meals, ten baths, fifty
+pets, ten and fifty games, five letters read, a trick learned and all
+six, ten purchases from the peddler, the fifth and the tenth level, a
+week and a month of visits in a row, the archetype chosen. The rules
+keep lifetime counts for the care, the pets, the letters, the tricks'
+sessions, the games and the wares (`counts`), and read the rest from
+where it is. Each badge has a reward, acorns for the near ones and a
+grain or three of dust for the long ones, taken with a tap once the
+badge is reached; the sheet shows every badge with its bar and reward,
+the hub's row counts the rewards waiting, and the activities button's
+dot also lights for them.
+
 The elf reaches two places outside its tab: the onboarding pager (the
 welcome of a fresh install and the profile's "How to play") carries a
 page about it, and the Kronika's progress card says how many virtues
@@ -824,6 +840,7 @@ every care, pet, egg, sleep and swap:
 | Tricks | six, for acorns: the wave 40 (2 sessions), the twirl 60 (3), the bow 60 (3), the cheer 80 (3), the applause 80 (4), the toast 100 (4); one practice session a day per trick, none asleep; learned at the last session, then shown on demand (`ELF_TRICKS`, `buyTrick`, `trainTrick`) |
 | Games | catch the acorns and memory, three rounds a day each (`GAME_PLAYS_PER_DAY`); a round pays its points in acorns up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns); the best points kept per game (`gamePlaysLeft`, `recordGame`) |
 | Peddler | three wares a day (`WARES_A_DAY`) drawn by the day from treat 20, toy 25, soap 30 (a care's charges back), ticket 15 (one round more in each game today), dust 60 (one grain) and a trick the elf has not got at its price less 10; each once a day (`peddlerWares`, `buyWare`, `peddlerFresh`) |
+| Badges | meals 10 (15 acorns) and 100 (2 dust), baths 10 (15), pets 50 (15), games 10 (20) and 50 (2 dust), letters read 5 (15), a trick learned (10) and all six (3 dust), wares bought 10 (20), level 5 (20) and 10 (2 dust), best streak 7 (1 dust) and 30 (3 dust), an archetype chosen (2 dust); a reward taken once (`ELF_BADGES`, `badgeStatus`, `claimBadge`) |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days; the days bought in the shop (`daysBonus`) count as days, the cottages cannot be bought |
 | Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |

@@ -23,6 +23,7 @@ import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/Arrow
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft'
 import { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight'
 import { ArmchairIcon } from 'phosphor-react-native/src/icons/Armchair'
+import { MedalIcon } from 'phosphor-react-native/src/icons/Medal'
 import { TicketIcon } from 'phosphor-react-native/src/icons/Ticket'
 import { BackpackIcon } from 'phosphor-react-native/src/icons/Backpack'
 import { TimerIcon } from 'phosphor-react-native/src/icons/Timer'
@@ -260,6 +261,12 @@ export const GameClockIcon = TimerIcon
    (his other wares borrow the care's, the dust's and the tricks' icons). */
 export const PeddlerIcon = BackpackIcon
 export const GameTicketIcon = TicketIcon
+/* The badges: the medal of the collection, a level reached, the
+   archetype chosen (the others borrow the care's, the games', the
+   streak's, the tricks', the letters' and the peddler's icons). */
+export const BadgesIcon = MedalIcon
+export const LevelBadgeIcon = CrownIcon
+export const ArchetypeBadgeIcon = TreeEvergreenIcon
 /* A letter from the cottages, sealed and opened. */
 export const LetterIcon = EnvelopeSimpleIcon
 export const LetterOpenIcon = EnvelopeSimpleOpenIcon
@@ -280,7 +287,7 @@ export const ICON_VOCABULARY = {
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
   ActivitiesIcon, TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
-  GamesIcon, MemoryGameIcon, GameClockIcon, PeddlerIcon, GameTicketIcon,
+  GamesIcon, MemoryGameIcon, GameClockIcon, PeddlerIcon, GameTicketIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

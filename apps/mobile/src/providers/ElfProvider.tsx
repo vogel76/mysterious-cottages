@@ -1,4 +1,4 @@
-import type { ElfGameId, ElfTrickId, ElfWareId } from '@chatynkowo/core'
+import type { ElfBadgeId, ElfGameId, ElfTrickId, ElfWareId } from '@chatynkowo/core'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -32,6 +32,7 @@ import {
   buyItem as buyElfItem,
   buyTrick as buyElfTrick,
   buyWare as buyElfWare,
+  claimBadge as claimElfBadge,
   gamePlaysLeft as elfGamePlaysLeft,
   recordGame,
   trainTrick as trainElfTrick,
@@ -199,6 +200,8 @@ export type ElfValue = {
   /* A ware bought from the peddler: false when it is not on offer today,
      bought already or the acorns are short. */
   buyWare: (id: ElfWareId) => boolean
+  /* A badge's reward taken: false unless the badge is reached and untaken. */
+  claimBadge: (id: ElfBadgeId) => boolean
   /* The pieces the tree granted or the shop sold, free of the finds (slot:id). */
   granted: string[]
   /* Picks one of the day's reward options, once a day. */
@@ -643,6 +646,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     },
     [commit],
   )
+  const claimBadge = useCallback(
+    (id: ElfBadgeId): boolean => {
+      const current = stateRef.current
+      if (!current) return false
+      const next = claimElfBadge(current, id)
+      if (!next) return false
+      commit(next, true)
+      return true
+    },
+    [commit],
+  )
   const buyItem = useCallback(
     (slot: string, id: string): boolean => {
       const current = stateRef.current
@@ -737,6 +751,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       gameResult,
       clearGameResult,
       buyWare,
+      claimBadge,
       granted: state ? grantedItems(state) : [],
       claimDailyReward,
       pendingEvolution,
@@ -747,7 +762,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       readLetter,
     }
   }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, buyWare, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, buyWare, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

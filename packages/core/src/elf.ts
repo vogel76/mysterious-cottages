@@ -206,6 +206,47 @@ export const WARES_A_DAY = 3
 export type ElfWare = { id: ElfWareId; acorns: number; trick: ElfTrickId | null; bought: boolean }
 export type ElfPeddler = { day: string; bought: ElfWareId[] }
 
+/* The badges: what the elf and its family have done often enough, each
+   with a reward to take once reached (acorns, or a grain or three of
+   dust for the long ones). The counts live with the elf; the streak,
+   the level, the archetype and the tricks are read from where they are. */
+export type ElfCountId = 'feed' | 'play' | 'bath' | 'pet' | 'letters' | 'tricks' | 'games' | 'wares'
+export type ElfCounts = Record<ElfCountId, number>
+export type ElfBadgeId =
+  | 'meals10'
+  | 'meals100'
+  | 'games10'
+  | 'games50'
+  | 'pets50'
+  | 'baths10'
+  | 'streak7'
+  | 'streak30'
+  | 'level5'
+  | 'level10'
+  | 'archetype'
+  | 'tricks1'
+  | 'tricksAll'
+  | 'letters5'
+  | 'wares10'
+export type ElfBadgeSpec = { id: ElfBadgeId; target: number; reward: ElfReward }
+export const ELF_BADGES: readonly ElfBadgeSpec[] = [
+  { id: 'meals10', target: 10, reward: { kind: 'acorns', amount: 15 } },
+  { id: 'baths10', target: 10, reward: { kind: 'acorns', amount: 15 } },
+  { id: 'pets50', target: 50, reward: { kind: 'acorns', amount: 15 } },
+  { id: 'games10', target: 10, reward: { kind: 'acorns', amount: 20 } },
+  { id: 'letters5', target: 5, reward: { kind: 'acorns', amount: 15 } },
+  { id: 'tricks1', target: 1, reward: { kind: 'acorns', amount: 10 } },
+  { id: 'wares10', target: 10, reward: { kind: 'acorns', amount: 20 } },
+  { id: 'level5', target: 5, reward: { kind: 'acorns', amount: 20 } },
+  { id: 'streak7', target: 7, reward: { kind: 'dust', amount: 1 } },
+  { id: 'meals100', target: 100, reward: { kind: 'dust', amount: 2 } },
+  { id: 'games50', target: 50, reward: { kind: 'dust', amount: 2 } },
+  { id: 'level10', target: 10, reward: { kind: 'dust', amount: 2 } },
+  { id: 'archetype', target: 1, reward: { kind: 'dust', amount: 2 } },
+  { id: 'tricksAll', target: 6, reward: { kind: 'dust', amount: 3 } },
+  { id: 'streak30', target: 30, reward: { kind: 'dust', amount: 3 } },
+]
+
 export type ElfEggAction = 'warm' | 'rock'
 export const ELF_EGG_ACTIONS: readonly ElfEggAction[] = ['warm', 'rock']
 
@@ -332,6 +373,10 @@ export type ElfState = {
   games: Partial<Record<ElfGameId, ElfGameRecord>>
   /* The peddler's day and what was bought from him that day. */
   peddler: ElfPeddler
+  /* How often things have happened, ever: the badges count them. */
+  counts: ElfCounts
+  /* The badges whose reward was taken. */
+  badges: ElfBadgeId[]
 }
 
 /* ---------- The numbers ---------- */
@@ -660,6 +705,8 @@ export function newElf(now: number): ElfState {
     tricks: {},
     games: {},
     peddler: { day: '', bought: [] },
+    counts: { ...NO_COUNTS },
+    badges: [],
   }
 }
 
@@ -783,6 +830,8 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     tricks: normalizeTricks(raw.tricks),
     games: normalizeGames(raw.games),
     peddler: normalizePeddler(raw.peddler),
+    counts: normalizeCounts(raw.counts),
+    badges: stringList(raw.badges).filter(isBadgeId),
   }
   const outfit = stringRecord(raw.outfit, WEARABLE_SLOT_IDS) as Partial<ElfOutfit> | undefined
   const decor = stringRecord(raw.decor)
@@ -1010,7 +1059,7 @@ function settleAbsence(previous: ElfState, state: ElfState, today: string, finds
 /* A letter read. */
 export function readLetter(state: ElfState, n: number): ElfState {
   if (!state.letters.some((letter) => letter.n === n && !letter.read)) return state
-  return { ...state, letters: state.letters.map((letter) => (letter.n === n ? { ...letter, read: true } : letter)), xp: state.xp + XP.letter }
+  return { ...state, letters: state.letters.map((letter) => (letter.n === n ? { ...letter, read: true } : letter)), xp: state.xp + XP.letter, counts: counted(state.counts, 'letters') }
 }
 
 export type VisitOutcome = {
@@ -1225,7 +1274,7 @@ export function performCare(state: ElfState, id: ElfCareAction, now: number): Ca
   if (spent.length >= spec.charges) return { kind: 'refused', reason: 'charging' }
   if (id === 'feed' && current.needs.fullness >= FULL_AT) return { kind: 'refused', reason: 'full' }
   const needs = { ...current.needs, [spec.need]: clamp(current.needs[spec.need] + spec.gain) }
-  const cared: ElfState = { ...current, needs, care: { ...current.care, [id]: [...spent, now] }, lastInteraction: now, xp: current.xp + XP.care }
+  const cared: ElfState = { ...current, needs, care: { ...current.care, [id]: [...spent, now] }, lastInteraction: now, xp: current.xp + XP.care, counts: counted(current.counts, id) }
   const recorded = recordEvent(cared, id)
   return { kind: 'done', ...recorded }
 }
@@ -1255,7 +1304,7 @@ export function pet(state: ElfState, now: number): PetOutcome {
   const current = ensureDay(applyElapsed(state, now), now).state
   if (current.sleeping) return { kind: 'asleep' }
   const needs = { ...current.needs, joy: clamp(current.needs.joy + PET_JOY) }
-  const recorded = recordEvent({ ...current, needs, lastInteraction: now }, 'pet')
+  const recorded = recordEvent({ ...current, needs, lastInteraction: now, counts: counted(current.counts, 'pet') }, 'pet')
   return { kind: 'petted', ...recorded }
 }
 
@@ -1571,7 +1620,7 @@ export function trainTrick(state: ElfState, id: ElfTrickId, now: number): TrickO
   if (current.sleeping) return { kind: 'asleep' }
   if (trickTrainedToday(current, id, now)) return { kind: 'done' }
   const sessions = trick.sessions + 1
-  const next: ElfState = { ...current, tricks: { ...current.tricks, [id]: { sessions, day: dayKey(now) } }, lastInteraction: now, xp: current.xp + XP.trick }
+  const next: ElfState = { ...current, tricks: { ...current.tricks, [id]: { sessions, day: dayKey(now) } }, lastInteraction: now, xp: current.xp + XP.trick, counts: counted(current.counts, 'tricks') }
   return { kind: sessions >= trickSpec(id).sessions ? 'learned' : 'trained', state: next }
 }
 
@@ -1627,6 +1676,7 @@ export function recordGame(state: ElfState, id: ElfGameId, points: number, now: 
     wallet: { ...current.wallet, acorns: current.wallet.acorns + acorns },
     xp: current.xp + XP.game,
     lastInteraction: now,
+    counts: counted(current.counts, 'games'),
   }
   const recorded = recordEvent(played, 'game')
   return { state: recorded.state, acorns, xp: XP.game, best, completed: recorded.completed, setBonus: recorded.setBonus }
@@ -1685,7 +1735,7 @@ export function buyWare(state: ElfState, id: ElfWareId, now: number): ElfState |
   const paid = spendAcorns(current, ware.acorns)
   if (!paid) return null
   const day = dayKey(now)
-  let next: ElfState = { ...paid, peddler: { day, bought: [...(paid.peddler.day === day ? paid.peddler.bought : []), id] }, lastInteraction: now }
+  let next: ElfState = { ...paid, peddler: { day, bought: [...(paid.peddler.day === day ? paid.peddler.bought : []), id] }, lastInteraction: now, counts: counted(paid.counts, 'wares') }
   if (id === 'treat') next = refillCare(next, 'feed')
   else if (id === 'toy') next = refillCare(next, 'play')
   else if (id === 'soap') next = refillCare(next, 'bath')
@@ -1693,6 +1743,81 @@ export function buyWare(state: ElfState, id: ElfWareId, now: number): ElfState |
   else if (id === 'dust') next = addDust(next, 1)
   else if (ware.trick && !next.tricks[ware.trick]) next = { ...next, tricks: { ...next.tricks, [ware.trick]: { sessions: 0, day: null } } }
   return next
+}
+
+/* ---------- The badges ---------- */
+
+const NO_COUNTS: ElfCounts = { feed: 0, play: 0, bath: 0, pet: 0, letters: 0, tricks: 0, games: 0, wares: 0 }
+
+function counted(counts: ElfCounts, id: ElfCountId): ElfCounts {
+  return { ...counts, [id]: counts[id] + 1 }
+}
+
+function normalizeCounts(raw: unknown): ElfCounts {
+  const counts = { ...NO_COUNTS }
+  if (!isRecord(raw)) return counts
+  for (const id of Object.keys(NO_COUNTS) as ElfCountId[]) counts[id] = count(raw[id])
+  return counts
+}
+
+function isBadgeId(value: string): value is ElfBadgeId {
+  return ELF_BADGES.some((badge) => badge.id === value)
+}
+
+export function badgeSpec(id: ElfBadgeId): ElfBadgeSpec {
+  return ELF_BADGES.find((badge) => badge.id === id)!
+}
+
+/* How far a badge has come, in its own count. */
+export function badgeProgress(state: ElfState, id: ElfBadgeId): number {
+  switch (id) {
+    case 'meals10':
+    case 'meals100':
+      return state.counts.feed
+    case 'baths10':
+      return state.counts.bath
+    case 'pets50':
+      return state.counts.pet
+    case 'games10':
+    case 'games50':
+      return state.counts.games
+    case 'letters5':
+      return state.counts.letters
+    case 'wares10':
+      return state.counts.wares
+    case 'tricks1':
+    case 'tricksAll':
+      return ELF_TRICKS.filter((trick) => trickStatus(state, trick.id) === 'learned').length
+    case 'streak7':
+    case 'streak30':
+      return state.bestStreak
+    case 'level5':
+    case 'level10':
+      return levelOf(state.xp)
+    case 'archetype':
+      return archetypeOf(state) ? 1 : 0
+  }
+}
+
+/* Where a badge stands: still to reach, reached with its reward waiting, or taken. */
+export type ElfBadgeStatus = 'locked' | 'earned' | 'claimed'
+
+export function badgeStatus(state: ElfState, id: ElfBadgeId): ElfBadgeStatus {
+  if (state.badges.includes(id)) return 'claimed'
+  return badgeProgress(state, id) >= badgeSpec(id).target ? 'earned' : 'locked'
+}
+
+/* The badges reached whose reward still waits. */
+export function badgesToClaim(state: ElfState): ElfBadgeId[] {
+  return ELF_BADGES.filter((badge) => badgeStatus(state, badge.id) === 'earned').map((badge) => badge.id)
+}
+
+/* A badge's reward taken: null unless the badge is reached and untaken. */
+export function claimBadge(state: ElfState, id: ElfBadgeId): ElfState | null {
+  if (badgeStatus(state, id) !== 'earned') return null
+  const { reward } = badgeSpec(id)
+  const wallet = reward.kind === 'acorns' ? { ...state.wallet, acorns: state.wallet.acorns + reward.amount } : { ...state.wallet, dust: state.wallet.dust + reward.amount }
+  return { ...state, wallet, badges: [...state.badges, id] }
 }
 
 /* ---------- Reminders ---------- */

@@ -104,6 +104,10 @@ export const MOBILE_ICON_ROLES = [
   /* The travelling peddler and his ticket to the games. */
   'PeddlerIcon',
   'GameTicketIcon',
+  /* The badges: the collection's medal, a level reached, the archetype chosen. */
+  'BadgesIcon',
+  'LevelBadgeIcon',
+  'ArchetypeBadgeIcon',
   /* Supporting Chatynkowo (apps/mobile/src/features/support): a coffee
      for the elf, a rewarded ad watched instead. */
   'CoffeeIcon',

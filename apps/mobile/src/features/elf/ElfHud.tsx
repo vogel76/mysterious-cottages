@@ -46,7 +46,7 @@ export type ElfHudProps = {
   onShop: () => void
   /* Opens the activities hub (the tricks, the games, the peddler, the badges). */
   onActivities: () => void
-  /* The hub has something new today (the peddler's basket unbought): a dot on its button. */
+  /* The hub has something new (the peddler's basket unbought, a badge's reward to take): a dot on its button. */
   activitiesFresh: boolean
   /* The rank the tree gives the elf, after its form; a tap on the name
      block opens the tree. Absent for the egg. */
