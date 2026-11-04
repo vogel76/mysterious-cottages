@@ -228,7 +228,7 @@ app/                     expo-router routes
                          dust packs and the skips of the waiting (the hatch, a care's charges, the next form) for
                          dust or an ad, a sheet from the shop button on the elf's bar and the egg's chip
   elf-tree.tsx           the elf's tree of development: the level with its rank, the experience bar, the points and
-                         the three paths of six nodes, a sheet from the name block on the elf's bar
+                         a trunk, three branches that fork and merge, three archetypes; a sheet from the name block on the elf's bar
   elf-shelf.tsx          the keepsake shelf: the jars of the cottages found, the windowsill's treasures and the letters
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
@@ -427,7 +427,7 @@ through `src/lib/haptics.ts`.
 | QR | `expo-camera` | `CameraView` scanning `qr` only, torch from the header; the code is resolved on the scanner itself through the same `useCodeEntry` as manual entry |
 | Cottage scene | `@shopify/react-native-skia` | the elf's cottage (`src/features/elf/cottage`): one full-screen `Canvas` whose transforms, opacities and control values are Reanimated shared values, so every loop and reaction runs on the UI thread with no React state per frame; the room is the Blender plate as an `Image`, the furniture its rendered crops and the elf an `Atlas` node fed one cell per frame from the packed sheets (`src/features/elf/sprites`); the room is designed in room units (1000 by 1300, the plate's pixels) and scaled to cover the band between the tab's top strip and its bottom band; the canvas is `opaque` (the room covers it anyway), which backs it with a SurfaceView on Android, the cheapest path and the only one that draws on the emulator |
 | Tabs and stacks | `react-native-screens` through expo-router | a custom tab bar (`Tabs` from expo-router/js-tabs with the `tabBar` prop; it reports its height through `useTabBarHeight` so screens keep clear of it), native stack headers (transparent with the system glass on iOS), `transparentModal` routes carrying the shared sheet (src/ui/Sheet.tsx) for the code, reward and rules, `modal` page sheets for the story and the cottage list |
-| Sheets | `@gorhom/bottom-sheet` | one base for every sheet: the in-screen parchment panel over the map (three snaps, the map stays pannable, the camera keeps room for it) and the sheet routes (the code gate, a reward, the rules), which open at their own height or part-way and can be pulled to the top; a scroll inside moves the content first |
+| Sheets | `@gorhom/bottom-sheet` | one base for every sheet: the in-screen parchment panel over the map (three snaps, the map stays pannable, the camera keeps room for it) and the sheet routes (the code gate, a reward, the rules), which open at their own height or part-way and can be pulled to the top; a scroll inside moves the content first; a sheet route can pin a footer under its scroll (the tree's node card), kept in view whatever is tapped above |
 | Motion | `react-native-reanimated` 4 + `react-native-gesture-handler` | springs, entrances, the progress ring, the scrub bar, the toast gesture; every animation passes `ReduceMotion.System` |
 | Reminders | `expo-notifications` | local notifications only (no push token, no server): the elf's reminders scheduled on the device when the app goes to the background and dropped when it comes back (`src/lib/notifications.ts`, `src/features/elf/useElfReminders.ts`); one Android channel of the default importance, so the phone's settings decide the sound and the vibration; the small icon is `assets/notification-icon.png` (the monochrome app icon as a white silhouette), tinted with the gold accent; `POST_NOTIFICATIONS` comes with the library and is asked for only after the player says yes to the elf |
 | Haptics | `expo-haptics` | one module (`src/lib/haptics.ts`) and only three moments: medium on the seal of a fresh find, success on an accepted code and a revealed reward, error on a refused code; no control, tab, pager or toast vibrates; iOS uses the UIKit generators, Android the system `HapticFeedbackConstants` through `performAndroidHapticsAsync` (the OEM's short click, under the system touch-feedback setting and intensity), with the Vibrator notification patterns kept only for success and error below API 30 |
@@ -703,20 +703,40 @@ each day a streak goes on. The levels start forty points apart and
 widen (`xpForLevel`, `levelOf`), each one past the first gives a point,
 and the rank by level (`rankOf`: Skrzat, Leśnik, Strażnik, Mędrzec,
 Legenda) stands beside the form on the elf's bar, whose name block
-opens the tree (`/elf-tree`, `ElfTreeSheet.tsx`): three paths of six
-nodes, unlocked in order for a point each (`ELF_TREE`, `nodeStatus`,
-`unlockNode`), their effects read by the rules themselves: the glutton's
-slower hunger, bigger meals, fourth meal, cauldron, fullness holding
-through sleep and mushroom; the prankster's longer joy, quests paying
-half as much again, third game, hammock, bigger games and nightcap; the
-tracker's extra sill find on a return, streak milestones paying double
-dust, charges back a quarter sooner, antlers, a streak that forgives
-one missed day and the nest. The fourth and sixth nodes of each path
-grant their piece free of the finds (`grantedItems`, which also counts
+opens the tree (`/elf-tree`, `ElfTreeSheet.tsx`), drawn as one. The
+shape is the rules' (`ELF_TREE`, a list of nodes with their row, branch,
+side and parents): a trunk at the bottom carrying the level, the roots'
+node on it that every elf takes first, a fork into three branches (the
+belly, the smile, the eye), each branch forking again into a pair of
+nodes that merge in a hearth, a fair or a camp, which the neighbouring
+branches also reach by a shortcut (the feast leads to the fair as well
+as the hearth, the games to the hearth, the party to the camp, the trail
+to the fair), and over each merge an archetype: the glutton, the
+prankster, the tracker, the one choice that closes the other two
+(`archetypeOf`, the status `taken`). A node opens when any one of its
+parents is owned (`nodeStatus`, `unlockNode`), for a point each, so the
+first point is never a verdict: the branch choice comes second and can
+be crossed later, and only the archetype, five points up at the
+soonest, settles what the elf is. Every parent-child pair is a line that
+lights once both ends are owned, so the route climbed shows; a node is
+a circle with its own picture (thirteen icon roles plus the acorns',
+the streak's and the bath's), filled when owned, outlined and breathing
+while a point waits to be spent, dim with a lock while shut; a tap
+picks it and the card under the tree says what it gives and offers the
+unlock. The effects are read by the rules themselves: the roots' charges
+back a quarter sooner; the belly's slower hunger and the smile's longer
+joy; the eye's extra sill find on a return; the pantry's fourth meal
+and the feast's bigger meals; the games' third game and the party's
+bigger games; the trail's streak that forgives one missed day and the
+luck's streak milestones paying double dust; the hearth's fullness
+holding through sleep; the fair's quests paying half as much again; the
+camp's second bath; and each archetype's piece free of the finds (the
+cauldron, the hammock, the antlers: `grantedItems`, which also counts
 the shop's purchases, read by `decorFindsNeeded` wherever the catalogue
-is gated). Experience also comes from every care, a letter read and the
-tuck-in, so a day of looking after the elf moves the bar without a
-find. The ranking's use of the rank waits for the account sync.
+is gated) with its title in the rank's place on the elf's bar.
+Experience also comes from every care, a letter read and the tuck-in,
+so a day of looking after the elf moves the bar without a find. The
+ranking's use of the rank waits for the account sync.
 
 The elf reaches two places outside its tab: the onboarding pager (the
 welcome of a fresh install and the profile's "How to play") carries a
@@ -750,7 +770,7 @@ every care, pet, egg, sleep and swap:
 | Care | feed fullness +25 (3 charges, refused at 90), play joy +30 (2 charges), bath clean +60 (1 charge); a charge spent comes back 4 hours later for a meal, 6 for a game, 12 for a bath (the moments spent in the state's `care`), and with none back the elf has had enough for now, saying when the next is; a refill for dust or an ad brings them all back |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
 | Experience | a find 40, a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
-| Tree | glutton: fullness eases half as fast, a meal +35 instead of +25, four meals, the cauldron, fullness holding through sleep, the mushroom; prankster: joy eases half as fast, quest acorns one and a half times (rounded up), three games, the hammock, a game +45 instead of +30, the nightcap; tracker: one sill find more on a return, streak milestones paying double dust, charges back in three quarters of the time, the antlers, one missed day forgiven by the streak, the nest; each path in order, the pieces of the fourth and sixth nodes free of the finds |
+| Tree | sixteen nodes, any parent owned opens a node, a point each: roots (charges back in three quarters of the time); belly (fullness eases half as fast), smile (joy eases half as fast), eye (one sill find more on a return); pantry (four meals), feast (a meal +35 instead of +25), games (three games), party (a game +45 instead of +30), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (two baths; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days; the days bought in the shop (`daysBonus`) count as days, the cottages cannot be bought |
 | Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |

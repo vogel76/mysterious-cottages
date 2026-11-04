@@ -1,6 +1,6 @@
-import { useCallback, useRef, type ReactNode } from 'react'
+import { useCallback, useRef, type ReactNode, useState } from 'react'
 import { BackHandler, StyleSheet, View } from 'react-native'
-import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView, BottomSheetView, useBottomSheetSpringConfigs, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView, BottomSheetView, useBottomSheetSpringConfigs, type BottomSheetBackdropProps, BottomSheetFooter, type BottomSheetFooterProps } from '@gorhom/bottom-sheet'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from 'expo-router'
 import { useCloseModal } from '../providers'
@@ -31,6 +31,9 @@ export type SheetRouteProps = {
      so the keyboard finds a sheet to extend (one that rose before the
      sheet existed goes unnoticed). */
   onPresented?: () => void
+  /* Pinned under the scrolling content, always in view: a card that
+     speaks of what was picked above (the tree's node). */
+  footer?: ReactNode
   children: ReactNode
 }
 
@@ -40,7 +43,7 @@ function Backdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={BACKDROP_OPACITY} pressBehavior="close" />
 }
 
-export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, onPresented, children }: SheetRouteProps) {
+export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, onPresented, footer, children }: SheetRouteProps) {
   const insets = useSafeAreaInsets()
   const close = useCloseModal()
   const sheet = useRef<BottomSheet>(null)
@@ -67,7 +70,22 @@ export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, 
     }, []),
   )
 
-  const content = { paddingBottom: insets.bottom + space.lg }
+  /* The footer's height keeps the content's end above it; the footer
+     itself runs to the sheet's bottom edge (its own padding holds the
+     inset), so nothing scrolls into view beneath it. */
+  const [footerHeight, setFooterHeight] = useState(0)
+  const renderFooter = useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]} onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}>
+          {footer}
+        </View>
+      </BottomSheetFooter>
+    ),
+    [footer, insets.bottom],
+  )
+
+  const content = { paddingBottom: footer ? footerHeight + space.md : insets.bottom + space.lg }
   return (
     <View style={StyleSheet.absoluteFill}>
       <BottomSheet
@@ -87,6 +105,7 @@ export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, 
         android_keyboardInputMode="adjustResize"
         onChange={onChange}
         onClose={close}
+        footerComponent={footer ? renderFooter : undefined}
       >
         {scroll ? (
           <BottomSheetScrollView contentContainerStyle={[styles.content, content]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -113,5 +132,12 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: space.lg,
+  },
+  footer: {
+    paddingHorizontal: space.lg,
+    paddingTop: space.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    backgroundColor: colors.pageRaised,
   },
 })

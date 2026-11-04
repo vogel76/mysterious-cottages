@@ -23,6 +23,15 @@ import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/Arrow
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft'
 import { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight'
 import { ArmchairIcon } from 'phosphor-react-native/src/icons/Armchair'
+import { BedIcon } from 'phosphor-react-native/src/icons/Bed'
+import { BowlFoodIcon } from 'phosphor-react-native/src/icons/BowlFood'
+import { CookieIcon } from 'phosphor-react-native/src/icons/Cookie'
+import { CookingPotIcon } from 'phosphor-react-native/src/icons/CookingPot'
+import { EyeIcon } from 'phosphor-react-native/src/icons/Eye'
+import { GameControllerIcon } from 'phosphor-react-native/src/icons/GameController'
+import { HourglassMediumIcon } from 'phosphor-react-native/src/icons/HourglassMedium'
+import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning'
+import { SmileyIcon } from 'phosphor-react-native/src/icons/Smiley'
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp'
 import { BalloonIcon } from 'phosphor-react-native/src/icons/Balloon'
 import { BookOpenTextIcon } from 'phosphor-react-native/src/icons/BookOpenText'
@@ -199,6 +208,25 @@ export const ShopIcon = StorefrontIcon
 export const PathGluttonIcon = ForkKnifeIcon
 export const PathPranksterIcon = ConfettiIcon
 export const PathTrackerIcon = CompassIcon
+/* The nodes of the tree, one picture each (the fair, the luck and the
+   camp reuse the acorns', the streak's and the bath's): the roots' quick
+   hands, the belly's slow hunger, the smile's long joy, the sharp eye,
+   the pantry's extra meal, the feast's big meal, the games' extra game,
+   the party's big game, the trail's forgiving streak, the hearth's sound
+   sleep, and the archetypes' cauldron, hammock and antlers. */
+export const SlowHungerIcon = HourglassMediumIcon
+export const BigMealIcon = BowlFoodIcon
+export const ExtraMealIcon = CookieIcon
+export const CauldronIcon = CookingPotIcon
+export const SoundSleepIcon = MoonStarsIcon
+export const LongJoyIcon = SmileyIcon
+export const ExtraGameIcon = GameControllerIcon
+export const HammockIcon = BedIcon
+export const BigGameIcon = BalloonIcon
+export const SharpEyeIcon = EyeIcon
+export const QuickHandsIcon = LightningIcon
+export const AntlersIcon = TrophyIcon
+export const ForgivingStreakIcon = CalendarCheckIcon
 /* A letter from the cottages, sealed and opened. */
 export const LetterIcon = EnvelopeSimpleIcon
 export const LetterOpenIcon = EnvelopeSimpleOpenIcon
@@ -216,6 +244,8 @@ export const ICON_VOCABULARY = {
   CoffeeIcon, WatchAdIcon,
   EggIcon, WarmIcon, LullabyIcon, FeedIcon, ToyIcon, BathIcon, SleepIcon, WakeIcon, JoyIcon, AcornsIcon, DustIcon, StreakIcon, QuestIcon, JarIcon, LockIcon,
   DecorIcon, ShopIcon, PathGluttonIcon, PathPranksterIcon, PathTrackerIcon, LetterIcon, LetterOpenIcon,
+  SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
+  BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

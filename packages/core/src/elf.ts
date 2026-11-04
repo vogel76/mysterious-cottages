@@ -126,15 +126,48 @@ export type ElfDecor = Record<string, string>
 export type ElfCareAction = 'feed' | 'play' | 'bath'
 export const ELF_CARE_ACTIONS: readonly ElfCareAction[] = ['feed', 'play', 'bath']
 
-/* The tree of development: three paths of six nodes each, unlocked in
-   order with the points the levels give (see "Experience" below). */
+/* The tree of development, climbed with the points the levels give
+   (see "Experience" below): a trunk every elf takes first, a fork into
+   three branches (the belly, the smile, the eye), each branch forking
+   again into two nodes that merge in a hearth, a fair or a camp, which
+   the neighbouring branches also reach by a shortcut, and over each
+   merge an archetype, the one choice that closes the other two. A node
+   opens when any one of its parents is owned, so a route can cross from
+   one branch to the next before it settles. */
 export type ElfPath = 'glutton' | 'prankster' | 'tracker'
 export const ELF_PATHS: readonly ElfPath[] = ['glutton', 'prankster', 'tracker']
-export type ElfNodeId = `${ElfPath}${1 | 2 | 3 | 4 | 5 | 6}`
-export const ELF_TREE: Record<ElfPath, readonly ElfNodeId[]> = {
-  glutton: ['glutton1', 'glutton2', 'glutton3', 'glutton4', 'glutton5', 'glutton6'],
-  prankster: ['prankster1', 'prankster2', 'prankster3', 'prankster4', 'prankster5', 'prankster6'],
-  tracker: ['tracker1', 'tracker2', 'tracker3', 'tracker4', 'tracker5', 'tracker6'],
+export type ElfNodeId = 'roots' | 'belly' | 'smile' | 'eye' | 'pantry' | 'feast' | 'games' | 'party' | 'trail' | 'luck' | 'hearth' | 'fair' | 'camp' | ElfPath
+export type ElfTreeNode = {
+  id: ElfNodeId
+  /* The row above the trunk, 1 at the bottom; the archetypes stand in the fifth. */
+  row: 1 | 2 | 3 | 4 | 5
+  /* The branch the node grows on; the trunk's node belongs to none. */
+  branch: ElfPath | null
+  /* Left (-1) or right (1) of the branch's line in a row of pairs, else on it. */
+  side: -1 | 0 | 1
+  /* Any one of them owned opens the node. */
+  parents: readonly ElfNodeId[]
+}
+export const ELF_TREE: readonly ElfTreeNode[] = [
+  { id: 'roots', row: 1, branch: null, side: 0, parents: [] },
+  { id: 'belly', row: 2, branch: 'glutton', side: 0, parents: ['roots'] },
+  { id: 'smile', row: 2, branch: 'prankster', side: 0, parents: ['roots'] },
+  { id: 'eye', row: 2, branch: 'tracker', side: 0, parents: ['roots'] },
+  { id: 'pantry', row: 3, branch: 'glutton', side: -1, parents: ['belly'] },
+  { id: 'feast', row: 3, branch: 'glutton', side: 1, parents: ['belly'] },
+  { id: 'games', row: 3, branch: 'prankster', side: -1, parents: ['smile'] },
+  { id: 'party', row: 3, branch: 'prankster', side: 1, parents: ['smile'] },
+  { id: 'trail', row: 3, branch: 'tracker', side: -1, parents: ['eye'] },
+  { id: 'luck', row: 3, branch: 'tracker', side: 1, parents: ['eye'] },
+  { id: 'hearth', row: 4, branch: 'glutton', side: 0, parents: ['pantry', 'feast', 'games'] },
+  { id: 'fair', row: 4, branch: 'prankster', side: 0, parents: ['games', 'party', 'feast', 'trail'] },
+  { id: 'camp', row: 4, branch: 'tracker', side: 0, parents: ['trail', 'luck', 'party'] },
+  { id: 'glutton', row: 5, branch: 'glutton', side: 0, parents: ['hearth'] },
+  { id: 'prankster', row: 5, branch: 'prankster', side: 0, parents: ['fair'] },
+  { id: 'tracker', row: 5, branch: 'tracker', side: 0, parents: ['camp'] },
+]
+export function treeNode(id: ElfNodeId): ElfTreeNode {
+  return ELF_TREE.find((node) => node.id === id)!
 }
 export type ElfRank = 'spark' | 'forester' | 'warden' | 'sage' | 'legend'
 
@@ -277,23 +310,23 @@ const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; charges: numb
   play: { need: 'joy', gain: 30, charges: 2, recharge: 6 * 60 * 60 * 1000 },
   bath: { need: 'clean', gain: 60, charges: 1, recharge: 12 * 60 * 60 * 1000 },
 }
-/* The care as the tree has it: the glutton's bigger meals and extra
-   meal, the prankster's extra and bigger games, the tracker's quicker
-   charges. */
+/* The care as the tree has it: the feast's bigger meals, the pantry's
+   extra meal, the games' extra game, the party's bigger games, the
+   camp's extra bath, the roots' quicker charges. */
 function careSpec(state: ElfState, id: ElfCareAction): { need: ElfNeedId; gain: number; charges: number; recharge: number } {
   const base = CARE[id]
   const has = (node: ElfNodeId) => state.nodes.includes(node)
   return {
     need: base.need,
-    gain: base.gain + (id === 'feed' && has('glutton2') ? 10 : 0) + (id === 'play' && has('prankster5') ? 15 : 0),
-    charges: base.charges + ((id === 'feed' && has('glutton3')) || (id === 'play' && has('prankster3')) ? 1 : 0),
-    recharge: has('tracker3') ? base.recharge * 0.75 : base.recharge,
+    gain: base.gain + (id === 'feed' && has('feast') ? 10 : 0) + (id === 'play' && has('party') ? 15 : 0),
+    charges: base.charges + ((id === 'feed' && has('pantry')) || (id === 'play' && has('games')) || (id === 'bath' && has('camp')) ? 1 : 0),
+    recharge: has('roots') ? base.recharge * 0.75 : base.recharge,
   }
 }
 
 /* The drift as the tree has it: a need eases half as fast with its node. */
 function needTauDays(state: ElfState, need: ElfNeedId): number {
-  const slower = (need === 'fullness' && state.nodes.includes('glutton1')) || (need === 'joy' && state.nodes.includes('prankster1'))
+  const slower = (need === 'fullness' && state.nodes.includes('belly')) || (need === 'joy' && state.nodes.includes('smile'))
   return NEED_TAU_DAYS[need] * (slower ? 1.5 : 1)
 }
 
@@ -741,8 +774,8 @@ export function applyElapsed(state: ElfState, now: number): ElfState {
   }
   const needs = { ...state.needs }
   for (const need of ELF_NEEDS) {
-    /* Asleep, a need eases at half the rate; the glutton's fullness holds through the night. */
-    const effectiveHours = awakeHours + asleepHours * (need === 'fullness' && state.nodes.includes('glutton5') ? 0 : SLEEP_DRIFT_RATE)
+    /* Asleep, a need eases at half the rate; the hearth's fullness holds through the night. */
+    const effectiveHours = awakeHours + asleepHours * (need === 'fullness' && state.nodes.includes('hearth') ? 0 : SLEEP_DRIFT_RATE)
     const distance = needs[need] - NEED_FLOOR
     needs[need] = distance > 0 ? NEED_FLOOR + distance * Math.exp(-effectiveHours / (needTauDays(state, need) * 24)) : needs[need]
   }
@@ -898,7 +931,7 @@ function settleAbsence(previous: ElfState, state: ElfState, today: string, finds
   const days = Math.max(1, calendarDaysBetween(previous.lastVisitDay, today))
   const found: ElfSillItem[] = []
   const [y, m, d] = today.split('-').map(Number)
-  for (let back = 0; back < Math.min(days + (state.nodes.includes('tracker1') ? 1 : 0), SILL_FINDS_MAX); back += 1) {
+  for (let back = 0; back < Math.min(days + (state.nodes.includes('eye') ? 1 : 0), SILL_FINDS_MAX); back += 1) {
     const date = new Date(y!, m! - 1, d! - back)
     found.push(sillFindOn(dayKey(date.getTime()), state.name))
   }
@@ -950,12 +983,12 @@ function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boo
   const day = dayKey(now)
   if (state.lastVisitDay === day) return { state, newDay: false, streakLost: null, milestoneDust: 0 }
   const yesterday = dayKey(previousDay(now))
-  /* The tracker's forgiving streak: one day missed does not break it. */
-  const forgiven = state.nodes.includes('tracker5') && state.lastVisitDay === dayKey(previousDay(previousDay(now)))
+  /* The trail's forgiving streak: one day missed does not break it. */
+  const forgiven = state.nodes.includes('trail') && state.lastVisitDay === dayKey(previousDay(previousDay(now)))
   const continues = state.lastVisitDay === yesterday || forgiven
   const streak = continues ? state.streak + 1 : 1
   const streakLost = !continues && state.lastVisitDay !== null && state.streak > 1 ? state.streak : null
-  const milestoneDust = (STREAK_MILESTONES[streak] ?? 0) * (state.nodes.includes('tracker2') ? 2 : 1)
+  const milestoneDust = (STREAK_MILESTONES[streak] ?? 0) * (state.nodes.includes('luck') ? 2 : 1)
   const next: ElfState = {
     ...state,
     lastVisitDay: day,
@@ -998,9 +1031,9 @@ function recordEvent(state: ElfState, event: ElfEvent): { state: ElfState; compl
   return { state: { ...state, daily: { ...state.daily, quests, bonusGranted: state.daily.bonusGranted || setBonus }, wallet, xp }, completed, setBonus }
 }
 
-/* A quest's acorns as the tree pays them: half as much again for the prankster. */
+/* A quest's acorns as the tree pays them: half as much again with the fair. */
 function questAcorns(state: ElfState, acorns: number): number {
-  return state.nodes.includes('prankster2') ? Math.ceil(acorns * 1.5) : acorns
+  return state.nodes.includes('fair') ? Math.ceil(acorns * 1.5) : acorns
 }
 
 /* The cottages found go to the day's quests: a find on the day the state
@@ -1351,17 +1384,14 @@ export function pointsLeft(state: ElfState): number {
 }
 
 function isNodeId(value: string): value is ElfNodeId {
-  return ELF_PATHS.some((path) => (ELF_TREE[path] as readonly string[]).includes(value))
+  return ELF_TREE.some((node) => node.id === value)
 }
 
-/* The pieces the fourth and sixth nodes of each path grant, free of the finds. */
+/* The piece each archetype grants, free of the finds. */
 const TREE_ITEMS: Partial<Record<ElfNodeId, string>> = {
-  glutton4: 'candle:cauldron',
-  glutton6: 'fern:mushroom',
-  prankster4: 'bed:hammock',
-  prankster6: 'hat:nightcap',
-  tracker4: 'picture:antlers',
-  tracker6: 'bed:nest',
+  glutton: 'candle:cauldron',
+  prankster: 'bed:hammock',
+  tracker: 'picture:antlers',
 }
 
 /* The pieces the player has free of the finds: the tree's grants and the shop's purchases (slot:id). */
@@ -1400,15 +1430,21 @@ export function buyItem(state: ElfState, slot: string, id: string, finds: number
   return paid ? { ...paid, items: [...paid.items, `${slot}:${id}`] } : null
 }
 
-/* Where a node stands: owned, open (the next of its path, whether or
-   not a point is at hand) or locked behind an earlier one. */
-export type ElfNodeStatus = 'owned' | 'open' | 'locked'
+/* The archetype chosen, the one node of the fifth row owned. */
+export function archetypeOf(state: ElfState): ElfPath | null {
+  return ELF_PATHS.find((path) => state.nodes.includes(path)) ?? null
+}
+
+/* Where a node stands: owned, open (a parent owned, whether or not a
+   point is at hand), locked behind its parents, or taken, an archetype
+   closed by the one already chosen. */
+export type ElfNodeStatus = 'owned' | 'open' | 'locked' | 'taken'
 
 export function nodeStatus(state: ElfState, id: ElfNodeId): ElfNodeStatus {
   if (state.nodes.includes(id)) return 'owned'
-  const path = ELF_PATHS.find((candidate) => (ELF_TREE[candidate] as readonly string[]).includes(id))!
-  const index = ELF_TREE[path].indexOf(id)
-  return index === 0 || state.nodes.includes(ELF_TREE[path][index - 1]!) ? 'open' : 'locked'
+  const node = treeNode(id)
+  if (node.row === 5 && archetypeOf(state)) return 'taken'
+  return node.parents.length === 0 || node.parents.some((parent) => state.nodes.includes(parent)) ? 'open' : 'locked'
 }
 
 /* A node unlocked for a point: null without a point or out of order. */

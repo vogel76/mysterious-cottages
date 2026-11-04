@@ -72,6 +72,21 @@ export const MOBILE_ICON_ROLES = [
   'PathGluttonIcon',
   'PathPranksterIcon',
   'PathTrackerIcon',
+  /* The nodes of the tree, one picture each (the fair, the luck and the
+     camp reuse AcornsIcon, StreakIcon and BathIcon). */
+  'SlowHungerIcon',
+  'BigMealIcon',
+  'ExtraMealIcon',
+  'CauldronIcon',
+  'SoundSleepIcon',
+  'LongJoyIcon',
+  'ExtraGameIcon',
+  'HammockIcon',
+  'BigGameIcon',
+  'SharpEyeIcon',
+  'QuickHandsIcon',
+  'AntlersIcon',
+  'ForgivingStreakIcon',
   /* Supporting Chatynkowo (apps/mobile/src/features/support): a coffee
      for the elf, a rewarded ad watched instead. */
   'CoffeeIcon',
