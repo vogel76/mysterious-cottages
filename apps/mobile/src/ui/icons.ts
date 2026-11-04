@@ -23,6 +23,8 @@ import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/Arrow
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft'
 import { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight'
 import { ArmchairIcon } from 'phosphor-react-native/src/icons/Armchair'
+import { TimerIcon } from 'phosphor-react-native/src/icons/Timer'
+import { CardsIcon } from 'phosphor-react-native/src/icons/Cards'
 import { CheersIcon } from 'phosphor-react-native/src/icons/Cheers'
 import { HandWavingIcon } from 'phosphor-react-native/src/icons/HandWaving'
 import { HandsClappingIcon } from 'phosphor-react-native/src/icons/HandsClapping'
@@ -246,6 +248,12 @@ export const TrickBowIcon = PersonSimpleTaiChiIcon
 export const TrickCheerIcon = StarIcon
 export const TrickApplauseIcon = HandsClappingIcon
 export const TrickToastIcon = CheersIcon
+/* The games from the couch: the games as a whole (the quest, the
+   hub), the acorns to tap (the acorns' own icon stands for it), the
+   memory of pairs, and a round's clock. */
+export const GamesIcon = GameControllerIcon
+export const MemoryGameIcon = CardsIcon
+export const GameClockIcon = TimerIcon
 /* A letter from the cottages, sealed and opened. */
 export const LetterIcon = EnvelopeSimpleIcon
 export const LetterOpenIcon = EnvelopeSimpleOpenIcon
@@ -266,6 +274,7 @@ export const ICON_VOCABULARY = {
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
   ActivitiesIcon, TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
+  GamesIcon, MemoryGameIcon, GameClockIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

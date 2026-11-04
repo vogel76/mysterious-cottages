@@ -97,6 +97,10 @@ export const MOBILE_ICON_ROLES = [
   'TrickCheerIcon',
   'TrickApplauseIcon',
   'TrickToastIcon',
+  /* The games from the couch: the memory of pairs and a round's clock. */
+  'GamesIcon',
+  'MemoryGameIcon',
+  'GameClockIcon',
   /* Supporting Chatynkowo (apps/mobile/src/features/support): a coffee
      for the elf, a rewarded ad watched instead. */
   'CoffeeIcon',
