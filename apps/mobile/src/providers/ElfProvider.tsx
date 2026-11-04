@@ -27,6 +27,7 @@ import {
   recordAd as recordElfAd,
   applySkip as applyElfSkip,
   nextForm as elfNextForm,
+  growUp as growElf,
   SKIP_COST,
   unlockNode as unlockElfNode,
   buyItem as buyElfItem,
@@ -90,8 +91,9 @@ configureElfNight(!ELF_DEMO)
    when the app leaves the foreground, every action at once. The day is
    settled on every path (the tick, the visit, each action) and its news
    reported from whichever path settled it, so the new day is never
-   consumed in silence. A form reached (by the hatch, by the cottages found, by
-   time) waits in `pendingEvolution` until the Elf tab has shown its card.
+   consumed in silence. A form reached (by the hatch, or by the player
+   letting the elf grow once its level allows, `growUp`) waits in
+   `pendingEvolution` until the Elf tab has shown its card.
    What the day's rules said about an action or a visit (a quest completed
    and its pay, the full set, a new day, a streak milestone or a streak
    lost, a cottage found to cheer about, what an absence brought) is
@@ -102,8 +104,9 @@ configureElfNight(!ELF_DEMO)
    the latest find, from the content provider this one mounts under.
 
    The cottages found come from the progress provider, which this one
-   mounts under: they decide the form, a find while the egg waits hatches
-   it early, each find is credited to the day's find quest by the rules,
+   mounts under: a find while the egg waits hatches it early, each find
+   pays the experience the forms go by, each is credited to the day's
+   find quest by the rules,
    and a find from an earlier day is celebrated on the next visit (never
    on its own day, which belongs to the expedition); finds from before the
    egg appeared are the expedition's past and stay quiet. The wardrobe and the decor
@@ -180,8 +183,11 @@ export type ElfValue = {
   earnAdDust: () => number
   addDust: (amount: number) => void
   skip: (kind: ElfSkip, pay: 'dust' | 'ad') => boolean
-  /* The form ahead and what it waits for, null for the egg and the elder. */
+  /* The form ahead, the level it asks for and whether the elf is there,
+     null for the egg and the elder; the elf grown to it at the player's
+     word (false before the level). */
   nextForm: ElfNextForm | null
+  growUp: () => boolean
   /* A node of the tree unlocked for a point; false out of order or without one. */
   unlockNode: (id: ElfNodeId) => boolean
   /* A piece of the shop bought for dust: false without the dust or when it is not on sale. */
@@ -307,10 +313,9 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     else void AsyncStorage.removeItem(STORAGE_KEYS.elf).catch(() => undefined)
   }, [])
 
-  /* The form reached and not shown yet: derived from the state and the
-     finds whenever either changes. */
-  const refreshPending = useCallback((next: ElfState | null, now: number) => {
-    setPendingEvolution(next ? pendingForm(next, findsRef.current.length, now) : null)
+  /* The form reached and not shown yet, derived from the state. */
+  const refreshPending = useCallback((next: ElfState | null) => {
+    setPendingEvolution(next ? pendingForm(next) : null)
   }, [])
 
   /* Every change goes through here: the ref for the next caller, the state
@@ -319,7 +324,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (next: ElfState | null, save: boolean) => {
       stateRef.current = next
       setState(next)
-      refreshPending(next, elfNow())
+      refreshPending(next)
       if (save) persist(next)
       else dirtyRef.current = true
     },
@@ -349,7 +354,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
         const next = stored ? applyElapsed(stored, now) : null
         stateRef.current = next
         setState(next)
-        refreshPending(next, now)
+        refreshPending(next)
         setLoaded(true)
       } catch {
         if (!current) return
@@ -427,12 +432,6 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       subscription.remove()
     }
   }, [loaded, commit, persist, settle, report])
-
-  /* The finds decide the form: a find that arrives while the elf is on
-     screen is seen on the next render. */
-  useEffect(() => {
-    refreshPending(stateRef.current, elfNow())
-  }, [foundCount, refreshPending])
 
   const christen = useCallback(
     (name: string, starter: ElfStarter) => {
@@ -581,13 +580,22 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const now = elfNow()
       const paid = pay === 'dust' ? spendElfDust(current, SKIP_COST[kind]) : recordElfAd(current, now)
       if (!paid) return false
-      const next = applyElfSkip(paid, kind, finds.length, now)
+      const next = applyElfSkip(paid, kind, now)
       if (!next) return false
       commit(next, true)
       return true
     },
-    [commit, finds.length],
+    [commit],
   )
+
+  const growUp = useCallback((): boolean => {
+    const current = stateRef.current
+    if (!current) return false
+    const next = growElf(current, elfNow())
+    if (!next) return false
+    commit(next, true)
+    return true
+  }, [commit])
 
   const unlockNode = useCallback(
     (id: ElfNodeId): boolean => {
@@ -722,7 +730,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       state,
       loaded,
       finds,
-      stage: state ? stageOf(state, foundCount, now) : 'egg',
+      stage: state ? stageOf(state) : 'egg',
       mood: state ? moodOf(state, now) : 'content',
       outfit,
       decor,
@@ -743,7 +751,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       earnAdDust,
       addDust,
       skip,
-      nextForm: state ? elfNextForm(state, foundCount, now) : null,
+      nextForm: state ? elfNextForm(state) : null,
+      growUp,
       unlockNode,
       buyItem,
       buyTrick,
@@ -766,8 +775,8 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       dismissAway,
       readLetter,
     }
-  }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, buyWare, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+  }, [state, loaded, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
+      thankSupport, earnAdDust, addDust, skip, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, buyWare, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

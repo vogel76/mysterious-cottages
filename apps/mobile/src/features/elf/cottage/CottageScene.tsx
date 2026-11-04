@@ -410,9 +410,12 @@ export const CottageScene = memo(
     useEffect(() => {
       onFigureReady?.(figureReady)
     }, [onFigureReady, figureReady])
-    /* The figure's top in the view, for the bubble over its head. */
+    /* The figure's top in the view, for the bubble over its head: the
+       middle of the figure's box (the standing elf's is centred on its
+       anchor, the sleeper's lies where the bed is, the egg's around the
+       nest), at its top edge. */
     useEffect(() => {
-      onFigureTop?.({ x: layout.offsetX + figureOrigin.x * layout.scale, y: layout.offsetY + (figureOrigin.y + figureBox.y) * layout.scale })
+      onFigureTop?.({ x: layout.offsetX + (figureOrigin.x + figureBox.x + figureBox.width / 2) * layout.scale, y: layout.offsetY + (figureOrigin.y + figureBox.y) * layout.scale })
     }, [onFigureTop, layout, figureOrigin, figureBox])
 
     /* The clip: the mood's loop, or a reaction's one shot over

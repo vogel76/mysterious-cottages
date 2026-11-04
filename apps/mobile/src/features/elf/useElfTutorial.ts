@@ -6,7 +6,8 @@ import { readJson, writeJson } from '../../lib/storage'
 /* The tutorial of the Elf tab: a few cards the player clicks through at
    their own pace, one flow for the egg (rock it, warm it, find the
    ledger, what hatches it) and one for the hatched and named elf (pet
-   it, feed it, the caps, the decorating, what a cottage found brings).
+   it, feed it, the caps and the night, the decorating, the activities,
+   the level with the tree, growing up and what a cottage found brings).
    A step that asks for a move waits for it (the tab reports the moves
    as they happen) before "next" lights up; "skip" ends the flow. Each
    flow is shown once per device, remembered in AsyncStorage, and a
@@ -42,6 +43,8 @@ const FLOWS: Record<TutorialFlow, readonly StepSpec[]> = {
     { key: 'tutorialElf3' },
     { key: 'tutorialElf4' },
     { key: 'tutorialElf5' },
+    { key: 'tutorialElf6' },
+    { key: 'tutorialElf7' },
   ],
 }
 

@@ -11,9 +11,15 @@ import { elfNow } from '../../lib/elf-clock'
    a row with its picture, its name, what it does and its price in
    acorns, or a mark once bought today. The rules draw the wares by the
    day and do what a ware does as it is bought (packages/core:
-   peddlerWares, buyWare): a treat, a toy or a soap bring a care's charges
-   back, a ticket adds a round to each game for the day, a grain of dust
-   is one, and a trick is one the elf has not got, under its usual price. */
+   peddlerWares, buyWare): a treat, a toy or a soap go to the pantry as a
+   gift the care button hands over whatever the charges and the belly
+   (the toast says which button), a ticket adds a round to each game for
+   the day, a grain of dust is one, and a trick is one the elf has not
+   got, under its usual price (the toast points at the tricks, where it
+   is practised). */
+
+/* The care button a gift waits under. */
+const GIFT_BUTTON: Partial<Record<ElfWareId, string>> = { treat: 'mobile:elf.actionFeed', toy: 'mobile:elf.actionPlay', soap: 'mobile:elf.actionBath' }
 
 const WARE_ICON: Record<ElfWareId, Icon> = {
   treat: FeedIcon,
@@ -37,7 +43,11 @@ export function ElfPeddlerSheet() {
   const wares = peddlerWares(state, elfNow())
   const nameOf = (ware: ElfWare) => (ware.id === 'trick' && ware.trick ? t(wareKey('trick'), { name: t(trickKey(ware.trick)) }) : t(wareKey(ware.id)))
   const buy = (ware: ElfWare) => {
-    if (buyWare(ware.id)) toast.show({ tone: 'success', text: t('mobile:elf.wareBoughtToast', { name: nameOf(ware) }) })
+    if (!buyWare(ware.id)) return
+    const name = nameOf(ware)
+    const button = GIFT_BUTTON[ware.id]
+    const text = button ? t('mobile:elf.wareGiftToast', { name, button: t(button) }) : ware.id === 'trick' && ware.trick ? t('mobile:elf.wareTrickToast', { name: t(trickKey(ware.trick)) }) : t('mobile:elf.wareBoughtToast', { name })
+    toast.show({ tone: 'success', text })
   }
 
   return (

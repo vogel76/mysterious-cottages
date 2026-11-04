@@ -9,12 +9,17 @@ import { elfNow } from '../../lib/elf-clock'
 /* The elf's tricks (the route /elf-tricks), from the activities hub: the
    acorns at hand and the six tricks, each a row with its picture, its
    name, what the elf does and where it stands. A trick not yet bought
-   offers its price in acorns; one in learning shows its sessions and a
-   practice button, once a day (the rules refuse a second, and a sleeping
-   elf); a learned one offers to be shown. Practice and a show close the
-   sheet and hand the trick to the tab, which plays the reaction in the
-   room with the elf's line. The rules hold the catalogue, the prices and
-   the sessions (packages/core: ELF_TRICKS, buyTrick, trainTrick). */
+   offers its price in acorns, and the purchase is followed at once by
+   the first practice (the sheet closes and the elf is seen trying the
+   trick in the room; a sleeping elf keeps the trick for the morning,
+   the toast says so), so nothing is left to guess; one in learning says
+   how many practices are left and offers the day's, once a day (the
+   rules refuse a second, and a sleeping elf), and says to come back
+   tomorrow once it had it; a learned one offers to be shown. Practice
+   and a show close the sheet and hand the trick to the tab, which plays
+   the reaction in the room with the elf's line. The rules hold the
+   catalogue, the prices and the sessions (packages/core: ELF_TRICKS,
+   buyTrick, trainTrick, tricksToTrain). */
 
 export function ElfTricksSheet() {
   const { t } = useTranslation()
@@ -26,7 +31,14 @@ export function ElfTricksSheet() {
   const now = elfNow()
 
   const buy = (id: ElfTrickId) => {
-    if (buyTrick(id)) toast.show({ tone: 'success', text: t('mobile:elf.trickBoughtToast', { name: t(trickKey(id)) }) })
+    if (!buyTrick(id)) return
+    const name = t(trickKey(id))
+    const outcome = trainTrick(id)
+    if (outcome === 'trained' || outcome === 'learned') {
+      toast.show({ tone: 'success', text: t('mobile:elf.trickBoughtToast', { name }) })
+      playTrick(id, outcome)
+      close()
+    } else toast.show({ tone: 'success', text: t('mobile:elf.trickBoughtAsleepToast', { name }) })
   }
   const train = (id: ElfTrickId) => {
     const outcome = trainTrick(id)
@@ -79,9 +91,14 @@ export function ElfTricksSheet() {
                   {t(trickKey(spec.id, 'desc'))}
                 </Text>
                 {status === 'learning' ? (
-                  <Text variant="small" tone="accent">
-                    {t('mobile:elf.trickProgress', { done: sessions, total: spec.sessions })}
-                  </Text>
+                  <>
+                    <Text variant="small" tone="accent">
+                      {t('mobile:elf.trickProgress', { done: sessions, total: spec.sessions })}
+                    </Text>
+                    <Text variant="small" tone="soft">
+                      {trainedToday ? t('mobile:elf.trickTrainedTodayHint') : t('mobile:elf.trickTrainHint', { count: spec.sessions - sessions })}
+                    </Text>
+                  </>
                 ) : status === 'unowned' && short ? (
                   <Text variant="small" tone="faint">
                     {t('mobile:elf.trickBuyShort')}

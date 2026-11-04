@@ -4,7 +4,7 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { archetypeOf, badgesToClaim, careCharges, peddlerFresh, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, levelOf, rankOf, isBedtimeAt, plantStageAt, wantedNeed, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
+import { archetypeOf, badgesToClaim, careCharges, peddlerFresh, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, levelOf, isBedtimeAt, plantStageAt, tricksToTrain, wantedNeed, xpForLevel, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { requestNotificationPermission } from '../../lib/notifications'
 import { setReminders } from '../../lib/reminders-store'
@@ -124,6 +124,8 @@ const EVOLVE_FLASH_MS = 900
 const EVOLVE_FIGURE_WAIT_MS = 5000
 /* The acorn under the finger. */
 const ACORN = 44
+/* What the elf says when a gift from the pantry is given. */
+const GIFT_LINE: Record<ElfCareAction, string> = { feed: 'mobile:elf.giftFeedLine', play: 'mobile:elf.giftPlayLine', bath: 'mobile:elf.giftBathLine' }
 
 export function ElfTab() {
   const { t, i18n } = useTranslation()
@@ -425,8 +427,25 @@ export function ElfTab() {
     [say, t],
   )
 
-  /* The card over the care band (the tutorial's step, or the elf's
-     question about the reminders), measured so the room is lifted. */
+  /* The elf may grow (its next form's level is reached): a card over the
+     care band offers it once the tutorial and the question are out of
+     the way; "later" puts it off until the tab is next looked at, and
+     the level's dot on the bar keeps the offer in sight meanwhile. The
+     growth itself is the player's word: the rules change the form and
+     the moment below plays it. */
+  const [growLater, setGrowLater] = useState(false)
+  useEffect(() => {
+    if (!focused) setGrowLater(false)
+  }, [focused])
+  const askGrow = Boolean(elf.nextForm?.ready) && hatched && state?.starter !== null && !pendingEvolution && !growLater && loaded && focused && panel === 'none' && !tutorial.step && !askReminders
+  const { growUp } = elf
+  const onGrow = useCallback(() => {
+    growUp()
+  }, [growUp])
+
+  /* The card over the care band (the tutorial's step, the elf's question
+     about the reminders, or its offer to grow), measured so the room is
+     lifted. */
   const [cardHeight, setCardHeight] = useState(0)
   const onCardLayout = useCallback((event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout
@@ -659,6 +678,8 @@ export function ElfTab() {
       else if (outcome.kind === 'done') {
         sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
         if (id === 'feed') tutorial.note('feed')
+        /* A gift from the pantry: the elf says what it got. */
+        if (outcome.gift) say(t(GIFT_LINE[id]))
         /* The scene and the "+N" over the chip show it; a screen reader
            is told the need and its gain. */
         const need = ELF_CARE_NEEDS[id]
@@ -763,7 +784,10 @@ export function ElfTab() {
   /* What covers the view's bottom, for the room's band: the care band (and
      the tutorial's card over it) or the decorating catalogue, both on the
      tab bar. */
-  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step || askReminders ? cardHeight + space.md : 0) : tabBarHeight + panelHeight
+  const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step || askReminders || askGrow ? cardHeight + space.md : 0) : tabBarHeight + panelHeight
+  /* The level and the way to the next, for the name block. */
+  const level = levelOf(state.xp)
+  const xpFraction = (state.xp - xpForLevel(level)) / (xpForLevel(level + 1) - xpForLevel(level))
 
   return (
     <View ref={rootRef} style={styles.screen} onLayout={onLayout}>
@@ -818,7 +842,27 @@ export function ElfTab() {
             panel has the way out. */}
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} onActivities={onActivities} activitiesFresh={peddlerFresh(state, elfNow()) || badgesToClaim(state).length > 0} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} archetype={archetypeOf(state)} onTree={onTree} onLedger={onLedger} />
+            <ElfHud
+              name={state.name}
+              stage={stage}
+              mood={mood}
+              wantedNeed={wanted}
+              hatchAt={hatchTime}
+              wallet={state.wallet}
+              streak={state.streak}
+              questsDone={state.daily.quests.filter((quest) => quest.done).length}
+              rewardWaiting={state.daily.rewardPicked === null}
+              onDecorate={onDecorate}
+              onShop={onShop}
+              onActivities={onActivities}
+              activitiesFresh={peddlerFresh(state, now) || badgesToClaim(state).length > 0 || tricksToTrain(state, now).length > 0}
+              level={stage === 'egg' ? null : level}
+              xpFraction={xpFraction}
+              archetype={archetypeOf(state)}
+              growthReady={Boolean(elf.nextForm?.ready) && !pendingEvolution}
+              onTree={onTree}
+              onLedger={onLedger}
+            />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (
@@ -841,11 +885,11 @@ export function ElfTab() {
       {/* The elf's line, over its head where the scene says it is. */}
       {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={hudHeight + space.sm} /> : null}
 
-      {(tutorial.step || askReminders) && panel === 'none' ? (
+      {(tutorial.step || askReminders || askGrow) && panel === 'none' ? (
         <View style={[styles.tutorial, { bottom: tabBarHeight + bandHeight + space.md }]} pointerEvents="box-none">
           {tutorial.step ? (
             <ElfTutorial key={tutorial.step.index} step={tutorial.step} onNext={tutorial.next} onSkip={tutorial.skip} onLayout={onCardLayout} />
-          ) : (
+          ) : askReminders ? (
             <ElfCard
               key="reminders"
               kicker={t('mobile:reminders.askKicker')}
@@ -854,13 +898,22 @@ export function ElfTab() {
               primary={{ label: t('mobile:reminders.askYes'), onPress: () => void answerReminders(true) }}
               onLayout={onCardLayout}
             />
+          ) : (
+            <ElfCard
+              key="grow"
+              kicker={t('mobile:elf.growKicker')}
+              text={t('mobile:elf.growCard', { level })}
+              secondary={{ label: t('mobile:elf.growLater'), onPress: () => setGrowLater(true) }}
+              primary={{ label: t('mobile:elf.growNow'), onPress: onGrow }}
+              onLayout={onCardLayout}
+            />
           )}
         </View>
       ) : null}
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>

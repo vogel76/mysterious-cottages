@@ -3,7 +3,7 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { archetypeOf, ELF_PATHS, ELF_TREE, levelOf, nodeStatus, pointsLeft, rankOf, treeNode, xpForLevel, type ElfNodeId, type ElfNodeStatus, type ElfPath } from '@chatynkowo/core'
-import { useElf, useToast } from '../../providers'
+import { useCloseModal, useElf, useToast } from '../../providers'
 import {
   AcornsIcon,
   AntlersIcon,
@@ -36,13 +36,15 @@ import {
   space,
   type Icon,
 } from '../../ui'
-import { nodeKey, pathKey, rankKey } from './labels'
+import { elfKey, nodeKey, pathKey, rankKey } from './labels'
 
 /* The elf's tree of development (the route /elf-tree), from the name
    block on the elf's bar: the level with its rank and the experience
    towards the next level, the points at hand (one per level past the
-   first, less the nodes unlocked), the archetype once chosen, and the
-   tree itself, drawn as one. A trunk at the bottom carries the level;
+   first, less the nodes unlocked), the archetype once chosen, the next
+   form (the level it waits for, or, once reached, the button that lets
+   the elf grow, which closes the sheet so the moment is seen in the
+   room), and the tree itself, drawn as one. A trunk at the bottom carries the level;
    the roots' node sits on it; the tree forks into three branches (the
    glutton's leaning left, the prankster's straight, the tracker's
    leaning right), each forks again into a pair, the pair merges in a
@@ -116,7 +118,8 @@ function rootCentre(width: number): Point {
 export function ElfTreeSheet() {
   const { t } = useTranslation()
   const toast = useToast()
-  const { state, unlockNode } = useElf()
+  const close = useCloseModal()
+  const { state, unlockNode, nextForm, growUp } = useElf()
   const [width, setWidth] = useState(0)
   const [picked, setPicked] = useState<ElfNodeId | null>(null)
   const reduceMotion = useReducedMotion()
@@ -207,6 +210,25 @@ export function ElfTreeSheet() {
             {points > 0 ? t('mobile:elf.treePoints', { count: points }) : t('mobile:elf.treePointsNone')}
           </Text>
           {archetype ? <Text weight="semibold">{t('mobile:elf.treeArchetype', { name: t(pathKey(archetype)) })}</Text> : null}
+          {nextForm?.ready ? (
+            <View style={styles.grow}>
+              <Text weight="semibold" tone="accent" style={styles.growWords}>
+                {t('mobile:elf.treeGrowReady', { form: t(elfKey('stage', nextForm.form)) })}
+              </Text>
+              <Button
+                variant="primary"
+                onPress={() => {
+                  if (growUp()) close()
+                }}
+              >
+                {t('mobile:elf.growNow')}
+              </Button>
+            </View>
+          ) : nextForm ? (
+            <Text variant="small" tone="soft">
+              {t('mobile:elf.treeGrowAt', { form: t(elfKey('stage', nextForm.form)), level: nextForm.level })}
+            </Text>
+          ) : null}
         </View>
 
         {/* The tree: lines first, the nodes over them, the trunk last. */}
@@ -349,6 +371,16 @@ function TreeNode({ id, status, archetype, selected, breath, centre, accessibili
 }
 
 const styles = StyleSheet.create({
+  /* The next form reached: its line and the button that lets the elf grow. */
+  grow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    marginTop: space.xs,
+  },
+  growWords: {
+    flex: 1,
+  },
   column: {
     gap: space.lg,
     paddingTop: space.sm,

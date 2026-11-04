@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, hatchAt, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
+import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, hatchAt, levelOf, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
 import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport, useToast } from '../../providers'
 import { Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { packLabelKey } from '../support/tips'
@@ -18,8 +18,11 @@ import { elfKey } from './labels'
    a day, and the store's packs, consumable products the support provider
    sells beside the coffees and credits on payment), then the skips of the
    waiting the rules allow (the egg before its hour, a care's charges
-   before their time, the next form before its days), each for its dust
-   (SKIP_COST) or for one ad, which counts towards the same daily cap,
+   before their time, the next form before its level; a form whose level
+   is reached is not for sale, the elf grows for free at the player's
+   word), each for its dust (SKIP_COST) or for one ad, which counts
+   towards the same daily cap, the two ways to pay as two buttons of one
+   width under each other,
    and last the furniture and hats the finds still lock (shopItems: the
    unlock table's entries the player has neither reached, been granted by
    the tree nor bought), each with its catalogue thumbnail, the cottages
@@ -88,13 +91,8 @@ export function ElfShopSheet() {
     }
     if (nextForm) {
       const form = t(elfKey('stage', nextForm.form))
-      const detail =
-        nextForm.days === null
-          ? t('mobile:elf.shopSkipGrowFinds', { form, count: nextForm.finds })
-          : nextForm.days > 0
-            ? t('mobile:elf.shopSkipGrowWhen', { form, count: nextForm.days })
-            : t('mobile:elf.shopSkipGrowDue', { form })
-      skips.push({ kind: 'grow', title: t('mobile:elf.shopSkipGrow'), detail, open: nextForm.days !== null && nextForm.days > 0 })
+      const detail = nextForm.ready ? t('mobile:elf.shopSkipGrowReady', { form }) : t('mobile:elf.shopSkipGrowLevels', { form, count: Math.max(1, nextForm.level - levelOf(state.xp)) })
+      skips.push({ kind: 'grow', title: t('mobile:elf.shopSkipGrow'), detail, open: !nextForm.ready })
     }
   }
 
@@ -232,6 +230,7 @@ export function ElfShopSheet() {
                     <View style={styles.pays}>
                       <Button
                         variant="primary"
+                        block
                         disabled={short || adBusy}
                         accessibilityLabel={t('mobile:elf.shopPayDustAria', { what: entry.title, cost })}
                         icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
@@ -241,6 +240,7 @@ export function ElfShopSheet() {
                       </Button>
                       {ad.offered ? (
                         <Button
+                          block
                           busy={adHere}
                           disabled={!adAllowed || adBusy}
                           accessibilityLabel={t('mobile:elf.shopPayAdAria', { what: entry.title })}
@@ -380,6 +380,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.xs,
   },
+  /* The two ways to pay, one under the other and as wide as the wider. */
   pays: {
     gap: space.xs,
     alignItems: 'stretch',

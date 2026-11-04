@@ -3,7 +3,7 @@ import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
-import { BathIcon, FeedIcon, LullabyIcon, PressableScale, ProgressRing, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
+import { BathIcon, FeedIcon, GiftIcon, LullabyIcon, PressableScale, ProgressRing, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
 import { ELF_CARE_NEEDS, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfStage } from '@chatynkowo/core'
 import { elfKey } from './labels'
 
@@ -21,10 +21,14 @@ import { elfKey } from './labels'
    a moment. Under each care button the dots of its charges (three
    feeds, two plays, one bath, each back some hours after it was spent,
    the rules say how many), lit while they are left, so the player
-   sees before tapping what the day still allows. While the elf sleeps,
-   or once a cap is used up, the button dims and tells assistive tech it
-   is disabled, but it stays pressable: the rules refuse the action and
-   the elf says why, so a tap is never met with silence. The feed button
+   sees before tapping what the day still allows, and after them the
+   peddler's gifts in the pantry for that care (a treat, a toy, a soap),
+   each a little gift mark instead of a dot: a gift is taken whatever
+   the charges and the belly, so a bought treat is eaten at once. While
+   the elf sleeps, or once a cap is used up with no gift at hand, the
+   button dims and tells assistive tech it is disabled, but it stays
+   pressable: the rules refuse the action and the elf says why, so a tap
+   is never met with silence. The feed button
    also lets the acorn be dragged: a pan that starts on it reports the
    finger's position in window coordinates to the tab, which floats an
    acorn under the finger, has the elf follow it with its eyes and feeds
@@ -44,6 +48,8 @@ export type ElfActionBarProps = {
   careLeft: Record<ElfCareAction, number>
   /* The charges each care has (the tree can add one). */
   careCharges: Record<ElfCareAction, number>
+  /* The peddler's gifts in the pantry, one care each. */
+  gifts: Record<ElfCareAction, number>
   onCare: (id: ElfCareAction) => void
   onTendEgg: (id: ElfEggAction) => void
   onToggleSleep: () => void
@@ -59,9 +65,9 @@ type Action = {
   disabled?: boolean
   /* The need the care sees to, 0..100, for the ring. */
   need?: { id: ElfNeedId; value: number }
-  /* The charges and what is left of them, as dots under the button, and
-     the same in words for a screen reader. */
-  cap?: { total: number; left: number }
+  /* The charges and what is left of them, as dots under the button, the
+     gifts after them, and the same in words for a screen reader. */
+  cap?: { total: number; left: number; gifts: number }
   valueText?: string
   onPress: () => void
 }
@@ -71,6 +77,8 @@ const BUTTON = 56
 const RING = 64
 const RING_STROKE = 3
 const DOT = 6
+/* A gift's mark under the button, a little bigger than a dot. */
+const GIFT = 10
 /* The press feedback of the round buttons. */
 const PRESS_SCALE = 0.9
 /* How far the finger travels before a press on the acorn becomes a drag. */
@@ -83,21 +91,22 @@ const COMFORTABLE = 60
 const GAIN_SHOWN = 10
 const GAIN_MS = 1400
 
-export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
+export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gifts, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
   const { t } = useTranslation()
   const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => {
     const needId = ELF_CARE_NEEDS[id]
     const value = needs[needId]
     const left = careLeft[id] > 0 ? t('mobile:elf.careLeftAria', { left: careLeft[id], total: careCharges[id] }) : t('mobile:elf.careUsedAria')
+    const pantry = gifts[id] > 0 ? ` ${t('mobile:elf.careGiftsAria', { count: gifts[id] })}` : ''
     return {
       key: id,
       Glyph,
       label,
       face: 'primary',
-      disabled: sleeping || careLeft[id] === 0,
+      disabled: sleeping || (careLeft[id] === 0 && gifts[id] === 0),
       need: { id: needId, value },
-      cap: { total: careCharges[id], left: careLeft[id] },
-      valueText: `${t('mobile:elf.needAria', { need: t(elfKey('need', needId)), value: Math.round(value) })}. ${left}`,
+      cap: { total: careCharges[id], left: careLeft[id], gifts: gifts[id] },
+      valueText: `${t('mobile:elf.needAria', { need: t(elfKey('need', needId)), value: Math.round(value) })}. ${left}${pantry}`,
       onPress: () => onCare(id),
     }
   }
@@ -208,13 +217,14 @@ function NeedGain({ value }: { value: number }) {
 }
 
 /* The charges under a care button: one dot per charge, lit while it is
-   back. The button's label already says what the dots are for. A
-   button without a cap keeps the row's height, so every label sits on
-   the same line. */
-function CapDots({ cap }: { cap?: { total: number; left: number } }) {
+   back, then a gift mark for each gift in the pantry. The button's label
+   already says what the dots are for. A button without a cap keeps the
+   row's height, so every label sits on the same line. */
+function CapDots({ cap }: { cap?: { total: number; left: number; gifts: number } }) {
   return (
     <View style={styles.dots} pointerEvents="none">
       {cap ? Array.from({ length: cap.total }, (_, index) => <View key={index} style={[styles.dot, index < cap.left ? styles.dotLeft : styles.dotUsed]} />) : null}
+      {cap ? Array.from({ length: cap.gifts }, (_, index) => <GiftIcon key={`gift-${index}`} size={GIFT} weight="fill" color={colors.accentStrong} />) : null}
     </View>
   )
 }
@@ -338,8 +348,9 @@ const styles = StyleSheet.create({
   },
   dots: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: space.xs,
-    minHeight: DOT,
+    minHeight: GIFT,
   },
   dot: {
     width: DOT,
