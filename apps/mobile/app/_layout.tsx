@@ -255,6 +255,8 @@ function RootStack() {
       <Stack.Screen name="elf-letter" options={sheetRoute} />
       <Stack.Screen name="elf-shop" options={sheetRoute} />
       <Stack.Screen name="elf-tree" options={sheetRoute} />
+      <Stack.Screen name="elf-activities" options={sheetRoute} />
+      <Stack.Screen name="elf-tricks" options={sheetRoute} />
       <Stack.Screen name="elf-shelf" options={sheetRoute} />
       {/* Supporting Chatynkowo (src/features/support): a sheet from the
           profile, the Kronika, a tale's end and the celebration card. */}

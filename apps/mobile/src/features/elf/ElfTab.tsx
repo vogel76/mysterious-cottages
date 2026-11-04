@@ -23,6 +23,7 @@ import { ElfCard } from './ElfCard'
 import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
 import { durationText } from './duration'
+import { TRICK_REACTION, trickKey } from './tricks'
 import { elfKey } from './labels'
 import { useElfCardPresenter } from './useElfCardPresenter'
 import { useElfSounds } from './useElfSounds'
@@ -469,6 +470,7 @@ export function ElfTab() {
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
   const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
   const onShop = useCallback(() => router.push('/elf-shop'), [router])
+  const onActivities = useCallback(() => router.push('/elf-activities'), [router])
   const onTree = useCallback(() => router.push('/elf-tree'), [router])
   /* The day's quests, the reward to pick and what the ledger's figures
      mean: a sheet over the tab. */
@@ -618,6 +620,17 @@ export function ElfTab() {
     sceneRef.current?.react('egg')
     tutorial.note('egg')
   }, [hatchReady, hatchNow, tendEgg, say, t, tutorial])
+
+  /* A trick handed over by the tricks sheet as it closed: the elf shows
+     it in the room (a practice or a performance) and says its line. */
+  const { trickPlay, clearTrickPlay } = elf
+  useEffect(() => {
+    if (!trickPlay || !focused) return
+    const name = t(trickKey(trickPlay.id))
+    sceneRef.current?.react(TRICK_REACTION[trickPlay.id])
+    say(trickPlay.outcome === 'shown' ? t(trickKey(trickPlay.id, 'line')) : trickPlay.outcome === 'learned' ? t('mobile:elf.trickLearnedLine', { name }) : t('mobile:elf.trickTrainedLine'))
+    clearTrickPlay()
+  }, [trickPlay, focused, say, t, clearTrickPlay])
 
   /* Returns how the rules took it, so the drag-to-feed can tell an eaten
      acorn from a refused one. */
@@ -793,7 +806,7 @@ export function ElfTab() {
             panel has the way out. */}
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} archetype={archetypeOf(state)} onTree={onTree} onLedger={onLedger} />
+            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} onActivities={onActivities} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} archetype={archetypeOf(state)} onTree={onTree} onLedger={onLedger} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (

@@ -23,6 +23,14 @@ import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/Arrow
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft'
 import { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight'
 import { ArmchairIcon } from 'phosphor-react-native/src/icons/Armchair'
+import { CheersIcon } from 'phosphor-react-native/src/icons/Cheers'
+import { HandWavingIcon } from 'phosphor-react-native/src/icons/HandWaving'
+import { HandsClappingIcon } from 'phosphor-react-native/src/icons/HandsClapping'
+import { MagicWandIcon } from 'phosphor-react-native/src/icons/MagicWand'
+import { PersonSimpleTaiChiIcon } from 'phosphor-react-native/src/icons/PersonSimpleTaiChi'
+import { PuzzlePieceIcon } from 'phosphor-react-native/src/icons/PuzzlePiece'
+import { SpiralIcon } from 'phosphor-react-native/src/icons/Spiral'
+import { StarIcon } from 'phosphor-react-native/src/icons/Star'
 import { BedIcon } from 'phosphor-react-native/src/icons/Bed'
 import { BowlFoodIcon } from 'phosphor-react-native/src/icons/BowlFood'
 import { CookieIcon } from 'phosphor-react-native/src/icons/Cookie'
@@ -227,6 +235,17 @@ export const SharpEyeIcon = EyeIcon
 export const QuickHandsIcon = LightningIcon
 export const AntlersIcon = TrophyIcon
 export const ForgivingStreakIcon = CalendarCheckIcon
+/* The elf's activities (apps/mobile/src/features/elf): the hub on the
+   bar, and the tricks it learns, one picture each: the wave, the twirl,
+   the bow, the cheer, the applause, the toast. */
+export const ActivitiesIcon = PuzzlePieceIcon
+export const TricksIcon = MagicWandIcon
+export const TrickWaveIcon = HandWavingIcon
+export const TrickTwirlIcon = SpiralIcon
+export const TrickBowIcon = PersonSimpleTaiChiIcon
+export const TrickCheerIcon = StarIcon
+export const TrickApplauseIcon = HandsClappingIcon
+export const TrickToastIcon = CheersIcon
 /* A letter from the cottages, sealed and opened. */
 export const LetterIcon = EnvelopeSimpleIcon
 export const LetterOpenIcon = EnvelopeSimpleOpenIcon
@@ -246,6 +265,7 @@ export const ICON_VOCABULARY = {
   DecorIcon, ShopIcon, PathGluttonIcon, PathPranksterIcon, PathTrackerIcon, LetterIcon, LetterOpenIcon,
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
+  ActivitiesIcon, TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

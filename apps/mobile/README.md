@@ -230,6 +230,10 @@ app/                     expo-router routes
   elf-tree.tsx           the elf's tree of development: the level with its rank, the experience bar, the points and
                          a trunk, three branches that fork and merge, three archetypes; a sheet from the name block on the elf's bar
   elf-shelf.tsx          the keepsake shelf: the jars of the cottages found, the windowsill's treasures and the letters
+  elf-activities.tsx     the activities hub: what there is to do with the elf from the couch (the tricks; the games,
+                         the peddler and the badges join as they come), a sheet from the activities button on the elf's bar
+  elf-tricks.tsx         the elf's tricks: bought for acorns, practised once a day until learned, shown on demand; a sheet
+                         from the activities hub
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
@@ -738,6 +742,22 @@ Experience also comes from every care, a letter read and the tuck-in,
 so a day of looking after the elf moves the bar without a find. The
 ranking's use of the rank waits for the account sync.
 
+The activities button on the elf's bar (shown once the elf has hatched)
+opens the hub (`/elf-activities`, `ElfActivitiesSheet.tsx`), one row
+per thing to do from the couch, each with a word on where it stands and
+its own sheet. The tricks (`/elf-tricks`, `ElfTricksSheet.tsx`;
+`ELF_TRICKS`, `buyTrick`, `trainTrick` in the rules) are the first: six
+of them (the wave, the twirl, the bow, the cheer, the applause, the
+toast), each bought for acorns, the soft currency's first sink, then
+practised once a day by an awake elf for the sessions it needs (two to
+four), a session paying experience, until learned, and a learned one
+shown on demand. A practice or a show closes the sheet and hands the
+trick to the tab (`trickPlay` in the provider), which plays it as one of
+the elf's existing reactions (`tricks.ts` maps each to its clip: the
+call's wave, the twirl, the greeting's bow, the cheer, the admiring
+clap, the sip) with the elf's line in its bubble; a sleeping elf refuses
+both. The acorns' price and the sessions are in the rules' table.
+
 The elf reaches two places outside its tab: the onboarding pager (the
 welcome of a fresh install and the profile's "How to play") carries a
 page about it, and the Kronika's progress card says how many virtues
@@ -769,8 +789,9 @@ every care, pet, egg, sleep and swap:
 | Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, or at a cottage found while it waits, whichever comes first (the HUD counts the hours down), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
 | Care | feed fullness +25 (3 charges, refused at 90), play joy +30 (2 charges), bath clean +60 (1 charge); a charge spent comes back 4 hours later for a meal, 6 for a game, 12 for a bath (the moments spent in the state's `care`), and with none back the elf has had enough for now, saying when the next is; a refill for dust or an ad brings them all back |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
-| Experience | a find 40, a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
+| Experience | a find 40, a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3, a trick's practice 4 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
 | Tree | sixteen nodes, any parent owned opens a node, a point each: roots (charges back in three quarters of the time); belly (fullness eases half as fast), smile (joy eases half as fast), eye (one sill find more on a return); pantry (four meals), feast (a meal +35 instead of +25), games (three games), party (a game +45 instead of +30), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (two baths; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
+| Tricks | six, for acorns: the wave 40 (2 sessions), the twirl 60 (3), the bow 60 (3), the cheer 80 (3), the applause 80 (4), the toast 100 (4); one practice session a day per trick, none asleep; learned at the last session, then shown on demand (`ELF_TRICKS`, `buyTrick`, `trainTrick`) |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days; the days bought in the shop (`daysBonus`) count as days, the cottages cannot be bought |
 | Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |

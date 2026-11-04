@@ -87,6 +87,16 @@ export const MOBILE_ICON_ROLES = [
   'QuickHandsIcon',
   'AntlersIcon',
   'ForgivingStreakIcon',
+  /* The elf's activities: the hub on the bar and the tricks, one picture
+     each. */
+  'ActivitiesIcon',
+  'TricksIcon',
+  'TrickWaveIcon',
+  'TrickTwirlIcon',
+  'TrickBowIcon',
+  'TrickCheerIcon',
+  'TrickApplauseIcon',
+  'TrickToastIcon',
   /* Supporting Chatynkowo (apps/mobile/src/features/support): a coffee
      for the elf, a rewarded ad watched instead. */
   'CoffeeIcon',
