@@ -228,7 +228,7 @@ app/                     expo-router routes
                          dust packs and the skips of the waiting (the hatch, a care's charges, the next form) for
                          dust or an ad, a sheet from the shop button on the elf's bar and the egg's chip
   elf-tree.tsx           the elf's tree of development: the level with its rank, the experience bar, the points and
-                         the three paths of four nodes, a sheet from the name block on the elf's bar
+                         the three paths of six nodes, a sheet from the name block on the elf's bar
   elf-shelf.tsx          the keepsake shelf: the jars of the cottages found, the windowsill's treasures and the letters
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
@@ -687,9 +687,15 @@ nothing is for sale). Each row shows its countdown (`duration.ts` keeps
 the clock and the words, shared with the egg's chip and the elf's line
 when a care has no charge back) and a skip bought closes the sheet, so
 the player sees the egg ready, the dots relit or the elf grow in the
-room. The furniture and outfits for dust come later, so their card only
-says so. The store's orders arrive at once; nothing in the shop is
-needed to play.
+room. The last card sells the furniture and hats the finds still lock
+(`shopItems` in the rules: every entry of the unlock table the player has
+neither reached, been granted by the tree nor bought), each with a
+thumbnail from the decorating catalogue, the cottages it still needs and
+its price, ten dust per cottage of its threshold and fifteen at least; a
+purchase lands in `state.items`, which `grantedItems` counts with the
+tree's grants, and a threshold reached makes a piece free anyway, so the
+card empties as the trail goes on. The store's orders arrive at once;
+nothing in the shop is needed to play.
 
 The elf grows in a second way, by experience (`XP` in the rules): the
 cottages found pay the most, then the day's quests, the full set and
@@ -697,16 +703,20 @@ each day a streak goes on. The levels start forty points apart and
 widen (`xpForLevel`, `levelOf`), each one past the first gives a point,
 and the rank by level (`rankOf`: Skrzat, Leśnik, Strażnik, Mędrzec,
 Legenda) stands beside the form on the elf's bar, whose name block
-opens the tree (`/elf-tree`, `ElfTreeSheet.tsx`): three paths of four
+opens the tree (`/elf-tree`, `ElfTreeSheet.tsx`): three paths of six
 nodes, unlocked in order for a point each (`ELF_TREE`, `nodeStatus`,
 `unlockNode`), their effects read by the rules themselves: the glutton's
-slower hunger, bigger meals, fourth meal and cauldron; the prankster's
-longer joy, quests paying half as much again, third game and hammock;
-the tracker's extra sill find on a return, streak milestones paying
-double dust, charges back a quarter sooner, and antlers. The last node
-of each path grants its piece free of the finds (`grantedItems`, read
-by `decorFindsNeeded` wherever the catalogue is gated). The ranking's
-use of the rank waits for the account sync.
+slower hunger, bigger meals, fourth meal, cauldron, fullness holding
+through sleep and mushroom; the prankster's longer joy, quests paying
+half as much again, third game, hammock, bigger games and nightcap; the
+tracker's extra sill find on a return, streak milestones paying double
+dust, charges back a quarter sooner, antlers, a streak that forgives
+one missed day and the nest. The fourth and sixth nodes of each path
+grant their piece free of the finds (`grantedItems`, which also counts
+the shop's purchases, read by `decorFindsNeeded` wherever the catalogue
+is gated). Experience also comes from every care, a letter read and the
+tuck-in, so a day of looking after the elf moves the bar without a
+find. The ranking's use of the rank waits for the account sync.
 
 The elf reaches two places outside its tab: the onboarding pager (the
 welcome of a fresh install and the profile's "How to play") carries a
@@ -739,8 +749,8 @@ every care, pet, egg, sleep and swap:
 | Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, or at a cottage found while it waits, whichever comes first (the HUD counts the hours down), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
 | Care | feed fullness +25 (3 charges, refused at 90), play joy +30 (2 charges), bath clean +60 (1 charge); a charge spent comes back 4 hours later for a meal, 6 for a game, 12 for a bath (the moments spent in the state's `care`), and with none back the elf has had enough for now, saying when the next is; a refill for dust or an ad brings them all back |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
-| Experience | a find 40, a quest done 8, the full set 15, each day a streak goes on 5 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
-| Tree | glutton: fullness eases half as fast, a meal +35 instead of +25, four meals, the cauldron; prankster: joy eases half as fast, quest acorns one and a half times (rounded up), three games, the hammock; tracker: one sill find more on a return, streak milestones paying double dust, charges back in three quarters of the time, the antlers; each path in order, the piece of the last node free of the finds |
+| Experience | a find 40, a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
+| Tree | glutton: fullness eases half as fast, a meal +35 instead of +25, four meals, the cauldron, fullness holding through sleep, the mushroom; prankster: joy eases half as fast, quest acorns one and a half times (rounded up), three games, the hammock, a game +45 instead of +30, the nightcap; tracker: one sill find more on a return, streak milestones paying double dust, charges back in three quarters of the time, the antlers, one missed day forgiven by the streak, the nest; each path in order, the pieces of the fourth and sixth nodes free of the finds |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days; the days bought in the shop (`daysBonus`) count as days, the cottages cannot be bought |
 | Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |

@@ -126,15 +126,15 @@ export type ElfDecor = Record<string, string>
 export type ElfCareAction = 'feed' | 'play' | 'bath'
 export const ELF_CARE_ACTIONS: readonly ElfCareAction[] = ['feed', 'play', 'bath']
 
-/* The tree of development: three paths of four nodes each, unlocked in
+/* The tree of development: three paths of six nodes each, unlocked in
    order with the points the levels give (see "Experience" below). */
 export type ElfPath = 'glutton' | 'prankster' | 'tracker'
 export const ELF_PATHS: readonly ElfPath[] = ['glutton', 'prankster', 'tracker']
-export type ElfNodeId = `${ElfPath}${1 | 2 | 3 | 4}`
+export type ElfNodeId = `${ElfPath}${1 | 2 | 3 | 4 | 5 | 6}`
 export const ELF_TREE: Record<ElfPath, readonly ElfNodeId[]> = {
-  glutton: ['glutton1', 'glutton2', 'glutton3', 'glutton4'],
-  prankster: ['prankster1', 'prankster2', 'prankster3', 'prankster4'],
-  tracker: ['tracker1', 'tracker2', 'tracker3', 'tracker4'],
+  glutton: ['glutton1', 'glutton2', 'glutton3', 'glutton4', 'glutton5', 'glutton6'],
+  prankster: ['prankster1', 'prankster2', 'prankster3', 'prankster4', 'prankster5', 'prankster6'],
+  tracker: ['tracker1', 'tracker2', 'tracker3', 'tracker4', 'tracker5', 'tracker6'],
 }
 export type ElfRank = 'spark' | 'forester' | 'warden' | 'sage' | 'legend'
 
@@ -250,6 +250,8 @@ export type ElfState = {
   /* The experience gathered (XP) and the nodes of the tree unlocked. */
   xp: number
   nodes: ElfNodeId[]
+  /* The pieces bought in the shop for dust (slot:id), free of the finds. */
+  items: string[]
 }
 
 /* ---------- The numbers ---------- */
@@ -276,13 +278,14 @@ const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; charges: numb
   bath: { need: 'clean', gain: 60, charges: 1, recharge: 12 * 60 * 60 * 1000 },
 }
 /* The care as the tree has it: the glutton's bigger meals and extra
-   meal, the prankster's extra game, the tracker's quicker charges. */
+   meal, the prankster's extra and bigger games, the tracker's quicker
+   charges. */
 function careSpec(state: ElfState, id: ElfCareAction): { need: ElfNeedId; gain: number; charges: number; recharge: number } {
   const base = CARE[id]
   const has = (node: ElfNodeId) => state.nodes.includes(node)
   return {
     need: base.need,
-    gain: id === 'feed' && has('glutton2') ? base.gain + 10 : base.gain,
+    gain: base.gain + (id === 'feed' && has('glutton2') ? 10 : 0) + (id === 'play' && has('prankster5') ? 15 : 0),
     charges: base.charges + ((id === 'feed' && has('glutton3')) || (id === 'play' && has('prankster3')) ? 1 : 0),
     recharge: has('tracker3') ? base.recharge * 0.75 : base.recharge,
   }
@@ -299,9 +302,9 @@ function needTauDays(state: ElfState, need: ElfNeedId): number {
    place keeps one choice besides its default free from the start, so a
    new player can arrange the room at once; the rest come one or two at a
    time up to the eighth cottage. The ids are the app's catalogue's; the
-   rules keep only the thresholds, so a shop paid in acorns can use the
-   same table later. What a player placed before a lock existed is never
-   taken away. */
+   rules keep only the thresholds, and the shop (shopItems below) prices
+   a locked piece from the same table. What a player placed before a lock
+   existed is never taken away. */
 export const DECOR_UNLOCKS: Record<string, number> = {
   'rug:moss': 1,
   'lantern:bell': 1,
@@ -572,6 +575,7 @@ export function newElf(now: number): ElfState {
     ads: { day: '', count: 0 },
     xp: 0,
     nodes: [],
+    items: [],
   }
 }
 
@@ -689,6 +693,7 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     ads: normalizeAds(raw.ads),
     xp: count(raw.xp),
     nodes: stringList(raw.nodes).filter(isNodeId),
+    items: stringList(raw.items),
   }
   const outfit = stringRecord(raw.outfit, WEARABLE_SLOT_IDS) as Partial<ElfOutfit> | undefined
   const decor = stringRecord(raw.decor)
@@ -724,16 +729,20 @@ export function isAsleepAt(state: ElfState, at: number): boolean {
 export function applyElapsed(state: ElfState, now: number): ElfState {
   if (now === state.last) return state
   if (!state.hatched || now < state.last) return { ...state, last: now }
-  let effectiveHours = 0
+  let awakeHours = 0
+  let asleepHours = 0
   let at = state.last
   while (at < now) {
     const end = Math.min(now, Math.floor(at / HOUR_MS) * HOUR_MS + HOUR_MS)
     const hours = (end - at) / HOUR_MS
-    effectiveHours += isAsleepAt(state, at) ? hours * SLEEP_DRIFT_RATE : hours
+    if (isAsleepAt(state, at)) asleepHours += hours
+    else awakeHours += hours
     at = end
   }
   const needs = { ...state.needs }
   for (const need of ELF_NEEDS) {
+    /* Asleep, a need eases at half the rate; the glutton's fullness holds through the night. */
+    const effectiveHours = awakeHours + asleepHours * (need === 'fullness' && state.nodes.includes('glutton5') ? 0 : SLEEP_DRIFT_RATE)
     const distance = needs[need] - NEED_FLOOR
     needs[need] = distance > 0 ? NEED_FLOOR + distance * Math.exp(-effectiveHours / (needTauDays(state, need) * 24)) : needs[need]
   }
@@ -912,7 +921,7 @@ function settleAbsence(previous: ElfState, state: ElfState, today: string, finds
 /* A letter read. */
 export function readLetter(state: ElfState, n: number): ElfState {
   if (!state.letters.some((letter) => letter.n === n && !letter.read)) return state
-  return { ...state, letters: state.letters.map((letter) => (letter.n === n ? { ...letter, read: true } : letter)) }
+  return { ...state, letters: state.letters.map((letter) => (letter.n === n ? { ...letter, read: true } : letter)), xp: state.xp + XP.letter }
 }
 
 export type VisitOutcome = {
@@ -941,7 +950,9 @@ function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boo
   const day = dayKey(now)
   if (state.lastVisitDay === day) return { state, newDay: false, streakLost: null, milestoneDust: 0 }
   const yesterday = dayKey(previousDay(now))
-  const continues = state.lastVisitDay === yesterday
+  /* The tracker's forgiving streak: one day missed does not break it. */
+  const forgiven = state.nodes.includes('tracker5') && state.lastVisitDay === dayKey(previousDay(previousDay(now)))
+  const continues = state.lastVisitDay === yesterday || forgiven
   const streak = continues ? state.streak + 1 : 1
   const streakLost = !continues && state.lastVisitDay !== null && state.streak > 1 ? state.streak : null
   const milestoneDust = (STREAK_MILESTONES[streak] ?? 0) * (state.nodes.includes('tracker2') ? 2 : 1)
@@ -1125,7 +1136,7 @@ export function performCare(state: ElfState, id: ElfCareAction, now: number): Ca
   if (spent.length >= spec.charges) return { kind: 'refused', reason: 'charging' }
   if (id === 'feed' && current.needs.fullness >= FULL_AT) return { kind: 'refused', reason: 'full' }
   const needs = { ...current.needs, [spec.need]: clamp(current.needs[spec.need] + spec.gain) }
-  const cared: ElfState = { ...current, needs, care: { ...current.care, [id]: [...spent, now] }, lastInteraction: now }
+  const cared: ElfState = { ...current, needs, care: { ...current.care, [id]: [...spent, now] }, lastInteraction: now, xp: current.xp + XP.care }
   const recorded = recordEvent(cared, id)
   return { kind: 'done', ...recorded }
 }
@@ -1237,7 +1248,7 @@ export function toggleSleep(state: ElfState, now: number): SleepOutcome {
     return { kind: 'woke', state: woken, completed: [], setBonus: false }
   }
   if (!isBedtimeAt(now)) return { kind: 'tooEarly' }
-  const tucked: ElfState = { ...current, sleeping: true, tuckedAt: now, wokenAt: null, lastInteraction: now }
+  const tucked: ElfState = { ...current, sleeping: true, tuckedAt: now, wokenAt: null, lastInteraction: now, xp: current.xp + XP.sleep }
   return { kind: 'slept', ...recordEvent(tucked, 'sleep') }
 }
 
@@ -1310,8 +1321,9 @@ export function spendDust(state: ElfState, cost: number): ElfState | null {
 /* ---------- Experience, levels, the tree and the ranks ---------- */
 
 /* What experience comes from: a cottage found (the most), a quest done,
-   the full set, each day a streak goes on. */
-export const XP = { find: 40, quest: 8, questSet: 15, streakDay: 5 } as const
+   the full set, each day a streak goes on, a care given, a letter read
+   and the elf tucked in. */
+export const XP = { find: 40, quest: 8, questSet: 15, streakDay: 5, care: 2, letter: 10, sleep: 3 } as const
 
 /* The experience a level starts at: 0, 40, 120, 240, 400, 600... (each
    level forty more than the last), so the early levels come fast and the
@@ -1342,11 +1354,50 @@ function isNodeId(value: string): value is ElfNodeId {
   return ELF_PATHS.some((path) => (ELF_TREE[path] as readonly string[]).includes(value))
 }
 
-/* The pieces the last node of each path grants, free of the finds. */
-const TREE_ITEMS: Partial<Record<ElfNodeId, string>> = { glutton4: 'candle:cauldron', prankster4: 'bed:hammock', tracker4: 'picture:antlers' }
+/* The pieces the fourth and sixth nodes of each path grant, free of the finds. */
+const TREE_ITEMS: Partial<Record<ElfNodeId, string>> = {
+  glutton4: 'candle:cauldron',
+  glutton6: 'fern:mushroom',
+  prankster4: 'bed:hammock',
+  prankster6: 'hat:nightcap',
+  tracker4: 'picture:antlers',
+  tracker6: 'bed:nest',
+}
 
+/* The pieces the player has free of the finds: the tree's grants and the shop's purchases (slot:id). */
 export function grantedItems(state: ElfState): string[] {
-  return state.nodes.flatMap((node) => (TREE_ITEMS[node] ? [TREE_ITEMS[node]!] : []))
+  return [...state.nodes.flatMap((node) => (TREE_ITEMS[node] ? [TREE_ITEMS[node]!] : [])), ...state.items]
+}
+
+/* ---------- The shop's pieces ---------- */
+
+/* A piece the finds have not unlocked yet can be bought for dust instead:
+   ten dust per cottage of its threshold, fifteen at least. */
+export const ITEM_DUST_PER_FIND = 10
+export const ITEM_DUST_MIN = 15
+export type ElfShopItem = { slot: string; id: string; finds: number; cost: number }
+
+export function itemDust(slot: string, id: string): number {
+  return Math.max(ITEM_DUST_MIN, (DECOR_UNLOCKS[`${slot}:${id}`] ?? 0) * ITEM_DUST_PER_FIND)
+}
+
+/* The pieces on sale: those the finds still lock and neither the tree
+   nor a purchase has given, in the order of the unlock table, each with
+   the cottages it still needs and its price. */
+export function shopItems(state: ElfState, finds: number): ElfShopItem[] {
+  const granted = grantedItems(state)
+  return Object.keys(DECOR_UNLOCKS).flatMap((key) => {
+    const [slot, id] = key.split(':') as [string, string]
+    const left = decorFindsNeeded(slot, id, finds, granted)
+    return left > 0 ? [{ slot, id, finds: left, cost: itemDust(slot, id) }] : []
+  })
+}
+
+/* A piece bought: null when it is not on sale or the dust is short. */
+export function buyItem(state: ElfState, slot: string, id: string, finds: number): ElfState | null {
+  if (!shopItems(state, finds).some((item) => item.slot === slot && item.id === id)) return null
+  const paid = spendDust(state, itemDust(slot, id))
+  return paid ? { ...paid, items: [...paid.items, `${slot}:${id}`] } : null
 }
 
 /* Where a node stands: owned, open (the next of its path, whether or
