@@ -632,6 +632,17 @@ export function ElfTab() {
     clearTrickPlay()
   }, [trickPlay, focused, say, t, clearTrickPlay])
 
+  /* A round of a game just played: the elf cheers a best or a fine pay,
+     and admires the rest. */
+  const { gameResult, clearGameResult } = elf
+  useEffect(() => {
+    if (!gameResult || !focused) return
+    const fine = gameResult.best || gameResult.acorns >= 15
+    sceneRef.current?.react(fine ? 'cheer' : 'admire')
+    say(t(fine ? 'mobile:elf.gameLineBest' : 'mobile:elf.gameLineGood'))
+    clearGameResult()
+  }, [gameResult, focused, say, t, clearGameResult])
+
   /* Returns how the rules took it, so the drag-to-feed can tell an eaten
      acorn from a refused one. */
   const onCare = useCallback(

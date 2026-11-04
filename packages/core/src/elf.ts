@@ -186,14 +186,24 @@ export const ELF_TRICKS: readonly ElfTrickSpec[] = [
 ]
 export type ElfTrick = { sessions: number; day: string | null }
 
+/* The games played from the couch (the app holds the boards): a few
+   rounds a day each, a round paying acorns by its points, up to a cap,
+   and experience. */
+export type ElfGameId = 'acorns' | 'memory'
+export const ELF_GAMES: readonly ElfGameId[] = ['acorns', 'memory']
+export const GAME_PLAYS_PER_DAY = 3
+export const GAME_ACORNS_MAX = 20
+export type ElfGameRecord = { best: number; played: number }
+
 export type ElfEggAction = 'warm' | 'rock'
 export const ELF_EGG_ACTIONS: readonly ElfEggAction[] = ['warm', 'rock']
 
 /* What the quests count: the care, a pet, a swap, the tuck-in, the egg
-   tended, a visit, an evening visit, and a cottage found in the field. */
-export type ElfEvent = ElfCareAction | 'pet' | 'decor' | 'sleep' | 'egg' | 'open' | 'evening' | 'find'
+   tended, a visit, an evening visit, a cottage found in the field, and a
+   game played. */
+export type ElfEvent = ElfCareAction | 'pet' | 'decor' | 'sleep' | 'egg' | 'open' | 'evening' | 'find' | 'game'
 
-export type ElfQuestId = 'feedOnce' | 'feedTwice' | 'playOnce' | 'bathOnce' | 'petFive' | 'petTen' | 'decorOne' | 'tuckIn' | 'eggThree' | 'evening' | 'open' | 'findOne'
+export type ElfQuestId = 'feedOnce' | 'feedTwice' | 'playOnce' | 'bathOnce' | 'petFive' | 'petTen' | 'decorOne' | 'tuckIn' | 'eggThree' | 'evening' | 'open' | 'findOne' | 'gameOnce'
 
 export type ElfQuest = {
   id: ElfQuestId
@@ -229,6 +239,8 @@ export type ElfDaily = {
      or null while the pick is still open. */
   rewardOptions: ElfReward[]
   rewardPicked: number | null
+  /* How many rounds of each game were played today. */
+  games: Partial<Record<ElfGameId, number>>
 }
 
 export type ElfState = {
@@ -303,6 +315,8 @@ export type ElfState = {
   /* The tricks bought, with the practice they have had: the sessions
      done and the day of the last one. */
   tricks: Partial<Record<ElfTrickId, ElfTrick>>
+  /* The games' records: the best points and the rounds played, ever. */
+  games: Partial<Record<ElfGameId, ElfGameRecord>>
 }
 
 /* ---------- The numbers ---------- */
@@ -440,6 +454,7 @@ const QUEST_POOL: readonly QuestSpec[] = [
   { id: 'evening', event: 'evening', target: 1, acorns: 5, stage: 'any' },
   { id: 'open', event: 'open', target: 1, acorns: 3, stage: 'any' },
   { id: 'findOne', event: 'find', target: 1, acorns: 25, dust: 1, stage: 'any', when: 'weekend' },
+  { id: 'gameOnce', event: 'game', target: 1, acorns: 8, stage: 'elf' },
 ]
 
 /* ---------- The calendar ---------- */
@@ -586,7 +601,7 @@ function dealRewards(day: string, name: string): ElfReward[] {
 }
 
 function freshDaily(day: string, name: string, hatched: boolean): ElfDaily {
-  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null }
+  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, games: {} }
 }
 
 /* ---------- A new elf and a stored one ---------- */
@@ -628,6 +643,7 @@ export function newElf(now: number): ElfState {
     nodes: [],
     items: [],
     tricks: {},
+    games: {},
   }
 }
 
@@ -663,6 +679,7 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
     bonusGranted: raw.bonusGranted === true,
     rewardOptions: rewards.length === 3 ? rewards : fresh.rewardOptions,
     rewardPicked: typeof raw.rewardPicked === 'number' && raw.rewardPicked >= 0 && raw.rewardPicked < 3 ? Math.floor(raw.rewardPicked) : null,
+    games: normalizeGamePlays(raw.games),
   }
 }
 
@@ -747,6 +764,7 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     nodes: stringList(raw.nodes).filter(isNodeId),
     items: stringList(raw.items),
     tricks: normalizeTricks(raw.tricks),
+    games: normalizeGames(raw.games),
   }
   const outfit = stringRecord(raw.outfit, WEARABLE_SLOT_IDS) as Partial<ElfOutfit> | undefined
   const decor = stringRecord(raw.decor)
@@ -1375,8 +1393,8 @@ export function spendDust(state: ElfState, cost: number): ElfState | null {
 
 /* What experience comes from: a cottage found (the most), a quest done,
    the full set, each day a streak goes on, a care given, a letter read,
-   the elf tucked in, a trick practised. */
-export const XP = { find: 40, quest: 8, questSet: 15, streakDay: 5, care: 2, letter: 10, sleep: 3, trick: 4 } as const
+   the elf tucked in, a trick practised, a game played. */
+export const XP = { find: 40, quest: 8, questSet: 15, streakDay: 5, care: 2, letter: 10, sleep: 3, trick: 4, game: 5 } as const
 
 /* The experience a level starts at: 0, 40, 120, 240, 400, 600... (each
    level forty more than the last), so the early levels come fast and the
@@ -1537,6 +1555,63 @@ export function trainTrick(state: ElfState, id: ElfTrickId, now: number): TrickO
   const sessions = trick.sessions + 1
   const next: ElfState = { ...current, tricks: { ...current.tricks, [id]: { sessions, day: dayKey(now) } }, lastInteraction: now, xp: current.xp + XP.trick }
   return { kind: sessions >= trickSpec(id).sessions ? 'learned' : 'trained', state: next }
+}
+
+/* ---------- Games ---------- */
+
+function isGameId(value: string): value is ElfGameId {
+  return (ELF_GAMES as readonly string[]).includes(value)
+}
+
+function normalizeGamePlays(raw: unknown): Partial<Record<ElfGameId, number>> {
+  const plays: Partial<Record<ElfGameId, number>> = {}
+  if (!isRecord(raw)) return plays
+  for (const [id, value] of Object.entries(raw)) if (isGameId(id)) plays[id] = count(value)
+  return plays
+}
+
+function normalizeGames(raw: unknown): Partial<Record<ElfGameId, ElfGameRecord>> {
+  const games: Partial<Record<ElfGameId, ElfGameRecord>> = {}
+  if (!isRecord(raw)) return games
+  for (const [id, value] of Object.entries(raw)) {
+    if (isGameId(id) && isRecord(value)) games[id] = { best: count(value.best), played: count(value.played) }
+  }
+  return games
+}
+
+/* The rounds of a game still open today. */
+export function gamePlaysLeft(state: ElfState, id: ElfGameId, now: number): number {
+  const daily = state.daily.day === dayKey(now) ? state.daily : null
+  return Math.max(0, GAME_PLAYS_PER_DAY - (daily?.games[id] ?? 0))
+}
+
+/* The acorns a round pays for its points: the points up to the cap,
+   half as much again with the fair. */
+export function gameAcorns(state: ElfState, points: number): number {
+  return questAcorns(state, Math.max(0, Math.min(GAME_ACORNS_MAX, Math.floor(points))))
+}
+
+export type GameOutcome = { state: ElfState; acorns: number; xp: number; best: boolean; completed: ElfQuestPay[]; setBonus: boolean }
+
+/* A round played, with its points: the acorns and the experience paid,
+   the record kept, the day's quests told; null when the day's rounds of
+   that game are used up. */
+export function recordGame(state: ElfState, id: ElfGameId, points: number, now: number): GameOutcome | null {
+  const current = ensureDay(applyElapsed(state, now), now).state
+  if (gamePlaysLeft(current, id, now) <= 0) return null
+  const acorns = gameAcorns(current, points)
+  const record = current.games[id] ?? { best: 0, played: 0 }
+  const best = record.played > 0 && points > record.best
+  const played: ElfState = {
+    ...current,
+    daily: { ...current.daily, games: { ...current.daily.games, [id]: (current.daily.games[id] ?? 0) + 1 } },
+    games: { ...current.games, [id]: { best: Math.max(record.best, Math.floor(points)), played: record.played + 1 } },
+    wallet: { ...current.wallet, acorns: current.wallet.acorns + acorns },
+    xp: current.xp + XP.game,
+    lastInteraction: now,
+  }
+  const recorded = recordEvent(played, 'game')
+  return { state: recorded.state, acorns, xp: XP.game, best, completed: recorded.completed, setBonus: recorded.setBonus }
 }
 
 /* ---------- Reminders ---------- */

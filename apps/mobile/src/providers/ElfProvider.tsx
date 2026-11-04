@@ -1,4 +1,4 @@
-import type { ElfTrickId } from '@chatynkowo/core'
+import type { ElfGameId, ElfTrickId } from '@chatynkowo/core'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -31,6 +31,8 @@ import {
   unlockNode as unlockElfNode,
   buyItem as buyElfItem,
   buyTrick as buyElfTrick,
+  gamePlaysLeft as elfGamePlaysLeft,
+  recordGame,
   trainTrick as trainElfTrick,
   grantedItems,
   type ElfSkip,
@@ -186,6 +188,13 @@ export type ElfValue = {
   trickPlay: { id: ElfTrickId; outcome: 'trained' | 'learned' | 'shown'; at: number } | null
   playTrick: (id: ElfTrickId, outcome: 'trained' | 'learned' | 'shown') => void
   clearTrickPlay: () => void
+  /* The games: the rounds of one still open today, a round finished with
+     its points (what it paid, or null when the day's rounds are used up),
+     and the result the tab is to greet next, cleared once greeted. */
+  gamePlaysLeft: (id: ElfGameId) => number
+  finishGame: (id: ElfGameId, points: number) => { acorns: number; xp: number; best: boolean } | null
+  gameResult: { id: ElfGameId; points: number; acorns: number; best: boolean; at: number } | null
+  clearGameResult: () => void
   /* The pieces the tree granted or the shop sold, free of the finds (slot:id). */
   granted: string[]
   /* Picks one of the day's reward options, once a day. */
@@ -604,6 +613,21 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const [trickPlay, setTrickPlay] = useState<ElfValue['trickPlay']>(null)
   const playTrick = useCallback((id: ElfTrickId, outcome: 'trained' | 'learned' | 'shown') => setTrickPlay({ id, outcome, at: Date.now() }), [])
   const clearTrickPlay = useCallback(() => setTrickPlay(null), [])
+  const gamePlaysLeft = useCallback((id: ElfGameId): number => (stateRef.current ? elfGamePlaysLeft(stateRef.current, id, Date.now()) : 0), [])
+  const [gameResult, setGameResult] = useState<ElfValue['gameResult']>(null)
+  const finishGame = useCallback(
+    (id: ElfGameId, points: number) => {
+      const current = stateRef.current
+      if (!current) return null
+      const outcome = recordGame(current, id, points, Date.now())
+      if (!outcome) return null
+      commit(outcome.state, true)
+      setGameResult({ id, points, acorns: outcome.acorns, best: outcome.best, at: Date.now() })
+      return { acorns: outcome.acorns, xp: outcome.xp, best: outcome.best }
+    },
+    [commit],
+  )
+  const clearGameResult = useCallback(() => setGameResult(null), [])
   const buyItem = useCallback(
     (slot: string, id: string): boolean => {
       const current = stateRef.current
@@ -693,6 +717,10 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       trickPlay,
       playTrick,
       clearTrickPlay,
+      gamePlaysLeft,
+      finishGame,
+      gameResult,
+      clearGameResult,
       granted: state ? grantedItems(state) : [],
       claimDailyReward,
       pendingEvolution,
@@ -703,7 +731,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       readLetter,
     }
   }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

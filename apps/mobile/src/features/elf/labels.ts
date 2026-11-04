@@ -1,5 +1,5 @@
 import type { ElfEvent, ElfMood, ElfNeedId, ElfNodeId, ElfPath, ElfRank, ElfStage, ElfStarter } from '@chatynkowo/core'
-import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, FoundIcon, JoyIcon, LoreIcon, SleepIcon, ToyIcon, WarmIcon, type Icon } from '../../ui'
+import { BathIcon, CottageIcon, DecorIcon, EggIcon, FeedIcon, ForestIcon, FoundIcon, GamesIcon, JoyIcon, LoreIcon, SleepIcon, ToyIcon, WarmIcon, type Icon } from '../../ui'
 
 /* How the elf's ids (a form, an element, a need, a mood, a quest, a
    wearable or decor slot, an item of either catalogue, a find of the
@@ -46,8 +46,9 @@ export const NEED_ICONS: Record<ElfNeedId, Icon> = {
 
 /* The day's quests by what they count: the care's own glyphs, the heart
    for a pet, the armchair for a swap, the moon for the tuck-in, the egg,
-   the cottage for a visit, the hearth for an evening one and the
-   expedition's own tick for a cottage found. */
+   the cottage for a visit, the hearth for an evening one, the
+   expedition's own tick for a cottage found and the controller for a
+   game played. */
 export const QUEST_ICONS: Record<ElfEvent, Icon> = {
   feed: FeedIcon,
   play: ToyIcon,
@@ -59,6 +60,7 @@ export const QUEST_ICONS: Record<ElfEvent, Icon> = {
   open: CottageIcon,
   evening: WarmIcon,
   find: FoundIcon,
+  game: GamesIcon,
 }
 
 /* The rank's name (mobile:elf.rankSpark...). */
