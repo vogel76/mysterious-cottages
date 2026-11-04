@@ -1,9 +1,9 @@
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { type ElfMood, type ElfNeedId, type ElfRank, type ElfStage, type ElfWallet } from '@chatynkowo/core'
+import { type ElfMood, type ElfNeedId, type ElfRank, type ElfStage, type ElfWallet, type ElfPath } from '@chatynkowo/core'
 import { AcornsIcon, CrossfadeText, DecorIcon, DustIcon, EggIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
 import { durationText, useClock } from './duration'
-import { elfKey, rankKey } from './labels'
+import { elfKey, pathKey, rankKey } from './labels'
 
 /* The strip over the cottage, in the dark chrome of the Atlas's cards so
    the two full-bleed tabs read alike: two rows, and the room starts under
@@ -47,13 +47,15 @@ export type ElfHudProps = {
   /* The rank the tree gives the elf, after its form; a tap on the name
      block opens the tree. Absent for the egg. */
   rank: ElfRank | null
+  /* The archetype chosen in the tree, shown in the rank's place. */
+  archetype: ElfPath | null
   onTree: () => void
   /* The ledger was tapped: the day's sheet (the quests, the reward to
      pick, the streak, and what the figures mean). */
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, rank, onTree, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, rank, archetype, onTree, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   return (
@@ -76,7 +78,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
                 {name}
               </Text>
             ) : null}
-            <CrossfadeText value={rank ? `${t(elfKey('stage', stage))} · ${t(rankKey(rank))}` : t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
+            <CrossfadeText value={rank ? `${t(elfKey('stage', stage))} · ${archetype ? t(pathKey(archetype)) : t(rankKey(rank))}` : t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
           </View>
           <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
         </PressableScale>
