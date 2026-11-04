@@ -842,12 +842,21 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
 
 /* ---------- Time passing ---------- */
 
+/* Whether the night takes the elf to sleep on its own and bedtime waits
+   for the evening. A demo build turns this off (configureElfNight), so
+   the elf sleeps only when tucked in and may be tucked in at any hour;
+   nothing else reads the switch. */
+let nightSleep = true
+export function configureElfNight(enabled: boolean): void {
+  nightSleep = enabled
+}
+
 /* Whether the elf may be tucked in at a moment: from the evening until
    the morning. Before that the sleep button answers 'tooEarly'; the scene
    lets the elf yawn and droop in this window, so the player sees it is
    bedtime. */
 export function isBedtimeAt(at: number): boolean {
-  return hourOf(at) >= TUCK_IN_FROM_HOUR || isNightAt(at)
+  return !nightSleep || hourOf(at) >= TUCK_IN_FROM_HOUR || isNightAt(at)
 }
 
 /* Whether the elf is asleep at a moment: woken by the player it stays up a
@@ -856,7 +865,7 @@ export function isBedtimeAt(at: number): boolean {
 export function isAsleepAt(state: ElfState, at: number): boolean {
   if (!state.hatched) return false
   if (state.wokenAt !== null && at >= state.wokenAt && at - state.wokenAt < DOZE_MS) return false
-  if (isNightAt(at)) return true
+  if (nightSleep && isNightAt(at)) return true
   return state.tuckedAt !== null && at >= state.tuckedAt && at < nextMorning(state.tuckedAt)
 }
 

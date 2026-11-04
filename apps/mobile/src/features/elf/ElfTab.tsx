@@ -25,6 +25,7 @@ import { useElfTutorial } from './useElfTutorial'
 import { durationText } from './duration'
 import { TRICK_REACTION, trickKey } from './tricks'
 import { elfKey } from './labels'
+import { elfNow } from '../../lib/elf-clock'
 import { useElfCardPresenter } from './useElfCardPresenter'
 import { useElfSounds } from './useElfSounds'
 import { useReminderPrefs } from './useElfReminders'
@@ -372,7 +373,7 @@ export function ElfTab() {
      tap opens; the shelf and the sill's finds open the keepsake shelf.
      Built from plain values, so the room is not redrawn on every drift of
      the needs. */
-  const plantStage = state ? plantStageAt(state, Date.now()) : 0
+  const plantStage = state ? plantStageAt(state, elfNow()) : 0
   const sillLine = state?.sill.join(',') ?? ''
   const unreadLetter = state ? ([...state.letters].reverse().find((letter) => !letter.read)?.n ?? null) : null
   const extras = useMemo<RoomExtras>(() => ({ plantStage, sill: sillLine ? sillLine.split(',') : [], letter: unreadLetter !== null }), [plantStage, sillLine, unreadLetter])
@@ -650,7 +651,7 @@ export function ElfTab() {
       const outcome = elf.care(id)
       if (outcome.kind === 'refused') {
         sceneRef.current?.react('refuse')
-        const at = Date.now()
+        const at = elfNow()
         const next = outcome.reason === 'charging' && stateRef.current ? careNextAt(stateRef.current, id, at) : null
         say(t(elfKey('guard', outcome.reason), { time: durationText(t, (next ?? at) - at) }))
       }
@@ -752,7 +753,7 @@ export function ElfTab() {
 
   const hatchTime = hatchAt(state)
   /* What the day still allows of each care, for the buttons' dots. */
-  const now = Date.now()
+  const now = elfNow()
   const left = { feed: careLeft(state, 'feed', now), play: careLeft(state, 'play', now), bath: careLeft(state, 'bath', now) }
   const charges = { feed: careCharges(state, 'feed'), play: careCharges(state, 'play'), bath: careCharges(state, 'bath') }
   const editing = panel === 'decor'
@@ -817,7 +818,7 @@ export function ElfTab() {
             panel has the way out. */}
         {panel === 'none' ? (
           <Animated.View entering={fade()} exiting={leave()} pointerEvents="box-none">
-            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} onActivities={onActivities} activitiesFresh={peddlerFresh(state, Date.now()) || badgesToClaim(state).length > 0} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} archetype={archetypeOf(state)} onTree={onTree} onLedger={onLedger} />
+            <ElfHud name={state.name} stage={stage} mood={mood} wantedNeed={wanted} hatchAt={hatchTime} wallet={state.wallet} streak={state.streak} questsDone={state.daily.quests.filter((quest) => quest.done).length} rewardWaiting={state.daily.rewardPicked === null} onDecorate={onDecorate} onShop={onShop} onActivities={onActivities} activitiesFresh={peddlerFresh(state, elfNow()) || badgesToClaim(state).length > 0} rank={stage === 'egg' ? null : rankOf(levelOf(state.xp))} archetype={archetypeOf(state)} onTree={onTree} onLedger={onLedger} />
           </Animated.View>
         ) : null}
         {panel === 'decor' ? (

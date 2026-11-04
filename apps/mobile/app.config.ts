@@ -21,6 +21,10 @@ import type { ConfigContext, ExpoConfig } from 'expo/config'
      is named (the classic SDK, written to gradle.properties) because the
      library's Gradle script (17.2.0) fails to evaluate when neither that
      nor a key of its own in app.json says which SDK to build against.
+   - A demo build (EXPO_PUBLIC_ELF_DEMO "1", see src/config.ts): named
+     "Chatynkowo DEMO" and installed beside the real app under the package
+     and bundle id with ".demo" appended, since its elf keeps a faster
+     clock and must not share the real app's data.
    - The commit the build was made from (extra.commitHash), shown next to
      the version on the Profile tab: EAS Build names it in
      EAS_BUILD_GIT_COMMIT_HASH (the upload carries no .git), a local build
@@ -51,6 +55,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const appleTeamId = process.env.APPLE_TEAM_ID
   const admobAndroidAppId = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID || ADMOB_SAMPLE_APP_IDS.android
   const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID || ADMOB_SAMPLE_APP_IDS.ios
+  const demo = process.env.EXPO_PUBLIC_ELF_DEMO === '1'
   const plugins = [...(config.plugins ?? [])]
   if (appleSignIn) plugins.push('expo-apple-authentication')
   if (googleIosClientId) plugins.push(['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosClientId.split('.').reverse().join('.') }])
@@ -58,7 +63,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   /* app.json carries the name and the slug the type asks for. */
   return {
     ...config,
-    ios: { ...config.ios, usesAppleSignIn: appleSignIn, ...(appleTeamId ? { appleTeamId } : {}) },
+    ...(demo ? { name: `${config.name} DEMO` } : {}),
+    ios: {
+      ...config.ios,
+      usesAppleSignIn: appleSignIn,
+      ...(appleTeamId ? { appleTeamId } : {}),
+      ...(demo && config.ios?.bundleIdentifier ? { bundleIdentifier: `${config.ios.bundleIdentifier}.demo` } : {}),
+    },
+    android: { ...config.android, ...(demo && config.android?.package ? { package: `${config.android.package}.demo` } : {}) },
     plugins,
     extra: { ...config.extra, commitHash: commitHash() },
   } as ExpoConfig

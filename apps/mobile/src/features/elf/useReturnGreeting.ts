@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AppState } from 'react-native'
+import { elfNow } from '../../lib/elf-clock'
 
 /* The greeting after an absence: when the player comes back to the Elf
    tab and has not done anything for the elf in half an hour, the elf
@@ -58,13 +59,13 @@ export function useReturnGreeting({ focused, awake, lastInteraction, onGreet }: 
     }
     const check = () => {
       clear()
-      const since = Date.now() - Math.max(lastRef.current, greetedAt.current)
+      const since = elfNow() - Math.max(lastRef.current, greetedAt.current)
       const due = awakeRef.current && lastRef.current > 0 && since > RETURN_AFTER_MS
       setGreeting(due)
       if (!due) return
       greetTimer = setTimeout(() => {
         greetTimer = null
-        greetedAt.current = Date.now()
+        greetedAt.current = elfNow()
         greetRef.current()
         holdTimer = setTimeout(() => {
           holdTimer = null

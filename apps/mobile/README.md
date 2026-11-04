@@ -84,6 +84,34 @@ pnpm check                                          # type-checks every package,
 pnpm --filter @chatynkowo/mobile export:android     # bundles the JS for Android through Metro (no SDK needed)
 ```
 
+### A demo build, for walking the elf through in a sitting
+
+A build with `EXPO_PUBLIC_ELF_DEMO=1` in `apps/mobile/.env` is "Chatynkowo
+DEMO", installed beside the real app under the package with `.demo`
+appended (`app.config.ts`), so it starts with a fresh egg and never
+touches the real app's data. Its elf keeps a clock seventy-two times
+faster than the wall clock (`src/lib/elf-clock.ts`: a day in twenty
+minutes, an hour in fifty seconds), so the egg hatches, the care's
+charges come back, the peddler changes his wares, the letters arrive,
+the streak grows and the forms come within a presentation; the night no
+longer puts the elf to sleep on its own (it sleeps when tucked in, at any
+hour; `configureElfNight` in the rules), and no reminder is scheduled.
+Give it Google's sample rewarded unit as well, so the dust shop's ad
+works without an AdMob account:
+
+```bash
+cd apps/mobile
+printf 'EXPO_PUBLIC_ELF_DEMO=1\nEXPO_PUBLIC_ADMOB_REWARDED_ANDROID_UNIT_ID=ca-app-pub-3940256099942544/5224354917\n' > .env
+npx expo prebuild --clean --platform android      # the demo package into the native project
+cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a && cd ..
+adb install app/build/outputs/apk/release/app-release.apk
+# then put .env back and regenerate the native project for the real package:
+npx expo prebuild --clean --platform android
+```
+
+Never ship it: the fast timestamps it stores make no sense to the real
+app, which is why it lives under its own package.
+
 ### Store builds (EAS Build)
 
 The release variant above is signed with the generated project's debug
@@ -244,7 +272,7 @@ app/                     expo-router routes
   +not-found.tsx         redirects to the Atlas
 src/
   config.ts              EXPO_PUBLIC_* with production defaults (including the account preview flag and the elf's
-                         flag, EXPO_PUBLIC_ELF_ENABLED, "0" leaving the elf out of a build), storage keys
+                         flag, EXPO_PUBLIC_ELF_ENABLED, "0" leaving the elf out of a build; the demo flag, EXPO_PUBLIC_ELF_DEMO, see "A demo build"), storage keys
   i18n/                  the i18next instance: "translation" + "mobile" namespaces, device locale, remembered choice
   ui/                    the interface layer: tokens, fonts, icons (plus the tab glyphs and the native header symbols), motion
                          tokens, Text, Button/LinkButton/IconButton on PressableScale, Screen, ContentImage (expo-image),

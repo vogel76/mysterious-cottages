@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { ELF_DEMO } from '../../config'
 import { AppState } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -31,7 +32,8 @@ function noteOf(reminder: ElfReminder, name: string, hatched: boolean, t: (key: 
    to the front (nothing rings while the player is here, and every leave
    plans afresh from the elf as it is), and a tapped reminder opens the
    Elf tab. Nothing is scheduled without the player's yes and the
-   system's permission. */
+   system's permission, and nothing in a demo build, whose fast clock
+   would name hours that never come. */
 export function useElfReminders() {
   const { t } = useTranslation()
   const router = useRouter()
@@ -50,7 +52,7 @@ export function useElfReminders() {
   useEffect(() => {
     const plan = async () => {
       const { state: elf, finds: found, prefs: answer, t: translate } = latest.current
-      if (!elf || !answer.enabled || (await notificationPermission()) !== 'granted') {
+      if (ELF_DEMO || !elf || !answer.enabled || (await notificationPermission()) !== 'granted') {
         await cancelScheduled()
         return
       }

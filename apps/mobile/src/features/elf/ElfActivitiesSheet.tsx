@@ -5,6 +5,7 @@ import { badgesToClaim, badgeStatus, ELF_BADGES, ELF_GAMES, ELF_TRICKS, peddlerW
 import { useElf } from '../../providers'
 import { BadgesIcon, NextIcon, PeddlerIcon, PressableScale, SheetRoute, Text, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
 import { GAME_ICON, gameKey } from './games/games'
+import { elfNow } from '../../lib/elf-clock'
 
 /* The activities hub (the route /elf-activities), from the activities
    button on the elf's bar: what there is to do with the elf from the
@@ -21,7 +22,7 @@ export function ElfActivitiesSheet() {
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const learned = ELF_TRICKS.filter((trick) => trickStatus(state, trick.id) === 'learned').length
   const learning = ELF_TRICKS.filter((trick) => trickStatus(state, trick.id) === 'learning').length
-  const unbought = peddlerWares(state, Date.now()).filter((ware) => !ware.bought).length
+  const unbought = peddlerWares(state, elfNow()).filter((ware) => !ware.bought).length
   const toClaim = badgesToClaim(state).length
   const earned = ELF_BADGES.filter((badge) => badgeStatus(state, badge.id) !== 'locked').length
   const activities: Activity[] = [
