@@ -1,17 +1,23 @@
 import { StyleSheet, View } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { type ElfMood, type ElfNeedId, type ElfRank, type ElfStage, type ElfWallet, type ElfPath } from '@chatynkowo/core'
-import { AcornsIcon, ActivitiesIcon, CrossfadeText, DecorIcon, DustIcon, EggIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
+import { type ElfMood, type ElfNeedId, type ElfStage, type ElfWallet, type ElfPath } from '@chatynkowo/core'
+import { AcornsIcon, ActivitiesIcon, DecorIcon, DustIcon, EggIcon, LevelBadgeIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, fade, iconSize, mapPalette, radius, space, type Icon, type TextProps } from '../../ui'
 import { durationText, useClock } from './duration'
-import { elfKey, pathKey, rankKey } from './labels'
+import { elfKey, pathKey } from './labels'
 
 /* The strip over the cottage, in the dark chrome of the Atlas's cards so
    the two full-bleed tabs read alike: two rows, and the room starts under
-   them, never behind them. The first row: the elf's name with its form,
-   the mood in a line underneath (what the elf is doing, or, for the egg,
-   how it hatches, or the need it wants seen to when one is under the
-   mark), and the decorating button (the mode it opens lives inside the
-   tab; starting over lives in the profile, out of the way of a child's
+   them, never behind them. The first row: the name block (the elf's
+   name, or "the egg", with the level in a gold pill at the end of the
+   line, which wears a dot while the elf may grow; under it the form
+   and, once chosen, the nature, or, when there is one, what the elf
+   asks for in gold: the need it wants seen to, or that it may grow, or,
+   for the egg, how it hatches; and a thin bar of the experience towards
+   the next level along the foot), which opens the tree of development,
+   and the buttons: the activities,
+   the shop and the decorating (the mode it opens lives inside the tab;
+   starting over lives in the profile, out of the way of a child's
    thumb). The second row is the ledger: the acorns and the star dust in
    the purse, the streak of days and the day's quests done out of three
    (with a dot while the day's reward waits to be picked), one pressable
@@ -21,7 +27,11 @@ import { elfKey, pathKey, rankKey } from './labels'
    The needs themselves are not here: they ring the care buttons at the
    bottom (ElfActionBar), where the care is. What the elf has to say in the
    moment (a refusal, a good night, a greeting, a quest done) is in the
-   speech bubble over its head (ElfSpeech). */
+   speech bubble over its head (ElfSpeech). Every text here is plain and
+   in its ordinary case, so a child reads it at a glance; a value that
+   changes fades in anew and leaves nothing behind (no exit animation and
+   no layout transition, which can leave a ghost of the old words on a
+   strip that re-renders every few seconds). */
 
 /* Which panel of the tab is open, if any; the HUD leaves while one is. */
 export type ElfPanel = 'none' | 'decor'
@@ -46,45 +56,67 @@ export type ElfHudProps = {
   onShop: () => void
   /* Opens the activities hub (the tricks, the games, the peddler, the badges). */
   onActivities: () => void
-  /* The hub has something new (the peddler's basket unbought, a badge's reward to take): a dot on its button. */
+  /* The hub has something new (the peddler's basket unbought, a badge's
+     reward to take, a trick's practice today): a dot on its button. */
   activitiesFresh: boolean
-  /* The rank the tree gives the elf, after its form; a tap on the name
-     block opens the tree. Absent for the egg. */
-  rank: ElfRank | null
-  /* The archetype chosen in the tree, shown in the rank's place. */
+  /* The elf's level and how far its experience has come towards the next
+     level (0..1); the level is null for the egg, which has none. A tap on
+     the name block opens the tree. */
+  level: number | null
+  xpFraction: number
+  /* The nature chosen in the tree, named after the form. */
   archetype: ElfPath | null
+  /* The elf may grow to its next form: the mood line says so and the
+     level wears a dot. */
+  growthReady: boolean
   onTree: () => void
   /* The ledger was tapped: the day's sheet (the quests, the reward to
      pick, the streak, and what the figures mean). */
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, rank, archetype, onTree, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, level, xpFraction, archetype, growthReady, onTree, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
+  const form = t(elfKey('stage', stage))
+  const whatItIs = archetype ? `${form} · ${t(pathKey(archetype))}` : form
+  /* The egg goes by its own word; an elf still to be named by the plain name. */
+  const shownName = stage === 'egg' ? form : name || t('mobile:elf.defaultName')
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.topRow} pointerEvents="box-none">
         <PressableScale
           onPress={onTree}
-          disabled={rank === null}
+          disabled={level === null}
           accessibilityRole="header"
-          accessibilityHint={rank === null ? undefined : t('mobile:elf.treeHint')}
+          accessibilityLabel={level === null ? `${name || form}. ${whatItIs}` : `${name}. ${whatItIs}. ${t('mobile:elf.hudLevel', { level })}${growthReady ? `. ${t('mobile:elf.hudGrowReady')}` : ''}`}
+          accessibilityHint={level === null ? undefined : t('mobile:elf.treeHint')}
           pressedFill="transparent"
           ripple={false}
           style={[styles.chrome, styles.identity]}
         >
-          {/* The name, the form and the rank share a line, so the block
-              stays two lines tall next to the buttons. */}
+          {/* The name and the level share a line. */}
           <View style={styles.nameRow}>
-            {name ? (
-              <Text weight="bold" variant="compact" numberOfLines={1} style={styles.chromeInk}>
-                {name}
-              </Text>
+            <Text weight="bold" variant="compact" numberOfLines={1} style={[styles.chromeInk, styles.name]}>
+              {shownName}
+            </Text>
+            {level !== null ? (
+              <View style={styles.level}>
+                <LevelBadgeIcon size={iconSize.xs} weight="fill" color={colors.accentInk} />
+                <Text variant="label" weight="bold" style={styles.levelInk}>
+                  {t('mobile:elf.hudLevel', { level })}
+                </Text>
+                {growthReady ? <View style={styles.growDot} /> : null}
+              </View>
             ) : null}
-            <CrossfadeText value={rank ? `${t(elfKey('stage', stage))} · ${archetype ? t(pathKey(archetype)) : t(rankKey(rank))}` : t(elfKey('stage', stage))} variant="caption" style={styles.stage} />
           </View>
-          <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
+          <StatusLine name={name} stage={stage} mood={mood} whatItIs={whatItIs} hatchAt={hatchAt} wantedNeed={wantedNeed} growthReady={growthReady} />
+          {/* The experience towards the next level, along the block's foot. */}
+          {level !== null ? (
+            <View style={styles.xpTrack}>
+              <View style={[styles.xpFill, { width: `${Math.round(100 * Math.min(1, Math.max(0, xpFraction)))}%` }]} />
+            </View>
+          ) : null}
         </PressableScale>
         {/* The activities, the shop of star dust, then the decorating:
             squares as tall as the name block beside them; the room can be
@@ -124,7 +156,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
         <LedgerChip Glyph={StreakIcon} value={streak} />
         <View style={[styles.chrome, styles.ledgerChip]}>
           <QuestIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
-          <CrossfadeText value={t('mobile:elf.questsChip', { done: questsDone, total: QUESTS_TOTAL })} variant="small" weight="bold" style={styles.chromeInk} />
+          <FadeText value={t('mobile:elf.questsChip', { done: questsDone, total: QUESTS_TOTAL })} variant="small" weight="bold" style={styles.chromeInk} />
           {/* The caret says the row opens something. */}
           <NextIcon size={iconSize.xs} weight="bold" color={mapPalette.chromeIcon} />
           {rewardWaiting ? <View style={styles.rewardDot} /> : null}
@@ -136,6 +168,17 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
 
 /* The quests a day deals, as the chip counts them. */
 const QUESTS_TOTAL = 3
+
+/* A text of the strip whose value changes in place: the new value fades
+   in, keyed by its content; the old one simply goes (no exit animation,
+   no layout transition: nothing can linger over the new words). */
+function FadeText({ value, ...rest }: TextProps & { value: string }) {
+  return (
+    <Animated.View key={value} entering={fade()} style={styles.fadeLine}>
+      <Text {...rest}>{value}</Text>
+    </Animated.View>
+  )
+}
 
 /* The egg's countdown in words (duration.ts keeps the clock). */
 function useHatchWhen(hatchAt: number | null): { when: string; due: boolean } | null {
@@ -161,45 +204,50 @@ function EggChip({ hatchAt, onPress }: { hatchAt: number; onPress: () => void })
       style={[styles.chrome, styles.ledgerChip]}
     >
       <EggIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
-      <CrossfadeText value={when} variant="small" weight="bold" style={styles.chromeInk} />
+      <FadeText value={when} variant="small" weight="bold" style={styles.chromeInk} />
     </PressableScale>
   )
 }
 
-/* One figure of the ledger: the glyph and the count, which crossfades
+/* One figure of the ledger: the glyph and the count, which fades in anew
    when a quest pays; the row's label names them all for a screen reader. */
 function LedgerChip({ Glyph, value }: { Glyph: Icon; value: number }) {
   return (
     <View style={[styles.chrome, styles.ledgerChip]}>
       <Glyph size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
-      <CrossfadeText value={String(value)} variant="small" weight="bold" style={styles.chromeInk} />
+      <FadeText value={String(value)} variant="small" weight="bold" style={styles.chromeInk} />
     </View>
   )
 }
 
-/* ---------- The mood line ---------- */
+/* ---------- The status line ---------- */
 
-type MoodLineProps = {
+type StatusLineProps = {
   name: string
   stage: ElfStage
   mood: ElfMood
+  /* The form and, once chosen, the nature. */
+  whatItIs: string
   /* When the egg is ready to hatch; null once hatched. */
   hatchAt: number | null
   wantedNeed: ElfNeedId | null
+  growthReady: boolean
 }
 
-/* What the elf is doing, in the name block: the mood's sentence, or the
-   need the elf wants seen to, which says more. The egg's sentence stays
-   the same until the hatch is due: the chip carries the countdown, and a
-   line that changed every minute would be read out every minute. */
-function MoodLine({ name: given, stage, mood, hatchAt, wantedNeed }: MoodLineProps) {
+/* The second line of the name block: the need the elf wants seen to
+   (the care comes first), else that it may grow, else that it misses
+   the player, in gold; otherwise what the elf is (its form and nature).
+   The egg's line says how it hatches and stays the same until the hatch
+   is due: the chip carries the countdown, and a line that changed every
+   minute would be read out every minute. */
+function StatusLine({ name: given, stage, mood, whatItIs, hatchAt, wantedNeed, growthReady }: StatusLineProps) {
   const { t } = useTranslation()
   /* An elf still to be named (the hatch sheet is up) goes by the plain name. */
   const name = given || t('mobile:elf.defaultName')
   const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
-  const want = wantedNeed && stage !== 'egg' ? t(elfKey('wants', wantedNeed), { name }) : null
-  const sentence = hatch ? (hatch.due ? t('mobile:elf.moodEggDue') : t('mobile:elf.moodEgg')) : t(elfKey('mood', mood), { name })
-  return <CrossfadeText value={want ?? sentence} variant="small" numberOfLines={2} style={want ? styles.want : styles.chromeInk} />
+  if (hatch) return <FadeText value={hatch.due ? t('mobile:elf.moodEggDue') : t('mobile:elf.moodEgg')} variant="small" numberOfLines={2} style={hatch.due ? styles.want : styles.chromeInk} />
+  const asks = wantedNeed ? t(elfKey('wants', wantedNeed), { name }) : growthReady ? t('mobile:elf.hudGrowReady') : mood === 'misses' ? t(elfKey('mood', mood), { name }) : null
+  return <FadeText value={asks ?? whatItIs} variant="small" numberOfLines={2} style={asks ? styles.want : styles.stage} />
 }
 
 const styles = StyleSheet.create({
@@ -214,8 +262,8 @@ const styles = StyleSheet.create({
   },
   nameRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: space.sm,
+    alignItems: 'center',
+    gap: space.xs,
   },
   chrome: {
     borderWidth: 1,
@@ -229,14 +277,60 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: space.sm,
     paddingHorizontal: space.md,
-    gap: 1,
+    gap: 2,
   },
   chromeInk: {
     color: mapPalette.chromeInk,
   },
+  fadeLine: {
+    flexShrink: 1,
+  },
+  name: {
+    flexShrink: 1,
+  },
   stage: {
     color: mapPalette.chromeInk,
     opacity: 0.85,
+  },
+  /* The level: a gold pill at the end of the line, the ink of the gold
+     buttons on it. */
+  level: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 1,
+    paddingHorizontal: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent,
+  },
+  levelInk: {
+    color: colors.accentInk,
+  },
+  /* The elf may grow: a green dot on the pill's corner. */
+  growDot: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 9,
+    height: 9,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.accentInk,
+    backgroundColor: colors.success,
+  },
+  /* The experience towards the next level: a thin gold line along the foot. */
+  xpTrack: {
+    marginTop: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: mapPalette.chromeBorder,
+    overflow: 'hidden',
+  },
+  xpFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: colors.accent,
   },
   /* The decorating button: a square the height of the name block, in the
      chrome. */
@@ -260,7 +354,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: radius.pill,
   },
-  /* The reward waiting: a gold dot on the quests chip's corner. */
   /* Something new behind the activities button: a dot in its corner. */
   freshDot: {
     position: 'absolute',
@@ -273,6 +366,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accentInk,
     backgroundColor: colors.accentStrong,
   },
+  /* The reward waiting: a gold dot on the quests chip's corner. */
   rewardDot: {
     position: 'absolute',
     top: -3,

@@ -1,10 +1,11 @@
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
-import { badgesToClaim, badgeStatus, ELF_BADGES, ELF_GAMES, ELF_TRICKS, peddlerWares, trickStatus } from '@chatynkowo/core'
+import { badgesToClaim, badgeStatus, ELF_BADGES, ELF_GAMES, ELF_TRICKS, peddlerWares, trickStatus, tricksToTrain } from '@chatynkowo/core'
 import { useElf } from '../../providers'
 import { BadgesIcon, NextIcon, PeddlerIcon, PressableScale, SheetRoute, Text, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
 import { GAME_ICON, gameKey } from './games/games'
+import { trickKey } from './tricks'
 import { elfNow } from '../../lib/elf-clock'
 
 /* The activities hub (the route /elf-activities), from the activities
@@ -20,9 +21,12 @@ export function ElfActivitiesSheet() {
   const router = useRouter()
   const { state, gamePlaysLeft } = useElf()
   if (!state) return <SheetRoute>{null}</SheetRoute>
+  const now = elfNow()
   const learned = ELF_TRICKS.filter((trick) => trickStatus(state, trick.id) === 'learned').length
   const learning = ELF_TRICKS.filter((trick) => trickStatus(state, trick.id) === 'learning').length
-  const unbought = peddlerWares(state, elfNow()).filter((ware) => !ware.bought).length
+  /* A trick in learning that still waits for today's practice names itself. */
+  const toTrain = tricksToTrain(state, now)[0] ?? null
+  const unbought = peddlerWares(state, now).filter((ware) => !ware.bought).length
   const toClaim = badgesToClaim(state).length
   const earned = ELF_BADGES.filter((badge) => badgeStatus(state, badge.id) !== 'locked').length
   const activities: Activity[] = [
@@ -30,7 +34,7 @@ export function ElfActivitiesSheet() {
       key: 'tricks',
       icon: TricksIcon,
       title: t('mobile:elf.activityTricks'),
-      hint: learning > 0 ? t('mobile:elf.activityTricksLearning', { count: learning }) : t('mobile:elf.activityTricksHint', { learned, total: ELF_TRICKS.length }),
+      hint: toTrain ? t('mobile:elf.activityTricksTrain', { name: t(trickKey(toTrain)) }) : learning > 0 ? t('mobile:elf.activityTricksLearning', { count: learning }) : t('mobile:elf.activityTricksHint', { learned, total: ELF_TRICKS.length }),
       open: () => router.replace('/elf-tricks'),
     },
     ...ELF_GAMES.map((id): Activity => {

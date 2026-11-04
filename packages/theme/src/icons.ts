@@ -97,13 +97,14 @@ export const MOBILE_ICON_ROLES = [
   'TrickCheerIcon',
   'TrickApplauseIcon',
   'TrickToastIcon',
-  /* The games from the couch: the memory of pairs and a round's clock. */
+  /* The games from the couch and the memory of pairs. */
   'GamesIcon',
   'MemoryGameIcon',
-  'GameClockIcon',
-  /* The travelling peddler and his ticket to the games. */
+  /* The travelling peddler, his ticket to the games and his gifts (a
+     treat, a toy, a soap in the pantry, marked under the care buttons). */
   'PeddlerIcon',
   'GameTicketIcon',
+  'GiftIcon',
   /* The badges: the collection's medal, a level reached, the archetype chosen. */
   'BadgesIcon',
   'LevelBadgeIcon',

@@ -26,7 +26,6 @@ import { ArmchairIcon } from 'phosphor-react-native/src/icons/Armchair'
 import { MedalIcon } from 'phosphor-react-native/src/icons/Medal'
 import { TicketIcon } from 'phosphor-react-native/src/icons/Ticket'
 import { BackpackIcon } from 'phosphor-react-native/src/icons/Backpack'
-import { TimerIcon } from 'phosphor-react-native/src/icons/Timer'
 import { CardsIcon } from 'phosphor-react-native/src/icons/Cards'
 import { CheersIcon } from 'phosphor-react-native/src/icons/Cheers'
 import { HandWavingIcon } from 'phosphor-react-native/src/icons/HandWaving'
@@ -96,6 +95,7 @@ import { ShareNetworkIcon } from 'phosphor-react-native/src/icons/ShareNetwork'
 import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck'
 import { SignOutIcon as PhosphorSignOut } from 'phosphor-react-native/src/icons/SignOut'
 import { ShootingStarIcon } from 'phosphor-react-native/src/icons/ShootingStar'
+import { GiftIcon as PhosphorGiftIcon } from 'phosphor-react-native/src/icons/Gift'
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
 import { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront'
 import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife'
@@ -256,11 +256,12 @@ export const TrickToastIcon = CheersIcon
    memory of pairs, and a round's clock. */
 export const GamesIcon = GameControllerIcon
 export const MemoryGameIcon = CardsIcon
-export const GameClockIcon = TimerIcon
 /* The travelling peddler with his basket, and his ticket to the games
    (his other wares borrow the care's, the dust's and the tricks' icons). */
 export const PeddlerIcon = BackpackIcon
 export const GameTicketIcon = TicketIcon
+/* A gift of the peddler's in the pantry (a treat, a toy, a soap). */
+export const GiftIcon = PhosphorGiftIcon
 /* The badges: the medal of the collection, a level reached, the
    archetype chosen (the others borrow the care's, the games', the
    streak's, the tricks', the letters' and the peddler's icons). */
@@ -287,7 +288,7 @@ export const ICON_VOCABULARY = {
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
   ActivitiesIcon, TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
-  GamesIcon, MemoryGameIcon, GameClockIcon, PeddlerIcon, GameTicketIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
+  GamesIcon, MemoryGameIcon, PeddlerIcon, GameTicketIcon, GiftIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */
