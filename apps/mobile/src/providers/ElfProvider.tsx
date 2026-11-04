@@ -1,4 +1,4 @@
-import type { ElfGameId, ElfTrickId } from '@chatynkowo/core'
+import type { ElfGameId, ElfTrickId, ElfWareId } from '@chatynkowo/core'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -31,6 +31,7 @@ import {
   unlockNode as unlockElfNode,
   buyItem as buyElfItem,
   buyTrick as buyElfTrick,
+  buyWare as buyElfWare,
   gamePlaysLeft as elfGamePlaysLeft,
   recordGame,
   trainTrick as trainElfTrick,
@@ -195,6 +196,9 @@ export type ElfValue = {
   finishGame: (id: ElfGameId, points: number) => { acorns: number; xp: number; best: boolean } | null
   gameResult: { id: ElfGameId; points: number; acorns: number; best: boolean; at: number } | null
   clearGameResult: () => void
+  /* A ware bought from the peddler: false when it is not on offer today,
+     bought already or the acorns are short. */
+  buyWare: (id: ElfWareId) => boolean
   /* The pieces the tree granted or the shop sold, free of the finds (slot:id). */
   granted: string[]
   /* Picks one of the day's reward options, once a day. */
@@ -628,6 +632,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [commit],
   )
   const clearGameResult = useCallback(() => setGameResult(null), [])
+  const buyWare = useCallback(
+    (id: ElfWareId): boolean => {
+      const current = stateRef.current
+      if (!current) return false
+      const next = buyElfWare(current, id, Date.now())
+      if (!next) return false
+      commit(next, true)
+      return true
+    },
+    [commit],
+  )
   const buyItem = useCallback(
     (slot: string, id: string): boolean => {
       const current = stateRef.current
@@ -721,6 +736,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       finishGame,
       gameResult,
       clearGameResult,
+      buyWare,
       granted: state ? grantedItems(state) : [],
       claimDailyReward,
       pendingEvolution,
@@ -731,7 +747,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       readLetter,
     }
   }, [state, loaded, foundCount, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+      thankSupport, earnAdDust, addDust, skip, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, buyWare, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

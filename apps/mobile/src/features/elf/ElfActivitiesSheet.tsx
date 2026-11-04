@@ -1,16 +1,16 @@
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
-import { ELF_GAMES, ELF_TRICKS, trickStatus } from '@chatynkowo/core'
+import { ELF_GAMES, ELF_TRICKS, peddlerWares, trickStatus } from '@chatynkowo/core'
 import { useElf } from '../../providers'
-import { NextIcon, PressableScale, SheetRoute, Text, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
+import { NextIcon, PeddlerIcon, PressableScale, SheetRoute, Text, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
 import { GAME_ICON, gameKey } from './games/games'
 
 /* The activities hub (the route /elf-activities), from the activities
    button on the elf's bar: what there is to do with the elf from the
    couch, one row each with a word on where it stands, opening its own
-   sheet or screen: the tricks and the two games; the peddler and the
-   badges join as they come. */
+   sheet or screen: the tricks, the two games and the peddler; the badges
+   join as they come. */
 
 type Activity = { key: string; icon: Icon; title: string; hint: string; open: () => void }
 
@@ -21,6 +21,7 @@ export function ElfActivitiesSheet() {
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const learned = ELF_TRICKS.filter((trick) => trickStatus(state, trick.id) === 'learned').length
   const learning = ELF_TRICKS.filter((trick) => trickStatus(state, trick.id) === 'learning').length
+  const unbought = peddlerWares(state, Date.now()).filter((ware) => !ware.bought).length
   const activities: Activity[] = [
     {
       key: 'tricks',
@@ -40,6 +41,13 @@ export function ElfActivitiesSheet() {
         open: () => router.replace({ pathname: '/elf-game/[id]', params: { id } }),
       }
     }),
+    {
+      key: 'peddler',
+      icon: PeddlerIcon,
+      title: t('mobile:elf.activityPeddler'),
+      hint: unbought > 0 ? t('mobile:elf.activityPeddlerHint', { count: unbought }) : t('mobile:elf.activityPeddlerEmpty'),
+      open: () => router.replace('/elf-peddler'),
+    },
   ]
 
   return (
