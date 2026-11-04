@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { ELF_DEMO } from '../../config'
+import { elfNow } from '../../lib/elf-clock'
 
 /* A wait in the player's words and a clock for the countdowns: the
    egg's chip in the HUD, the shop's skips, the elf's line when a care
@@ -20,13 +22,15 @@ export function durationText(t: Translate, leftMs: number): string {
    state does not change on the elf's drift, so nothing else would
    re-render it. Idle when there is nothing to count. */
 const MINUTE_TICK_MS = 20000
+/* A demo build's clock moves a day in twenty minutes, so its countdowns tick every two seconds. */
+const DEMO_TICK_MS = 2000
 
 export function useClock(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(() => elfNow())
   useEffect(() => {
     if (!active) return
-    setNow(Date.now())
-    const timer = setInterval(() => setNow(Date.now()), MINUTE_TICK_MS)
+    setNow(elfNow())
+    const timer = setInterval(() => setNow(elfNow()), ELF_DEMO ? DEMO_TICK_MS : MINUTE_TICK_MS)
     return () => clearInterval(timer)
   }, [active])
   return now

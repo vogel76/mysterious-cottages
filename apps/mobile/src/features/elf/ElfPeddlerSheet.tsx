@@ -4,6 +4,7 @@ import { peddlerWares, type ElfWare, type ElfWareId } from '@chatynkowo/core'
 import { useElf, useToast } from '../../providers'
 import { AcornsIcon, BathIcon, Button, CheckIcon, DustIcon, FeedIcon, GameTicketIcon, PeddlerIcon, SheetRoute, Text, ToyIcon, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
 import { trickKey } from './tricks'
+import { elfNow } from '../../lib/elf-clock'
 
 /* The travelling peddler (the route /elf-peddler), from the activities
    hub: his greeting, the acorns at hand, and the day's three wares, each
@@ -33,7 +34,7 @@ export function ElfPeddlerSheet() {
   const { state, buyWare } = useElf()
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const acorns = state.wallet.acorns
-  const wares = peddlerWares(state, Date.now())
+  const wares = peddlerWares(state, elfNow())
   const nameOf = (ware: ElfWare) => (ware.id === 'trick' && ware.trick ? t(wareKey('trick'), { name: t(trickKey(ware.trick)) }) : t(wareKey(ware.id)))
   const buy = (ware: ElfWare) => {
     if (buyWare(ware.id)) toast.show({ tone: 'success', text: t('mobile:elf.wareBoughtToast', { name: nameOf(ware) }) })

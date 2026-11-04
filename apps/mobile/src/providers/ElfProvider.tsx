@@ -32,6 +32,7 @@ import {
   buyItem as buyElfItem,
   buyTrick as buyElfTrick,
   buyWare as buyElfWare,
+  configureElfNight,
   claimBadge as claimElfBadge,
   gamePlaysLeft as elfGamePlaysLeft,
   recordGame,
@@ -64,11 +65,15 @@ import {
   type VisitOutcome,
   type WearableSlot,
 } from '@chatynkowo/core'
-import { STORAGE_KEYS } from '../config'
+import { elfNow, elfTime } from '../lib/elf-clock'
+import { ELF_DEMO, STORAGE_KEYS } from '../config'
 import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, PHOTO_ID, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
 import { readJsonStrict, writeJson } from '../lib/storage'
 import { useContent } from './ContentProvider'
 import { useProgress } from './ProgressProvider'
+
+/* A demo build keeps the elf awake through its fast nights (src/config.ts). */
+configureElfNight(!ELF_DEMO)
 
 /* The elf companion's state for the whole app, on the rules in
    @chatynkowo/core (elf.ts): the Elf tab reads and acts on it. The state is
@@ -262,7 +267,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const finds = useMemo<ElfFind[]>(
     () =>
       Object.entries(progress.found)
-        .map(([slug, find]) => ({ slug, at: Date.parse(find.foundAt) }))
+        .map(([slug, find]) => ({ slug, at: elfTime(Date.parse(find.foundAt)) }))
         .filter((find) => Number.isFinite(find.at)),
     [progress.found],
   )
@@ -314,7 +319,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (next: ElfState | null, save: boolean) => {
       stateRef.current = next
       setState(next)
-      refreshPending(next, Date.now())
+      refreshPending(next, elfNow())
       if (save) persist(next)
       else dirtyRef.current = true
     },
@@ -337,7 +342,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       try {
         const raw = await readJsonStrict<unknown>(STORAGE_KEYS.elf)
         if (!current) return
-        const now = Date.now()
+        const now = elfNow()
         const stored = raw ? normalizeElf(raw, now) : null
         /* Only the drift here: the day and the hatch wait for the first
            tick or visit, which report their news. */
@@ -394,11 +399,11 @@ export function ElfProvider({ children }: { children: ReactNode }) {
      the background, a new day or a hatch at once. */
   useEffect(() => {
     if (!loaded) return
-    let lastSave = Date.now()
+    let lastSave = elfNow()
     const tick = () => {
       const current = stateRef.current
       if (!current) return
-      const now = Date.now()
+      const now = elfNow()
       const { state: next, day } = settle(current, now)
       if (next === current) return
       const save = now - lastSave >= DRIFT_SAVE_MS || day.newDay
@@ -426,7 +431,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   /* The finds decide the form: a find that arrives while the elf is on
      screen is seen on the next render. */
   useEffect(() => {
-    refreshPending(stateRef.current, Date.now())
+    refreshPending(stateRef.current, elfNow())
   }, [foundCount, refreshPending])
 
   const christen = useCallback(
@@ -439,7 +444,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   )
 
   const reset = useCallback(() => {
-    commit(newElf(Date.now()), true)
+    commit(newElf(elfNow()), true)
     setNews(null)
     setAway(null)
   }, [commit])
@@ -456,7 +461,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   )
 
   const visit = useCallback(() => {
-    const now = Date.now()
+    const now = elfNow()
     /* The first visit ever lays the egg in the nest. */
     const current = stateRef.current ?? newElf(now)
     const { state: settled, day } = settle(current, now)
@@ -469,7 +474,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const hatchNow = useCallback(() => {
     const current = stateRef.current
     if (!current) return
-    const now = Date.now()
+    const now = elfNow()
     if (!hatchDue(current, now, findsRef.current)) return
     const { state: settled, day } = settle(current, now)
     const next = hatch(settled, now)
@@ -481,7 +486,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (id: ElfCareAction): CareOutcome => {
       const current = stateRef.current
       if (!current) return { kind: 'egg' }
-      const now = Date.now()
+      const now = elfNow()
       const { state: settled, day } = settle(current, now)
       const outcome = performCare(settled, id, now)
       if (outcome.kind !== 'done') return outcome
@@ -496,7 +501,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (id: ElfEggAction) => {
       const current = stateRef.current
       if (!current || current.hatched) return
-      const now = Date.now()
+      const now = elfNow()
       const { state: settled, day } = settle(current, now)
       const outcome = tendEgg(settled, id, now)
       commit(outcome.state, true)
@@ -508,7 +513,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const toggleSleep = useCallback((): SleepOutcome['kind'] => {
     const current = stateRef.current
     if (!current) return 'egg'
-    const now = Date.now()
+    const now = elfNow()
     const { state: settled, day } = settle(current, now)
     const outcome = toggleElfSleep(settled, now)
     if (outcome.kind === 'slept' || outcome.kind === 'woke') {
@@ -521,7 +526,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const pet = useCallback((): boolean => {
     const current = stateRef.current
     if (!current) return false
-    const now = Date.now()
+    const now = elfNow()
     if (now < petAtRef.current) return false
     const { state: settled, day } = settle(current, now)
     const outcome = petElf(settled, now)
@@ -536,7 +541,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (slot: WearableSlot, id: string) => {
       const current = stateRef.current
       if (!current || !WEARABLE_IDS[slot]?.includes(id)) return
-      commit(equipElf(current, slot, id, Date.now()), true)
+      commit(equipElf(current, slot, id, elfNow()), true)
     },
     [commit],
   )
@@ -554,7 +559,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const earnAdDust = useCallback((): number => {
     const current = stateRef.current
     if (!current) return 0
-    const outcome = earnElfAdDust(current, Date.now())
+    const outcome = earnElfAdDust(current, elfNow())
     if (outcome.earned) commit(outcome.state, true)
     return outcome.earned
   }, [commit])
@@ -573,7 +578,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (kind: ElfSkip, pay: 'dust' | 'ad'): boolean => {
       const current = stateRef.current
       if (!current) return false
-      const now = Date.now()
+      const now = elfNow()
       const paid = pay === 'dust' ? spendElfDust(current, SKIP_COST[kind]) : recordElfAd(current, now)
       if (!paid) return false
       const next = applyElfSkip(paid, kind, finds.length, now)
@@ -610,7 +615,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (id: ElfTrickId): 'trained' | 'learned' | 'asleep' | 'done' | null => {
       const current = stateRef.current
       if (!current) return null
-      const outcome = trainElfTrick(current, id, Date.now())
+      const outcome = trainElfTrick(current, id, elfNow())
       if (!outcome) return null
       if (outcome.kind === 'trained' || outcome.kind === 'learned') commit(outcome.state, true)
       return outcome.kind
@@ -618,18 +623,18 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [commit],
   )
   const [trickPlay, setTrickPlay] = useState<ElfValue['trickPlay']>(null)
-  const playTrick = useCallback((id: ElfTrickId, outcome: 'trained' | 'learned' | 'shown') => setTrickPlay({ id, outcome, at: Date.now() }), [])
+  const playTrick = useCallback((id: ElfTrickId, outcome: 'trained' | 'learned' | 'shown') => setTrickPlay({ id, outcome, at: elfNow() }), [])
   const clearTrickPlay = useCallback(() => setTrickPlay(null), [])
-  const gamePlaysLeft = useCallback((id: ElfGameId): number => (stateRef.current ? elfGamePlaysLeft(stateRef.current, id, Date.now()) : 0), [])
+  const gamePlaysLeft = useCallback((id: ElfGameId): number => (stateRef.current ? elfGamePlaysLeft(stateRef.current, id, elfNow()) : 0), [])
   const [gameResult, setGameResult] = useState<ElfValue['gameResult']>(null)
   const finishGame = useCallback(
     (id: ElfGameId, points: number) => {
       const current = stateRef.current
       if (!current) return null
-      const outcome = recordGame(current, id, points, Date.now())
+      const outcome = recordGame(current, id, points, elfNow())
       if (!outcome) return null
       commit(outcome.state, true)
-      setGameResult({ id, points, acorns: outcome.acorns, best: outcome.best, at: Date.now() })
+      setGameResult({ id, points, acorns: outcome.acorns, best: outcome.best, at: elfNow() })
       return { acorns: outcome.acorns, xp: outcome.xp, best: outcome.best }
     },
     [commit],
@@ -639,7 +644,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (id: ElfWareId): boolean => {
       const current = stateRef.current
       if (!current) return false
-      const next = buyElfWare(current, id, Date.now())
+      const next = buyElfWare(current, id, elfNow())
       if (!next) return false
       commit(next, true)
       return true
@@ -673,7 +678,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (slot: SlotId, id: string) => {
       const current = stateRef.current
       if (!current || !DECOR_IDS[slot]?.includes(id) || decorFindsNeeded(slot, id, findsRef.current.length, grantedItems(current)) > 0) return
-      const now = Date.now()
+      const now = elfNow()
       const { state: settled, day } = settle(current, now)
       const outcome = placeElfDecor(settled, slot, id, now)
       if (outcome.state === current) return
@@ -687,7 +692,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (index: number) => {
       const current = stateRef.current
       if (!current) return
-      const now = Date.now()
+      const now = elfNow()
       const { state: settled, day } = settle(current, now)
       const next = claimElfReward(settled, index, now)
       if (next !== current) commit(next, true)
@@ -712,7 +717,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const decor = useMemo(() => resolveDecor(storedDecor, hasFinds), [storedDecor, hasFinds])
 
   const value = useMemo<ElfValue>(() => {
-    const now = Date.now()
+    const now = elfNow()
     return {
       state,
       loaded,

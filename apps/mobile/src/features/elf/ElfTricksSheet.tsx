@@ -4,6 +4,7 @@ import { ELF_TRICKS, trickStatus, trickTrainedToday, type ElfTrickId } from '@ch
 import { useCloseModal, useElf, useToast } from '../../providers'
 import { AcornsIcon, Button, CheckIcon, SheetRoute, Text, colors, iconSize, radius, space } from '../../ui'
 import { TRICK_ICON, trickKey } from './tricks'
+import { elfNow } from '../../lib/elf-clock'
 
 /* The elf's tricks (the route /elf-tricks), from the activities hub: the
    acorns at hand and the six tricks, each a row with its picture, its
@@ -22,7 +23,7 @@ export function ElfTricksSheet() {
   const { state, buyTrick, trainTrick, playTrick } = useElf()
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const acorns = state.wallet.acorns
-  const now = Date.now()
+  const now = elfNow()
 
   const buy = (id: ElfTrickId) => {
     if (buyTrick(id)) toast.show({ tone: 'success', text: t('mobile:elf.trickBoughtToast', { name: t(trickKey(id)) }) })
