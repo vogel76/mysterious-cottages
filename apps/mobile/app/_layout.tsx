@@ -258,6 +258,7 @@ function RootStack() {
       <Stack.Screen name="elf-activities" options={sheetRoute} />
       <Stack.Screen name="elf-tricks" options={sheetRoute} />
       <Stack.Screen name="elf-game/[id]" options={pageSheet} />
+      <Stack.Screen name="elf-peddler" options={sheetRoute} />
       <Stack.Screen name="elf-shelf" options={sheetRoute} />
       {/* Supporting Chatynkowo (src/features/support): a sheet from the
           profile, the Kronika, a tale's end and the celebration card. */}

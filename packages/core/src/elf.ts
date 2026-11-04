@@ -195,6 +195,17 @@ export const GAME_PLAYS_PER_DAY = 3
 export const GAME_ACORNS_MAX = 20
 export type ElfGameRecord = { best: number; played: number }
 
+/* The travelling peddler: three wares a day drawn from his basket, each
+   for acorns and each once a day; a treat, a toy or a soap bring a
+   care's charges back at once, a ticket adds a round to each game for
+   the day, a grain of dust is a grain of dust, and a trick is one the
+   elf has not got, a little under its price in the tricks' catalogue. */
+export type ElfWareId = 'treat' | 'toy' | 'soap' | 'ticket' | 'dust' | 'trick'
+export const ELF_WARES: readonly ElfWareId[] = ['treat', 'toy', 'soap', 'ticket', 'dust', 'trick']
+export const WARES_A_DAY = 3
+export type ElfWare = { id: ElfWareId; acorns: number; trick: ElfTrickId | null; bought: boolean }
+export type ElfPeddler = { day: string; bought: ElfWareId[] }
+
 export type ElfEggAction = 'warm' | 'rock'
 export const ELF_EGG_ACTIONS: readonly ElfEggAction[] = ['warm', 'rock']
 
@@ -239,8 +250,10 @@ export type ElfDaily = {
      or null while the pick is still open. */
   rewardOptions: ElfReward[]
   rewardPicked: number | null
-  /* How many rounds of each game were played today. */
+  /* How many rounds of each game were played today, and the rounds the
+     peddler's ticket added to the day's cap. */
   games: Partial<Record<ElfGameId, number>>
+  extraRounds: number
 }
 
 export type ElfState = {
@@ -317,6 +330,8 @@ export type ElfState = {
   tricks: Partial<Record<ElfTrickId, ElfTrick>>
   /* The games' records: the best points and the rounds played, ever. */
   games: Partial<Record<ElfGameId, ElfGameRecord>>
+  /* The peddler's day and what was bought from him that day. */
+  peddler: ElfPeddler
 }
 
 /* ---------- The numbers ---------- */
@@ -601,7 +616,7 @@ function dealRewards(day: string, name: string): ElfReward[] {
 }
 
 function freshDaily(day: string, name: string, hatched: boolean): ElfDaily {
-  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, games: {} }
+  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, games: {}, extraRounds: 0 }
 }
 
 /* ---------- A new elf and a stored one ---------- */
@@ -644,6 +659,7 @@ export function newElf(now: number): ElfState {
     items: [],
     tricks: {},
     games: {},
+    peddler: { day: '', bought: [] },
   }
 }
 
@@ -680,6 +696,7 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
     rewardOptions: rewards.length === 3 ? rewards : fresh.rewardOptions,
     rewardPicked: typeof raw.rewardPicked === 'number' && raw.rewardPicked >= 0 && raw.rewardPicked < 3 ? Math.floor(raw.rewardPicked) : null,
     games: normalizeGamePlays(raw.games),
+    extraRounds: count(raw.extraRounds),
   }
 }
 
@@ -765,6 +782,7 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     items: stringList(raw.items),
     tricks: normalizeTricks(raw.tricks),
     games: normalizeGames(raw.games),
+    peddler: normalizePeddler(raw.peddler),
   }
   const outfit = stringRecord(raw.outfit, WEARABLE_SLOT_IDS) as Partial<ElfOutfit> | undefined
   const decor = stringRecord(raw.decor)
@@ -1582,7 +1600,7 @@ function normalizeGames(raw: unknown): Partial<Record<ElfGameId, ElfGameRecord>>
 /* The rounds of a game still open today. */
 export function gamePlaysLeft(state: ElfState, id: ElfGameId, now: number): number {
   const daily = state.daily.day === dayKey(now) ? state.daily : null
-  return Math.max(0, GAME_PLAYS_PER_DAY - (daily?.games[id] ?? 0))
+  return Math.max(0, GAME_PLAYS_PER_DAY + (daily?.extraRounds ?? 0) - (daily?.games[id] ?? 0))
 }
 
 /* The acorns a round pays for its points: the points up to the cap,
@@ -1612,6 +1630,69 @@ export function recordGame(state: ElfState, id: ElfGameId, points: number, now: 
   }
   const recorded = recordEvent(played, 'game')
   return { state: recorded.state, acorns, xp: XP.game, best, completed: recorded.completed, setBonus: recorded.setBonus }
+}
+
+/* ---------- The peddler ---------- */
+
+const WARE_ACORNS: Record<Exclude<ElfWareId, 'trick'>, number> = { treat: 20, toy: 25, soap: 30, ticket: 15, dust: 60 }
+/* The peddler's trick costs this much less than the catalogue. */
+const TRICK_WARE_OFF = 10
+
+function isWareId(value: string): value is ElfWareId {
+  return (ELF_WARES as readonly string[]).includes(value)
+}
+
+function normalizePeddler(raw: unknown): ElfPeddler {
+  if (!isRecord(raw)) return { day: '', bought: [] }
+  return { day: typeof raw.day === 'string' ? raw.day : '', bought: stringList(raw.bought).filter(isWareId) }
+}
+
+/* The day's wares: three of the basket drawn by the day (the same on
+   every device, different from the day before), the trick among them
+   only while the elf has one still to buy, with what was bought today. */
+export function peddlerWares(state: ElfState, now: number): ElfWare[] {
+  const day = dayKey(now)
+  const unowned = ELF_TRICKS.filter((trick) => !state.tricks[trick.id])
+  const pool = unowned.length ? ELF_WARES : ELF_WARES.filter((id) => id !== 'trick')
+  const picked: ElfWareId[] = []
+  let seed = hashOf(`${day}|${state.born}|peddler`)
+  while (picked.length < WARES_A_DAY && picked.length < pool.length) {
+    const id = pool[seed % pool.length]!
+    if (!picked.includes(id)) picked.push(id)
+    seed = hashOf(`${seed}`)
+  }
+  const trick = unowned.length ? unowned[hashOf(`${day}|${state.born}|trick`) % unowned.length]!.id : null
+  const bought = state.peddler.day === day ? state.peddler.bought : []
+  return picked.map((id) => ({
+    id,
+    acorns: id === 'trick' && trick ? Math.max(10, trickSpec(trick).acorns - TRICK_WARE_OFF) : WARE_ACORNS[id as Exclude<ElfWareId, 'trick'>],
+    trick: id === 'trick' ? trick : null,
+    bought: bought.includes(id),
+  }))
+}
+
+/* Whether the peddler still has something unbought today. */
+export function peddlerFresh(state: ElfState, now: number): boolean {
+  return peddlerWares(state, now).some((ware) => !ware.bought)
+}
+
+/* A ware bought: null when it is not on offer today, bought already or
+   the acorns are short; the ware does what it does at once. */
+export function buyWare(state: ElfState, id: ElfWareId, now: number): ElfState | null {
+  const current = ensureDay(applyElapsed(state, now), now).state
+  const ware = peddlerWares(current, now).find((offer) => offer.id === id)
+  if (!ware || ware.bought) return null
+  const paid = spendAcorns(current, ware.acorns)
+  if (!paid) return null
+  const day = dayKey(now)
+  let next: ElfState = { ...paid, peddler: { day, bought: [...(paid.peddler.day === day ? paid.peddler.bought : []), id] }, lastInteraction: now }
+  if (id === 'treat') next = refillCare(next, 'feed')
+  else if (id === 'toy') next = refillCare(next, 'play')
+  else if (id === 'soap') next = refillCare(next, 'bath')
+  else if (id === 'ticket') next = { ...next, daily: { ...next.daily, extraRounds: next.daily.extraRounds + 1 } }
+  else if (id === 'dust') next = addDust(next, 1)
+  else if (ware.trick && !next.tricks[ware.trick]) next = { ...next, tricks: { ...next.tricks, [ware.trick]: { sessions: 0, day: null } } }
+  return next
 }
 
 /* ---------- Reminders ---------- */

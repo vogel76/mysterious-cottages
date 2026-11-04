@@ -101,6 +101,9 @@ export const MOBILE_ICON_ROLES = [
   'GamesIcon',
   'MemoryGameIcon',
   'GameClockIcon',
+  /* The travelling peddler and his ticket to the games. */
+  'PeddlerIcon',
+  'GameTicketIcon',
   /* Supporting Chatynkowo (apps/mobile/src/features/support): a coffee
      for the elf, a rewarded ad watched instead. */
   'CoffeeIcon',

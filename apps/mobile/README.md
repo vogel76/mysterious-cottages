@@ -236,6 +236,8 @@ app/                     expo-router routes
                          from the activities hub
   elf-game/[id].tsx      a game from the couch (catch the acorns, memory), a page sheet from the activities hub: a few
                          rounds a day, a round paying acorns by its points and experience
+  elf-peddler.tsx        the travelling peddler: three wares a day for acorns, each once (a care's charges back, a round
+                         more in the games, a grain of dust, a trick under its price); a sheet from the activities hub
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
@@ -774,6 +776,18 @@ screen's card after a round shows the pay and offers once more or the
 way back, and the tab greets the result with the elf's cheer (a best or
 fifteen acorns and more) or its admiring clap.
 
+The travelling peddler (`/elf-peddler`, `ElfPeddlerSheet.tsx`;
+`peddlerWares`, `buyWare` in the rules) comes every day with three
+wares drawn from his basket by the day (the same on every device,
+different from the day before): a treat, a toy or a soap, which bring a
+care's charges back at once (20, 25 and 30 acorns); a ticket, which
+adds a round to each game for the day (15); a grain of dust (60); and
+a trick the elf has not got, ten acorns under the tricks' price, only
+while one is left to buy. Each is bought once a day; the sheet marks
+what was bought, the hub's row counts what is left in the basket, and
+the activities button on the bar carries a dot while the basket holds
+something unbought, the day's small reason to look in.
+
 The elf reaches two places outside its tab: the onboarding pager (the
 welcome of a fresh install and the profile's "How to play") carries a
 page about it, and the Kronika's progress card says how many virtues
@@ -809,6 +823,7 @@ every care, pet, egg, sleep and swap:
 | Tree | sixteen nodes, any parent owned opens a node, a point each: roots (charges back in three quarters of the time); belly (fullness eases half as fast), smile (joy eases half as fast), eye (one sill find more on a return); pantry (four meals), feast (a meal +35 instead of +25), games (three games), party (a game +45 instead of +30), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (two baths; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
 | Tricks | six, for acorns: the wave 40 (2 sessions), the twirl 60 (3), the bow 60 (3), the cheer 80 (3), the applause 80 (4), the toast 100 (4); one practice session a day per trick, none asleep; learned at the last session, then shown on demand (`ELF_TRICKS`, `buyTrick`, `trainTrick`) |
 | Games | catch the acorns and memory, three rounds a day each (`GAME_PLAYS_PER_DAY`); a round pays its points in acorns up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns); the best points kept per game (`gamePlaysLeft`, `recordGame`) |
+| Peddler | three wares a day (`WARES_A_DAY`) drawn by the day from treat 20, toy 25, soap 30 (a care's charges back), ticket 15 (one round more in each game today), dust 60 (one grain) and a trick the elf has not got at its price less 10; each once a day (`peddlerWares`, `buyWare`, `peddlerFresh`) |
 | Forms | baby from the hatch; young with 1 find and 3 days since the egg appeared, or 21 days alone; adult with 5 finds and 14 days, or 90 days alone; elder with 13 finds and 60 days; the days bought in the shop (`daysBonus`) count as days, the cottages cannot be bought |
 | Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |

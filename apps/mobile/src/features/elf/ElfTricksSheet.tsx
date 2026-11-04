@@ -95,7 +95,7 @@ export function ElfTricksSheet() {
                   icon={<AcornsIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
                   onPress={() => buy(spec.id)}
                 >
-                  {t('mobile:elf.trickBuy', { count: spec.acorns })}
+                  {t('mobile:elf.acornsPrice', { count: spec.acorns })}
                 </Button>
               ) : status === 'learning' ? (
                 <Button variant="primary" disabled={trainedToday} accessibilityLabel={t('mobile:elf.trickTrainAria', { name })} onPress={() => train(spec.id)}>

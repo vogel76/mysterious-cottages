@@ -46,6 +46,8 @@ export type ElfHudProps = {
   onShop: () => void
   /* Opens the activities hub (the tricks, the games, the peddler, the badges). */
   onActivities: () => void
+  /* The hub has something new today (the peddler's basket unbought): a dot on its button. */
+  activitiesFresh: boolean
   /* The rank the tree gives the elf, after its form; a tap on the name
      block opens the tree. Absent for the egg. */
   rank: ElfRank | null
@@ -57,7 +59,7 @@ export type ElfHudProps = {
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, rank, archetype, onTree, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, rank, archetype, onTree, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   return (
@@ -89,8 +91,13 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
             arranged for the egg and the elf alike, the activities wait for
             the hatch. */}
         {!egg ? (
-          <PressableScale onPress={onActivities} accessibilityLabel={t('mobile:elf.activitiesOpen')} style={[styles.chrome, styles.control]}>
+          <PressableScale
+            onPress={onActivities}
+            accessibilityLabel={`${t('mobile:elf.activitiesOpen')}${activitiesFresh ? `. ${t('mobile:elf.activitiesFreshAria')}` : ''}`}
+            style={[styles.chrome, styles.control]}
+          >
             <ActivitiesIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
+            {activitiesFresh ? <View style={styles.freshDot} /> : null}
           </PressableScale>
         ) : null}
         <PressableScale onPress={onShop} accessibilityLabel={t('mobile:elf.shopOpen')} style={[styles.chrome, styles.control]}>
@@ -254,6 +261,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   /* The reward waiting: a gold dot on the quests chip's corner. */
+  /* Something new behind the activities button: a dot in its corner. */
+  freshDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 10,
+    height: 10,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.accentInk,
+    backgroundColor: colors.accentStrong,
+  },
   rewardDot: {
     position: 'absolute',
     top: -3,
