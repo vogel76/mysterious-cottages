@@ -171,6 +171,21 @@ export function treeNode(id: ElfNodeId): ElfTreeNode {
 }
 export type ElfRank = 'spark' | 'forester' | 'warden' | 'sage' | 'legend'
 
+/* The tricks: bought for acorns, practised once a day until learned
+   (the sessions each needs), then shown on demand; the app plays each
+   as one of the elf's reactions. */
+export type ElfTrickId = 'wave' | 'twirl' | 'bow' | 'cheer' | 'applause' | 'toast'
+export type ElfTrickSpec = { id: ElfTrickId; acorns: number; sessions: number }
+export const ELF_TRICKS: readonly ElfTrickSpec[] = [
+  { id: 'wave', acorns: 40, sessions: 2 },
+  { id: 'twirl', acorns: 60, sessions: 3 },
+  { id: 'bow', acorns: 60, sessions: 3 },
+  { id: 'cheer', acorns: 80, sessions: 3 },
+  { id: 'applause', acorns: 80, sessions: 4 },
+  { id: 'toast', acorns: 100, sessions: 4 },
+]
+export type ElfTrick = { sessions: number; day: string | null }
+
 export type ElfEggAction = 'warm' | 'rock'
 export const ELF_EGG_ACTIONS: readonly ElfEggAction[] = ['warm', 'rock']
 
@@ -285,6 +300,9 @@ export type ElfState = {
   nodes: ElfNodeId[]
   /* The pieces bought in the shop for dust (slot:id), free of the finds. */
   items: string[]
+  /* The tricks bought, with the practice they have had: the sessions
+     done and the day of the last one. */
+  tricks: Partial<Record<ElfTrickId, ElfTrick>>
 }
 
 /* ---------- The numbers ---------- */
@@ -609,6 +627,7 @@ export function newElf(now: number): ElfState {
     xp: 0,
     nodes: [],
     items: [],
+    tricks: {},
   }
 }
 
@@ -727,6 +746,7 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     xp: count(raw.xp),
     nodes: stringList(raw.nodes).filter(isNodeId),
     items: stringList(raw.items),
+    tricks: normalizeTricks(raw.tricks),
   }
   const outfit = stringRecord(raw.outfit, WEARABLE_SLOT_IDS) as Partial<ElfOutfit> | undefined
   const decor = stringRecord(raw.decor)
@@ -1354,9 +1374,9 @@ export function spendDust(state: ElfState, cost: number): ElfState | null {
 /* ---------- Experience, levels, the tree and the ranks ---------- */
 
 /* What experience comes from: a cottage found (the most), a quest done,
-   the full set, each day a streak goes on, a care given, a letter read
-   and the elf tucked in. */
-export const XP = { find: 40, quest: 8, questSet: 15, streakDay: 5, care: 2, letter: 10, sleep: 3 } as const
+   the full set, each day a streak goes on, a care given, a letter read,
+   the elf tucked in, a trick practised. */
+export const XP = { find: 40, quest: 8, questSet: 15, streakDay: 5, care: 2, letter: 10, sleep: 3, trick: 4 } as const
 
 /* The experience a level starts at: 0, 40, 120, 240, 400, 600... (each
    level forty more than the last), so the early levels come fast and the
@@ -1457,6 +1477,66 @@ export function unlockNode(state: ElfState, id: ElfNodeId): ElfState | null {
    support ledger's count); the thanks itself is the app's sip. */
 export function thankSupport(state: ElfState, total: number): ElfState {
   return total > state.supportThanked ? { ...state, supportThanked: total } : state
+}
+
+/* ---------- Tricks ---------- */
+
+export function trickSpec(id: ElfTrickId): ElfTrickSpec {
+  return ELF_TRICKS.find((trick) => trick.id === id)!
+}
+
+function isTrickId(value: string): value is ElfTrickId {
+  return ELF_TRICKS.some((trick) => trick.id === value)
+}
+
+function normalizeTricks(raw: unknown): Partial<Record<ElfTrickId, ElfTrick>> {
+  const tricks: Partial<Record<ElfTrickId, ElfTrick>> = {}
+  if (!isRecord(raw)) return tricks
+  for (const [id, value] of Object.entries(raw)) {
+    if (isTrickId(id) && isRecord(value)) tricks[id] = { sessions: count(value.sessions), day: typeof value.day === 'string' ? value.day : null }
+  }
+  return tricks
+}
+
+/* Where a trick stands: not bought, in practice, or learned. */
+export type ElfTrickStatus = 'unowned' | 'learning' | 'learned'
+
+export function trickStatus(state: ElfState, id: ElfTrickId): ElfTrickStatus {
+  const trick = state.tricks[id]
+  if (!trick) return 'unowned'
+  return trick.sessions >= trickSpec(id).sessions ? 'learned' : 'learning'
+}
+
+/* Acorns spent: the state with less, or null when there are not enough. */
+export function spendAcorns(state: ElfState, cost: number): ElfState | null {
+  return state.wallet.acorns >= cost ? { ...state, wallet: { ...state.wallet, acorns: state.wallet.acorns - cost } } : null
+}
+
+/* A trick bought: null when owned already or the acorns are short. */
+export function buyTrick(state: ElfState, id: ElfTrickId): ElfState | null {
+  if (state.tricks[id]) return null
+  const paid = spendAcorns(state, trickSpec(id).acorns)
+  return paid ? { ...paid, tricks: { ...paid.tricks, [id]: { sessions: 0, day: null } } } : null
+}
+
+/* Whether a trick had its practice today. */
+export function trickTrainedToday(state: ElfState, id: ElfTrickId, now: number): boolean {
+  return state.tricks[id]?.day === dayKey(now)
+}
+
+export type TrickOutcome = { kind: 'trained' | 'learned'; state: ElfState } | { kind: 'asleep' } | { kind: 'done' }
+
+/* A practice session: once a day for a trick in learning, by an awake
+   elf; it pays its experience, and the last session learns the trick. */
+export function trainTrick(state: ElfState, id: ElfTrickId, now: number): TrickOutcome | null {
+  const trick = state.tricks[id]
+  if (!trick || trickStatus(state, id) === 'learned') return null
+  const current = ensureDay(applyElapsed(state, now), now).state
+  if (current.sleeping) return { kind: 'asleep' }
+  if (trickTrainedToday(current, id, now)) return { kind: 'done' }
+  const sessions = trick.sessions + 1
+  const next: ElfState = { ...current, tricks: { ...current.tricks, [id]: { sessions, day: dayKey(now) } }, lastInteraction: now, xp: current.xp + XP.trick }
+  return { kind: sessions >= trickSpec(id).sessions ? 'learned' : 'trained', state: next }
 }
 
 /* ---------- Reminders ---------- */

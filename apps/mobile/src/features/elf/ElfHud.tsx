@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { type ElfMood, type ElfNeedId, type ElfRank, type ElfStage, type ElfWallet, type ElfPath } from '@chatynkowo/core'
-import { AcornsIcon, CrossfadeText, DecorIcon, DustIcon, EggIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, ActivitiesIcon, CrossfadeText, DecorIcon, DustIcon, EggIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, iconSize, mapPalette, radius, space, type Icon } from '../../ui'
 import { durationText, useClock } from './duration'
 import { elfKey, pathKey, rankKey } from './labels'
 
@@ -44,6 +44,8 @@ export type ElfHudProps = {
   onDecorate: () => void
   /* Opens the shop of star dust. */
   onShop: () => void
+  /* Opens the activities hub (the tricks, the games, the peddler, the badges). */
+  onActivities: () => void
   /* The rank the tree gives the elf, after its form; a tap on the name
      block opens the tree. Absent for the egg. */
   rank: ElfRank | null
@@ -55,7 +57,7 @@ export type ElfHudProps = {
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, rank, archetype, onTree, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, rank, archetype, onTree, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   return (
@@ -82,9 +84,15 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
           </View>
           <MoodLine name={name} stage={stage} mood={mood} hatchAt={hatchAt} wantedNeed={wantedNeed} />
         </PressableScale>
-        {/* The shop of star dust, then the decorating: two squares as tall
-            as the name block beside them; the room can be arranged for the
-            egg and the elf alike. */}
+        {/* The activities, the shop of star dust, then the decorating:
+            squares as tall as the name block beside them; the room can be
+            arranged for the egg and the elf alike, the activities wait for
+            the hatch. */}
+        {!egg ? (
+          <PressableScale onPress={onActivities} accessibilityLabel={t('mobile:elf.activitiesOpen')} style={[styles.chrome, styles.control]}>
+            <ActivitiesIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
+          </PressableScale>
+        ) : null}
         <PressableScale onPress={onShop} accessibilityLabel={t('mobile:elf.shopOpen')} style={[styles.chrome, styles.control]}>
           <ShopIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
         </PressableScale>
