@@ -1102,6 +1102,18 @@ played: a clip's own sheets are drawn, and kept by Skia, only once it
 plays, so the tab's cost now grows with what the elf has done rather
 than arriving whole on entry; the hat's layer and the sounds' players
 (a decoded buffer each) are in these numbers and not in October's.
+Measured again on a release build of 2026-11-04 with the atlases of the
+four acted clips (the APK 140 MB, the same cold starts and reactions,
+no greeting played): the Atlas alone 234 to 257 MB; the young elf's tab
+enters at 537 to 578 MB, 587 to 634 MB after the reactions, 606 to
+626 MB over the next three minutes and the Atlas after it 558 to
+575 MB; the elder's tab enters at 674 MB, 738 MB after the reactions,
+728 to 747 MB over three minutes, the Atlas after it 694 to 709 MB; 62
+fps with none dropped throughout. So the five extra sheets of each
+atlas cost nothing on entry and nothing after the care clips, which is
+the point of drawing a clip's sheets only when it plays; the sheets of
+the four new clips join the tab's cost only once a refusal, a thanks or
+a greeting has played.
 The development client measures far higher (787 MB on the Atlas and
 1.3 GB on the tab in the first series), which is why it is not quoted
 anywhere.
