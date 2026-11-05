@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { FadeIn, FlipInEasyY } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { AcornsIcon, BathIcon, DustIcon, EggIcon, FeedIcon, JarIcon, LetterIcon, PressableScale, StreakIcon, Text, ToyIcon, colors, radius, space, type Icon } from '../../../ui'
+import { AcornsIcon, BathIcon, DustIcon, EggIcon, GiftIcon, JarIcon, LetterIcon, PressableScale, StreakIcon, Text, ToyIcon, colors, radius, space, type Icon } from '../../../ui'
 
 /* Memory: cards face down in pairs of the elf's own pictures (the
-   acorns, the dust, the streak, a meal, a toy, a bath, an egg, a jar, a
-   letter). Two cards turn per move; a pair stays, a miss turns back
+   acorns, the dust, the streak, a gift, a toy, a bath, an egg, a jar, a
+   letter; the meal's picture is the acorn too, so it stays out). Two cards turn per move; a pair stays, a miss turns back
    after a moment. A round climbs through boards that grow (four pairs,
    then six, eight and ten), each with as many misses allowed as it has
    pairs and two more: the last pair of a board opens the next after a
@@ -14,7 +14,7 @@ import { AcornsIcon, BathIcon, DustIcon, EggIcon, FeedIcon, JarIcon, LetterIcon,
    pair ends it in glory. Every pair found is a point and every board
    cleared two more; the rules pay an acorn a point (GAME_POINTS_PER_ACORN). */
 
-const FACES: Icon[] = [AcornsIcon, DustIcon, StreakIcon, FeedIcon, ToyIcon, BathIcon, EggIcon, JarIcon, LetterIcon]
+const FACES: Icon[] = [AcornsIcon, DustIcon, StreakIcon, GiftIcon, ToyIcon, BathIcon, EggIcon, JarIcon, LetterIcon]
 /* The boards of a round, each with its pairs and its columns. */
 const STAGES = [
   { pairs: 4, columns: 4 },

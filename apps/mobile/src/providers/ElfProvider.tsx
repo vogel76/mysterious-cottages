@@ -23,6 +23,7 @@ import {
   adsLeft as elfAdsLeft,
   earnAdDust as earnElfAdDust,
   addDust as addElfDust,
+  DUST,
   spendDust as spendElfDust,
   recordAd as recordElfAd,
   applySkip as applyElfSkip,
@@ -86,8 +87,9 @@ configureElfNight(!ELF_DEMO)
    hiccup never lets a fresh egg overwrite the elf.
    While the app is in the foreground the needs are brought up to date every
    few seconds (the drift is slow, days not minutes), the calendar day is
-   settled as it turns, the egg hatches when its time has come and the elf
-   sleeps and wakes by the clock; the drift is saved every few seconds and
+   settled as it turns, the egg is ready when its time has come (the
+   hatch itself is the player's) and the elf sleeps and wakes by the
+   clock; the drift is saved every few seconds and
    when the app leaves the foreground, every action at once. The day is
    settled on every path (the tick, the visit, each action) and its news
    reported from whichever path settled it, so the new day is never
@@ -581,7 +583,12 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       const paid = pay === 'dust' ? spendElfDust(current, SKIP_COST[kind]) : recordElfAd(current, now)
       if (!paid) return false
       const next = applyElfSkip(paid, kind, now)
-      if (!next) return false
+      if (!next) {
+        /* The wait ended on its own while the ad played: the ad still
+           counts, and pays its dust instead. */
+        if (pay === 'ad') commit(addElfDust(paid, DUST.ad), true)
+        return false
+      }
       commit(next, true)
       return true
     },
@@ -619,16 +626,24 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     },
     [commit],
   )
+  /* The day is settled before a trick, a game or a ware, as before a
+     care: a day that turns inside one of them would otherwise pass with
+     no news and nothing found on the sill. */
   const trainTrick = useCallback(
     (id: ElfTrickId): 'trained' | 'learned' | 'asleep' | 'done' | null => {
       const current = stateRef.current
       if (!current) return null
-      const outcome = trainElfTrick(current, id, elfNow())
+      const now = elfNow()
+      const { state: settled, day } = settle(current, now)
+      const outcome = trainElfTrick(settled, id, now)
       if (!outcome) return null
-      if (outcome.kind === 'trained' || outcome.kind === 'learned') commit(outcome.state, true)
+      if (outcome.kind === 'trained' || outcome.kind === 'learned') {
+        commit(outcome.state, true)
+        if (day.newDay || day.completed.length) report(current, { state: outcome.state, completed: [], setBonus: false }, day)
+      }
       return outcome.kind
     },
-    [commit],
+    [commit, settle, report],
   )
   const [trickPlay, setTrickPlay] = useState<ElfValue['trickPlay']>(null)
   const playTrick = useCallback((id: ElfTrickId, outcome: 'trained' | 'learned' | 'shown') => setTrickPlay({ id, outcome, at: elfNow() }), [])
@@ -639,25 +654,31 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (id: ElfGameId, points: number) => {
       const current = stateRef.current
       if (!current) return null
-      const outcome = recordGame(current, id, points, elfNow())
+      const now = elfNow()
+      const { state: settled, day } = settle(current, now)
+      const outcome = recordGame(settled, id, points, now)
       if (!outcome) return null
       commit(outcome.state, true)
-      setGameResult({ id, points, acorns: outcome.acorns, best: outcome.best, at: elfNow() })
+      report(current, outcome, day)
+      setGameResult({ id, points, acorns: outcome.acorns, best: outcome.best, at: now })
       return { acorns: outcome.acorns, xp: outcome.xp, best: outcome.best }
     },
-    [commit],
+    [commit, settle, report],
   )
   const clearGameResult = useCallback(() => setGameResult(null), [])
   const buyWare = useCallback(
     (id: ElfWareId): boolean => {
       const current = stateRef.current
       if (!current) return false
-      const next = buyElfWare(current, id, elfNow())
+      const now = elfNow()
+      const { state: settled, day } = settle(current, now)
+      const next = buyElfWare(settled, id, now)
       if (!next) return false
       commit(next, true)
+      if (day.newDay || day.completed.length) report(current, { state: next, completed: [], setBonus: false }, day)
       return true
     },
-    [commit],
+    [commit, settle, report],
   )
   const claimBadge = useCallback(
     (id: ElfBadgeId): boolean => {

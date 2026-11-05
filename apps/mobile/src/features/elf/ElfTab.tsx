@@ -474,18 +474,27 @@ export function ElfTab() {
   useEffect(() => {
     if (!catalogueTabs.includes(decorTab)) setDecorTab(catalogueTabs[0] ?? 'rug')
   }, [catalogueTabs, decorTab])
-  /* No elf: no panel, and nothing left to say (a new egg would otherwise
-     be told the old elf's lines). */
+  /* A new egg (the elf started over) or no elf: no panel, nothing left
+     to say (the new egg would otherwise be told the old elf's lines) and
+     no memory of the old elf's moments, so the new one gets its own. The
+     first elf of the mount is left alone. */
+  const eggMoment = state?.eggAppearedAt ?? null
+  const knownEgg = useRef<number | null | undefined>(undefined)
   useEffect(() => {
-    if (state) return
+    const first = knownEgg.current === undefined
+    knownEgg.current = eggMoment
+    if (first) return
     setPanel('none')
     if (speechTimer.current) clearTimeout(speechTimer.current)
     speechTimer.current = null
     speechQueue.current = []
     saying.current = null
     setSpeech(null)
-    setFigureTop(null)
-  }, [state])
+    if (eggMoment === null) setFigureTop(null)
+    evolvedTo.current = null
+    setRevealed(null)
+    calledNeed.current = null
+  }, [eggMoment])
 
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
   const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
@@ -668,6 +677,10 @@ export function ElfTab() {
   const onCare = useCallback(
     (id: ElfCareAction) => {
       const outcome = elf.care(id)
+      /* The tutorial asks for a feed: the try counts, a full belly's
+         refusal included, so the card never waits for a hunger that
+         takes hours to come. */
+      if (id === 'feed' && outcome.kind !== 'egg') tutorial.note('feed')
       if (outcome.kind === 'refused') {
         sceneRef.current?.react('refuse')
         const at = elfNow()
@@ -677,7 +690,6 @@ export function ElfTab() {
       else if (outcome.kind === 'asleep') say(t('mobile:elf.asleepHint'))
       else if (outcome.kind === 'done') {
         sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
-        if (id === 'feed') tutorial.note('feed')
         /* A gift from the pantry: the elf says what it got. */
         if (outcome.gift) say(t(GIFT_LINE[id]))
         /* The scene and the "+N" over the chip show it; a screen reader
