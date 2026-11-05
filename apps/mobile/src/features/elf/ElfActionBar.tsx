@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { BathIcon, FeedIcon, GiftIcon, LullabyIcon, PressableScale, ProgressRing, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
-import { ELF_CARE_NEEDS, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfStage } from '@chatynkowo/core'
+import { ELF_CARE_NEEDS, ENERGY_LOW, ENERGY_MAX, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfStage } from '@chatynkowo/core'
 import { elfKey } from './labels'
 
 /* The care actions as round buttons on a band of the HUD's chrome that
@@ -28,7 +28,9 @@ import { elfKey } from './labels'
    the elf sleeps, or once a cap is used up with no gift at hand, the
    button dims and tells assistive tech it is disabled, but it stays
    pressable: the rules refuse the action and the elf says why, so a tap
-   is never met with silence. The feed button
+   is never met with silence. The sleep button wears the ring of the
+   elf's energy for the games (gold once it runs low: a tired elf yawns,
+   and sleep brings it back). The feed button
    also lets the acorn be dragged: a pan that starts on it reports the
    finger's position in window coordinates to the tab, which floats an
    acorn under the finger, has the elf follow it with its eyes and feeds
@@ -50,6 +52,8 @@ export type ElfActionBarProps = {
   careCharges: Record<ElfCareAction, number>
   /* The peddler's gifts in the pantry, one care each. */
   gifts: Record<ElfCareAction, number>
+  /* The elf's energy for the games, 0..ENERGY_MAX, for the sleep button's ring. */
+  energy: number
   onCare: (id: ElfCareAction) => void
   onTendEgg: (id: ElfEggAction) => void
   onToggleSleep: () => void
@@ -63,8 +67,10 @@ type Action = {
   /* The gold primary face, or the ghost face of the sleep toggle. */
   face: 'primary' | 'ghost'
   disabled?: boolean
-  /* The need the care sees to, 0..100, for the ring. */
+  /* The need the care sees to, 0..100, for the ring; the sleep button's
+     ring shows the energy instead. */
   need?: { id: ElfNeedId; value: number }
+  energy?: number
   /* The charges and what is left of them, as dots under the button, the
      gifts after them, and the same in words for a screen reader. */
   cap?: { total: number; left: number; gifts: number }
@@ -91,7 +97,7 @@ const COMFORTABLE = 60
 const GAIN_SHOWN = 10
 const GAIN_MS = 1400
 
-export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gifts, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
+export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gifts, energy, onCare, onTendEgg, onToggleSleep, onFeedDrag }: ElfActionBarProps) {
   const { t } = useTranslation()
   const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => {
     const needId = ELF_CARE_NEEDS[id]
@@ -122,8 +128,8 @@ export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gi
           care('play', ToyIcon, t('mobile:elf.actionPlay')),
           care('bath', BathIcon, t('mobile:elf.actionBath')),
           sleeping
-            ? { key: 'wake', Glyph: WakeIcon, label: t('mobile:elf.actionWake'), face: 'ghost', onPress: onToggleSleep }
-            : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', onPress: onToggleSleep },
+            ? { key: 'wake', Glyph: WakeIcon, label: t('mobile:elf.actionWake'), face: 'ghost', energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep }
+            : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep },
         ]
 
   /* The first half to the left of the key, the rest to its right. */
@@ -140,12 +146,13 @@ export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gi
 }
 
 function ActionButton({ action }: { action: Action }) {
-  const { Glyph, label, face, disabled, need, cap, valueText, onPress } = action
+  const { Glyph, label, face, disabled, need, energy, cap, valueText, onPress } = action
   const primary = face === 'primary'
   return (
     <View style={[styles.item, disabled && styles.itemDisabled]}>
       <View style={styles.well}>
         {need ? <NeedRing value={need.value} /> : null}
+        {energy !== undefined ? <EnergyRing value={energy} /> : null}
         <PressableScale
           onPress={onPress}
           scaleTo={PRESS_SCALE}
@@ -176,6 +183,15 @@ function NeedRing({ value }: { value: number }) {
   return (
     <View style={styles.ring} pointerEvents="none">
       <ProgressRing size={RING} value={value} max={100} stroke={RING_STROKE} color={value >= COMFORTABLE ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
+    </View>
+  )
+}
+
+/* The energy around the sleep button: full at ENERGY_MAX, gold once low. */
+function EnergyRing({ value }: { value: number }) {
+  return (
+    <View style={styles.ring} pointerEvents="none">
+      <ProgressRing size={RING} value={value} max={ENERGY_MAX} stroke={RING_STROKE} color={value < ENERGY_LOW ? colors.accent : colors.success} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
     </View>
   )
 }

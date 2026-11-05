@@ -69,13 +69,15 @@ export type ElfHudProps = {
   /* The elf may grow to its next form: the mood line says so and the
      level wears a dot. */
   growthReady: boolean
+  /* The elf's request of the day, in its words, while it is open. */
+  request: string | null
   onTree: () => void
   /* The ledger was tapped: the day's sheet (the quests, the reward to
      pick, the streak, and what the figures mean). */
   onLedger: () => void
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, level, xpFraction, archetype, growthReady, onTree, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, level, xpFraction, archetype, growthReady, request, onTree, onLedger }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   const form = t(elfKey('stage', stage))
@@ -110,7 +112,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
               </View>
             ) : null}
           </View>
-          <StatusLine name={name} stage={stage} mood={mood} whatItIs={whatItIs} hatchAt={hatchAt} wantedNeed={wantedNeed} growthReady={growthReady} />
+          <StatusLine name={name} stage={stage} mood={mood} whatItIs={whatItIs} hatchAt={hatchAt} wantedNeed={wantedNeed} growthReady={growthReady} request={request} />
           {/* The experience towards the next level, along the block's foot. */}
           {level !== null ? (
             <View style={styles.xpTrack}>
@@ -238,21 +240,22 @@ type StatusLineProps = {
   hatchAt: number | null
   wantedNeed: ElfNeedId | null
   growthReady: boolean
+  request: string | null
 }
 
 /* The second line of the name block: the need the elf wants seen to
-   (the care comes first), else that it may grow, else that it misses
-   the player, in gold; otherwise what the elf is (its form and nature).
+   (the care comes first), else that it may grow, else its request of
+   the day, else that it misses the player, in gold; otherwise what the elf is (its form and nature).
    The egg's line says how it hatches and stays the same until the hatch
    is due: the chip carries the countdown, and a line that changed every
    minute would be read out every minute. */
-function StatusLine({ name: given, stage, mood, whatItIs, hatchAt, wantedNeed, growthReady }: StatusLineProps) {
+function StatusLine({ name: given, stage, mood, whatItIs, hatchAt, wantedNeed, growthReady, request }: StatusLineProps) {
   const { t } = useTranslation()
   /* An elf still to be named (the hatch sheet is up) goes by the plain name. */
   const name = given || t('mobile:elf.defaultName')
   const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
   if (hatch) return <FadeText value={hatch.due ? t('mobile:elf.moodEggDue') : t('mobile:elf.moodEgg')} variant="small" numberOfLines={2} style={hatch.due ? styles.want : styles.chromeInk} />
-  const asks = wantedNeed ? t(elfKey('wants', wantedNeed), { name }) : growthReady ? t('mobile:elf.hudGrowReady') : mood === 'misses' ? t(elfKey('mood', mood), { name }) : null
+  const asks = wantedNeed ? t(elfKey('wants', wantedNeed), { name }) : growthReady ? t('mobile:elf.hudGrowReady') : request ?? (mood === 'misses' ? t(elfKey('mood', mood), { name }) : null)
   return <FadeText value={asks ?? whatItIs} variant="small" numberOfLines={2} style={asks ? styles.want : styles.stage} />
 }
 

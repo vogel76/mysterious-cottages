@@ -24,7 +24,6 @@ import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft'
 import { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight'
 import { ArmchairIcon } from 'phosphor-react-native/src/icons/Armchair'
 import { MedalIcon } from 'phosphor-react-native/src/icons/Medal'
-import { TicketIcon } from 'phosphor-react-native/src/icons/Ticket'
 import { BackpackIcon } from 'phosphor-react-native/src/icons/Backpack'
 import { CardsIcon } from 'phosphor-react-native/src/icons/Cards'
 import { CheersIcon } from 'phosphor-react-native/src/icons/Cheers'
@@ -256,10 +255,13 @@ export const TrickToastIcon = CheersIcon
    memory of pairs, and a round's clock. */
 export const GamesIcon = GameControllerIcon
 export const MemoryGameIcon = CardsIcon
+/* The forest echo: a melody to repeat. */
+export const EchoGameIcon = MusicNotesIcon
 /* The travelling peddler with his basket, and his ticket to the games
    (his other wares borrow the care's, the dust's and the tricks' icons). */
 export const PeddlerIcon = BackpackIcon
-export const GameTicketIcon = TicketIcon
+/* The peddler's cocoa, energy for the games. */
+export const CocoaIcon = PhosphorCoffee
 /* A gift of the peddler's in the pantry (a treat, a toy, a soap). */
 export const GiftIcon = PhosphorGiftIcon
 /* The badges: the medal of the collection, a level reached, the
@@ -288,7 +290,7 @@ export const ICON_VOCABULARY = {
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
   ActivitiesIcon, TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
-  GamesIcon, MemoryGameIcon, PeddlerIcon, GameTicketIcon, GiftIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
+  GamesIcon, MemoryGameIcon, EchoGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

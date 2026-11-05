@@ -34,9 +34,9 @@ import {
   buyItem as buyElfItem,
   buyTrick as buyElfTrick,
   buyWare as buyElfWare,
-  configureElfNight,
+  showTrick as showElfTrick,
+  gameRounds as elfGameRounds,
   claimBadge as claimElfBadge,
-  gamePlaysLeft as elfGamePlaysLeft,
   recordGame,
   trainTrick as trainElfTrick,
   grantedItems,
@@ -68,14 +68,11 @@ import {
   type WearableSlot,
 } from '@chatynkowo/core'
 import { elfNow, elfTime } from '../lib/elf-clock'
-import { ELF_DEMO, STORAGE_KEYS } from '../config'
+import { STORAGE_KEYS } from '../config'
 import { DECOR_IDS, DEFAULT_DECOR, DEFAULT_OUTFIT, PHOTO_ID, WEARABLE_IDS, type Decor, type SlotId } from '../features/elf/cottage/catalogue'
 import { readJsonStrict, writeJson } from '../lib/storage'
 import { useContent } from './ContentProvider'
 import { useProgress } from './ProgressProvider'
-
-/* A demo build keeps the elf awake through its fast nights (src/config.ts). */
-configureElfNight(!ELF_DEMO)
 
 /* The elf companion's state for the whole app, on the rules in
    @chatynkowo/core (elf.ts): the Elf tab reads and acts on it. The state is
@@ -88,8 +85,8 @@ configureElfNight(!ELF_DEMO)
    While the app is in the foreground the needs are brought up to date every
    few seconds (the drift is slow, days not minutes), the calendar day is
    settled as it turns, the egg is ready when its time has come (the
-   hatch itself is the player's) and the elf sleeps and wakes by the
-   clock; the drift is saved every few seconds and
+   hatch itself is the player's) and a sleeping elf rests and wakes once
+   its energy is back; the drift is saved every few seconds and
    when the app leaves the foreground, every action at once. The day is
    settled on every path (the tick, the visit, each action) and its news
    reported from whichever path settled it, so the new day is never
@@ -203,10 +200,15 @@ export type ElfValue = {
   trickPlay: { id: ElfTrickId; outcome: 'trained' | 'learned' | 'shown'; at: number } | null
   playTrick: (id: ElfTrickId, outcome: 'trained' | 'learned' | 'shown') => void
   clearTrickPlay: () => void
-  /* The games: the rounds of one still open today, a round finished with
-     its points (what it paid, or null when the day's rounds are used up),
-     and the result the tab is to greet next, cleared once greeted. */
-  gamePlaysLeft: (id: ElfGameId) => number
+  /* A learned skill shown at the player's word: the rules hear of it
+     (the day's request); false unless learned and awake. */
+  showTrick: (id: ElfTrickId) => boolean
+  /* The games: the elf's energy and the rounds it still allows (of any
+     game), a round finished with its points (what it paid, or null when
+     the elf has no energy for one), and the result the tab is to greet
+     next, cleared once greeted. */
+  energy: number
+  gameRounds: number
   finishGame: (id: ElfGameId, points: number) => { acorns: number; xp: number; best: boolean } | null
   gameResult: { id: ElfGameId; points: number; acorns: number; best: boolean; at: number } | null
   clearGameResult: () => void
@@ -542,9 +544,14 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     (slot: WearableSlot, id: string) => {
       const current = stateRef.current
       if (!current || !WEARABLE_IDS[slot]?.includes(id)) return
-      commit(equipElf(current, slot, id, elfNow()), true)
+      const now = elfNow()
+      const { state: settled, day } = settle(current, now)
+      const outcome = equipElf(settled, slot, id, now)
+      if (outcome.state === current) return
+      commit(outcome.state, true)
+      report(current, outcome, day)
     },
-    [commit],
+    [commit, settle, report],
   )
 
   const thankSupport = useCallback(
@@ -648,7 +655,20 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   const [trickPlay, setTrickPlay] = useState<ElfValue['trickPlay']>(null)
   const playTrick = useCallback((id: ElfTrickId, outcome: 'trained' | 'learned' | 'shown') => setTrickPlay({ id, outcome, at: elfNow() }), [])
   const clearTrickPlay = useCallback(() => setTrickPlay(null), [])
-  const gamePlaysLeft = useCallback((id: ElfGameId): number => (stateRef.current ? elfGamePlaysLeft(stateRef.current, id, elfNow()) : 0), [])
+  const showTrick = useCallback(
+    (id: ElfTrickId): boolean => {
+      const current = stateRef.current
+      if (!current) return false
+      const now = elfNow()
+      const { state: settled, day } = settle(current, now)
+      const outcome = showElfTrick(settled, id, now)
+      if (!outcome) return false
+      commit(outcome.state, true)
+      report(current, outcome, day)
+      return true
+    },
+    [commit, settle, report],
+  )
   const [gameResult, setGameResult] = useState<ElfValue['gameResult']>(null)
   const finishGame = useCallback(
     (id: ElfGameId, points: number) => {
@@ -781,7 +801,9 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       trickPlay,
       playTrick,
       clearTrickPlay,
-      gamePlaysLeft,
+      showTrick,
+      energy: state?.energy ?? 0,
+      gameRounds: state ? elfGameRounds(state) : 0,
       finishGame,
       gameResult,
       clearGameResult,
@@ -797,7 +819,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       readLetter,
     }
   }, [state, loaded, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, gamePlaysLeft, finishGame, gameResult, clearGameResult, buyWare, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+      thankSupport, earnAdDust, addDust, skip, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, showTrick, finishGame, gameResult, clearGameResult, buyWare, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }
