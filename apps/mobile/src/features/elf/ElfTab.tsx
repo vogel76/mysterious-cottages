@@ -21,6 +21,7 @@ import { DECOR_SLOTS, ElfDecorPanel, type CatalogueTab } from './ElfDecorPanel'
 import { ElfSpeech } from './ElfSpeech'
 import { ElfCard } from './ElfCard'
 import { ElfTutorial } from './ElfTutorial'
+import { TutorialPointer } from './TutorialHalo'
 import { useElfTutorial } from './useElfTutorial'
 import { durationText } from './duration'
 import { TRICK_REACTION, trickKey } from './tricks'
@@ -56,7 +57,9 @@ import { useReturnGreeting } from './useReturnGreeting'
    episode, and a return after half an hour away is greeted. A new player
    is shown the way by the tutorial (useElfTutorial, ElfTutorial): a few
    cards above the care band, once for the egg and once for the named
-   elf, some waiting for the move they ask for. In the same place, once
+   elf, some waiting for the move they ask for, which is lit meanwhile
+   (TutorialHalo: a ring on the button or the purse row, a pointer over
+   the figure). In the same place, once
    no step shows, the elf asks once whether it may let the player know
    when something happens (the reminders, useElfReminders).
 
@@ -529,10 +532,10 @@ export function ElfTab() {
   /* A piece or a hat the finds have not unlocked yet is not placed: the
      elf says how many cottages it still takes. A hat put on, the elf
      twirls in it; a piece placed, it turns to admire it. */
-  const { placeDecor, equip, outfit } = elf
+  const { placeDecor, equip, outfit, granted } = elf
   const onPick = useCallback(
     (tab: CatalogueTab, id: string) => {
-      const needed = decorFindsNeeded(tab, id, foundCount, elf.granted)
+      const needed = decorFindsNeeded(tab, id, foundCount, granted)
       if (needed > 0) {
         say(t('mobile:elf.lockedLine', { count: needed }))
         return
@@ -545,7 +548,7 @@ export function ElfTab() {
       placeDecor(tab, id)
       sceneRef.current?.admireSlot(tab)
     },
-    [placeDecor, equip, foundCount, say, t],
+    [placeDecor, equip, foundCount, granted, say, t],
   )
 
   /* ---------- The elf's own voice ---------- */
@@ -826,6 +829,11 @@ export function ElfTab() {
      the tutorial's card over it) or the decorating catalogue, both on the
      tab bar. */
   const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step || askReminders || askGrow ? cardHeight + space.md : 0) : tabBarHeight + panelHeight
+  /* What the tutorial's step asks for, lit where it is: the egg or the
+     elf in the room (a pointer over the head, out of the bubble's way),
+     a button of the care band, or the purse row. */
+  const target = panel === 'none' ? (tutorial.step?.target ?? null) : null
+  const pointAtFigure = (target === 'egg' || target === 'pet') && speech === null
   /* The level and the way to the next, for the name block. */
   const level = levelOf(state.xp)
   const xpFraction = (state.xp - xpForLevel(level)) / (xpForLevel(level + 1) - xpForLevel(level))
@@ -904,6 +912,7 @@ export function ElfTab() {
               request={request}
               onTree={onTree}
               onLedger={onLedger}
+              highlightLedger={target === 'ledger'}
             />
           </Animated.View>
         ) : null}
@@ -926,6 +935,7 @@ export function ElfTab() {
 
       {/* The elf's line, over its head where the scene says it is. */}
       {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={hudHeight + space.sm} /> : null}
+      {pointAtFigure && figureTop ? <TutorialPointer anchor={figureTop} /> : null}
 
       {(tutorial.step || askReminders || askGrow) && panel === 'none' ? (
         <View style={[styles.tutorial, { bottom: tabBarHeight + bandHeight + space.md }]} pointerEvents="box-none">
@@ -955,11 +965,11 @@ export function ElfTab() {
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} energy={state.energy} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} energy={state.energy} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} highlight={target === 'warm' || target === 'feed' ? target : null} />
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>
-          <ElfDecorPanel decor={decor} hat={outfit.hat} form={drawnForm} photo={photo} tabs={catalogueTabs} foundCount={foundCount} granted={elf.granted} activeTab={decorTab} onSelectTab={setDecorTab} onPick={onPick} onLayout={onPanelLayout} />
+          <ElfDecorPanel decor={decor} hat={outfit.hat} form={drawnForm} photo={photo} tabs={catalogueTabs} foundCount={foundCount} granted={granted} activeTab={decorTab} onSelectTab={setDecorTab} onPick={onPick} onLayout={onPanelLayout} />
         </Animated.View>
       )}
 

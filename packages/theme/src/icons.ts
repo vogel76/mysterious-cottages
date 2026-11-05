@@ -114,6 +114,8 @@ export const MOBILE_ICON_ROLES = [
      for the elf, a rewarded ad watched instead. */
   'CoffeeIcon',
   'WatchAdIcon',
+  /* The tutorial's pointer at what to tap. */
+  'TapHereIcon',
   /* The elf companion (apps/mobile/src/features/elf): the egg, the needs,
      the care actions, the purse, the streak, the day's quests, the jars of
      the cottages found and the lock on a piece they have not unlocked. */

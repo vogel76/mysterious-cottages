@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { peddlerWares, type ElfWare, type ElfWareId } from '@chatynkowo/core'
@@ -37,7 +38,11 @@ function wareKey(id: ElfWareId, part: 'name' | 'desc' = 'name'): string {
 export function ElfPeddlerSheet() {
   const { t } = useTranslation()
   const toast = useToast()
-  const { state, buyWare } = useElf()
+  const { state, buyWare, visitPeddler } = useElf()
+  /* The basket looked at: the hub's dot goes out for the day. */
+  useEffect(() => {
+    visitPeddler()
+  }, [visitPeddler])
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const acorns = state.wallet.acorns
   const wares = peddlerWares(state, elfNow())

@@ -219,7 +219,9 @@ export type ElfWareId = 'treat' | 'toy' | 'soap' | 'cocoa' | 'dust' | 'trick'
 export const ELF_WARES: readonly ElfWareId[] = ['treat', 'toy', 'soap', 'cocoa', 'dust', 'trick']
 export const WARES_A_DAY = 3
 export type ElfWare = { id: ElfWareId; acorns: number; trick: ElfTrickId | null; bought: boolean }
-export type ElfPeddler = { day: string; bought: ElfWareId[] }
+/* What was bought today, and the day the basket was last looked at (the
+   hub's dot says the day's basket is new until then). */
+export type ElfPeddler = { day: string; bought: ElfWareId[]; seenDay: string }
 
 /* The badges: what the elf and its family have done often enough, each
    with a reward to take once reached (acorns, or a grain or three of
@@ -763,7 +765,7 @@ export function newElf(now: number): ElfState {
     items: [],
     tricks: {},
     games: {},
-    peddler: { day: '', bought: [] },
+    peddler: { day: '', bought: [], seenDay: '' },
     counts: { ...NO_COUNTS },
     badges: [],
   }
@@ -1837,9 +1839,9 @@ function isWareId(value: string): value is ElfWareId {
 }
 
 function normalizePeddler(raw: unknown): ElfPeddler {
-  if (!isRecord(raw)) return { day: '', bought: [] }
+  if (!isRecord(raw)) return { day: '', bought: [], seenDay: '' }
   /* The ticket of the games became the cocoa. */
-  return { day: typeof raw.day === 'string' ? raw.day : '', bought: stringList(raw.bought).map((id) => (id === 'ticket' ? 'cocoa' : id)).filter(isWareId) }
+  return { day: typeof raw.day === 'string' ? raw.day : '', bought: stringList(raw.bought).map((id) => (id === 'ticket' ? 'cocoa' : id)).filter(isWareId), seenDay: typeof raw.seenDay === 'string' ? raw.seenDay : '' }
 }
 
 /* The day's wares: three of the basket drawn by the day (the same on
@@ -1866,9 +1868,15 @@ export function peddlerWares(state: ElfState, now: number): ElfWare[] {
   }))
 }
 
-/* Whether the peddler still has something unbought today. */
+/* Whether the day's basket has not been looked at yet. */
 export function peddlerFresh(state: ElfState, now: number): boolean {
-  return peddlerWares(state, now).some((ware) => !ware.bought)
+  return state.peddler.seenDay !== dayKey(now)
+}
+
+/* The basket looked at: the day's wares are no longer new. */
+export function visitPeddler(state: ElfState, now: number): ElfState {
+  const day = dayKey(now)
+  return state.peddler.seenDay === day ? state : { ...state, peddler: { ...state.peddler, seenDay: day } }
 }
 
 /* A ware bought: null when it is not on offer today, bought already or
@@ -1880,7 +1888,7 @@ export function buyWare(state: ElfState, id: ElfWareId, now: number): ElfState |
   const paid = spendAcorns(current, ware.acorns)
   if (!paid) return null
   const day = dayKey(now)
-  let next: ElfState = { ...paid, peddler: { day, bought: [...(paid.peddler.day === day ? paid.peddler.bought : []), id] }, lastInteraction: now, counts: counted(paid.counts, 'wares') }
+  let next: ElfState = { ...paid, peddler: { day, bought: [...(paid.peddler.day === day ? paid.peddler.bought : []), id], seenDay: day }, lastInteraction: now, counts: counted(paid.counts, 'wares') }
   if (id === 'treat') next = { ...next, gifts: { ...next.gifts, feed: next.gifts.feed + 1 } }
   else if (id === 'toy') next = { ...next, gifts: { ...next.gifts, play: next.gifts.play + 1 } }
   else if (id === 'soap') next = { ...next, gifts: { ...next.gifts, bath: next.gifts.bath + 1 } }

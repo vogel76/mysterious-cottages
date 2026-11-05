@@ -95,6 +95,7 @@ import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck'
 import { SignOutIcon as PhosphorSignOut } from 'phosphor-react-native/src/icons/SignOut'
 import { ShootingStarIcon } from 'phosphor-react-native/src/icons/ShootingStar'
 import { GiftIcon as PhosphorGiftIcon } from 'phosphor-react-native/src/icons/Gift'
+import { HandTapIcon } from 'phosphor-react-native/src/icons/HandTap'
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
 import { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront'
 import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife'
@@ -264,6 +265,7 @@ export const PeddlerIcon = BackpackIcon
 export const CocoaIcon = PhosphorCoffee
 /* A gift of the peddler's in the pantry (a treat, a toy, a soap). */
 export const GiftIcon = PhosphorGiftIcon
+export const TapHereIcon = HandTapIcon
 /* The badges: the medal of the collection, a level reached, the
    archetype chosen (the others borrow the care's, the games', the
    streak's, the tricks', the letters' and the peddler's icons). */
@@ -290,7 +292,7 @@ export const ICON_VOCABULARY = {
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
   ActivitiesIcon, TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
-  GamesIcon, MemoryGameIcon, EchoGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
+  GamesIcon, MemoryGameIcon, EchoGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, TapHereIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

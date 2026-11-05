@@ -6,19 +6,24 @@ import { nextStreakMilestone, REQUEST_ACORNS, type ElfQuest, type ElfRequest, ty
 import { announce } from '../../lib/announce'
 import { useElf } from '../../providers'
 import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
-import { QUEST_ICONS, elfKey, requestKey } from './labels'
+import { elfKey, requestKey } from './labels'
 
-/* The elf's day, as a sheet over the tab, opened from the HUD's ledger:
-   the three quests dealt for the day with their progress and their pay
-   (done ones ticked) and the grain of dust for the full set; the day's
+/* The elf's day, as a sheet over the tab, opened from the HUD's ledger.
+   The purse first, as three tiles that name their figures (the acorns,
+   the star dust, the days in a row: the HUD's chips show the same
+   figures by their glyphs alone, so this is where a child learns what
+   they are), with the streak's best and its next milestone under them.
+   Then the day's quests, one plain row each: a tick circle (empty
+   until done), the quest in words with its progress, and its pay at the
+   end; the grain of dust for the full set under them. Then the elf's
+   request of the day in its own words, the same way. Then the day's
    reward as three cards face down, one of which the player turns (the
    rules hold what each card hides and remember the pick, so the sheet
-   shows the turned card and the two missed ones until tomorrow); the way
-   to the keepsake shelf (the jars of the cottages found, the windowsill's
-   treasures, the letters); the streak with its longest and the next
-   milestone; and at the end what the ledger's figures are and earn, for
-   whoever still wonders. The content scrolls inside the sheet on a short
-   screen. */
+   shows the turned card and the two missed ones until tomorrow), the
+   way to the keepsake shelf, and at the end, in a line each, where the
+   acorns, the dust and the streak come from and what they are for. One
+   kind of mark per row and few pictures, so the eye finds what to read.
+   The content scrolls inside the sheet on a short screen. */
 
 export function ElfTodaySheet() {
   const { t } = useTranslation()
@@ -46,6 +51,19 @@ export function ElfTodaySheet() {
         <Text variant="eyebrow" accessibilityRole="header">
           {t('mobile:elf.todayTitle')}
         </Text>
+
+        {/* The purse: the three figures, each with its name. */}
+        <View style={styles.section}>
+          <View style={styles.tiles} accessible accessibilityLabel={t('mobile:elf.ledgerAria', { acorns: wallet.acorns, dust: wallet.dust, streak, done: quests.filter((quest) => quest.done).length, total: quests.length })}>
+            <Tile Glyph={AcornsIcon} value={wallet.acorns} label={t('mobile:elf.ledgerAcorns')} />
+            <Tile Glyph={DustIcon} value={wallet.dust} label={t('mobile:elf.ledgerDust')} />
+            <Tile Glyph={StreakIcon} value={streak} label={t('mobile:elf.ledgerStreak')} />
+          </View>
+          <Text variant="small" tone="faint">
+            {t('mobile:elf.ledgerBest', { count: best })}
+            {next ? ` ${t('mobile:elf.streakNext', { count: next.days - streak, days: next.days })}` : ''}
+          </Text>
+        </View>
 
         <View style={styles.section}>
           <Text weight="bold" accessibilityRole="header">
@@ -97,28 +115,12 @@ export function ElfTodaySheet() {
         </PressableScale>
 
         <View style={styles.section}>
-          <Text weight="bold" accessibilityRole="header">
-            {t('mobile:elf.todayStreak')}
-          </Text>
-          <View style={styles.row}>
-            <StreakIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
-            <View style={styles.column}>
-              <Text>{t('mobile:elf.streakLine', { count: streak })}</Text>
-              <Text variant="small" tone="faint">
-                {t('mobile:elf.ledgerBest', { count: best })}
-                {next ? ` ${t('mobile:elf.streakNext', { count: next.days - streak, days: next.days })}` : ''}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
           <Text variant="eyebrow" accessibilityRole="header">
             {t('mobile:elf.ledgerTitle')}
           </Text>
-          <Figure Glyph={AcornsIcon} title={t('mobile:elf.ledgerAcorns')} value={wallet.acorns} body={t('mobile:elf.ledgerAcornsBody')} />
-          <Figure Glyph={DustIcon} title={t('mobile:elf.ledgerDust')} value={wallet.dust} body={t('mobile:elf.ledgerDustBody')} />
-          <Figure Glyph={StreakIcon} title={t('mobile:elf.ledgerStreak')} value={streak} body={t('mobile:elf.ledgerStreakBody')} />
+          <Whence Glyph={AcornsIcon} title={t('mobile:elf.ledgerAcorns')} body={t('mobile:elf.ledgerAcornsBody')} />
+          <Whence Glyph={DustIcon} title={t('mobile:elf.ledgerDust')} body={t('mobile:elf.ledgerDustBody')} />
+          <Whence Glyph={StreakIcon} title={t('mobile:elf.ledgerStreak')} body={t('mobile:elf.ledgerStreakBody')} />
         </View>
       </View>
     </SheetRoute>
@@ -130,71 +132,88 @@ function rewardLabel(t: (key: string, options: { count: number }) => string, rew
   return reward.kind === 'dust' ? t('mobile:elf.rewardDustAria', { count: reward.amount }) : t('mobile:elf.rewardAcornsAria', { count: reward.amount })
 }
 
-/* One quest: its glyph, its name, the progress or the tick, and its pay
-   (the label says "done" and "1 of 2" in words: "1/2" would be read as a
-   fraction). */
-/* The elf's request of the day: its words, how far it has come and
-   what it pays, ticked once it came. */
-function RequestRow({ request }: { request: ElfRequest }) {
-  const { t } = useTranslation()
-  const Glyph = QUEST_ICONS[request.event]
-  const words = t(requestKey(request.id))
-  const state = request.done ? t('mobile:elf.questDoneAria') : t('mobile:elf.questProgressAria', { progress: request.progress, target: request.target })
+/* One figure of the purse: its glyph, the count large, its name under it. */
+function Tile({ Glyph, value, label }: { Glyph: Icon; value: number; label: string }) {
   return (
-    <View style={[styles.row, request.done && styles.rowDone]} accessible accessibilityLabel={`${words}. ${state}. ${t('mobile:elf.rewardAcornsAria', { count: REQUEST_ACORNS })}`}>
-      <Glyph size={iconSize.md} weight="fill" color={request.done ? colors.success : colors.accentStrong} />
-      <Text style={styles.grow} numberOfLines={2}>
-        {words}
+    <View style={styles.tile}>
+      <Glyph size={iconSize.md} weight="fill" color={colors.accentStrong} />
+      <Text variant="heading">{value}</Text>
+      <Text variant="small" tone="faint" align="center" numberOfLines={1}>
+        {label}
       </Text>
-      {request.done ? (
-        <CheckIcon size={iconSize.sm} weight="bold" color={colors.success} />
-      ) : request.target > 1 ? (
-        <Text variant="small" tone="faint">
-          {t('mobile:elf.questProgress', { progress: request.progress, target: request.target })}
-        </Text>
-      ) : null}
-      <View style={styles.pay}>
-        <AcornsIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
-        <Text variant="small" weight="semibold">
-          {t('mobile:elf.questPay', { count: REQUEST_ACORNS })}
-        </Text>
-      </View>
     </View>
   )
 }
 
+/* The tick circle of a row: empty until done. */
+function Tick({ done }: { done: boolean }) {
+  return <View style={[styles.tick, done && styles.tickDone]}>{done ? <CheckIcon size={iconSize.xs} weight="bold" color={colors.accentInk} /> : null}</View>
+}
+
+/* What a row pays: the acorns, and the dust when there is some. */
+function Pay({ acorns, dust = 0 }: { acorns: number; dust?: number }) {
+  const { t } = useTranslation()
+  return (
+    <View style={styles.pays}>
+      <View style={styles.pay}>
+        <Text variant="small" weight="semibold">
+          {t('mobile:elf.questPay', { count: acorns })}
+        </Text>
+        <AcornsIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
+      </View>
+      {dust > 0 ? (
+        <View style={styles.pay}>
+          <Text variant="small" weight="semibold">
+            {t('mobile:elf.questPay', { count: dust })}
+          </Text>
+          <DustIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
+        </View>
+      ) : null}
+    </View>
+  )
+}
+
+/* One quest: the tick, its name with the progress under it, and its pay
+   (the label says "done" and "1 of 2" in words: "1/2" would be read as a
+   fraction). */
 function QuestRow({ quest }: { quest: ElfQuest }) {
   const { t } = useTranslation()
-  const Glyph = QUEST_ICONS[quest.event]
   const state = quest.done ? t('mobile:elf.questDoneAria') : t('mobile:elf.questProgressAria', { progress: quest.progress, target: quest.target })
   const pay = quest.dust > 0 ? `${t('mobile:elf.rewardAcornsAria', { count: quest.acorns })}, ${t('mobile:elf.rewardDustAria', { count: quest.dust })}` : t('mobile:elf.rewardAcornsAria', { count: quest.acorns })
   return (
     <View style={[styles.row, quest.done && styles.rowDone]} accessible accessibilityLabel={`${t(elfKey('quest', quest.id))}. ${state}. ${pay}`}>
-      <Glyph size={iconSize.md} weight="fill" color={quest.done ? colors.success : colors.accentStrong} />
-      <Text style={styles.grow} numberOfLines={2}>
-        {t(elfKey('quest', quest.id))}
-      </Text>
-      {quest.done ? (
-        <CheckIcon size={iconSize.sm} weight="bold" color={colors.success} />
-      ) : (
-        <Text variant="small" tone="faint">
-          {t('mobile:elf.questProgress', { progress: quest.progress, target: quest.target })}
-        </Text>
-      )}
-      <View style={styles.pay}>
-        <AcornsIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
-        <Text variant="small" weight="semibold">
-          {t('mobile:elf.questPay', { count: quest.acorns })}
-        </Text>
-      </View>
-      {quest.dust > 0 ? (
-        <View style={styles.pay}>
-          <DustIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
-          <Text variant="small" weight="semibold">
-            {t('mobile:elf.questPay', { count: quest.dust })}
+      <Tick done={quest.done} />
+      <View style={styles.grow}>
+        <Text numberOfLines={2}>{t(elfKey('quest', quest.id))}</Text>
+        {!quest.done && quest.target > 1 ? (
+          <Text variant="small" tone="faint">
+            {t('mobile:elf.questProgress', { progress: quest.progress, target: quest.target })}
           </Text>
-        </View>
-      ) : null}
+        ) : null}
+      </View>
+      <Pay acorns={quest.acorns} dust={quest.dust} />
+    </View>
+  )
+}
+
+/* The elf's request of the day: its words, the progress and the pay,
+   ticked once it came. */
+function RequestRow({ request }: { request: ElfRequest }) {
+  const { t } = useTranslation()
+  const words = t(requestKey(request.id))
+  const state = request.done ? t('mobile:elf.questDoneAria') : t('mobile:elf.questProgressAria', { progress: request.progress, target: request.target })
+  return (
+    <View style={[styles.row, request.done && styles.rowDone]} accessible accessibilityLabel={`${words}. ${state}. ${t('mobile:elf.rewardAcornsAria', { count: REQUEST_ACORNS })}`}>
+      <Tick done={request.done} />
+      <View style={styles.grow}>
+        <Text numberOfLines={2}>{words}</Text>
+        {!request.done && request.target > 1 ? (
+          <Text variant="small" tone="faint">
+            {t('mobile:elf.questProgress', { progress: request.progress, target: request.target })}
+          </Text>
+        ) : null}
+      </View>
+      <Pay acorns={REQUEST_ACORNS} />
     </View>
   )
 }
@@ -232,25 +251,26 @@ function RewardCard({ index, reward, picked, onPick }: { index: number; reward: 
   )
 }
 
-/* One figure of the ledger explained: the glyph, the count as it stands,
-   how it is earned and what it is for. */
-function Figure({ Glyph, title, value, body }: { Glyph: Icon; title: string; value: number; body: string }) {
+/* Where a figure comes from and what it is for, in a line. */
+function Whence({ Glyph, title, body }: { Glyph: Icon; title: string; body: string }) {
   return (
-    <View style={styles.figure}>
+    <View style={styles.whence}>
       <View style={styles.glyph}>
-        <Glyph size={iconSize.md} weight="fill" color={colors.accentStrong} />
+        <Glyph size={iconSize.sm} weight="fill" color={colors.accentStrong} />
       </View>
-      <View style={styles.column}>
-        <Text weight="bold">
-          {title}: {value}
+      <Text variant="small" style={styles.grow}>
+        <Text variant="small" weight="bold">
+          {title}
         </Text>
-        <Text variant="small">{body}</Text>
-      </View>
+        {': '}
+        {body}
+      </Text>
     </View>
   )
 }
 
 const CARD_HEIGHT = 96
+const TICK = 24
 
 const styles = StyleSheet.create({
   sheet: {
@@ -260,6 +280,21 @@ const styles = StyleSheet.create({
   section: {
     gap: space.sm,
   },
+  tiles: {
+    flexDirection: 'row',
+    gap: space.sm,
+  },
+  tile: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: space.md,
+    paddingHorizontal: space.xs,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.card,
+    backgroundColor: colors.surfaceSoft,
+  },
   row: {
     flexDirection: 'row',
     gap: space.md,
@@ -267,6 +302,19 @@ const styles = StyleSheet.create({
   },
   rowDone: {
     opacity: 0.7,
+  },
+  tick: {
+    width: TICK,
+    height: TICK,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.accentBorder,
+    borderRadius: radius.pill,
+  },
+  tickDone: {
+    borderColor: colors.success,
+    backgroundColor: colors.success,
   },
   /* The way to the shelf: a row with the press feel of a list. */
   link: {
@@ -276,12 +324,14 @@ const styles = StyleSheet.create({
   grow: {
     flex: 1,
   },
+  pays: {
+    gap: 2,
+    alignItems: 'flex-end',
+  },
   pay: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    minWidth: 44,
-    justifyContent: 'flex-end',
   },
   setLine: {
     flexDirection: 'row',
@@ -318,19 +368,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.xs,
   },
-  /* An explanation runs to several lines: the glyph stays with the title. */
-  figure: {
-    flexDirection: 'row',
-    gap: space.md,
-    alignItems: 'flex-start',
-  },
   mineInk: {
     color: colors.accentInk,
   },
   missedInk: {
     color: colors.inkFaint,
   },
-  /* The glyph lines up with the first line of the title. */
+  /* A line of the ledger's whence: the glyph with its first line. */
+  whence: {
+    flexDirection: 'row',
+    gap: space.sm,
+    alignItems: 'flex-start',
+  },
   glyph: {
     paddingTop: 2,
   },
