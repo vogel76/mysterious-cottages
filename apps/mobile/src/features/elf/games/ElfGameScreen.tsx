@@ -7,17 +7,19 @@ import { ELF_GAMES, type ElfGameId } from '@chatynkowo/core'
 import { useCloseModal, useElf } from '../../../providers'
 import { AcornsIcon, Button, CloseIcon, IconButton, Text, colors, iconSize, radius, space } from '../../../ui'
 import { AcornsGame } from './AcornsGame'
+import { EchoGame } from './EchoGame'
 import { MemoryGame } from './MemoryGame'
 import { GAME_ICON, gameKey } from './games'
 
-/* A game from the couch (the route /elf-game/[id], a page sheet over the
+/* A game with the elf (the route /elf-game/[id], a page sheet over the
    Elf tab): the frame around a board, with the game's name, the rounds
-   still open today and a close button at the top, the board in the
-   middle, and once a round ends its card: the points, the acorns and
-   the experience paid, a word on a new best, and the way on (once more
-   while rounds remain, or back to the elf). The round is handed to the
-   rules as it ends (finishGame in the provider), which also leaves the
-   result for the tab to greet with the elf's reaction. */
+   the elf's energy still allows and a close button at the top, the
+   board in the middle, and once a round ends its card: the points, the
+   acorns and the experience paid, a word on a new best, and the way on
+   (once more while the energy lasts, or back to the elf); with no
+   energy left the card says sleep or the shop brings it back. The round
+   is handed to the rules as it ends (finishGame in the provider), which
+   also leaves the result for the tab to greet with the elf's reaction. */
 
 export function ElfGameScreen() {
   const { t } = useTranslation()
@@ -25,10 +27,10 @@ export function ElfGameScreen() {
   const close = useCloseModal()
   const params = useLocalSearchParams<{ id?: string }>()
   const id: ElfGameId = (ELF_GAMES as readonly string[]).includes(params.id ?? '') ? (params.id as ElfGameId) : 'acorns'
-  const { state, gamePlaysLeft, finishGame } = useElf()
+  const { state, gameRounds, finishGame } = useElf()
   const [round, setRound] = useState(0)
   const [result, setResult] = useState<{ points: number; acorns: number; xp: number; best: boolean } | null>(null)
-  const left = gamePlaysLeft(id)
+  const left = gameRounds
   const best = state?.games[id]?.best ?? 0
   const Glyph = GAME_ICON[id]
 
@@ -51,7 +53,7 @@ export function ElfGameScreen() {
               {t(gameKey(id))}
             </Text>
             <Text variant="small" tone="soft">
-              {left > 0 ? t('mobile:elf.gamePlaysLeft', { count: left }) : t('mobile:elf.gamePlaysNone')}
+              {left > 0 ? t('mobile:elf.energyRounds', { count: left }) : t('mobile:elf.energyNone')}
               {best > 0 ? ` · ${t('mobile:elf.gameBest', { count: best })}` : ''}
             </Text>
           </View>
@@ -91,12 +93,14 @@ export function ElfGameScreen() {
       ) : left > 0 ? (
         id === 'acorns' ? (
           <AcornsGame key={round} onFinish={onFinish} />
-        ) : (
+        ) : id === 'memory' ? (
           <MemoryGame key={round} onFinish={onFinish} />
+        ) : (
+          <EchoGame key={round} onFinish={onFinish} />
         )
       ) : (
         <View style={styles.card}>
-          <Text tone="soft">{t('mobile:elf.gamePlaysNone')}</Text>
+          <Text tone="soft">{t('mobile:elf.energyNoneLong')}</Text>
           <Button block onPress={close}>
             {t('mobile:elf.gameBack')}
           </Button>

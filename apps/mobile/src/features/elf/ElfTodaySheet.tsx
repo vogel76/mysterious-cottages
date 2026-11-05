@@ -2,11 +2,11 @@ import { StyleSheet, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { nextStreakMilestone, type ElfQuest, type ElfReward } from '@chatynkowo/core'
+import { nextStreakMilestone, REQUEST_ACORNS, type ElfQuest, type ElfRequest, type ElfReward } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { useElf } from '../../providers'
 import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
-import { QUEST_ICONS, elfKey } from './labels'
+import { QUEST_ICONS, elfKey, requestKey } from './labels'
 
 /* The elf's day, as a sheet over the tab, opened from the HUD's ledger:
    the three quests dealt for the day with their progress and their pay
@@ -25,6 +25,7 @@ export function ElfTodaySheet() {
   const router = useRouter()
   const { state, claimDailyReward } = useElf()
   const quests = state?.daily.quests ?? []
+  const request = state?.daily.request ?? null
   const rewards = state?.daily.rewardOptions ?? []
   const picked = state?.daily.rewardPicked ?? null
   const bonus = state?.daily.bonusGranted ?? false
@@ -60,6 +61,15 @@ export function ElfTodaySheet() {
             </Text>
           </View>
         </View>
+
+        {request ? (
+          <View style={styles.section}>
+            <Text weight="bold" accessibilityRole="header">
+              {t('mobile:elf.todayRequest')}
+            </Text>
+            <RequestRow request={request} />
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <Text weight="bold" accessibilityRole="header">
@@ -123,6 +133,36 @@ function rewardLabel(t: (key: string, options: { count: number }) => string, rew
 /* One quest: its glyph, its name, the progress or the tick, and its pay
    (the label says "done" and "1 of 2" in words: "1/2" would be read as a
    fraction). */
+/* The elf's request of the day: its words, how far it has come and
+   what it pays, ticked once it came. */
+function RequestRow({ request }: { request: ElfRequest }) {
+  const { t } = useTranslation()
+  const Glyph = QUEST_ICONS[request.event]
+  const words = t(requestKey(request.id))
+  const state = request.done ? t('mobile:elf.questDoneAria') : t('mobile:elf.questProgressAria', { progress: request.progress, target: request.target })
+  return (
+    <View style={[styles.row, request.done && styles.rowDone]} accessible accessibilityLabel={`${words}. ${state}. ${t('mobile:elf.rewardAcornsAria', { count: REQUEST_ACORNS })}`}>
+      <Glyph size={iconSize.md} weight="fill" color={request.done ? colors.success : colors.accentStrong} />
+      <Text style={styles.grow} numberOfLines={2}>
+        {words}
+      </Text>
+      {request.done ? (
+        <CheckIcon size={iconSize.sm} weight="bold" color={colors.success} />
+      ) : request.target > 1 ? (
+        <Text variant="small" tone="faint">
+          {t('mobile:elf.questProgress', { progress: request.progress, target: request.target })}
+        </Text>
+      ) : null}
+      <View style={styles.pay}>
+        <AcornsIcon size={iconSize.xs} weight="fill" color={colors.accentStrong} />
+        <Text variant="small" weight="semibold">
+          {t('mobile:elf.questPay', { count: REQUEST_ACORNS })}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
 function QuestRow({ quest }: { quest: ElfQuest }) {
   const { t } = useTranslation()
   const Glyph = QUEST_ICONS[quest.event]

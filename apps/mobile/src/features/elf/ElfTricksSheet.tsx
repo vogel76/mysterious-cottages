@@ -15,7 +15,9 @@ import { elfNow } from '../../lib/elf-clock'
    the toast says so), so nothing is left to guess; one in learning says
    how many practices are left and offers the day's, once a day (the
    rules refuse a second, and a sleeping elf), and says to come back
-   tomorrow once it had it; a learned one offers to be shown. Practice
+   tomorrow once it had it; a learned one offers to be shown (the rules hear of the show, for
+   the day's request; a learned skill the elf also shows on its own now
+   and then, which the lead says). Practice
    and a show close the sheet and hand the trick to the tab, which plays
    the reaction in the room with the elf's line. The rules hold the
    catalogue, the prices and the sessions (packages/core: ELF_TRICKS,
@@ -25,7 +27,7 @@ export function ElfTricksSheet() {
   const { t } = useTranslation()
   const close = useCloseModal()
   const toast = useToast()
-  const { state, buyTrick, trainTrick, playTrick } = useElf()
+  const { state, buyTrick, trainTrick, playTrick, showTrick } = useElf()
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const acorns = state.wallet.acorns
   const now = elfNow()
@@ -48,7 +50,7 @@ export function ElfTricksSheet() {
     } else if (outcome === 'asleep') toast.show({ tone: 'info', text: t('mobile:elf.trickAsleep') })
   }
   const show = (id: ElfTrickId) => {
-    if (state.sleeping) {
+    if (!showTrick(id)) {
       toast.show({ tone: 'info', text: t('mobile:elf.trickAsleep') })
       return
     }

@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, hatchAt, levelOf, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
+import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, ENERGY_MAX, hatchAt, levelOf, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
 import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport, useToast } from '../../providers'
 import { Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { packLabelKey } from '../support/tips'
@@ -18,7 +18,8 @@ import { elfKey } from './labels'
    a day, and the store's packs, consumable products the support provider
    sells beside the coffees and credits on payment), then the skips of the
    waiting the rules allow (the egg before its hour, a care's charges
-   before their time, the next form before its level; a form whose level
+   before their time, the elf's energy for the games before its sleep,
+   the next form before its level; a form whose level
    is reached is not for sale, the elf grows for free at the player's
    word), each for its dust (SKIP_COST) or for one ad, which counts
    towards the same daily cap, the two ways to pay as two buttons of one
@@ -40,7 +41,7 @@ export function ElfShopSheet() {
   const online = useOnline()
   const close = useCloseModal()
   const support = useSupport()
-  const { state, stage, finds, adsLeft, earnAdDust, skip, nextForm, buyItem } = useElf()
+  const { state, stage, finds, adsLeft, earnAdDust, skip, nextForm, buyItem, gameRounds } = useElf()
   const toast = useToast()
   const [earned, setEarned] = useState(0)
   const now = useClock(true)
@@ -89,6 +90,12 @@ export function ElfShopSheet() {
         open: left < total,
       })
     }
+    skips.push({
+      kind: 'energy',
+      title: t('mobile:elf.shopSkipEnergy'),
+      detail: state.energy >= ENERGY_MAX ? t('mobile:elf.shopSkipEnergyFull') : gameRounds > 0 ? t('mobile:elf.energyRounds', { count: gameRounds }) : t('mobile:elf.energyNone'),
+      open: state.energy < ENERGY_MAX,
+    })
     if (nextForm) {
       const form = t(elfKey('stage', nextForm.form))
       const detail = nextForm.ready ? t('mobile:elf.shopSkipGrowReady', { form }) : t('mobile:elf.shopSkipGrowLevels', { form, count: Math.max(1, nextForm.level - levelOf(state.xp)) })

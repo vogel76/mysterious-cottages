@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { peddlerWares, type ElfWare, type ElfWareId } from '@chatynkowo/core'
 import { useElf, useToast } from '../../providers'
-import { AcornsIcon, BathIcon, Button, CheckIcon, DustIcon, FeedIcon, GameTicketIcon, PeddlerIcon, SheetRoute, Text, ToyIcon, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, BathIcon, Button, CheckIcon, CocoaIcon, DustIcon, FeedIcon, PeddlerIcon, SheetRoute, Text, ToyIcon, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
 import { trickKey } from './tricks'
 import { elfNow } from '../../lib/elf-clock'
 
@@ -13,9 +13,9 @@ import { elfNow } from '../../lib/elf-clock'
    day and do what a ware does as it is bought (packages/core:
    peddlerWares, buyWare): a treat, a toy or a soap go to the pantry as a
    gift the care button hands over whatever the charges and the belly
-   (the toast says which button), a ticket adds a round to each game for
-   the day, a grain of dust is one, and a trick is one the elf has not
-   got, under its usual price (the toast points at the tricks, where it
+   (the toast says which button), a cocoa gives the elf energy for two
+   games, a grain of dust is one, and a skill is one the elf has not
+   got, under its usual price (the toast points at the skills, where it
    is practised). */
 
 /* The care button a gift waits under. */
@@ -25,7 +25,7 @@ const WARE_ICON: Record<ElfWareId, Icon> = {
   treat: FeedIcon,
   toy: ToyIcon,
   soap: BathIcon,
-  ticket: GameTicketIcon,
+  cocoa: CocoaIcon,
   dust: DustIcon,
   trick: TricksIcon,
 }

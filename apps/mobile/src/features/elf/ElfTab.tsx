@@ -4,7 +4,7 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { archetypeOf, badgesToClaim, careCharges, peddlerFresh, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, hatchAt, levelOf, isBedtimeAt, plantStageAt, tricksToTrain, wantedNeed, xpForLevel, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId } from '@chatynkowo/core'
+import { archetypeOf, badgesToClaim, careCharges, peddlerFresh, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, ENERGY_LOW, hatchAt, learnedTricks, levelOf, plantStageAt, tricksToTrain, wantedNeed, xpForLevel, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId, type ElfTrickId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { requestNotificationPermission } from '../../lib/notifications'
 import { setReminders } from '../../lib/reminders-store'
@@ -24,7 +24,7 @@ import { ElfTutorial } from './ElfTutorial'
 import { useElfTutorial } from './useElfTutorial'
 import { durationText } from './duration'
 import { TRICK_REACTION, trickKey } from './tricks'
-import { elfKey } from './labels'
+import { elfKey, requestKey } from './labels'
 import { elfNow } from '../../lib/elf-clock'
 import { useElfCardPresenter } from './useElfCardPresenter'
 import { useElfSounds } from './useElfSounds'
@@ -126,6 +126,10 @@ const EVOLVE_FIGURE_WAIT_MS = 5000
 const ACORN = 44
 /* What the elf says when a gift from the pantry is given. */
 const GIFT_LINE: Record<ElfCareAction, string> = { feed: 'mobile:elf.giftFeedLine', play: 'mobile:elf.giftPlayLine', bath: 'mobile:elf.giftBathLine' }
+/* A learned skill shown on the elf's own: this long after the tab's
+   opening or the last show, and a spread on top. */
+const SHOW_OFF_MIN_MS = 25_000
+const SHOW_OFF_SPREAD_MS = 35_000
 
 export function ElfTab() {
   const { t, i18n } = useTranslation()
@@ -281,10 +285,13 @@ export function ElfTab() {
     if (news.newDay) lines.push(t('mobile:elf.newDayLine'))
     const find = news.away && !news.away.card ? news.away.found[0] : undefined
     if (find) lines.push(t('mobile:elf.sillFoundLine', { item: lowerFirst(t(elfKey('sill', find)), i18n.language) }))
-    for (const quest of news.completed) lines.push(quest.dust > 0 ? t('mobile:elf.questDoneDust', { count: quest.acorns, dust: quest.dust }) : t('mobile:elf.questDone', { count: quest.acorns }))
+    for (const quest of news.completed) {
+      if (quest.id === 'request') lines.push(t('mobile:elf.requestDoneLine', { count: quest.acorns }))
+      else lines.push(quest.dust > 0 ? t('mobile:elf.questDoneDust', { count: quest.acorns, dust: quest.dust }) : t('mobile:elf.questDone', { count: quest.acorns }))
+    }
     if (news.setBonus) lines.push(t('mobile:elf.questSet'))
     queueSpeech(lines)
-    if (news.setBonus || news.milestoneDust || news.celebrate.length) sceneRef.current?.react('cheer')
+    if (news.setBonus || news.milestoneDust || news.celebrate.length || news.completed.some((quest) => quest.id === 'request')) sceneRef.current?.react('cheer')
   }, [news, focused, queueSpeech, t, i18n.language, cottages, foundCount])
 
 
@@ -714,10 +721,30 @@ export function ElfTab() {
 
   /* The wake itself is played by the sleeping edge above. */
   const onToggleSleep = useCallback(() => {
-    const outcome = elf.toggleSleep()
-    if (outcome === 'slept') say(t('mobile:elf.fallsAsleep'))
-    else if (outcome === 'tooEarly') say(t('mobile:elf.tooEarlyHint'))
+    if (elf.toggleSleep() === 'slept') say(t('mobile:elf.fallsAsleep'))
   }, [elf, say, t])
+
+  /* A skill learned is the elf's own: now and then, while the tab is
+     in view, the elf awake and nothing else going on, it shows one of
+     its skills unasked, with its line. */
+  const skillsKey = state ? learnedTricks(state).join(',') : ''
+  useEffect(() => {
+    if (!skillsKey || !focused || !awake || panel !== 'none') return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const next = () => {
+      timer = setTimeout(() => {
+        const shown = skillsKey.split(',') as ElfTrickId[]
+        const id = shown[Math.floor(Math.random() * shown.length)]!
+        sceneRef.current?.react(TRICK_REACTION[id])
+        say(t(trickKey(id, 'line')))
+        next()
+      }, SHOW_OFF_MIN_MS + Math.random() * SHOW_OFF_SPREAD_MS)
+    }
+    next()
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [skillsKey, focused, awake, panel, say, t])
 
   /* ---------- Drag-to-feed ---------- */
 
@@ -790,9 +817,11 @@ export function ElfTab() {
   const left = { feed: careLeft(state, 'feed', now), play: careLeft(state, 'play', now), bath: careLeft(state, 'bath', now) }
   const charges = { feed: careCharges(state, 'feed'), play: careCharges(state, 'play'), bath: careCharges(state, 'bath') }
   const editing = panel === 'decor'
-  /* Bedtime, before the elf is tucked in: heavy lids and yawns say it is
-     time. Read at render: the drift re-renders the tab every few seconds. */
-  const sleepy = awake && isBedtimeAt(now)
+  /* A tired elf (its energy low): heavy lids and yawns say it is time
+     for bed. Read at render: the drift re-renders the tab every few seconds. */
+  const sleepy = awake && state.energy < ENERGY_LOW
+  /* The elf's request of the day, in its words, while it is open. */
+  const request = state.daily.request && !state.daily.request.done ? t(requestKey(state.daily.request.id)) : null
   /* What covers the view's bottom, for the room's band: the care band (and
      the tutorial's card over it) or the decorating catalogue, both on the
      tab bar. */
@@ -872,6 +901,7 @@ export function ElfTab() {
               xpFraction={xpFraction}
               archetype={archetypeOf(state)}
               growthReady={Boolean(elf.nextForm?.ready) && !pendingEvolution}
+              request={request}
               onTree={onTree}
               onLedger={onLedger}
             />
@@ -925,7 +955,7 @@ export function ElfTab() {
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} energy={state.energy} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} />
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>
