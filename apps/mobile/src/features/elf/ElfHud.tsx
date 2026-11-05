@@ -1,10 +1,11 @@
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { type ElfMood, type ElfNeedId, type ElfStage, type ElfWallet, type ElfPath } from '@chatynkowo/core'
 import { AcornsIcon, ActivitiesIcon, DecorIcon, DustIcon, EggIcon, LevelBadgeIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, fade, iconSize, mapPalette, radius, space, type Icon, type TextProps } from '../../ui'
 import { durationText, useClock } from './duration'
 import { elfKey, pathKey } from './labels'
+import { TutorialHalo } from './TutorialHalo'
 
 /* The strip over the cottage, in the dark chrome of the Atlas's cards so
    the two full-bleed tabs read alike: two rows, and the room starts under
@@ -56,8 +57,9 @@ export type ElfHudProps = {
   onShop: () => void
   /* Opens the activities hub (the tricks, the games, the peddler, the badges). */
   onActivities: () => void
-  /* The hub has something new (the peddler's basket unbought, a badge's
-     reward to take, a trick's practice today): a dot on its button. */
+  /* The hub has something new (the peddler's basket not yet looked at
+     today, a badge's reward to take, a skill's practice today): a dot on
+     its button. */
   activitiesFresh: boolean
   /* The elf's level and how far its experience has come towards the next
      level (0..1); the level is null for the egg, which has none. A tap on
@@ -75,9 +77,11 @@ export type ElfHudProps = {
   /* The ledger was tapped: the day's sheet (the quests, the reward to
      pick, the streak, and what the figures mean). */
   onLedger: () => void
+  /* The tutorial asks for the ledger: its row wears a breathing ring. */
+  highlightLedger?: boolean
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, level, xpFraction, archetype, growthReady, request, onTree, onLedger }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, level, xpFraction, archetype, growthReady, request, onTree, onLedger, highlightLedger = false }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   const form = t(elfKey('stage', stage))
@@ -152,6 +156,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
         ripple={false}
         style={styles.ledger}
       >
+        {highlightLedger ? <TutorialHalo /> : null}
         {egg ? <EggChip hatchAt={hatchAt} onPress={onShop} /> : null}
         <LedgerChip Glyph={AcornsIcon} value={wallet.acorns} />
         <LedgerChip Glyph={DustIcon} value={wallet.dust} />
@@ -176,13 +181,15 @@ const QUESTS_TOTAL = 3
    measured too wide, its second line of text cut off once the buttons
    took their room. */
 const CONTROL = 60
+/* The countdown chip's text keeps this width whatever the count says. */
+const COUNTDOWN_WIDTH = 100
 
 /* A text of the strip whose value changes in place: the new value fades
    in, keyed by its content; the old one simply goes (no exit animation,
    no layout transition: nothing can linger over the new words). */
-function FadeText({ value, ...rest }: TextProps & { value: string }) {
+function FadeText({ value, lineStyle, ...rest }: TextProps & { value: string; lineStyle?: StyleProp<ViewStyle> }) {
   return (
-    <Animated.View key={value} entering={fade()} style={styles.fadeLine}>
+    <Animated.View key={value} entering={fade()} style={[styles.fadeLine, lineStyle]}>
       <Text {...rest}>{value}</Text>
     </Animated.View>
   )
@@ -212,7 +219,8 @@ function EggChip({ hatchAt, onPress }: { hatchAt: number; onPress: () => void })
       style={[styles.chrome, styles.ledgerChip]}
     >
       <EggIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
-      <FadeText value={when} variant="small" weight="bold" style={styles.chromeInk} />
+      {/* One width for every count, in figures of one width: the row would otherwise shift each minute. */}
+      <FadeText value={when} variant="small" weight="bold" style={[styles.chromeInk, styles.countdown]} lineStyle={styles.countdownLine} />
     </PressableScale>
   )
 }
@@ -293,6 +301,13 @@ const styles = StyleSheet.create({
   },
   fadeLine: {
     flexShrink: 1,
+  },
+  /* The egg's countdown: room for its longest form ("za 23 h 59 min"). */
+  countdownLine: {
+    minWidth: COUNTDOWN_WIDTH,
+  },
+  countdown: {
+    fontVariant: ['tabular-nums'],
   },
   name: {
     flexShrink: 1,

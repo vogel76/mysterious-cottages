@@ -27,3 +27,13 @@ The app plays them in `src/features/elf/useElfSounds.ts`.
 | `sip.mp3` | the sip of coffee that thanks for the player's support (the two sips and the sigh, 0.85 to 3.5 s of the preview) | [Sip of coffee, swallow then "ah"](https://freesound.org/people/odditonic/sounds/194808/) | odditonic | CC0 1.0 |
 | `beckon.mp3` | the beckon towards the door | [Short Whistle](https://freesound.org/people/CressieCres/sounds/498167/) | CressieCres | CC0 1.0 |
 | `fire.mp3` | the fire's crackle under the room (a 10 s loop) | [fire ambience, flames, crackles, pops, burning](https://freesound.org/people/ahriik/sounds/508110/) | ahriik | CC0 1.0 |
+
+## The forest echo's notes
+
+`echo1.wav` to `echo4.wav` (C5, E5, G5, C6: four soft bell tones on a
+major chord, so any order of them sounds like a tune) and `echo-wrong.wav`
+(the low buzz of a wrong tile) are synthesised, not recorded:
+`art/sounds/echo_notes.py` writes them (a sine with two quiet overtones
+under a fast attack and an exponential decay, 22.05 kHz 16-bit mono WAV).
+Nothing to credit; the game plays them in
+`src/features/elf/games/EchoGame.tsx`.

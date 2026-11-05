@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
-import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated'
+import Animated, { FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { AcornsIcon, Button, JoyIcon, PressableScale, Text, colors, iconSize, radius, space } from '../../../ui'
+import { AcornsIcon, Button, CloseIcon, JoyIcon, PressableScale, Text, colors, iconSize, radius, space } from '../../../ui'
 
 /* Catch the acorns: twelve spots in a grid, an acorn popping up on one
    of them every so often and vanishing again unless tapped, the pops
@@ -11,7 +11,10 @@ import { AcornsIcon, Button, JoyIcon, PressableScale, Text, colors, iconSize, ra
    hearts are lost, one for every acorn that gets away and one for every
    tap on an empty spot, so a round is as long as the thumb is quick. A
    catch is a point; the rules pay an acorn for two (GAME_POINTS_PER_ACORN).
-   All timing runs on timers in this component and dies with it. */
+   A heart lost is shown where it went: an acorn that gets away shrinks
+   out and leaves a red cross on its spot for a moment, and a tap on an
+   empty spot draws the same cross there, so the lost heart is never a
+   puzzle. All timing runs on timers in this component and dies with it. */
 
 const HEARTS = 3
 const COLUMNS = 3
@@ -28,6 +31,8 @@ const STAY_TO = 650
 /* A tap this soon after an acorn went is the late tap at it, not a tap
    on an empty spot: the acorn took its heart already. */
 const GRACE_MS = 250
+/* How long the cross of a lost heart stays on its spot. */
+const MARK_MS = 550
 const GAP = 8
 
 type Props = { onFinish: (points: number) => void }
@@ -43,6 +48,10 @@ export function AcornsGame({ onFinish }: Props) {
      answers the taps and the timers without a setter's updater (which
      must stay free of side effects). */
   const [acorns, setAcorns] = useState<Record<number, true>>({})
+  /* The crosses of the hearts lost, by spot, each numbered so a second
+     one on the same spot enters anew. */
+  const [marks, setMarks] = useState<Record<number, number>>({})
+  const markSeq = useRef(0)
   const held = useRef<Record<number, true>>({})
   const place = (next: Record<number, true>) => {
     held.current = next
@@ -66,6 +75,15 @@ export function AcornsGame({ onFinish }: Props) {
     away.current = {}
   }
   useEffect(() => clearTimers, [])
+
+  /* A cross on the spot, gone after its moment. */
+  const mark = (spot: number) => {
+    markSeq.current += 1
+    const seq = markSeq.current
+    setMarks((current) => ({ ...current, [spot]: seq }))
+    const timer = setTimeout(() => setMarks((current) => (current[spot] === seq ? Object.fromEntries(Object.entries(current).filter(([key]) => Number(key) !== spot)) : current)), MARK_MS)
+    timers.current.push(timer)
+  }
 
   const progress = () => Math.min(1, Math.max(0, (Date.now() - startedAt.current) / RAMP_MS))
   const lerp = (from: number, to: number) => from + (to - from) * progress()
@@ -92,6 +110,7 @@ export function AcornsGame({ onFinish }: Props) {
     overRef.current = false
     vanishedAt.current = {}
     place({})
+    setMarks({})
     startedAt.current = Date.now()
     const without = (spot: number) => Object.fromEntries(Object.entries(held.current).filter(([key]) => Number(key) !== spot)) as Record<number, true>
     const pop = () => {
@@ -105,6 +124,7 @@ export function AcornsGame({ onFinish }: Props) {
           if (!held.current[spot]) return
           vanishedAt.current[spot] = Date.now()
           place(without(spot))
+          mark(spot)
           miss()
         }, lerp(STAY_FROM, STAY_TO))
         timers.current.push(gone)
@@ -122,7 +142,10 @@ export function AcornsGame({ onFinish }: Props) {
     (spot: number) => {
       if (overRef.current) return
       if (!held.current[spot]) {
-        if (Date.now() - (vanishedAt.current[spot] ?? 0) >= GRACE_MS) miss()
+        if (Date.now() - (vanishedAt.current[spot] ?? 0) >= GRACE_MS) {
+          mark(spot)
+          miss()
+        }
         return
       }
       const gone = away.current[spot]
@@ -164,8 +187,13 @@ export function AcornsGame({ onFinish }: Props) {
               style={[styles.spot, { width: cell, height: cell }]}
             >
               {here ? (
-                <Animated.View entering={ZoomIn.duration(160)} exiting={ZoomOut.duration(120)}>
+                <Animated.View entering={ZoomIn.duration(160)} exiting={ZoomOut.duration(280)}>
                   <AcornsIcon size={Math.round(cell * 0.45)} weight="fill" color={colors.accentStrong} />
+                </Animated.View>
+              ) : null}
+              {marks[spot] !== undefined ? (
+                <Animated.View key={marks[spot]} entering={ZoomIn.duration(140)} exiting={FadeOut.duration(220)} style={styles.mark} pointerEvents="none">
+                  <CloseIcon size={Math.round(cell * 0.4)} weight="bold" color={colors.danger} />
                 </Animated.View>
               ) : null}
             </PressableScale>
@@ -210,6 +238,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /* The cross of a lost heart, over the spot. */
+  mark: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },

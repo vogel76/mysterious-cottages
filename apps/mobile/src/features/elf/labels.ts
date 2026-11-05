@@ -1,5 +1,5 @@
-import type { ElfEvent, ElfMood, ElfNeedId, ElfNodeId, ElfPath, ElfRank, ElfRequestId, ElfStage, ElfStarter } from '@chatynkowo/core'
-import { AcornsIcon, BathIcon, CottageIcon, DecorIcon, EchoGameIcon, EggIcon, FeedIcon, ForestIcon, FoundIcon, GamesIcon, JoyIcon, LoreIcon, MemoryGameIcon, PeddlerIcon, SleepIcon, ToyIcon, TricksIcon, WarmIcon, type Icon } from '../../ui'
+import type { ElfMood, ElfNeedId, ElfNodeId, ElfPath, ElfRank, ElfRequestId, ElfStage, ElfStarter } from '@chatynkowo/core'
+import { BathIcon, FeedIcon, ForestIcon, JoyIcon, LoreIcon, WarmIcon, type Icon } from '../../ui'
 
 /* How the elf's ids (a form, an element, a need, a mood, a quest, a
    wearable or decor slot, an item of either catalogue, a find of the
@@ -42,32 +42,6 @@ export const NEED_ICONS: Record<ElfNeedId, Icon> = {
   fullness: FeedIcon,
   joy: JoyIcon,
   clean: BathIcon,
-}
-
-/* The day's quests and the elf's requests by what they count: the
-   care's own glyphs, the heart for a pet, the armchair for a swap (and a
-   hat put on), the moon for the tuck-in, the egg, the cottage for a
-   visit, the hearth for an evening one, the expedition's own tick for a
-   cottage found, the controller for any game and each game's own
-   picture, the peddler's pack and the skills' wand. */
-export const QUEST_ICONS: Record<ElfEvent, Icon> = {
-  feed: FeedIcon,
-  play: ToyIcon,
-  bath: BathIcon,
-  pet: JoyIcon,
-  decor: DecorIcon,
-  sleep: SleepIcon,
-  egg: EggIcon,
-  open: CottageIcon,
-  evening: WarmIcon,
-  find: FoundIcon,
-  game: GamesIcon,
-  gameAcorns: AcornsIcon,
-  gameMemory: MemoryGameIcon,
-  gameEcho: EchoGameIcon,
-  equip: DecorIcon,
-  ware: PeddlerIcon,
-  trick: TricksIcon,
 }
 
 /* The elf's request of the day, in its own words (mobile:elf.requestAskPlay...). */

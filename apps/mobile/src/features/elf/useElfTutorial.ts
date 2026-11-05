@@ -9,7 +9,9 @@ import { readJson, writeJson } from '../../lib/storage'
    it, feed it, the caps and the night, the decorating, the activities,
    the level with the tree, growing up and what a cottage found brings).
    A step that asks for a move waits for it (the tab reports the moves
-   as they happen) before "next" lights up; "skip" ends the flow. Each
+   as they happen) before "next" lights up, and names the move as its
+   target, so the tab lights what the step asks for (TutorialHalo);
+   "skip" ends the flow. Each
    flow is shown once per device, remembered in AsyncStorage, and a
    flow only starts while the tab is in view with no panel over it and
    the egg not yet ready to hatch (the hatch has its own ritual). */
@@ -24,6 +26,10 @@ export type TutorialStep = {
   text: string
   /* The move this step waits for, still to be made. */
   waiting: boolean
+  /* The move still to be made, for the tab to light what it asks for
+     (the egg or the elf in the room, a button of the care band, the
+     purse row); null once made or for a step that only tells. */
+  target: TutorialMove | null
   last: boolean
 }
 
@@ -119,7 +125,8 @@ export function useElfTutorial({ flow, ready }: { flow: TutorialFlow | null; rea
 
   const step = useMemo<TutorialStep | null>(() => {
     if (!active || !spec) return null
-    return { index, total: specs.length, text: t(`mobile:elf.${spec.key}`), waiting: Boolean(spec.waits) && !made, last: index + 1 >= specs.length }
+    const waiting = Boolean(spec.waits) && !made
+    return { index, total: specs.length, text: t(`mobile:elf.${spec.key}`), waiting, target: waiting ? (spec.waits ?? null) : null, last: index + 1 >= specs.length }
   }, [active, spec, index, specs.length, made, t])
 
   return { step, next, skip: finish, note }

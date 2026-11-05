@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, Button, DustIcon, ForestIcon, JoyIcon, PressableScale, Text, colors, radius, space, type Icon } from '../../../ui'
+import { useSoundPool, type SoundSpec } from '../../../lib/sound-pool'
 
 /* The forest echo: four tiles with the elf's pictures, and a melody the
    elf hums by lighting them one after another; the player echoes it by
@@ -9,8 +10,12 @@ import { AcornsIcon, Button, DustIcon, ForestIcon, JoyIcon, PressableScale, Text
    one note (the earlier notes stay), and a round echoed right is a
    point; a wrong tile ends the round with the points so far, and the
    melody cannot grow past its longest. Between the humming and the
-   echo the line under the tiles says whose turn it is. All timing runs
-   on timers in this component and dies with it. */
+   echo the line under the tiles says whose turn it is. Each tile has
+   its note (four soft bell tones on a chord, art/sounds/echo_notes.py),
+   heard as the elf hums it and as the player taps it, and a wrong tile
+   buzzes, so the tune can be followed by ear as well as by eye (the
+   sounds follow the elf's switch and the phone's silent mode). All
+   timing runs on timers in this component and dies with it. */
 
 const TILES: { Glyph: Icon; tint: string }[] = [
   { Glyph: AcornsIcon, tint: colors.accent },
@@ -19,6 +24,16 @@ const TILES: { Glyph: Icon; tint: string }[] = [
   { Glyph: JoyIcon, tint: colors.danger },
 ]
 const LONGEST = 20
+/* The tiles' notes and the buzz of a wrong one. */
+type EchoSound = 'note1' | 'note2' | 'note3' | 'note4' | 'wrong'
+const NOTE_OF: EchoSound[] = ['note1', 'note2', 'note3', 'note4']
+const SOUNDS: Record<EchoSound, SoundSpec> = {
+  note1: { module: require('../../../../assets/elf/sounds/echo1.wav'), volume: 0.7, minGapMs: 60 },
+  note2: { module: require('../../../../assets/elf/sounds/echo2.wav'), volume: 0.7, minGapMs: 60 },
+  note3: { module: require('../../../../assets/elf/sounds/echo3.wav'), volume: 0.7, minGapMs: 60 },
+  note4: { module: require('../../../../assets/elf/sounds/echo4.wav'), volume: 0.7, minGapMs: 60 },
+  wrong: { module: require('../../../../assets/elf/sounds/echo-wrong.wav'), volume: 0.6, minGapMs: 200 },
+}
 /* How long a note lights, the gap between notes, and the breath before
    the elf hums and before the next round. */
 const NOTE_MS = 520
@@ -42,6 +57,7 @@ export function EchoGame({ onFinish }: Props) {
   const overRef = useRef(false)
   const [cell, setCell] = useState(0)
   const onLayout = (event: LayoutChangeEvent) => setCell(Math.floor((event.nativeEvent.layout.width - GAP * (COLUMNS - 1)) / COLUMNS))
+  const play = useSoundPool(SOUNDS, true)
 
   const later = (ms: number, run: () => void) => {
     const timer = setTimeout(run, ms)
@@ -59,7 +75,10 @@ export function EchoGame({ onFinish }: Props) {
     setPhase('humming')
     echoed.current = 0
     notes.forEach((tile, index) => {
-      later(BREATH_MS + index * (NOTE_MS + GAP_MS), () => setLit(tile))
+      later(BREATH_MS + index * (NOTE_MS + GAP_MS), () => {
+        setLit(tile)
+        play(NOTE_OF[tile]!)
+      })
       later(BREATH_MS + index * (NOTE_MS + GAP_MS) + NOTE_MS, () => setLit(null))
     })
     later(BREATH_MS + notes.length * (NOTE_MS + GAP_MS), () => setPhase('echo'))
@@ -90,9 +109,11 @@ export function EchoGame({ onFinish }: Props) {
     setLit(tile)
     later(NOTE_MS / 2, () => setLit(null))
     if (melody[echoed.current] !== tile) {
+      play('wrong')
       finish(points)
       return
     }
+    play(NOTE_OF[tile]!)
     echoed.current += 1
     if (echoed.current < melody.length) return
     /* The whole melody echoed: a point, and a longer one. */
