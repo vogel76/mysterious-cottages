@@ -119,7 +119,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
           ) : null}
         </PressableScale>
         {/* The activities, the shop of star dust, then the decorating:
-            squares as tall as the name block beside them; the room can be
+            buttons as tall as the name block beside them; the room can be
             arranged for the egg and the elf alike, the activities wait for
             the hatch. */}
         {!egg ? (
@@ -168,6 +168,12 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
 
 /* The quests a day deals, as the chip counts them. */
 const QUESTS_TOTAL = 3
+/* The width of a button beside the name block. A fixed width, not a
+   square from the block's height: Yoga lays the row out in one pass, so
+   a button whose width followed its height would leave the block
+   measured too wide, its second line of text cut off once the buttons
+   took their room. */
+const CONTROL = 60
 
 /* A text of the strip whose value changes in place: the new value fades
    in, keyed by its content; the old one simply goes (no exit animation,
@@ -332,10 +338,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: colors.accent,
   },
-  /* The decorating button: a square the height of the name block, in the
-     chrome. */
+  /* A button beside the name block: a fixed width, as tall as the block. */
   control: {
-    aspectRatio: 1,
+    width: CONTROL,
     alignItems: 'center',
     justifyContent: 'center',
   },
