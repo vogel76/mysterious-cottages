@@ -302,6 +302,9 @@ export type ElfDaily = {
      peddler's ticket added to the day's cap. */
   games: Partial<Record<ElfGameId, number>>
   extraRounds: number
+  /* The tuck-in's experience was paid today (once a day, whatever the
+     waking and tucking in again). */
+  sleptXp: boolean
 }
 
 export type ElfState = {
@@ -669,7 +672,7 @@ function dealRewards(day: string, name: string): ElfReward[] {
 }
 
 function freshDaily(day: string, name: string, hatched: boolean): ElfDaily {
-  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, games: {}, extraRounds: 0 }
+  return { day, quests: dealQuests(day, name, hatched), bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, games: {}, extraRounds: 0, sleptXp: false }
 }
 
 /* ---------- A new elf and a stored one ---------- */
@@ -753,6 +756,7 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
     rewardPicked: typeof raw.rewardPicked === 'number' && raw.rewardPicked >= 0 && raw.rewardPicked < 3 ? Math.floor(raw.rewardPicked) : null,
     games: normalizeGamePlays(raw.games),
     extraRounds: count(raw.extraRounds),
+    sleptXp: raw.sleptXp === true,
   }
 }
 
@@ -888,7 +892,23 @@ export function isAsleepAt(state: ElfState, at: number): boolean {
    turned back changes nothing but the mark. */
 export function applyElapsed(state: ElfState, now: number): ElfState {
   if (now === state.last) return state
-  if (!state.hatched || now < state.last) return { ...state, last: now }
+  /* A clock turned back changes nothing of the needs, but every moment
+     stored ahead of now is pulled back to now: a charge, a nap or a
+     hatch stamped in a future that never comes would otherwise wait for
+     it (and a countdown shown from it would never move). */
+  if (now < state.last) {
+    const back = (at: number | null) => (at === null ? null : Math.min(at, now))
+    return {
+      ...state,
+      last: now,
+      lastInteraction: Math.min(state.lastInteraction, now),
+      care: { feed: state.care.feed.map((at) => Math.min(at, now)), play: state.care.play.map((at) => Math.min(at, now)), bath: state.care.bath.map((at) => Math.min(at, now)) },
+      wokenAt: back(state.wokenAt),
+      tuckedAt: back(state.tuckedAt),
+      hatchReadyAt: back(state.hatchReadyAt),
+    }
+  }
+  if (!state.hatched) return { ...state, last: now }
   let awakeHours = 0
   let asleepHours = 0
   let at = state.last
@@ -964,18 +984,19 @@ export function growthReady(state: ElfState): boolean {
 }
 
 /* The elf grown to its next form, at the player's word; null when there
-   is no form ahead or its level is not reached. The form's card waits
-   on stageShown as a hatch's would. */
+   is no form ahead, its level is not reached, or the last form's card
+   has not been shown yet (one form at a time). The form's card waits on
+   stageShown as a hatch's would. */
 export function growUp(state: ElfState, now: number): ElfState | null {
   const next = nextForm(state)
-  return next?.ready ? { ...state, form: next.form, lastInteraction: now } : null
+  return next?.ready && pendingForm(state) === null ? { ...state, form: next.form, lastInteraction: now } : null
 }
 
 /* The next form ahead of its level, bought: null when there is nothing
    to buy (no form ahead, or one the elf may grow to for free). */
 export function growNow(state: ElfState, now: number): ElfState | null {
   const next = nextForm(state)
-  return next && !next.ready ? { ...state, form: next.form, lastInteraction: now } : null
+  return next && !next.ready && pendingForm(state) === null ? { ...state, form: next.form, lastInteraction: now } : null
 }
 
 /* ---------- The day ---------- */
@@ -1103,7 +1124,9 @@ export type VisitOutcome = {
    caps start over. */
 function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boolean; streakLost: number | null; milestoneDust: number } {
   const day = dayKey(now)
-  if (state.lastVisitDay === day) return { state, newDay: false, streakLost: null, milestoneDust: 0 }
+  /* The same day, or a day before the last visit (a device date set
+     back), is no new day: the streak and the deal stay as they are. */
+  if (state.lastVisitDay === day || (state.lastVisitDay !== null && day < state.lastVisitDay)) return { state, newDay: false, streakLost: null, milestoneDust: 0 }
   const yesterday = dayKey(previousDay(now))
   /* The trail's forgiving streak: one day missed does not break it. */
   const forgiven = state.nodes.includes('trail') && state.lastVisitDay === dayKey(previousDay(previousDay(now)))
@@ -1171,6 +1194,9 @@ function creditFinds(state: ElfState, finds: readonly ElfFind[], today: string):
   let setBonus = false
   for (const find of finds) {
     if (current.findsCredited.includes(find.slug)) continue
+    /* A find from before the egg appeared is the expedition's past: it
+       pays nothing to this elf (and nothing again to the next). */
+    if (find.at < current.eggAppearedAt) continue
     const day = dayKey(find.at)
     if (day > current.daily.day && day >= today) continue
     current = { ...current, findsCredited: [...current.findsCredited, find.slug], xp: current.xp + XP.find }
@@ -1277,7 +1303,7 @@ export type CareOutcome =
    from the future, after a clock change, counts as spent now). */
 function spentCharges(state: ElfState, id: ElfCareAction, now: number): number[] {
   const { recharge } = careSpec(state, id)
-  return state.care[id].filter((at) => now - at < recharge)
+  return state.care[id].filter((at) => now - Math.min(at, now) < recharge)
 }
 
 /* A care action: refused while the elf sleeps; otherwise a charge is
@@ -1421,7 +1447,9 @@ export function toggleSleep(state: ElfState, now: number): SleepOutcome {
     return { kind: 'woke', state: woken, completed: [], setBonus: false }
   }
   if (!isBedtimeAt(now)) return { kind: 'tooEarly' }
-  const tucked: ElfState = { ...current, sleeping: true, tuckedAt: now, wokenAt: null, lastInteraction: now, xp: current.xp + XP.sleep }
+  /* The tuck-in pays its experience once a day: waking the elf and
+     tucking it in again is no ladder. */
+  const tucked: ElfState = { ...current, sleeping: true, tuckedAt: now, wokenAt: null, lastInteraction: now, xp: current.xp + (current.daily.sleptXp ? 0 : XP.sleep), daily: { ...current.daily, sleptXp: true } }
   return { kind: 'slept', ...recordEvent(tucked, 'sleep') }
 }
 
@@ -1738,26 +1766,26 @@ function normalizePeddler(raw: unknown): ElfPeddler {
 }
 
 /* The day's wares: three of the basket drawn by the day (the same on
-   every device, different from the day before), the trick among them
-   only while the elf has one still to buy, with what was bought today. */
+   every device, different from the day before, and the same all day:
+   the draw never reads what the elf owns, so a purchase cannot re-deal
+   the basket), with what was bought today; the trick drawn is one of
+   the six, and one the elf has already stands as bought. */
 export function peddlerWares(state: ElfState, now: number): ElfWare[] {
   const day = dayKey(now)
-  const unowned = ELF_TRICKS.filter((trick) => !state.tricks[trick.id])
-  const pool = unowned.length ? ELF_WARES : ELF_WARES.filter((id) => id !== 'trick')
   const picked: ElfWareId[] = []
   let seed = hashOf(`${day}|${state.born}|peddler`)
-  while (picked.length < WARES_A_DAY && picked.length < pool.length) {
-    const id = pool[seed % pool.length]!
+  while (picked.length < WARES_A_DAY) {
+    const id = ELF_WARES[seed % ELF_WARES.length]!
     if (!picked.includes(id)) picked.push(id)
     seed = hashOf(`${seed}`)
   }
-  const trick = unowned.length ? unowned[hashOf(`${day}|${state.born}|trick`) % unowned.length]!.id : null
+  const trick = ELF_TRICKS[hashOf(`${day}|${state.born}|trick`) % ELF_TRICKS.length]!.id
   const bought = state.peddler.day === day ? state.peddler.bought : []
   return picked.map((id) => ({
     id,
-    acorns: id === 'trick' && trick ? Math.max(10, trickSpec(trick).acorns - TRICK_WARE_OFF) : WARE_ACORNS[id as Exclude<ElfWareId, 'trick'>],
+    acorns: id === 'trick' ? Math.max(10, trickSpec(trick).acorns - TRICK_WARE_OFF) : WARE_ACORNS[id as Exclude<ElfWareId, 'trick'>],
     trick: id === 'trick' ? trick : null,
-    bought: bought.includes(id),
+    bought: bought.includes(id) || (id === 'trick' && Boolean(state.tricks[trick])),
   }))
 }
 

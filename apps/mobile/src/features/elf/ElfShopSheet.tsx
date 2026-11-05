@@ -128,7 +128,7 @@ export function ElfShopSheet() {
                 icon={<WatchAdIcon size={iconSize.md} color={colors.accentInk} />}
                 onPress={() => watchFor('dust')}
               >
-                {t('mobile:elf.shopAdAction', { dust: DUST.ad })}
+                {t('mobile:elf.shopAdAction', { count: DUST.ad })}
               </Button>
               <Text variant="small" tone="soft" accessibilityLiveRegion="polite">
                 {earned > 0 ? `${t('mobile:elf.shopDustAdded', { dust: earned })} · ` : ''}
@@ -232,11 +232,11 @@ export function ElfShopSheet() {
                         variant="primary"
                         block
                         disabled={short || adBusy}
-                        accessibilityLabel={t('mobile:elf.shopPayDustAria', { what: entry.title, cost })}
+                        accessibilityLabel={t('mobile:elf.shopPayDustAria', { what: entry.title, count: cost })}
                         icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
                         onPress={() => buyWithDust(entry.kind)}
                       >
-                        {t('mobile:elf.shopPayDust', { cost })}
+                        {t('mobile:elf.shopPayDust', { count: cost })}
                       </Button>
                       {ad.offered ? (
                         <Button
@@ -297,11 +297,11 @@ export function ElfShopSheet() {
                   <Button
                     variant="primary"
                     disabled={short}
-                    accessibilityLabel={t('mobile:elf.shopItemBuyAria', { name, cost: item.cost })}
+                    accessibilityLabel={t('mobile:elf.shopItemBuyAria', { name, count: item.cost })}
                     icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
                     onPress={() => buy(item, name)}
                   >
-                    {t('mobile:elf.shopPayDust', { cost: item.cost })}
+                    {t('mobile:elf.shopPayDust', { count: item.cost })}
                   </Button>
                 </View>
               )

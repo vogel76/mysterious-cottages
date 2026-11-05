@@ -119,7 +119,7 @@ export function ElfTreeSheet() {
   const { t } = useTranslation()
   const toast = useToast()
   const close = useCloseModal()
-  const { state, unlockNode, nextForm, growUp } = useElf()
+  const { state, unlockNode, nextForm, growUp, pendingEvolution } = useElf()
   const [width, setWidth] = useState(0)
   const [picked, setPicked] = useState<ElfNodeId | null>(null)
   const reduceMotion = useReducedMotion()
@@ -210,7 +210,7 @@ export function ElfTreeSheet() {
             {points > 0 ? t('mobile:elf.treePoints', { count: points }) : t('mobile:elf.treePointsNone')}
           </Text>
           {archetype ? <Text weight="semibold">{t('mobile:elf.treeArchetype', { name: t(pathKey(archetype)) })}</Text> : null}
-          {nextForm?.ready ? (
+          {nextForm?.ready && !pendingEvolution ? (
             <View style={styles.grow}>
               <Text weight="semibold" tone="accent" style={styles.growWords}>
                 {t('mobile:elf.treeGrowReady', { form: t(elfKey('stage', nextForm.form)) })}

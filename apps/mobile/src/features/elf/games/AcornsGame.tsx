@@ -25,6 +25,9 @@ const POP_FROM = 900
 const POP_TO = 380
 const STAY_FROM = 1300
 const STAY_TO = 650
+/* A tap this soon after an acorn went is the late tap at it, not a tap
+   on an empty spot: the acorn took its heart already. */
+const GRACE_MS = 250
 const GAP = 8
 
 type Props = { onFinish: (points: number) => void }
@@ -48,6 +51,7 @@ export function AcornsGame({ onFinish }: Props) {
   /* Every timer of the round, and the timer that takes each acorn away. */
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const away = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
+  const vanishedAt = useRef<Record<number, number>>({})
   const startedAt = useRef(0)
   const caughtRef = useRef(0)
   const heartsRef = useRef(HEARTS)
@@ -86,6 +90,7 @@ export function AcornsGame({ onFinish }: Props) {
     setHearts(HEARTS)
     heartsRef.current = HEARTS
     overRef.current = false
+    vanishedAt.current = {}
     place({})
     startedAt.current = Date.now()
     const without = (spot: number) => Object.fromEntries(Object.entries(held.current).filter(([key]) => Number(key) !== spot)) as Record<number, true>
@@ -98,6 +103,7 @@ export function AcornsGame({ onFinish }: Props) {
         const gone = setTimeout(() => {
           delete away.current[spot]
           if (!held.current[spot]) return
+          vanishedAt.current[spot] = Date.now()
           place(without(spot))
           miss()
         }, lerp(STAY_FROM, STAY_TO))
@@ -116,7 +122,7 @@ export function AcornsGame({ onFinish }: Props) {
     (spot: number) => {
       if (overRef.current) return
       if (!held.current[spot]) {
-        miss()
+        if (Date.now() - (vanishedAt.current[spot] ?? 0) >= GRACE_MS) miss()
         return
       }
       const gone = away.current[spot]

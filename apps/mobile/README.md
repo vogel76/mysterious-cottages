@@ -789,7 +789,8 @@ level pill wears a dot, a card over the care band offers it ("later"
 puts it off until the tab is next looked at), the tree sheet has the
 same line with its button, and `growUp` changes the stored `form`,
 which the room's moment and the evolution card then show as any form
-reached. The shop sells the form ahead of its level for dust or an ad
+reached; one form at a time (neither grows while a form's card still
+waits). The shop sells the form ahead of its level for dust or an ad
 (`growNow`); nothing else about time or the cottages decides a form.
 
 The activities button on the elf's bar (shown once the elf has hatched)
@@ -818,9 +819,11 @@ The games (`/elf-game/[id]`, `games/ElfGameScreen.tsx` around a board;
 (`AcornsGame.tsx`: twelve spots, an acorn popping on one every so often
 and vanishing unless tapped, faster and shorter-lived until the
 quickest pace a minute in, no clock: three hearts, one lost for every
-acorn that gets away and every tap on an empty spot, and the round ends
-with the last; a catch is a point) and memory (`MemoryGame.tsx`: boards
-that grow, four pairs of the elf's own pictures drawn from nine, then
+acorn that gets away and every tap on an empty spot, a tap right after
+an acorn went excepted, and the round ends with the last; a catch is a
+point) and memory (`MemoryGame.tsx`: boards
+that grow, four pairs of the elf's own pictures drawn from nine distinct
+ones (the meal's acorn stays out, it is the acorns' picture too), then
 six, eight and ten, two cards a move, a pair stays; each board allows
 as many misses as it has pairs and two more, one too many ends the
 round, the last pair opens the next board; a pair is a point and a
@@ -843,8 +846,10 @@ with it whatever the charges and the belly, with a little joy on top and
 the elf's word of thanks (`performCare` returns `gift`), so a bought
 treat is eaten at once, the toast naming the button; a ticket, which
 adds a round to each game for the day (15); a grain of dust (60); and
-a trick the elf has not got, ten acorns under the tricks' price, only
-while one is left to buy. Each is bought once a day; the sheet marks
+a trick, ten acorns under the tricks' price (one of the six, drawn by
+the day like the rest: the draw never reads what the elf owns, so a
+purchase cannot re-deal the basket, and a trick the elf already has
+stands as bought). Each is bought once a day; the sheet marks
 what was bought, the hub's row counts what is left in the basket, and
 the activities button on the bar carries a dot while the basket holds
 something unbought, the day's small reason to look in.
@@ -894,7 +899,7 @@ every care, pet, egg, sleep and swap:
 | Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, or at a cottage found while it waits, whichever comes first (the HUD counts the hours down), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
 | Care | feed fullness +25 (3 charges, refused at 90), play joy +30 (2 charges), bath clean +60 (1 charge); a charge spent comes back 4 hours later for a meal, 6 for a game, 12 for a bath (the moments spent in the state's `care`), and with none back the elf has had enough for now, saying when the next is; a refill for dust or an ad brings them all back; a gift of the peddler's in the pantry (`gifts`) is given instead whenever a charge or the belly would refuse, with joy +5 on top |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
-| Experience | a find 40, a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3, a trick's practice 4, a game 5 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
+| Experience | a find 40 (finds from before the egg appeared pay nothing), a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (once a day), a trick's practice 4, a game 5 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
 | Tree | sixteen nodes, any parent owned opens a node, a point each: roots (charges back in three quarters of the time); belly (fullness eases half as fast), smile (joy eases half as fast), eye (one sill find more on a return); pantry (four meals), feast (a meal +35 instead of +25), games (three games), party (a game +45 instead of +30), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (two baths; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
 | Tricks | six, for acorns: the wave 40 (2 sessions), the twirl 60 (3), the bow 60 (3), the cheer 80 (3), the applause 80 (4), the toast 100 (4); one practice session a day per trick, none asleep; learned at the last session, then shown on demand (`ELF_TRICKS`, `buyTrick`, `trainTrick`) |
 | Games | catch the acorns and memory, three rounds a day each (`GAME_PLAYS_PER_DAY`); a round pays its points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: 2 catches an acorn, 1 memory point an acorn) up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns); the best points kept per game (`gamePlaysLeft`, `recordGame`) |
@@ -903,7 +908,7 @@ every care, pet, egg, sleep and swap:
 | Forms | baby from the hatch; the next form at a level (`FORM_LEVELS`: young at 3, adult at 6, elder at 10) and only when the player lets the elf grow (`growUp`; the stored `form`); the shop sells the form ahead of its level (`growNow`), the finds count only through their experience |
 | Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |
-| Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3 |
+| Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3; a device date set back is no new day (the streak and the deal stay), and a date set forward and corrected pulls every stored moment back to now, so no charge or nap waits on a day that never comes |
 | Sill finds | the first visit of a day after an absence: one small thing for each calendar day away (a pine cone, a feather, a pebble, an acorn, a mushroom, an autumn leaf, berries, an ammonite), chosen by the day and the name, so settling a day twice finds the same; the newest three lie on the windowsill, every one is counted in the collection |
 | Letters | due on the 2nd, 5th and 9th day after the hatch, then every 7 days; one comes with the first visit after it is due (the ones due while the player was away are not heaped up); the odd ones are from a cottage found and not written from yet, the others an invitation from the nearest cottage not found yet (from the latest find), and the forest writes when there is neither; the last 12 are kept |
 | Plant | the pot on the sill grows with the days since the hatch: a seedling, a sprout at 7 days, a little plant at 30, a bush at 90, a bush in flower at 180 |
@@ -960,7 +965,9 @@ Talking Tom, Neko Atsume, Finch) says, applied in the tab:
   once for the named elf (pet it, feed it, the charges and the night, the
   decorating, the activities, the level with the tree, growing up and
   what a cottage found brings); a step that asks for a move waits for
-  it, skip ends the flow, and each flow is remembered per device.
+  it (the feed's step takes the try, a full belly's refusal included, so
+  it never waits for a hunger hours away), skip ends the flow, and each
+  flow is remembered per device.
 - **Reduced motion** keeps a slow, shallow breath as the elf's only loop,
   so it is alive and not a statue; reactions are a blip of particles.
 - **Idle fidgets** every 8 to 15 seconds (an ear twitch, a yawn, a glance
