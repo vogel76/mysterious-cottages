@@ -3,7 +3,7 @@
     "name": "Chatynkowo",
     "slug": "chatynkowo",
     "scheme": "chatynkowo",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.blockchainwares.app.mysterious.cottages",
-      "buildNumber": "2",
+      "buildNumber": "1",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
