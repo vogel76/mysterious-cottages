@@ -28,6 +28,7 @@ import {
   recordAd as recordElfAd,
   applySkip as applyElfSkip,
   refillEnergy as refillElfEnergy,
+  payRevive as payElfRevive,
   nextForm as elfNextForm,
   growUp as growElf,
   SKIP_COST,
@@ -186,6 +187,9 @@ export type ElfValue = {
   earnAdDust: () => number
   addDust: (amount: number) => void
   skip: (kind: ElfSkip, pay: 'dust' | 'ad' | 'free' | 'acorns') => boolean
+  /* One more life in a lost round of a game, paid in dust (DUST.revive) or
+     with an ad watched to the end; false when short or past the cap. */
+  reviveGame: (pay: 'dust' | 'ad') => boolean
   /* The form ahead, the level it asks for and whether the elf is there,
      null for the egg and the elder; the elf grown to it at the player's
      word (false before the level). */
@@ -624,6 +628,18 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
+  const reviveGame = useCallback(
+    (pay: 'dust' | 'ad'): boolean => {
+      const current = stateRef.current
+      if (!current) return false
+      const next = payElfRevive(current, pay, elfNow())
+      if (!next) return false
+      commit(next, true)
+      return true
+    },
+    [commit],
+  )
+
   const growUp = useCallback((): boolean => {
     const current = stateRef.current
     if (!current) return false
@@ -820,6 +836,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       earnAdDust,
       addDust,
       skip,
+      reviveGame,
       nextForm: state ? elfNextForm(state) : null,
       growUp,
       unlockNode,
@@ -848,7 +865,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       readLetter,
     }
   }, [state, loaded, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, showTrick, finishGame, gameResult, clearGameResult, buyWare, visitPeddler, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+      thankSupport, earnAdDust, addDust, skip, reviveGame, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, showTrick, finishGame, gameResult, clearGameResult, buyWare, visitPeddler, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

@@ -1559,8 +1559,9 @@ export function placeDecor(state: ElfState, slotId: string, id: string, now: num
    and any ad (for dust or for a skip) counts towards `adCap` a day; the
    skips cost their price (the hatch before its hour, a care's charges
    before their time, a form before its days), or one ad; the store's
-   packs (the app's product ids) add what they say. */
-export const DUST = { ad: 5, adCap: 3, hatchSkip: 20, careRefill: 5, growNow: 30 } as const
+   packs (the app's product ids) add what they say. A lost round of a
+   game may go on once with one more life, for `revive` dust or an ad. */
+export const DUST = { ad: 5, adCap: 3, hatchSkip: 20, careRefill: 5, growNow: 30, revive: 5 } as const
 
 /* The waits that can be bought, and what each costs in dust; the elf's
    energy is the one the dust does not buy: its acorns fill it
@@ -1596,6 +1597,14 @@ export function applySkip(state: ElfState, kind: ElfSkip, now: number): ElfState
   if (kind === 'grow') return growNow(state, now)
   if (kind === 'energy') return boostEnergy(state, ENERGY_AD)
   return careLeft(state, kind, now) >= careSpec(state, kind).charges ? null : refillCare(state, kind)
+}
+
+/* One more life in a lost round, paid in dust (DUST.revive) or with an ad
+   within the day's cap: the state paid, or null when short or past the
+   cap. The round goes on in the app's game, which allows it once a round,
+   and its energy is taken once, when it ends (recordGame). */
+export function payRevive(state: ElfState, pay: 'dust' | 'ad', now: number): ElfState | null {
+  return pay === 'dust' ? spendDust(state, DUST.revive) : recordAd(state, now)
 }
 
 /* Dust bought as a pack (or granted), any amount. */

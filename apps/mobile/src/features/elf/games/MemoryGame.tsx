@@ -4,6 +4,7 @@ import Animated, { FadeIn, FlipInEasyY } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, BathIcon, DustIcon, EggIcon, GiftIcon, JarIcon, LetterIcon, PressableScale, StreakIcon, Text, ToyIcon, colors, radius, space, type Icon } from '../../../ui'
 import { GameStartCard, fitCell } from './GameStartCard'
+import type { GameFinish } from './games'
 import { useGameSound } from './GameSounds'
 
 /* Memory: cards face down in pairs of the elf's own pictures (the
@@ -35,7 +36,7 @@ const MISS_MS = 700
 const NEXT_MS = 1100
 const GAP = 8
 
-type Props = { onFinish: (points: number) => void }
+type Props = { onFinish: GameFinish }
 
 function shuffled<T>(items: T[]): T[] {
   const copy = [...items]
@@ -69,6 +70,9 @@ export function MemoryGame({ onFinish }: Props) {
   const miss = useRef<ReturnType<typeof setTimeout> | null>(null)
   const next = useRef<ReturnType<typeof setTimeout> | null>(null)
   const done = useRef(false)
+  /* The round's revive for the frame, read through a ref, so a loss
+     hands over the one of the latest render. */
+  const reviveRef = useRef<() => void>(() => undefined)
   /* The board's room decides the cards' size: squares, the board's
      columns to a row, as large as both the width and the height allow. */
   const [room, setRoom] = useState({ width: 0, height: 0 })
@@ -86,10 +90,19 @@ export function MemoryGame({ onFinish }: Props) {
     [],
   )
 
-  const finish = (score: number) => {
+  const finish = (score: number, revive?: () => void) => {
     if (done.current) return
     done.current = true
-    onFinish(score)
+    onFinish(score, revive)
+  }
+
+  /* One more life: the cards of the miss turn back, and one more miss is
+     allowed on this board. */
+  reviveRef.current = () => {
+    done.current = false
+    setMisses(allowed)
+    play('flip')
+    setUp([])
   }
 
   const turn = (index: number) => {
@@ -130,7 +143,7 @@ export function MemoryGame({ onFinish }: Props) {
       const missed = misses + 1
       setMisses(missed)
       if (missed > allowed) {
-        finish(points)
+        finish(points, () => reviveRef.current())
         return
       }
       miss.current = setTimeout(() => {

@@ -3,6 +3,7 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, DustIcon, ForestIcon, JoyIcon, PressableScale, Text, colors, radius, space, type Icon } from '../../../ui'
 import { GameStartCard, fitCell } from './GameStartCard'
+import type { GameFinish } from './games'
 import { useGameSound, type GameSound } from './GameSounds'
 
 /* The forest echo: four tiles with the elf's pictures, and a melody the
@@ -41,7 +42,7 @@ const BREATH_MS = 700
 const COLUMNS = 2
 const GAP = 12
 
-type Props = { onFinish: (points: number) => void }
+type Props = { onFinish: GameFinish }
 
 type Phase = 'ready' | 'humming' | 'echo' | 'over'
 
@@ -54,6 +55,9 @@ export function EchoGame({ onFinish }: Props) {
   const echoed = useRef(0)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const overRef = useRef(false)
+  /* The round's revive for the frame, read through a ref, so a loss
+     hands over the one of the latest render. */
+  const reviveRef = useRef<() => void>(() => undefined)
   const [room, setRoom] = useState({ width: 0, height: 0 })
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout
@@ -99,12 +103,18 @@ export function EchoGame({ onFinish }: Props) {
     grow([])
   }
 
-  const finish = (score: number) => {
+  const finish = (score: number, revive?: () => void) => {
     if (overRef.current) return
     overRef.current = true
     setPhase('over')
     setLit(null)
-    onFinish(score)
+    onFinish(score, revive)
+  }
+
+  /* One more life: the elf hums the same melody again. */
+  reviveRef.current = () => {
+    overRef.current = false
+    hum(melody)
   }
 
   const tap = (tile: number) => {
@@ -113,7 +123,7 @@ export function EchoGame({ onFinish }: Props) {
     later(NOTE_MS / 2, () => setLit(null))
     if (melody[echoed.current] !== tile) {
       play('wrong')
-      finish(points)
+      finish(points, () => reviveRef.current())
       return
     }
     play(NOTE_OF[tile]!)
