@@ -204,12 +204,13 @@ export type ElfTrick = { sessions: number; day: string | null }
 /* The games played from the couch (the app holds the boards): rounds on
    the elf's energy, none while it sleeps, a round paying acorns by its
    points, up to a cap, and experience. */
-export type ElfGameId = 'acorns' | 'memory' | 'echo'
-export const ELF_GAMES: readonly ElfGameId[] = ['acorns', 'memory', 'echo']
+export type ElfGameId = 'acorns' | 'memory' | 'echo' | 'stars' | 'mushrooms'
+export const ELF_GAMES: readonly ElfGameId[] = ['acorns', 'memory', 'echo', 'stars', 'mushrooms']
 export const GAME_ACORNS_MAX = 20
 /* The points of a round that pay one acorn: two catches in the acorns'
-   game, a point in memory, a round in the echo. */
-export const GAME_POINTS_PER_ACORN: Record<ElfGameId, number> = { acorns: 2, memory: 1, echo: 1 }
+   game and in the star rain, a point in memory, a round in the echo and
+   in the mushrooms' game. */
+export const GAME_POINTS_PER_ACORN: Record<ElfGameId, number> = { acorns: 2, memory: 1, echo: 1, stars: 2, mushrooms: 1 }
 export type ElfGameRecord = { best: number; played: number }
 
 /* The travelling peddler: three wares a day drawn from his basket, each
@@ -273,11 +274,11 @@ export const ELF_EGG_ACTIONS: readonly ElfEggAction[] = ['warm', 'rock']
    tuck-in, the egg tended, a visit, an evening visit, a cottage found in
    the field, a game played (any, and each by its name), a hat put on, a
    ware bought and a skill shown. */
-export type ElfEvent = ElfCareAction | 'pet' | 'decor' | 'sleep' | 'egg' | 'open' | 'evening' | 'find' | 'game' | 'gameAcorns' | 'gameMemory' | 'gameEcho' | 'equip' | 'ware' | 'trick'
+export type ElfEvent = ElfCareAction | 'pet' | 'decor' | 'sleep' | 'egg' | 'open' | 'evening' | 'find' | 'game' | 'gameAcorns' | 'gameMemory' | 'gameEcho' | 'gameStars' | 'gameMushrooms' | 'equip' | 'ware' | 'trick'
 
 /* The elf's own request of the day: one thing it asks for in its own
    words, beside the quests, paid in acorns when it comes. */
-export type ElfRequestId = 'askPlay' | 'askBath' | 'askPets' | 'askDecor' | 'askHat' | 'askWare' | 'askSkill' | 'askEcho' | 'askAcorns' | 'askMemory' | 'askSleep'
+export type ElfRequestId = 'askPlay' | 'askBath' | 'askPets' | 'askDecor' | 'askHat' | 'askWare' | 'askSkill' | 'askEcho' | 'askAcorns' | 'askMemory' | 'askStars' | 'askMushrooms' | 'askSleep'
 export type ElfRequest = { id: ElfRequestId; event: ElfEvent; target: number; progress: number; done: boolean }
 export const REQUEST_ACORNS = 10
 
@@ -704,6 +705,8 @@ const REQUEST_POOL: readonly { id: ElfRequestId; event: ElfEvent; target: number
   { id: 'askEcho', event: 'gameEcho', target: 1 },
   { id: 'askAcorns', event: 'gameAcorns', target: 1 },
   { id: 'askMemory', event: 'gameMemory', target: 1 },
+  { id: 'askStars', event: 'gameStars', target: 1 },
+  { id: 'askMushrooms', event: 'gameMushrooms', target: 1 },
   { id: 'askSleep', event: 'sleep', target: 1 },
 ]
 
@@ -1808,9 +1811,7 @@ export function gameRounds(state: ElfState): number {
 }
 
 /* The event a game played raises beside 'game', for the requests. */
-function gameEvent(id: ElfGameId): ElfEvent {
-  return id === 'acorns' ? 'gameAcorns' : id === 'memory' ? 'gameMemory' : 'gameEcho'
-}
+const GAME_EVENT: Record<ElfGameId, ElfEvent> = { acorns: 'gameAcorns', memory: 'gameMemory', echo: 'gameEcho', stars: 'gameStars', mushrooms: 'gameMushrooms' }
 
 /* The acorns a round pays for its points: the game's rate, up to the
    cap, half as much again with the fair. */
@@ -1839,7 +1840,7 @@ export function recordGame(state: ElfState, id: ElfGameId, points: number, now: 
     counts: counted(current.counts, 'games'),
   }
   const any = recordEvent(played, 'game')
-  const named = recordEvent(any.state, gameEvent(id))
+  const named = recordEvent(any.state, GAME_EVENT[id])
   return { state: named.state, acorns, xp: XP.game, best, completed: [...any.completed, ...named.completed], setBonus: any.setBonus || named.setBonus }
 }
 

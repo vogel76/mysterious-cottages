@@ -35,8 +35,8 @@ Not recorded but synthesised, so nothing to credit:
 
 | File | Plays for | Sound |
 |---|---|---|
-| `echo1.wav` to `echo4.wav` | the forest echo's four tiles (`src/features/elf/games/EchoGame.tsx`) | C5, E5, G5, C6: soft bell tones on a major chord, so any order of them sounds like a tune (a sine with two quiet overtones under a fast attack and an exponential decay) |
-| `echo-wrong.wav` | a wrong tile in the forest echo | a low buzz with a quick fade |
+| `echo1.wav` to `echo4.wav` | the forest echo's four tiles (`src/features/elf/games/EchoGame.tsx`) | C4, E4, G4, A4: warm kalimba-like plucks on a pentatonic set, so any order of them sounds like a tune (the fundamental with a quiet octave that fades first, a soft 15 ms rise, under half a second long, a gentle low-pass: nothing above 2 kHz, so a long melody never grates) |
+| `echo-wrong.wav` | a wrong tile in the forest echo | a soft "oh-oh": two of the same plucks falling a third, E4 to C4 |
 | `egg-knock.wav` | a tap on the egg | a soft wooden knock on the shell |
 | `egg-warm.wav` | warming the egg | a warm hush (noise under a gentle low-pass and a slow swell) with a few ember crackles |
 | `egg-lullaby.wav` | rocking the egg | a short lullaby on soft bells (sol-mi, sol-mi, la-sol) |

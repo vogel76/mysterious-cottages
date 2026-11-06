@@ -9,6 +9,8 @@ import { AcornsIcon, Button, CloseIcon, HurryIcon, IconButton, SleepIcon, Text, 
 import { AcornsGame } from './AcornsGame'
 import { EchoGame } from './EchoGame'
 import { MemoryGame } from './MemoryGame'
+import { MushroomsGame } from './MushroomsGame'
+import { StarRainGame } from './StarRainGame'
 import { GAME_ICON, gameKey } from './games'
 
 /* A game with the elf (the route /elf-game/[id], a page sheet over the
@@ -110,13 +112,7 @@ export function ElfGameScreen() {
         </View>
       ) : left > 0 ? (
         <View style={styles.board}>
-          {id === 'acorns' ? (
-            <AcornsGame key={round} onFinish={onFinish} />
-          ) : id === 'memory' ? (
-            <MemoryGame key={round} onFinish={onFinish} />
-          ) : (
-            <EchoGame key={round} onFinish={onFinish} />
-          )}
+          <Board key={round} id={id} onFinish={onFinish} />
         </View>
       ) : (
         <View style={styles.card}>
@@ -131,6 +127,20 @@ export function ElfGameScreen() {
       )}
     </View>
   )
+}
+
+/* The board of a game. */
+const BOARDS: Record<ElfGameId, (props: { onFinish: (points: number) => void }) => React.JSX.Element> = {
+  acorns: AcornsGame,
+  memory: MemoryGame,
+  echo: EchoGame,
+  stars: StarRainGame,
+  mushrooms: MushroomsGame,
+}
+
+function Board({ id, onFinish }: { id: ElfGameId; onFinish: (points: number) => void }) {
+  const Game = BOARDS[id]
+  return <Game onFinish={onFinish} />
 }
 
 const styles = StyleSheet.create({

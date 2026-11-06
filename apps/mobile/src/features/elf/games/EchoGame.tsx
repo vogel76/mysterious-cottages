@@ -12,9 +12,9 @@ import { GameStartCard, fitCell } from './GameStartCard'
    point; a wrong tile ends the round with the points so far, and the
    melody cannot grow past its longest. Between the humming and the
    echo the line under the tiles says whose turn it is. Each tile has
-   its note (four soft bell tones on a chord, art/sounds/synth.py),
-   heard as the elf hums it and as the player taps it, and a wrong tile
-   buzzes, so the tune can be followed by ear as well as by eye (the
+   its note (four warm, low kalimba-like plucks on a pentatonic set,
+   art/sounds/synth.py), heard as the elf hums it and as the player taps
+   it, and a wrong tile answers with a soft falling "oh-oh", so the tune can be followed by ear as well as by eye (the
    sounds follow the elf's switch and the phone's silent mode). The tiles
    fit the room they have, width and height, and how to play waits over
    them with the start (GameStartCard). All timing runs on timers in this
@@ -27,15 +27,15 @@ const TILES: { Glyph: Icon; tint: string }[] = [
   { Glyph: JoyIcon, tint: colors.danger },
 ]
 const LONGEST = 20
-/* The tiles' notes and the buzz of a wrong one. */
+/* The tiles' notes and the soft "oh-oh" of a wrong one. */
 type EchoSound = 'note1' | 'note2' | 'note3' | 'note4' | 'wrong'
 const NOTE_OF: EchoSound[] = ['note1', 'note2', 'note3', 'note4']
 const SOUNDS: Record<EchoSound, SoundSpec> = {
-  note1: { module: require('../../../../assets/elf/sounds/echo1.wav'), volume: 0.7, minGapMs: 60 },
-  note2: { module: require('../../../../assets/elf/sounds/echo2.wav'), volume: 0.7, minGapMs: 60 },
-  note3: { module: require('../../../../assets/elf/sounds/echo3.wav'), volume: 0.7, minGapMs: 60 },
-  note4: { module: require('../../../../assets/elf/sounds/echo4.wav'), volume: 0.7, minGapMs: 60 },
-  wrong: { module: require('../../../../assets/elf/sounds/echo-wrong.wav'), volume: 0.6, minGapMs: 200 },
+  note1: { module: require('../../../../assets/elf/sounds/echo1.wav'), volume: 0.55, minGapMs: 60 },
+  note2: { module: require('../../../../assets/elf/sounds/echo2.wav'), volume: 0.55, minGapMs: 60 },
+  note3: { module: require('../../../../assets/elf/sounds/echo3.wav'), volume: 0.55, minGapMs: 60 },
+  note4: { module: require('../../../../assets/elf/sounds/echo4.wav'), volume: 0.55, minGapMs: 60 },
+  wrong: { module: require('../../../../assets/elf/sounds/echo-wrong.wav'), volume: 0.5, minGapMs: 200 },
 }
 /* How long a note lights, the gap between notes, and the breath before
    the elf hums and before the next round. */

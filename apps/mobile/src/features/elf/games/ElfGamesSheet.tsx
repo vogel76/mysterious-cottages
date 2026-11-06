@@ -7,10 +7,11 @@ import { Button, HurryIcon, PressableScale, SheetRoute, SleepIcon, Text, colors,
 import { GAME_ICON, gameKey } from './games'
 
 /* The choice of a game (the route /elf-games), from the games button on
-   the side of the cottage: the elf's energy for them on top, and the three
-   games as big tiles side by side, each its picture, its name and its
-   record (or a word on how it goes before the first round); a tap starts
-   that game's screen in place of this sheet. With no energy left the line
+   the side of the cottage: the elf's energy for them on top, and the
+   games as big tiles three to a row (a shorter last row centred), each
+   its picture, its name and its record (or a word on how it goes before
+   the first round); a tap starts that game's screen in place of this
+   sheet. With no energy left the line
    says so and a button beside it opens the hurry of the energy
    (/elf-hurry), so the way back to play is never a search. A sleeping
    elf never gets here (the tab has it say so), but should it, the tiles
@@ -95,12 +96,15 @@ const styles = StyleSheet.create({
   energyWords: {
     flex: 1,
   },
+  /* Three to a row, a shorter last row centred. */
   tiles: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: space.sm,
   },
   tile: {
-    flex: 1,
+    width: '31.5%',
     alignItems: 'center',
     gap: space.xs,
     paddingVertical: space.md,
