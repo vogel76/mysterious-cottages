@@ -503,7 +503,7 @@ export const mobileEn: typeof mobilePl = {
     gameEchoHint: 'Repeat the elf\'s melody.',
     gameStars: 'Star rain',
     gameStarsHint: 'Catch the stars in a basket.',
-    gameStarsHow: 'Move the basket with your finger and catch the falling stars. Keep away from the storm clouds! A heart goes when a star lands beside the basket or you catch a cloud.',
+    gameStarsHow: 'Move the basket with your finger and catch the falling stars. Keep away from the storm clouds, they sometimes fall right beside a star! The stars fall faster and faster, some of them slantwise. A heart goes when a star lands beside the basket or you catch a cloud.',
     gameStarsBoardAria: 'The sky with a basket at the bottom. Move your finger to catch the stars.',
     gameMushrooms: 'Under which mushroom?',
     gameMushroomsHint: 'Spot where the acorn is.',

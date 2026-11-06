@@ -891,17 +891,20 @@ again; each round the melody grows by a note, a round echoed is a
 point, a wrong tile answers with a soft "oh-oh" and ends the round), the
 star rain (`StarRainGame.tsx`: stars fall from the top and a basket along
 the foot follows the finger, a drag or a touch where it should go; a star
-caught is a point, storm clouds fall among them from the seventh second,
-more as the round goes on, and a star that lands beside the basket or a
-storm caught costs a heart, marked by a red cross; the rain thickens to
-its quickest a minute in; every falling thing is its own animation on the
-UI thread and the catch is decided once, at the basket's rim, so the game
-has no frame loop) and under which mushroom (`MushroomsGame.tsx`: an acorn
+caught is a point, storm clouds fall among them from the third second,
+up to almost half of what falls, and a star that lands beside the
+basket or a storm caught costs a heart, marked by a red cross; the basket
+is narrow, the rain thickens to its quickest three quarters of a minute
+in, stars begin to fall slantwise and a storm often falls right beside a
+star, so the basket has to be placed, not swept; every falling thing is
+its own animation on the UI thread and the catch is decided once, at the
+basket's rim, where the thing then is, so the game has no frame loop) and under which mushroom (`MushroomsGame.tsx`: an acorn
 shown under one of three drawn toadstool caps, the caps shuffled two at a
 time, one hopping over the other, then the player taps the cap; found, a
 point, and the next round shuffles more and faster, a fourth cap from the
 fifth round; missed, the right cap lifts to show where it was and a heart
-goes). The games share the
+goes; the acorn is drawn only while it is shown and when the caps tell
+the round, so a hop never lets it peek out from under a rim). The games share the
 elf's energy (`energy` in the state, `ENERGY_MAX` 100): a round takes
 `GAME_ENERGY` (20), so a rested elf has five rounds of any game, and
 the choice of a game, the game's header and the shop say how many are

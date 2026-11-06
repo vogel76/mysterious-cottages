@@ -534,7 +534,7 @@ export const mobilePl = {
     gameEchoHint: 'Powtórz melodię elfa.',
     gameStars: 'Gwiezdny deszcz',
     gameStarsHint: 'Łap gwiazdki do koszyka.',
-    gameStarsHow: 'Przesuwaj palcem koszyk i łap spadające gwiazdki. Omijaj burzowe chmurki! Tracisz serduszko, gdy gwiazdka spadnie obok koszyka albo złapiesz chmurkę.',
+    gameStarsHow: 'Przesuwaj palcem koszyk i łap spadające gwiazdki. Omijaj burzowe chmurki, bo czasem lecą tuż obok gwiazdek! Gwiazdki spadają coraz szybciej, niektóre na ukos. Tracisz serduszko, gdy gwiazdka spadnie obok koszyka albo złapiesz chmurkę.',
     gameStarsBoardAria: 'Niebo z koszykiem na dole. Przesuwaj palcem, żeby łapać gwiazdki.',
     gameMushrooms: 'Pod którym grzybkiem?',
     gameMushroomsHint: 'Wypatrz, gdzie jest żołądź.',
