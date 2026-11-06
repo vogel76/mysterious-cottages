@@ -32,7 +32,7 @@ export const ACCOUNT_PREVIEW: boolean = process.env.EXPO_PUBLIC_ACCOUNT_PREVIEW 
 export const ELF_ENABLED: boolean = process.env.EXPO_PUBLIC_ELF_ENABLED !== '0'
 /* "1" makes a demo build: the elf's clock runs seventy-two times faster
    (a day in twenty minutes, an hour in fifty seconds), so the egg, the
-   care's charges, the letters, the streak and the forms can be walked
+   care's rhythm, the letters, the streak and the forms can be walked
    through in a sitting; the night no longer puts the elf to sleep on its
    own (it sleeps only when tucked in), the reminders are not scheduled,
    and the app installs beside the real one under its own package

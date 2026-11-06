@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, ENERGY_AD, ENERGY_MAX, ENERGY_REFILL_ACORNS, GAME_ENERGY, hatchAt, levelOf, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
+import { canBrew, DUST, ENERGY_AD, ENERGY_MAX, GAME_ENERGY, hatchAt, levelOf, shopItems, SKIP_COST, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
 import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport, useToast } from '../../providers'
-import { AcornsIcon, Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
+import { AcornsIcon, BrewIcon, Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { packLabelKey } from '../support/tips'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { isSlotId } from './cottage/catalogue'
-import { durationText, useClock } from './duration'
+import { durationText, restText, useClock } from './duration'
 import { ElfThumb } from './ElfThumb'
 import { elfKey } from './labels'
 
@@ -17,19 +17,22 @@ import { elfKey } from './labels'
    same unit as the support sheet's, paying DUST.ad up to DUST.adCap ads
    a day, and the store's packs, consumable products the support provider
    sells beside the coffees and credits on payment), then the skips of the
-   waiting the rules allow (the egg before its hour, a care's charges
-   before their time, the elf's energy for the games before its sleep,
-   the next form before its level; a form whose level
+   waiting the rules allow (the egg before its hour, the elf's energy for
+   the games before its sleep, the next form before its level; the care
+   itself is never sold, the elf eats when hungry and bathes when dirty;
+   a form whose level
    is reached is not for sale, the elf grows for free at the player's
    word), each for its dust (SKIP_COST) or for one ad, which counts
    towards the same daily cap, the two ways to pay as two buttons of one
    width under each other (the energy for its acorns in place of dust,
-   ENERGY_REFILL_ACORNS, and an ad gives back only two rounds of it),
+   refillPrice, dearer with each fill of the day, and an ad gives back
+   only two rounds of it), and under them the star brew for dust, half an
+   hour of games and play without tiring (its time left while it works),
    and last the furniture and hats the finds still lock (shopItems: the
    unlock table's entries the player has neither reached, been granted by
    the tree nor bought), each with its catalogue thumbnail, the cottages
    it still needs and its price in dust. A skip bought closes the sheet,
-   so the player sees the egg ready, the charges back or the elf grow in
+   so the player sees the egg ready, the elf rested or grown in
    the room; a piece bought stays, with a toast pointing at the decorating
    panel. The store's receipt reaches the wallet through the provider (a
    toast says how much), the ad's through the elf provider, right here,
@@ -42,7 +45,7 @@ export function ElfShopSheet() {
   const online = useOnline()
   const close = useCloseModal()
   const support = useSupport()
-  const { state, stage, finds, adsLeft, earnAdDust, skip, nextForm, buyItem, gameRounds } = useElf()
+  const { state, stage, finds, adsLeft, earnAdDust, skip, nextForm, buyItem, rest, brewUntil, refillPrice, buyBrew } = useElf()
   const toast = useToast()
   const [earned, setEarned] = useState(0)
   const now = useClock(true)
@@ -69,6 +72,7 @@ export function ElfShopSheet() {
     if (skip(kind, kind === 'energy' ? 'acorns' : 'dust')) close()
   }
   const adAllowed = ad.offered && online !== false && adsLeft > 0
+  const brewReady = state ? canBrew(state, now) : false
   const items = state ? shopItems(state, finds.length) : []
   const buy = (item: ElfShopItem, name: string) => {
     if (buyItem(item.slot, item.id)) toast.show({ tone: 'success', text: t('mobile:elf.shopItemBought', { name }) })
@@ -82,21 +86,10 @@ export function ElfShopSheet() {
     skips.push({ kind: 'hatch', title: t('mobile:elf.shopSkipHatch'), detail: left > 0 ? t('mobile:elf.shopSkipHatchWhen', { time: durationText(t, left) }) : t('mobile:elf.hatchSoon'), open: left > 0 })
   }
   if (state && stage !== 'egg') {
-    for (const id of ELF_CARE_ACTIONS) {
-      const left = careLeft(state, id, now)
-      const next = careNextAt(state, id, now)
-      const total = careCharges(state, id)
-      skips.push({
-        kind: id,
-        title: t(careTitleKey(id)),
-        detail: left >= total || next === null ? t('mobile:elf.shopSkipCareFull') : t('mobile:elf.shopSkipCareWhen', { left, total, time: durationText(t, next - now) }),
-        open: left < total,
-      })
-    }
     skips.push({
       kind: 'energy',
       title: t('mobile:elf.shopSkipEnergy'),
-      detail: state.energy >= ENERGY_MAX ? t('mobile:elf.shopSkipEnergyFull') : gameRounds > 0 ? t('mobile:elf.energyRounds', { count: gameRounds }) : t('mobile:elf.energyNone'),
+      detail: state.energy >= ENERGY_MAX ? t('mobile:elf.shopSkipEnergyFull') : restText(t, rest, brewUntil, now),
       open: state.energy < ENERGY_MAX,
     })
     if (nextForm) {
@@ -219,7 +212,7 @@ export function ElfShopSheet() {
             </Text>
             {skips.map((entry) => {
               const energy = entry.kind === 'energy'
-              const cost = entry.kind === 'energy' ? ENERGY_REFILL_ACORNS : SKIP_COST[entry.kind]
+              const cost = entry.kind === 'energy' ? refillPrice : SKIP_COST[entry.kind]
               const short = energy ? acorns < cost : dust < cost
               const adHere = adBusy && adFor.current === entry.kind
               return (
@@ -272,6 +265,44 @@ export function ElfShopSheet() {
                 </View>
               )
             })}
+            {state && stage !== 'egg' ? (
+              <View style={styles.row}>
+                <View style={styles.rowWords}>
+                  <View style={styles.brewTitle}>
+                    <BrewIcon size={iconSize.sm} weight="duotone" color={colors.accentStrong} />
+                    <Text weight="bold" numberOfLines={1}>
+                      {t('mobile:elf.shopBrew')}
+                    </Text>
+                  </View>
+                  <Text variant="small" tone="soft">
+                    {brewUntil !== null && brewUntil > now ? t('mobile:elf.shopBrewActive', { time: durationText(t, brewUntil - now) }) : t('mobile:elf.shopBrewDesc')}
+                  </Text>
+                  {!brewReady ? (
+                    <Text variant="small" tone="faint">
+                      {t('mobile:elf.shopBrewMax')}
+                    </Text>
+                  ) : dust < DUST.brew ? (
+                    <Text variant="small" tone="faint">
+                      {t('mobile:elf.shopPayShort')}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.pays}>
+                  <Button
+                    variant="primary"
+                    block
+                    disabled={!brewReady || dust < DUST.brew || adBusy}
+                    accessibilityLabel={t('mobile:elf.shopPayDustAria', { what: t('mobile:elf.shopBrew'), count: DUST.brew })}
+                    icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
+                    onPress={() => {
+                      if (buyBrew()) close()
+                    }}
+                  >
+                    {t('mobile:elf.shopPayDust', { count: DUST.brew })}
+                  </Button>
+                </View>
+              </View>
+            ) : null}
           </View>
         ) : null}
 
@@ -333,10 +364,6 @@ export function ElfShopSheet() {
 /* The side of a piece's thumbnail in the items card, points. */
 const THUMB = 56
 
-function careTitleKey(id: ElfCareAction): string {
-  return `mobile:elf.shopSkip${id.charAt(0).toUpperCase()}${id.slice(1)}`
-}
-
 const styles = StyleSheet.create({
   column: {
     gap: space.lg,
@@ -391,6 +418,11 @@ const styles = StyleSheet.create({
   rowWords: {
     flex: 1,
     gap: 2,
+  },
+  brewTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
   },
   rowDust: {
     flexDirection: 'row',

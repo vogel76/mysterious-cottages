@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { peddlerWares, type ElfWare, type ElfWareId } from '@chatynkowo/core'
 import { useElf, useToast } from '../../providers'
-import { AcornsIcon, BathIcon, Button, CheckIcon, CocoaIcon, DustIcon, FeedIcon, PeddlerIcon, SheetRoute, Text, ToyIcon, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
+import { AcornsIcon, BrewIcon, Button, CheckIcon, CocoaIcon, DustIcon, FeedIcon, PeddlerIcon, SheetRoute, Text, ToyIcon, TricksIcon, colors, iconSize, radius, space, type Icon } from '../../ui'
 import { trickKey } from './tricks'
 import { elfNow } from '../../lib/elf-clock'
 
@@ -12,21 +12,22 @@ import { elfNow } from '../../lib/elf-clock'
    a row with its picture, its name, what it does and its price in
    acorns, or a mark once bought today. The rules draw the wares by the
    day and do what a ware does as it is bought (packages/core:
-   peddlerWares, buyWare): a treat, a toy or a soap go to the pantry as a
-   gift the care button hands over whatever the charges and the belly
-   (the toast says which button), a cocoa gives the elf energy for two
-   games, a grain of dust is one, and a skill is one the elf has not
-   got, under its usual price (the toast points at the skills, where it
-   is practised). */
+   peddlerWares, buyWare): a treat and a toy go to the pantry as gifts
+   the care buttons hand over (a treat is eaten hungry or not, a toy is
+   played with at no energy; the toast says which button), a cocoa gives
+   the elf energy for two games, the star brew lets it play half an hour
+   without tiring (and wakes it), a grain of dust is one, and a skill is
+   one the elf has not got, under its usual price (the toast points at
+   the skills, where it is practised). */
 
 /* The care button a gift waits under. */
-const GIFT_BUTTON: Partial<Record<ElfWareId, string>> = { treat: 'mobile:elf.actionFeed', toy: 'mobile:elf.actionPlay', soap: 'mobile:elf.actionBath' }
+const GIFT_BUTTON: Partial<Record<ElfWareId, string>> = { treat: 'mobile:elf.actionFeed', toy: 'mobile:elf.actionPlay' }
 
 const WARE_ICON: Record<ElfWareId, Icon> = {
   treat: FeedIcon,
   toy: ToyIcon,
-  soap: BathIcon,
   cocoa: CocoaIcon,
+  brew: BrewIcon,
   dust: DustIcon,
   trick: TricksIcon,
 }
@@ -51,7 +52,13 @@ export function ElfPeddlerSheet() {
     if (!buyWare(ware.id)) return
     const name = nameOf(ware)
     const button = GIFT_BUTTON[ware.id]
-    const text = button ? t('mobile:elf.wareGiftToast', { name, button: t(button) }) : ware.id === 'trick' && ware.trick ? t('mobile:elf.wareTrickToast', { name: t(trickKey(ware.trick)) }) : t('mobile:elf.wareBoughtToast', { name })
+    const text = button
+      ? t('mobile:elf.wareGiftToast', { name, button: t(button) })
+      : ware.id === 'trick' && ware.trick
+        ? t('mobile:elf.wareTrickToast', { name: t(trickKey(ware.trick)) })
+        : ware.id === 'brew'
+          ? t('mobile:elf.wareBrewToast')
+          : t('mobile:elf.wareBoughtToast', { name })
     toast.show({ tone: 'success', text })
   }
 

@@ -11,25 +11,31 @@ import { AcornsGame } from './AcornsGame'
 import { EchoGame } from './EchoGame'
 import { GameSounds, useGameSound } from './GameSounds'
 import { GameVeil } from './GameStartCard'
+import { elfNow } from '../../../lib/elf-clock'
+import { restText } from '../duration'
 import { MemoryGame } from './MemoryGame'
 import { MushroomsGame } from './MushroomsGame'
 import { StarRainGame } from './StarRainGame'
 import { GAME_ICON, gameKey, type GameFinish } from './games'
 
 /* A game with the elf (the route /elf-game/[id], a page sheet over the
-   Elf tab): the frame around a board, with the game's name, the rounds
-   the elf's energy still allows and a close button at the top, the
-   board in the middle, and once a round ends its card: the points, the
-   acorns and the experience paid, a word on a new best, and the way on
-   (once more while the energy lasts, or back to the elf); with no
-   energy left the card says sleep brings it back and offers the hurry of
-   the energy (/elf-hurry) right there, and a sleeping elf does not play
+   Elf tab): the frame around a board, with the game's name, how rested
+   the elf is (in words, never a count of rounds) and a close button at
+   the top, the board in the middle, and once a round ends its card: the
+   points, the acorns and the experience paid (the happy elf's share
+   named, and a word when the day's cap held acorns back), a word on a
+   new best, and the way on (once more while the elf has the energy, the
+   hurry of the energy when it is tired, or back to the elf); too tired
+   to begin, the card says sleep brings the energy back and offers the
+   hurry (/elf-hurry) right there, and a sleeping elf does not play
    at all: the card says to wake it first. The board takes the room
    between the head and the foot, and each game fits itself into it. On
    iOS the page sheet starts below the status bar, so only Android's
    full-screen modal takes the top inset (as the cottage directory). The round
-   is handed to the rules as it ends (finishGame in the provider), which
-   also leaves the result for the tab to greet with the elf's reaction.
+   is handed to the rules as it ends (finishGame in the provider), with
+   the moment it began, so a round begun under the star brew stays free
+   and on screen when the brew runs out during it; the rules also leave
+   the result for the tab to greet with the elf's reaction.
    The frame holds the games' sounds (GameSounds) for every board, and
    the round's card is heard as it appears: a calm close, or a small
    fanfare for a new record. A round lost that the board can undo (the
@@ -46,27 +52,35 @@ export function ElfGameScreen() {
   const params = useLocalSearchParams<{ id?: string }>()
   const id: ElfGameId = (ELF_GAMES as readonly string[]).includes(params.id ?? '') ? (params.id as ElfGameId) : 'acorns'
   const router = useRouter()
-  const { state, gameRounds, finishGame, reviveGame, adsLeft } = useElf()
+  const { state, gameReady, rest, brewUntil, finishGame, reviveGame, adsLeft } = useElf()
   const online = useOnline()
   const [round, setRound] = useState(0)
-  const [result, setResult] = useState<{ points: number; acorns: number; xp: number; best: boolean } | null>(null)
+  const [result, setResult] = useState<{ points: number; acorns: number; happy: number; capped: boolean; xp: number; best: boolean } | null>(null)
+  /* When the round on the board began: it holds the board while the
+     round lasts, whatever the energy or the brew do meanwhile. */
+  const [roundAt, setRoundAt] = useState<number | null>(null)
   /* The round lost and the way on while the offer of one more life
      stands, and whether this round has had its life. */
   const [out, setOut] = useState<{ points: number; revive: () => void } | null>(null)
   const outRef = useRef(out)
   outRef.current = out
   const revived = useRef(false)
-  const left = gameRounds
   const best = state?.games[id]?.best ?? 0
   const asleep = Boolean(state?.sleeping)
+  useEffect(() => {
+    if (!result && !asleep && gameReady && roundAt === null) setRoundAt(elfNow())
+  }, [result, asleep, gameReady, roundAt])
+  const onBoard = !asleep && (gameReady || roundAt !== null)
   const Glyph = GAME_ICON[id]
   const topInset = Platform.OS === 'android' ? insets.top : 0
 
   const settle = (points: number) => {
     setOut(null)
-    const pay = finishGame(id, points)
-    setResult({ points, acorns: pay?.acorns ?? 0, xp: pay?.xp ?? 0, best: pay?.best ?? false })
+    const pay = finishGame(id, points, roundAt ?? undefined)
+    setRoundAt(null)
+    setResult({ points, acorns: pay?.acorns ?? 0, happy: pay?.happy ?? 0, capped: pay?.capped ?? false, xp: pay?.xp ?? 0, best: pay?.best ?? false })
   }
+  const hurry = () => router.push({ pathname: '/elf-hurry', params: { kind: 'energy' } })
   const onFinish: GameFinish = (points, revive) => {
     if (revive && !revived.current) setOut({ points, revive })
     else settle(points)
@@ -88,7 +102,7 @@ export function ElfGameScreen() {
   /* Closing while the offer stands settles the round as it stood. */
   const leave = () => {
     const current = outRef.current
-    if (current) finishGame(id, current.points)
+    if (current) finishGame(id, current.points, roundAt ?? undefined)
     close()
   }
   const again = () => {
@@ -108,7 +122,7 @@ export function ElfGameScreen() {
                 {t(gameKey(id))}
               </Text>
               <Text variant="small" tone="soft">
-                {left > 0 ? t('mobile:elf.energyRounds', { count: left }) : t('mobile:elf.energyNone')}
+                {restText(t, rest, brewUntil, elfNow())}
                 {best > 0 ? ` · ${t('mobile:elf.gameBest', { count: best })}` : ''}
               </Text>
             </View>
@@ -137,11 +151,28 @@ export function ElfGameScreen() {
                 {t('mobile:elf.gameOverXp', { count: result.xp })}
               </Text>
             </View>
-            {left > 0 ? (
+            {result.happy > 0 ? (
+              <Text variant="small" tone="accent">
+                {t('mobile:elf.gameOverHappy', { count: result.happy })}
+              </Text>
+            ) : null}
+            {result.capped ? (
+              <Text variant="small" tone="soft">
+                {t('mobile:elf.gameOverCapped')}
+              </Text>
+            ) : null}
+            {gameReady ? (
               <Button variant="primary" block onPress={again}>
                 {t('mobile:elf.gameAgain')}
               </Button>
-            ) : null}
+            ) : (
+              <>
+                <Text tone="soft">{t('mobile:elf.energyNoneLong')}</Text>
+                <Button variant="primary" block icon={<HurryIcon size={iconSize.md} weight="fill" color={colors.accentInk} />} onPress={hurry}>
+                  {t('mobile:elf.hurryAction')}
+                </Button>
+              </>
+            )}
             <Button block onPress={close}>
               {t('mobile:elf.gameBack')}
             </Button>
@@ -156,7 +187,7 @@ export function ElfGameScreen() {
               {t('mobile:elf.gameBack')}
             </Button>
           </View>
-        ) : left > 0 ? (
+        ) : onBoard ? (
           <View style={styles.board}>
             <Board key={round} id={id} onFinish={onFinish} />
             {out ? (
@@ -207,7 +238,7 @@ export function ElfGameScreen() {
         ) : (
           <View style={styles.card}>
             <Text tone="soft">{t('mobile:elf.energyNoneLong')}</Text>
-            <Button variant="primary" block icon={<HurryIcon size={iconSize.md} weight="fill" color={colors.accentInk} />} onPress={() => router.push({ pathname: '/elf-hurry', params: { kind: 'energy' } })}>
+            <Button variant="primary" block icon={<HurryIcon size={iconSize.md} weight="fill" color={colors.accentInk} />} onPress={hurry}>
               {t('mobile:elf.hurryAction')}
             </Button>
             <Button block onPress={close}>

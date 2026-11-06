@@ -6,7 +6,7 @@ import { BathIcon, FeedIcon, ForestIcon, JoyIcon, LoreIcon, WarmIcon, type Icon 
    sill, a stage of the plant) map to the copy in the "elf" group of the
    mobile dictionary and to the vocabulary's glyphs. The
    dictionary names each entry with a prefix and the id in title case
-   (stageBaby, starterEmber, needJoy, moodAsleep, wantsClean, guardCharging,
+   (stageBaby, starterEmber, needJoy, moodAsleep, wantsClean, guardTired,
    questFeedTwice, slotHat, itemAcornCap, sillPinecone), so the screens build the key
    here rather than spelling out every switch themselves. */
 

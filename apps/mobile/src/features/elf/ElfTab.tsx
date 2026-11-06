@@ -4,7 +4,7 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { archetypeOf, badgesToClaim, careCharges, peddlerFresh, careLeft, careNextAt, decorFindsNeeded, ELF_CARE_NEEDS, ENERGY_LOW, hatchAt, learnedTricks, levelOf, plantStageAt, tricksToTrain, wantedNeed, xpForLevel, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId, type ElfTrickId } from '@chatynkowo/core'
+import { archetypeOf, badgesToClaim, brewing, careFor, isCareRefusal, peddlerFresh, decorFindsNeeded, ELF_CARE_NEEDS, ENERGY_LOW, hatchAt, learnedTricks, levelOf, plantStageAt, tricksToTrain, wantedNeed, xpForLevel, type CareKind, type ElfCareAction, type ElfEggAction, type ElfForm, type ElfNeedId, type ElfTrickId } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
 import { requestNotificationPermission } from '../../lib/notifications'
 import { setReminders } from '../../lib/reminders-store'
@@ -24,7 +24,6 @@ import { ElfCard } from './ElfCard'
 import { ElfTutorial } from './ElfTutorial'
 import { TutorialPointer } from './TutorialHalo'
 import { useElfTutorial } from './useElfTutorial'
-import { durationText } from './duration'
 import { TRICK_REACTION, trickKey } from './tricks'
 import { elfKey, requestKey } from './labels'
 import { elfNow } from '../../lib/elf-clock'
@@ -135,7 +134,8 @@ const EVOLVE_FIGURE_WAIT_MS = 5000
 /* The acorn under the finger. */
 const ACORN = 44
 /* What the elf says when a gift from the pantry is given. */
-const GIFT_LINE: Record<ElfCareAction, string> = { feed: 'mobile:elf.giftFeedLine', play: 'mobile:elf.giftPlayLine', bath: 'mobile:elf.giftBathLine' }
+/* What the elf says as it takes a gift from the pantry. */
+const GIFT_LINE: Partial<Record<CareKind, string>> = { treat: 'mobile:elf.giftFeedLine', toy: 'mobile:elf.giftPlayLine' }
 /* A learned skill shown on the elf's own: this long after the tab's
    opening or the last show, and a spread on top. */
 const SHOW_OFF_MIN_MS = 25_000
@@ -715,15 +715,14 @@ export function ElfTab() {
       if (id === 'feed' && outcome.kind !== 'egg') tutorial.note('feed')
       if (outcome.kind === 'refused') {
         sceneRef.current?.react('refuse')
-        const at = elfNow()
-        const next = outcome.reason === 'charging' && stateRef.current ? careNextAt(stateRef.current, id, at) : null
-        say(t(elfKey('guard', outcome.reason), { time: durationText(t, (next ?? at) - at) }))
+        say(t(elfKey('guard', outcome.reason)))
       }
       else if (outcome.kind === 'asleep') say(t('mobile:elf.asleepHint'))
       else if (outcome.kind === 'done') {
         sceneRef.current?.react(id === 'feed' ? 'feed' : id === 'play' ? 'play' : 'bath')
         /* A gift from the pantry: the elf says what it got. */
-        if (outcome.gift) say(t(GIFT_LINE[id]))
+        const line = GIFT_LINE[outcome.care]
+        if (line) say(t(line))
         /* The scene and the "+N" over the chip show it; a screen reader
            is told the need and its gain. */
         const need = ELF_CARE_NEEDS[id]
@@ -838,14 +837,16 @@ export function ElfTab() {
   }
 
   const hatchTime = hatchAt(state)
-  /* What the day still allows of each care, for the buttons' dots. */
+  /* Whether each care would be taken now, for the buttons' faces, and
+     whether the star brew keeps the elf fresh. Read at render: the drift
+     re-renders the tab every few seconds. */
   const now = elfNow()
-  const left = { feed: careLeft(state, 'feed', now), play: careLeft(state, 'play', now), bath: careLeft(state, 'bath', now) }
-  const charges = { feed: careCharges(state, 'feed'), play: careCharges(state, 'play'), bath: careCharges(state, 'bath') }
+  const ready = { feed: !isCareRefusal(careFor(state, 'feed', now)), play: !isCareRefusal(careFor(state, 'play', now)), bath: !isCareRefusal(careFor(state, 'bath', now)) }
+  const brewed = brewing(state, now)
   const editing = panel === 'decor'
   /* A tired elf (its energy low): heavy lids and yawns say it is time
      for bed. Read at render: the drift re-renders the tab every few seconds. */
-  const sleepy = awake && state.energy < ENERGY_LOW
+  const sleepy = awake && !brewed && state.energy < ENERGY_LOW
   /* The elf's request of the day, in its words, while it is open. */
   const request = state.daily.request && !state.daily.request.done ? t(requestKey(state.daily.request.id)) : null
   /* What covers the view's bottom, for the room's band: the care band (and
@@ -1007,7 +1008,7 @@ export function ElfTab() {
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} energy={state.energy} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} highlight={bandLit} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} ready={ready} gifts={state.gifts} energy={state.energy} brewing={brewed} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} highlight={bandLit} />
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>

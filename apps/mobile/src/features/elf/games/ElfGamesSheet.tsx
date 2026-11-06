@@ -4,14 +4,17 @@ import { useRouter } from 'expo-router'
 import { ELF_GAMES } from '@chatynkowo/core'
 import { useElf } from '../../../providers'
 import { Button, HurryIcon, PressableScale, SheetRoute, SleepIcon, Text, colors, iconSize, radius, space } from '../../../ui'
+import { elfNow } from '../../../lib/elf-clock'
+import { restText } from '../duration'
 import { GAME_ICON, gameKey } from './games'
 
 /* The choice of a game (the route /elf-games), from the games button on
-   the side of the cottage: the elf's energy for them on top, and the
+   the side of the cottage: how rested the elf is on top (in words,
+   never a count of rounds; the star brew's time while it works), and the
    games as big tiles three to a row (a shorter last row centred), each
    its picture, its name and its record (or a word on how it goes before
    the first round); a tap starts that game's screen in place of this
-   sheet. With no energy left the line
+   sheet. Too tired for a round, the line
    says so and a button beside it opens the hurry of the energy
    (/elf-hurry), so the way back to play is never a search. A sleeping
    elf never gets here (the tab has it say so), but should it, the tiles
@@ -20,10 +23,10 @@ import { GAME_ICON, gameKey } from './games'
 export function ElfGamesSheet() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { state, gameRounds } = useElf()
+  const { state, gameReady, rest, brewUntil } = useElf()
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const asleep = state.sleeping
-  const playable = !asleep && gameRounds > 0
+  const playable = gameReady
   return (
     <SheetRoute>
       <View style={styles.column}>
@@ -34,9 +37,9 @@ export function ElfGamesSheet() {
           <View style={styles.energy}>
             <SleepIcon size={iconSize.md} weight="duotone" color={playable ? colors.accentStrong : colors.inkFaint} />
             <Text weight="semibold" tone={playable ? 'ink' : 'soft'} style={styles.energyWords}>
-              {asleep ? t('mobile:elf.gamesAsleep') : gameRounds > 0 ? t('mobile:elf.energyRounds', { count: gameRounds }) : t('mobile:elf.energyNone')}
+              {asleep ? t('mobile:elf.gamesAsleep') : restText(t, rest, brewUntil, elfNow())}
             </Text>
-            {!asleep && gameRounds === 0 ? (
+            {!asleep && !gameReady ? (
               <Button variant="primary" icon={<HurryIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />} onPress={() => router.push({ pathname: '/elf-hurry', params: { kind: 'energy' } })}>
                 {t('mobile:elf.hurryAction')}
               </Button>

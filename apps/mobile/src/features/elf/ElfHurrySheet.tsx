@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ELF_SKIPS, ENERGY_AD, ENERGY_MAX, ENERGY_REFILL_ACORNS, GAME_ENERGY, hatchAt, SKIP_COST, type ElfSkip } from '@chatynkowo/core'
+import { DUST, ELF_SKIPS, ENERGY_AD, ENERGY_MAX, ENERGY_REFILL_ACORNS, GAME_ENERGY, hatchAt, SKIP_COST, type ElfSkip } from '@chatynkowo/core'
 import { useCloseModal, useElf, useOnline } from '../../providers'
-import { AcornsIcon, Button, DustIcon, EggIcon, HurryIcon, SheetRoute, SleepIcon, Text, WatchAdIcon, colors, iconSize, space, type Icon } from '../../ui'
+import { AcornsIcon, BrewIcon, Button, DustIcon, EggIcon, HurryIcon, SheetRoute, SleepIcon, Text, WatchAdIcon, colors, iconSize, space, type Icon } from '../../ui'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
-import { durationText, useClock } from './duration'
+import { durationText, restText, useClock } from './duration'
 
 /* The hurry of a wait (the route /elf-hurry?kind=...), opened right where
    the wait shows: the egg's hurry button and countdown, the games' line
@@ -17,10 +17,13 @@ import { durationText, useClock } from './duration'
    towards the day's cap like every ad. Short of dust, the dust button
    itself leads to the shop, where dust is bought, and a line under the
    buttons says how much there is. The energy is not sold for dust: its
-   acorns fill it (ENERGY_REFILL_ACORNS; short of them the button rests
-   and the line says how many there are) and an ad gives back two rounds
-   (ENERGY_AD), never the full bar. Done, the sheet closes on the room,
-   where the egg is ready or the elf rested. */
+   acorns fill it (refillPrice, dearer with each fill of the day; short
+   of them the button rests and the line says how many there are), an ad
+   gives back two rounds (ENERGY_AD), never the full bar, and the dust
+   buys the star brew instead, half an hour without tiring (DUST.brew;
+   short of dust that button too opens the shop). The energy is spoken
+   of as rest, never as a count of rounds. Done, the sheet closes on the
+   room, where the egg is ready or the elf rested. */
 
 const ICON: Partial<Record<ElfSkip, Icon>> = { hatch: EggIcon, energy: SleepIcon }
 
@@ -31,7 +34,7 @@ export function ElfHurrySheet() {
   const online = useOnline()
   const params = useLocalSearchParams<{ kind?: string }>()
   const kind: ElfSkip = (ELF_SKIPS as readonly string[]).includes(params.kind ?? '') ? (params.kind as ElfSkip) : 'hatch'
-  const { state, adsLeft, skip, gameRounds } = useElf()
+  const { state, adsLeft, skip, rest, brewUntil, refillPrice, buyBrew } = useElf()
   const now = useClock(true)
   const [failed, setFailed] = useState(false)
   const onRewarded = useCallback(() => {
@@ -60,9 +63,7 @@ export function ElfHurrySheet() {
         : t('mobile:elf.hatchSoon')
       : state.energy >= ENERGY_MAX
         ? t('mobile:elf.shopSkipEnergyFull')
-        : gameRounds > 0
-          ? t('mobile:elf.energyRounds', { count: gameRounds })
-          : t('mobile:elf.energyNone')
+        : restText(t, rest, brewUntil, now)
   const Glyph = ICON[kind] ?? HurryIcon
   const adAllowed = ad.offered && online !== false && adsLeft > 0
 
@@ -71,13 +72,19 @@ export function ElfHurrySheet() {
   }
   /* Short of dust, the dust button opens the shop in place of this sheet;
      short of acorns, the energy's button rests. */
-  const short = energy ? acorns < ENERGY_REFILL_ACORNS : dust < cost
+  const short = energy ? acorns < refillPrice : dust < cost
   const payDust = () => {
     if (short) router.replace('/elf-shop')
     else if (skip(kind, 'dust')) close()
   }
   const payAcorns = () => {
     if (skip('energy', 'acorns')) close()
+  }
+  /* The brew for dust; short of it, the shop in place of this sheet. */
+  const brewShort = dust < DUST.brew
+  const payBrew = () => {
+    if (brewShort) router.replace('/elf-shop')
+    else if (buyBrew()) close()
   }
 
   return (
@@ -114,7 +121,7 @@ export function ElfHurrySheet() {
                   icon={<AcornsIcon size={iconSize.md} weight="fill" color={colors.accentInk} />}
                   onPress={payAcorns}
                 >
-                  {t('mobile:elf.hurryEnergyAcorns', { count: ENERGY_REFILL_ACORNS })}
+                  {t('mobile:elf.hurryEnergyAcorns', { count: refillPrice })}
                 </Button>
               ) : (
                 <Button
@@ -139,6 +146,17 @@ export function ElfHurrySheet() {
                 >
                   {energy ? t('mobile:elf.hurryEnergyAd', { count: ENERGY_AD / GAME_ENERGY }) : t('mobile:elf.hurryAdAction')}
                 </Button>
+              ) : null}
+              {energy ? (
+                <Button block disabled={adBusy} icon={<BrewIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />} onPress={payBrew}>
+                  {t('mobile:elf.hurryEnergyBrew', { count: DUST.brew })}
+                </Button>
+              ) : null}
+              {energy ? (
+                <Text variant="small" tone="soft" align="center">
+                  {t('mobile:elf.hurryEnergyBrewNote')}
+                  {refillPrice > ENERGY_REFILL_ACORNS ? ` ${t('mobile:elf.hurryEnergyPriceNote')}` : ''}
+                </Text>
               ) : null}
               {short ? (
                 <Text variant="small" tone="soft" align="center">
