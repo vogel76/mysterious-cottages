@@ -8,16 +8,30 @@
 
    What the rules say:
 
-   - Three needs (fullness, joy, clean) drift towards a floor of 35, never
-     below it, with time constants of days (4, 5 and 7), half as fast while
-     the elf sleeps. A day away leaves the needs near 90, a week near 50, a
-     month at the floor: wistful, never sick. There is no sick state.
-   - The elf sleeps when the player tucks it in, at any hour, and wakes
-     when woken or once it is rested. Sleep is where its energy comes
-     back: the games share one bar of it (a round takes a fifth), an hour
-     of sleep gives half of it back, and a tired elf yawns; acorns fill
-     it too, and an ad or the peddler's cocoa give some of it back. Nothing else runs by the
-     clock of the day.
+   - Three needs (fullness, joy, clean) drift down over hours towards a
+     floor of 10, never below it (time constants of 10, 14 and 30 hours,
+     half as fast while the elf sleeps): a meal is welcome again some four
+     hours after the last, a bath about once a day or after a few games.
+     The floor is wistful, never sick: there is no sick state, and neglect
+     only costs the happy elf's bonus.
+   - Care is gated by how the elf is, never by a count: it eats when it is
+     hungry (fullness under HUNGRY_BELOW), bathes when it is dirty
+     (cleanliness under DIRTY_BELOW), and plays whenever it has the
+     energy (a play takes half of what a round of a game takes). The games
+     and play make it dirty and the games a little hungry, so a run of
+     games leads back to care. A refusal costs nothing and the elf says
+     why; a pet is always welcome and adds a little joy.
+   - Energy paces the sessions: one bar for the games and play (a round
+     takes a fifth of it; the app speaks of how rested the elf is, not of
+     rounds), back in sleep (half the bar an hour) and slowly while awake.
+     The elf sleeps when the player tucks it in, at any hour, and wakes
+     when woken or rested; a tired elf yawns. Before its sleep the bar can
+     be bought: acorns fill it (dearer with each fill of the day), an ad
+     or the peddler's cocoa give back two rounds, and the star brew (dust,
+     or the peddler's acorns) lets the elf play for half an hour without
+     tiring. Nothing else runs by the clock of the day.
+   - A happy elf (beaming) finds more acorns in every game: care is
+     rewarded with a bonus, never punished by its absence.
    - Skills (the tricks) are bought for acorns and practised once a day
      until learned; a learned skill the elf shows on its own now and then,
      and at once when asked.
@@ -27,18 +41,15 @@
    - Mood: asleep; 'misses' after five days without the player; 'wants'
      when the lowest need is under 60 (the need is named); 'beaming' when
      the needs average 75 and none is under 60; 'content' otherwise.
-   - Care has daily caps (three feeds, two plays, one bath) and a full
-     belly refuses a feed without any penalty, so a short session is a
-     complete session. A pet is always welcome and adds a little joy.
    - Growth goes by the level: everything done together earns
      experience, the cottages found the most, and the next form opens at
      a level (young at 3, adult at 6, elder at 10); the elf never grows
      on its own, the player lets it grow (growUp), and a form ahead of
      its level can be bought in the shop (growNow). The levels also give
      the points of the tree of development.
-   - Care has a pantry for the peddler's gifts (a treat, a toy, a soap):
-     a gift is taken whatever the charges and the belly, with a little
-     joy on top (performCare).
+   - Care has a pantry for the peddler's gifts: a treat is eaten whenever
+     it is offered, hungry or not, and a toy is played with at no energy
+     (performCare).
    - The egg waits in the nest from the first visit and is ready six
      hours later, or the moment a cottage is found; its warmth (warming
      and rocking it) brings the hour nearer, by up to two hours, and the
@@ -51,10 +62,11 @@
      "discover a cottage", paid in acorns and dust; a daily reward to pick
      from (acorns, now and then dust); and a streak of consecutive days
      visited, which milestones reward with dust and which a missed day
-     resets (the loss is the counter, never the elf). Acorns and dust are
-     the two currencies the cosmetics will be bought with; a few pieces of
-     furniture take a number of finds instead (DECOR_UNLOCKS); nothing else
-     about care, forms or finds ever depends on them.
+     resets (the loss is the counter, never the elf). Acorns and dust buy
+     the cosmetics, the peddler's wares and the energy before its sleep; a
+     few pieces of furniture take a number of finds instead
+     (DECOR_UNLOCKS); the care itself is never sold, and the finds never
+     depend on them.
    - The cottages found reach the rules as finds: each is credited once to
      the find quest of its own day (a weekend find seen later still pays),
      and a find from an earlier day is handed back once, on the next
@@ -140,6 +152,8 @@ export type ElfDecor = Record<string, string>
 
 export type ElfCareAction = 'feed' | 'play' | 'bath'
 export const ELF_CARE_ACTIONS: readonly ElfCareAction[] = ['feed', 'play', 'bath']
+/* The cares the pantry holds gifts for: a treat to eat, a toy to play with. */
+export type ElfPantryCare = 'feed' | 'play'
 
 /* The tree of development, climbed with the points the levels give
    (see "Experience" below): a trunk every elf takes first, a fork into
@@ -214,12 +228,14 @@ export const GAME_POINTS_PER_ACORN: Record<ElfGameId, number> = { acorns: 2, mem
 export type ElfGameRecord = { best: number; played: number }
 
 /* The travelling peddler: three wares a day drawn from his basket, each
-   for acorns and each once a day; a treat, a toy or a soap bring a
-   care's charges back at once, a ticket adds a round to each game for
-   the day, a grain of dust is a grain of dust, and a trick is one the
-   elf has not got, a little under its price in the tricks' catalogue. */
-export type ElfWareId = 'treat' | 'toy' | 'soap' | 'cocoa' | 'dust' | 'trick'
-export const ELF_WARES: readonly ElfWareId[] = ['treat', 'toy', 'soap', 'cocoa', 'dust', 'trick']
+   for acorns and each once a day; a treat goes to the pantry and is eaten
+   whenever it is offered, a toy goes there too and is played with at no
+   energy, a cocoa gives back two rounds of energy, the star brew lets the
+   elf play without tiring for a while, a grain of dust is a grain of
+   dust, and a trick is one the elf has not got, a little under its price
+   in the tricks' catalogue. */
+export type ElfWareId = 'treat' | 'toy' | 'cocoa' | 'brew' | 'dust' | 'trick'
+export const ELF_WARES: readonly ElfWareId[] = ['treat', 'toy', 'cocoa', 'brew', 'dust', 'trick']
 export const WARES_A_DAY = 3
 export type ElfWare = { id: ElfWareId; acorns: number; trick: ElfTrickId | null; bought: boolean }
 /* What was bought today, and the day the basket was last looked at (the
@@ -324,6 +340,10 @@ export type ElfDaily = {
   sleptXp: boolean
   /* The elf's request of the day, null for the egg. */
   request: ElfRequest | null
+  /* The acorns the games have paid today, up to GAME_ACORNS_DAILY. */
+  gameAcorns: number
+  /* The day's reward was doubled with an ad (once, after the pick). */
+  rewardDoubled: boolean
 }
 
 export type ElfState = {
@@ -346,9 +366,14 @@ export type ElfState = {
   sleeping: boolean
   /* When the player tucked the elf in, while it sleeps. */
   tuckedAt: number | null
-  /* The energy for the games, 0..ENERGY_MAX: a round takes GAME_ENERGY,
-     sleep gives it back. */
+  /* The energy for the games and play, 0..ENERGY_MAX: a round takes
+     GAME_ENERGY, a play less; sleep gives it back, and the awake hours a
+     little. */
   energy: number
+  /* Until when the star brew lets the elf play without tiring, or null. */
+  brewUntil: number | null
+  /* The energy bought for acorns on a day: each fill costs more. */
+  refills: { day: string; count: number }
   /* When the needs were last brought up to date. */
   last: number
   /* When the player last did something for the elf (a care, a pet, the
@@ -383,12 +408,9 @@ export type ElfState = {
   /* How much of the player's support (coffees and ads, as the support
      ledger counts them) the elf has thanked for, with its sip. */
   supportThanked: number
-  /* The charges of each care spent and not yet back (the moments they
-     were spent; each returns CARE[id].recharge later). */
-  care: Record<ElfCareAction, number[]>
-  /* The peddler's gifts in the pantry, one care each (a treat, a toy, a
-     soap): a care the elf takes whatever its charges and its belly. */
-  gifts: Record<ElfCareAction, number>
+  /* The peddler's gifts in the pantry: treats, eaten whenever offered,
+     and toys, played with at no energy. */
+  gifts: Record<ElfPantryCare, number>
   /* The hatch bought before its hour (the moment it was bought), or null. */
   hatchReadyAt: number | null
   /* The egg's wait may still be skipped for free: true for a new egg
@@ -418,56 +440,89 @@ export type ElfState = {
 
 /* ---------- The numbers ---------- */
 
-const NEED_FLOOR = 35
-/* Days for a need to cover about two thirds of its way to the floor. */
-const NEED_TAU_DAYS: ElfNeeds = { fullness: 4, joy: 5, clean: 7 }
+const NEED_FLOOR = 10
+/* Hours for a need to cover about two thirds of its way to the floor. */
+const NEED_TAU_HOURS: ElfNeeds = { fullness: 10, joy: 14, clean: 30 }
 /* The drift's pace while the elf sleeps. */
 const SLEEP_DRIFT_RATE = 0.5
 
 const EVENING_FROM_HOUR = 18
-/* The elf's energy for the games: the full bar, what a round of a game
-   takes, what an hour of sleep gives back, and under what the elf yawns. */
+/* The elf's energy for the games and play: the full bar, what a round of
+   a game takes, what a play takes, what an hour asleep and an hour awake
+   give back, and under what the elf yawns. */
 export const ENERGY_MAX = 100
 export const GAME_ENERGY = 20
+const PLAY_ENERGY = 10
 const ENERGY_PER_HOUR_ASLEEP = 50
+const ENERGY_PER_HOUR_AWAKE = 5
 /* The shortest nap: a rested elf tucked in still sleeps this long
    before it wakes on its own, so a tuck-in never ends the same moment. */
 const SLEEP_MIN_HOURS = 1
 export const ENERGY_LOW = 30
 /* What the peddler's cocoa gives back. */
 export const COCOA_ENERGY = 40
-/* The energy bought before its sleep: the acorns that fill the bar, and
-   what an ad gives back (two rounds), so an ad never rests the elf fully.
-   Star dust does not buy it. */
+/* The energy bought before its sleep: the acorns of the day's first fill
+   and what each further fill of the day adds to the price, and what an ad
+   gives back (two rounds), so an ad never rests the elf fully. Star dust
+   buys the brew, never the bar. */
 export const ENERGY_REFILL_ACORNS = 40
+const ENERGY_REFILL_STEP = 20
 export const ENERGY_AD = 2 * GAME_ENERGY
+/* The star brew: how long a draught lets the elf play without tiring,
+   and how far ahead draughts bought one after another may reach. */
+export const BREW_MS = 30 * 60 * 1000
+const BREW_AHEAD_MS = 2 * 60 * 60 * 1000
 
-/* Each care has a few charges; a charge spent comes back after its
-   recharge (milliseconds), so three meals at once wait four hours
-   together. */
-const CARE: Record<ElfCareAction, { need: ElfNeedId; gain: number; charges: number; recharge: number }> = {
-  feed: { need: 'fullness', gain: 25, charges: 3, recharge: 4 * 60 * 60 * 1000 },
-  play: { need: 'joy', gain: 30, charges: 2, recharge: 6 * 60 * 60 * 1000 },
-  bath: { need: 'clean', gain: 60, charges: 1, recharge: 12 * 60 * 60 * 1000 },
+/* How the elf stands for each care: under HUNGRY_BELOW a meal is welcome
+   (with the pantry's node from a lighter hunger), under DIRTY_BELOW a
+   bath; play has no gate but its energy. */
+export const HUNGRY_BELOW = 70
+const HUNGRY_BELOW_PANTRY = 85
+export const DIRTY_BELOW = 60
+/* Under these a need is named as a want and its ring turns gold. */
+export const NEED_WANT_BELOW: ElfNeeds = { fullness: HUNGRY_BELOW, joy: 60, clean: DIRTY_BELOW }
+/* What a care gives: a meal's fullness, a treat's fullness and joy, a
+   play's joy and a toy's, and the bath's joy beside the clean coat. */
+const MEAL = 35
+const TREAT = { fullness: 30, joy: 15 } as const
+const PLAY_JOY = 25
+const TOY_JOY = 40
+const BATH_JOY = 5
+/* What play and a round of a game leave behind: dirt, and after a round
+   some hunger. */
+const PLAY_DIRT = 6
+const GAME_DIRT = 10
+const GAME_HUNGER = 6
+
+/* The care as the tree has it: the pantry's lighter hunger, the feast's
+   bigger meals, the games' lighter play, the party's bigger joy, the
+   camp's slower dirt and the roots' quicker rest. */
+export function hungryBelow(state: ElfState): number {
+  return state.nodes.includes('pantry') ? HUNGRY_BELOW_PANTRY : HUNGRY_BELOW
 }
-/* The care as the tree has it: the feast's bigger meals, the pantry's
-   extra meal, the games' extra game, the party's bigger games, the
-   camp's extra bath, the roots' quicker charges. */
-function careSpec(state: ElfState, id: ElfCareAction): { need: ElfNeedId; gain: number; charges: number; recharge: number } {
-  const base = CARE[id]
+function mealGain(state: ElfState): number {
+  return MEAL + (state.nodes.includes('feast') ? 10 : 0)
+}
+/* The energy a play takes. */
+export function playEnergy(state: ElfState): number {
+  return state.nodes.includes('games') ? PLAY_ENERGY / 2 : PLAY_ENERGY
+}
+function playJoy(state: ElfState): number {
+  return PLAY_JOY + (state.nodes.includes('party') ? 15 : 0)
+}
+function dirtOf(state: ElfState, amount: number): number {
+  return state.nodes.includes('camp') ? amount / 2 : amount
+}
+function restRate(state: ElfState): number {
+  return state.nodes.includes('roots') ? 1.25 : 1
+}
+
+/* The drift as the tree has it: a need eases half as slowly again with
+   its node (the belly's fullness, the smile's joy, the camp's coat). */
+function needTauHours(state: ElfState, need: ElfNeedId): number {
   const has = (node: ElfNodeId) => state.nodes.includes(node)
-  return {
-    need: base.need,
-    gain: base.gain + (id === 'feed' && has('feast') ? 10 : 0) + (id === 'play' && has('party') ? 15 : 0),
-    charges: base.charges + ((id === 'feed' && has('pantry')) || (id === 'play' && has('games')) || (id === 'bath' && has('camp')) ? 1 : 0),
-    recharge: has('roots') ? base.recharge * 0.75 : base.recharge,
-  }
-}
-
-/* The drift as the tree has it: a need eases half as fast with its node. */
-function needTauDays(state: ElfState, need: ElfNeedId): number {
-  const slower = (need === 'fullness' && state.nodes.includes('belly')) || (need === 'joy' && state.nodes.includes('smile'))
-  return NEED_TAU_DAYS[need] * (slower ? 1.5 : 1)
+  const slower = (need === 'fullness' && has('belly')) || (need === 'joy' && has('smile')) || (need === 'clean' && has('camp'))
+  return NEED_TAU_HOURS[need] * (slower ? 1.5 : 1)
 }
 
 /* The pieces the finds unlock, by slot and id: a piece stays locked in
@@ -505,14 +560,8 @@ export function decorFindsNeeded(slot: string, id: string, finds: number, grante
   return Math.max(0, (DECOR_UNLOCKS[`${slot}:${id}`] ?? 0) - finds)
 }
 
-/* How many times a day each care is welcome, for the buttons to show,
-   and which need each care answers, for the app to name the gain. */
-export function careCharges(state: ElfState, id: ElfCareAction): number {
-  return careSpec(state, id).charges
-}
-export const ELF_CARE_NEEDS: Record<ElfCareAction, ElfNeedId> = { feed: CARE.feed.need, play: CARE.play.need, bath: CARE.bath.need }
-/* A feed is refused at this fullness, with no penalty. */
-const FULL_AT = 90
+/* Which need each care answers, for the app to name the gain. */
+export const ELF_CARE_NEEDS: Record<ElfCareAction, ElfNeedId> = { feed: 'fullness', play: 'joy', bath: 'clean' }
 
 const PET_JOY = 3
 export const PET_COOLDOWN_MS = 1400
@@ -521,10 +570,9 @@ const EGG_WARMTH: Record<ElfEggAction, number> = { warm: 18, rock: 13 }
 const HATCH_AFTER_MS = 6 * 60 * 60 * 1000
 /* How much nearer a full warmth brings the hatch. */
 export const EGG_WARMTH_HURRY_MS = 2 * 60 * 60 * 1000
-const HATCHED_NEEDS: ElfNeeds = { fullness: 78, joy: 82, clean: 84 }
+/* A newborn is hungry, so its first meal is welcome at once. */
+const HATCHED_NEEDS: ElfNeeds = { fullness: 55, joy: 75, clean: 80 }
 
-/* Under this the lowest need is named as a want. */
-const WANT_BELOW = 60
 const BEAMING_FROM = 75
 const MISSES_AFTER_DAYS = 5
 
@@ -532,8 +580,6 @@ const MISSES_AFTER_DAYS = 5
    before the player lets it grow (growUp); the cottages found feed the
    level through their experience. */
 export const FORM_LEVELS: Record<Exclude<ElfForm, 'baby'>, number> = { young: 3, adult: 6, elder: 10 }
-/* The joy a gift brings on top of its care. */
-const GIFT_JOY = 5
 
 const QUESTS_PER_DAY = 3
 const QUEST_SET_DUST = 1
@@ -727,7 +773,7 @@ function dealRequest(day: string, name: string, quests: readonly ElfQuest[], has
 
 function freshDaily(day: string, name: string, hatched: boolean, hasSkill = false): ElfDaily {
   const quests = dealQuests(day, name, hatched)
-  return { day, quests, bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, sleptXp: false, request: hatched ? dealRequest(day, name, quests, hasSkill) : null }
+  return { day, quests, bonusGranted: false, rewardOptions: dealRewards(day, name), rewardPicked: null, sleptXp: false, request: hatched ? dealRequest(day, name, quests, hasSkill) : null, gameAcorns: 0, rewardDoubled: false }
 }
 
 function isRequestId(value: string): value is ElfRequestId {
@@ -757,6 +803,8 @@ export function newElf(now: number): ElfState {
     sleeping: false,
     tuckedAt: null,
     energy: ENERGY_MAX,
+    brewUntil: null,
+    refills: { day: '', count: 0 },
     last: now,
     lastInteraction: now,
     lastVisitDay: null,
@@ -773,8 +821,7 @@ export function newElf(now: number): ElfState {
     letters: [],
     lettersSent: 0,
     supportThanked: 0,
-    care: { feed: [], play: [], bath: [] },
-    gifts: { feed: 0, play: 0, bath: 0 },
+    gifts: { feed: 0, play: 0 },
     hatchReadyAt: null,
     freeHatch: true,
     ads: { day: '', count: 0 },
@@ -789,6 +836,7 @@ export function newElf(now: number): ElfState {
   }
 }
 
+/* A count of a day (the ads watched, the energy bought). */
 function normalizeAds(raw: unknown): { day: string; count: number } {
   const record = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
   return { day: typeof record.day === 'string' ? record.day : '', count: count(record.count) }
@@ -823,14 +871,9 @@ function normalizeDaily(raw: unknown, name: string, hatched: boolean, now: numbe
     rewardPicked: typeof raw.rewardPicked === 'number' && raw.rewardPicked >= 0 && raw.rewardPicked < 3 ? Math.floor(raw.rewardPicked) : null,
     sleptXp: raw.sleptXp === true,
     request: normalizeRequest(raw.request),
+    gameAcorns: count(raw.gameAcorns),
+    rewardDoubled: raw.rewardDoubled === true,
   }
-}
-
-/* The charges spent per care: only the moments survive. */
-function normalizeCare(raw: unknown): Record<ElfCareAction, number[]> {
-  const record = isRecord(raw) ? raw : {}
-  const moments = (value: unknown) => (Array.isArray(value) ? value.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry)) : [])
-  return { feed: moments(record.feed), play: moments(record.play), bath: moments(record.bath) }
 }
 
 function isSillItem(value: string): value is ElfSillItem {
@@ -887,6 +930,9 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     sleeping: raw.sleeping === true,
     tuckedAt: typeof raw.tuckedAt === 'number' ? raw.tuckedAt : null,
     energy: clamp(number(raw.energy, ENERGY_MAX), 0, ENERGY_MAX),
+    /* A brew stamped further ahead than brews can reach (a clock set back) is cut to that reach. */
+    brewUntil: typeof raw.brewUntil === 'number' && Number.isFinite(raw.brewUntil) ? Math.min(raw.brewUntil, now + BREW_AHEAD_MS) : null,
+    refills: normalizeAds(raw.refills),
     last: number(raw.last, now),
     lastInteraction: number(raw.lastInteraction, number(raw.last, now)),
     lastVisitDay: typeof raw.lastVisitDay === 'string' ? raw.lastVisitDay : null,
@@ -903,8 +949,9 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     letters: Array.isArray(raw.letters) ? raw.letters.map(normalizeLetter).filter((letter): letter is ElfLetter => letter !== null).slice(-LETTERS_KEPT) : [],
     lettersSent: count(raw.lettersSent),
     supportThanked: count(raw.supportThanked),
-    care: normalizeCare(raw.care),
-    gifts: { feed: count(gifts.feed), play: count(gifts.play), bath: count(gifts.bath) },
+    /* The care's old charges are gone with the caps, and a soap left from
+       the peddler's old basket with them. */
+    gifts: { feed: count(gifts.feed), play: count(gifts.play) },
     hatchReadyAt: typeof raw.hatchReadyAt === 'number' ? raw.hatchReadyAt : null,
     /* An egg stored before the free skip existed gets it; a hatched elf has no use for it. */
     freeHatch: typeof raw.freeHatch === 'boolean' ? raw.freeHatch : !hatched,
@@ -937,26 +984,30 @@ export function isAsleep(state: ElfState): boolean {
   return state.hatched && state.sleeping
 }
 
-/* Energy back for a stretch of sleep. */
-function rested(energy: number, hours: number): number {
-  return Math.min(ENERGY_MAX, energy + hours * ENERGY_PER_HOUR_ASLEEP)
+/* Energy back for a stretch of sleep, and the hours of sleep the rest of the bar takes. */
+function rested(state: ElfState, energy: number, hours: number): number {
+  return Math.min(ENERGY_MAX, energy + hours * ENERGY_PER_HOUR_ASLEEP * restRate(state))
+}
+function hoursToRest(state: ElfState, energy: number): number {
+  return (ENERGY_MAX - energy) / (ENERGY_PER_HOUR_ASLEEP * restRate(state))
 }
 
 export function applyElapsed(state: ElfState, now: number): ElfState {
   if (now === state.last) return state
   /* A clock turned back changes nothing of the needs, but every moment
-     stored ahead of now is pulled back to now: a charge, a nap or a
-     hatch stamped in a future that never comes would otherwise wait for
-     it (and a countdown shown from it would never move). */
+     stored ahead of now is pulled back to now: a nap or a hatch stamped
+     in a future that never comes would otherwise wait for it (and a
+     countdown shown from it would never move); a brew keeps no more than
+     brews can reach. */
   if (now < state.last) {
     const back = (at: number | null) => (at === null ? null : Math.min(at, now))
     return {
       ...state,
       last: now,
       lastInteraction: Math.min(state.lastInteraction, now),
-      care: { feed: state.care.feed.map((at) => Math.min(at, now)), play: state.care.play.map((at) => Math.min(at, now)), bath: state.care.bath.map((at) => Math.min(at, now)) },
       tuckedAt: back(state.tuckedAt),
       hatchReadyAt: back(state.hatchReadyAt),
+      brewUntil: state.brewUntil === null ? null : Math.min(state.brewUntil, now + BREW_AHEAD_MS),
     }
   }
   if (!state.hatched) return { ...state, last: now }
@@ -970,18 +1021,20 @@ export function applyElapsed(state: ElfState, now: number): ElfState {
     /* The wake comes when the energy is full and the nap has lasted its
        minimum, whichever is later. */
     const napSoFar = state.tuckedAt === null ? SLEEP_MIN_HOURS : Math.max(0, (state.last - state.tuckedAt) / HOUR_MS)
-    const untilWake = Math.max((ENERGY_MAX - energy) / ENERGY_PER_HOUR_ASLEEP, SLEEP_MIN_HOURS - napSoFar)
+    const untilWake = Math.max(hoursToRest(state, energy), SLEEP_MIN_HOURS - napSoFar)
     asleepHours = Math.min(total, untilWake)
-    energy = rested(energy, asleepHours)
+    energy = rested(state, energy, asleepHours)
     if (total >= untilWake) sleeping = false
   }
+  /* Awake, the elf gets its breath back slowly. */
   const awakeHours = total - asleepHours
+  energy = Math.min(ENERGY_MAX, energy + awakeHours * ENERGY_PER_HOUR_AWAKE * restRate(state))
   const needs = { ...state.needs }
   for (const need of ELF_NEEDS) {
     /* Asleep, a need eases at half the rate; the hearth's fullness holds through the night. */
     const effectiveHours = awakeHours + asleepHours * (need === 'fullness' && state.nodes.includes('hearth') ? 0 : SLEEP_DRIFT_RATE)
     const distance = needs[need] - NEED_FLOOR
-    needs[need] = distance > 0 ? NEED_FLOOR + distance * Math.exp(-effectiveHours / (needTauDays(state, need) * 24)) : needs[need]
+    needs[need] = distance > 0 ? NEED_FLOOR + distance * Math.exp(-effectiveHours / needTauHours(state, need)) : needs[need]
   }
   return { ...state, needs, energy, sleeping, tuckedAt: sleeping ? state.tuckedAt : null, last: now }
 }
@@ -990,11 +1043,19 @@ export function averageNeed(needs: ElfNeeds): number {
   return ELF_NEEDS.reduce((sum, need) => sum + needs[need], 0) / ELF_NEEDS.length
 }
 
-/* The need the elf would like seen to, when the lowest is under the mark. */
+/* The need the elf would like seen to: of those under their mark
+   (NEED_WANT_BELOW), the furthest under it. */
 export function wantedNeed(state: ElfState): ElfNeedId | null {
   let worst: ElfNeedId | null = null
-  for (const need of ELF_NEEDS) if (worst === null || state.needs[need] < state.needs[worst]) worst = need
-  return worst !== null && state.needs[worst] < WANT_BELOW ? worst : null
+  let under = 0
+  for (const need of ELF_NEEDS) {
+    const by = NEED_WANT_BELOW[need] - state.needs[need]
+    if (by > under) {
+      worst = need
+      under = by
+    }
+  }
+  return worst
 }
 
 export function moodOf(state: ElfState, now: number): ElfMood {
@@ -1003,7 +1064,7 @@ export function moodOf(state: ElfState, now: number): ElfMood {
   if (daysBetween(state.lastInteraction, now) >= MISSES_AFTER_DAYS) return 'misses'
   if (wantedNeed(state)) return 'wants'
   const needs = state.needs
-  if (averageNeed(needs) >= BEAMING_FROM && ELF_NEEDS.every((need) => needs[need] >= WANT_BELOW)) return 'beaming'
+  if (averageNeed(needs) >= BEAMING_FROM && ELF_NEEDS.every((need) => needs[need] >= NEED_WANT_BELOW[need])) return 'beaming'
   return 'content'
 }
 
@@ -1177,8 +1238,8 @@ export type VisitOutcome = {
 
 /* The day the state lives in is the calendar's: on a new day the visit is
    counted (the streak grows by a day, breaks across a gap, pays at its
-   milestones), the quests and the reward are dealt afresh and the care
-   caps start over. */
+   milestones), the quests and the reward are dealt afresh, and the
+   games' pay and the price of the energy start over. */
 function ensureDay(state: ElfState, now: number): { state: ElfState; newDay: boolean; streakLost: number | null; milestoneDust: number } {
   const day = dayKey(now)
   /* The same day, or a day before the last visit (a device date set
@@ -1361,72 +1422,75 @@ export function nextStreakMilestone(streak: number): { days: number; dust: numbe
 
 /* ---------- Care ---------- */
 
-/* Why a care action was refused: no charge of it is back yet, or a
-   belly too full for another feed. */
-export type CareRefusal = 'charging' | 'full'
+/* Why a care was refused: a belly not hungry for a meal, a coat too
+   clean for a bath, no energy left for a play. */
+export type CareRefusal = 'full' | 'clean' | 'tired'
+
+/* What a care became: a meal, a treat from the pantry, a play, a toy
+   from the pantry, a bath. */
+export type CareKind = 'meal' | 'treat' | 'play' | 'toy' | 'bath'
 
 export type CareOutcome =
-  /* Done with a charge, or with a gift from the pantry (gift). */
-  | { kind: 'done'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean; gift: boolean }
+  | { kind: 'done'; care: CareKind; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean }
   | { kind: 'refused'; reason: CareRefusal }
   | { kind: 'asleep' }
   | { kind: 'egg' }
 
-/* The charges of a care spent and not yet back at a moment (a moment
-   from the future, after a clock change, counts as spent now). */
-function spentCharges(state: ElfState, id: ElfCareAction, now: number): number[] {
-  const { recharge } = careSpec(state, id)
-  return state.care[id].filter((at) => now - Math.min(at, now) < recharge)
+/* Whether the star brew is working at a moment. */
+export function brewing(state: ElfState, now: number): boolean {
+  return state.brewUntil !== null && now < state.brewUntil
 }
 
-/* A care action: refused while the elf sleeps; otherwise a charge is
-   spent and the need rises, or, with no charge back yet or (a feed) on a
-   full belly, a gift from the pantry is given instead (the need rises
-   and a little joy with it), and the quests hear of either; with neither
-   the care is refused. */
+/* What a care would be right now, or why it would be refused (the app
+   dims a button the elf would refuse and still lets it be pressed, so
+   the elf says why): a treat in the pantry is eaten hungry or not, else
+   a meal while hungry; a toy is played with at no energy, else a play
+   while the energy allows (any while the brew works); a bath while
+   dirty. */
+export function careFor(state: ElfState, id: ElfCareAction, now: number): CareKind | CareRefusal {
+  if (id === 'feed') return state.gifts.feed > 0 ? 'treat' : state.needs.fullness < hungryBelow(state) ? 'meal' : 'full'
+  if (id === 'play') return state.gifts.play > 0 ? 'toy' : brewing(state, now) || state.energy >= playEnergy(state) ? 'play' : 'tired'
+  return state.needs.clean < DIRTY_BELOW ? 'bath' : 'clean'
+}
+
+export function isCareRefusal(kind: CareKind | CareRefusal): kind is CareRefusal {
+  return kind === 'full' || kind === 'clean' || kind === 'tired'
+}
+
+/* A care: refused while the elf sleeps, or as careFor says; otherwise
+   its need rises (a treat and a toy from the pantry, a play from the
+   energy unless the brew works), play leaves a little dirt, and the
+   quests hear of it. */
 export function performCare(state: ElfState, id: ElfCareAction, now: number): CareOutcome {
   if (!state.hatched) return { kind: 'egg' }
   const current = ensureDay(applyElapsed(state, now), now).state
   if (current.sleeping) return { kind: 'asleep' }
-  const spec = careSpec(current, id)
-  const spent = spentCharges(current, id, now)
-  const refusal: CareRefusal | null = spent.length >= spec.charges ? 'charging' : id === 'feed' && current.needs.fullness >= FULL_AT ? 'full' : null
-  const gift = refusal !== null
-  if (gift && current.gifts[id] <= 0) return { kind: 'refused', reason: refusal }
-  const needs = { ...current.needs, [spec.need]: clamp(current.needs[spec.need] + spec.gain) }
-  if (gift) needs.joy = clamp(needs.joy + GIFT_JOY)
-  const cared: ElfState = {
-    ...current,
-    needs,
-    care: gift ? current.care : { ...current.care, [id]: [...spent, now] },
-    gifts: gift ? { ...current.gifts, [id]: current.gifts[id] - 1 } : current.gifts,
-    lastInteraction: now,
-    xp: current.xp + XP.care,
-    counts: counted(current.counts, id),
+  const care = careFor(current, id, now)
+  if (isCareRefusal(care)) return { kind: 'refused', reason: care }
+  const needs = { ...current.needs }
+  const gifts = { ...current.gifts }
+  let energy = current.energy
+  if (care === 'meal') needs.fullness = clamp(needs.fullness + mealGain(current))
+  else if (care === 'treat') {
+    needs.fullness = clamp(needs.fullness + TREAT.fullness)
+    needs.joy = clamp(needs.joy + TREAT.joy)
+    gifts.feed -= 1
+  } else if (care === 'play' || care === 'toy') {
+    needs.joy = clamp(needs.joy + (care === 'toy' ? TOY_JOY : playJoy(current)))
+    needs.clean = clamp(needs.clean - dirtOf(current, PLAY_DIRT))
+    if (care === 'toy') gifts.play -= 1
+    else if (!brewing(current, now)) energy = Math.max(0, energy - playEnergy(current))
+  } else {
+    needs.clean = 100
+    needs.joy = clamp(needs.joy + BATH_JOY)
   }
-  const recorded = recordEvent(cared, id)
-  return { kind: 'done', ...recorded, gift }
+  const cared: ElfState = { ...current, needs, gifts, energy, lastInteraction: now, xp: current.xp + XP.care, counts: counted(current.counts, id) }
+  return { kind: 'done', care, ...recordEvent(cared, id) }
 }
 
 /* The gifts of a care in the pantry. */
-export function giftsLeft(state: ElfState, id: ElfCareAction): number {
+export function giftsLeft(state: ElfState, id: ElfPantryCare): number {
   return state.gifts[id]
-}
-
-/* How many charges of a care are back. */
-export function careLeft(state: ElfState, id: ElfCareAction, now: number): number {
-  return Math.max(0, careSpec(state, id).charges - spentCharges(state, id, now).length)
-}
-
-/* When the next charge of a care is back; null with none spent. */
-export function careNextAt(state: ElfState, id: ElfCareAction, now: number): number | null {
-  const spent = spentCharges(state, id, now)
-  return spent.length ? Math.min(...spent.map((at) => Math.min(at, now))) + careSpec(state, id).recharge : null
-}
-
-/* Every charge of a care back at once (a refill bought). */
-export function refillCare(state: ElfState, id: ElfCareAction): ElfState {
-  return state.care[id].length ? { ...state, care: { ...state.care, [id]: [] } } : state
 }
 
 export type PetOutcome = { kind: 'petted'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } | { kind: 'asleep' } | { kind: 'egg' }
@@ -1518,9 +1582,8 @@ export function hatch(state: ElfState, now: number): ElfState {
 
 export type SleepOutcome = { kind: 'slept' | 'woke'; state: ElfState; completed: ElfQuestPay[]; setBonus: boolean } | { kind: 'egg' }
 
-/* The sleep button: tucks the elf in from 19:00 (asleep until the
-   morning), or wakes it (up for a few minutes, then dozing off again while
-   it is night). */
+/* The sleep button: tucks the elf in, at any hour (it sleeps until it is
+   rested, SLEEP_MIN_HOURS at the least), or wakes it. */
 export function toggleSleep(state: ElfState, now: number): SleepOutcome {
   if (!state.hatched) return { kind: 'egg' }
   const current = ensureDay(applyElapsed(state, now), now).state
@@ -1556,20 +1619,22 @@ export function placeDecor(state: ElfState, slotId: string, id: string, now: num
 /* ---------- Star dust as the premium currency ---------- */
 
 /* What the dust is earned and spent in: a rewarded ad pays `ad` dust,
-   and any ad (for dust or for a skip) counts towards `adCap` a day; the
-   skips cost their price (the hatch before its hour, a care's charges
-   before their time, a form before its days), or one ad; the store's
-   packs (the app's product ids) add what they say. A lost round of a
-   game may go on once with one more life, for `revive` dust or an ad. */
-export const DUST = { ad: 5, adCap: 3, hatchSkip: 20, careRefill: 5, growNow: 30, revive: 5 } as const
+   and any ad (for dust, a skip, the energy, one more life or the day's
+   reward doubled) counts towards `adCap` a day; the skips cost their
+   price (the hatch before its hour, a form before its level), or one ad;
+   a lost round of a game may go on once with one more life for `revive`
+   dust or an ad; the star brew costs `brew`; the store's packs (the
+   app's product ids) add what they say. The care itself is never sold. */
+export const DUST = { ad: 5, adCap: 5, hatchSkip: 20, growNow: 30, revive: 5, brew: 15 } as const
 
 /* The waits that can be bought, and what each costs in dust; the elf's
    energy is the one the dust does not buy: its acorns fill it
-   (refillEnergy) and an ad gives back a part (ENERGY_AD). */
-export type ElfSkip = 'hatch' | ElfCareAction | 'energy' | 'grow'
+   (refillEnergy), an ad gives back a part (ENERGY_AD), and the dust buys
+   the brew instead (buyBrew). */
+export type ElfSkip = 'hatch' | 'energy' | 'grow'
 export type ElfDustSkip = Exclude<ElfSkip, 'energy'>
-export const ELF_SKIPS: readonly ElfSkip[] = ['hatch', 'feed', 'play', 'bath', 'energy', 'grow']
-export const SKIP_COST: Record<ElfDustSkip, number> = { hatch: DUST.hatchSkip, feed: DUST.careRefill, play: DUST.careRefill, bath: DUST.careRefill, grow: DUST.growNow }
+export const ELF_SKIPS: readonly ElfSkip[] = ['hatch', 'energy', 'grow']
+export const SKIP_COST: Record<ElfDustSkip, number> = { hatch: DUST.hatchSkip, grow: DUST.growNow }
 
 /* How many rewarded ads may still be watched today. */
 export function adsLeft(state: ElfState, now: number): number {
@@ -1595,8 +1660,20 @@ export function earnAdDust(state: ElfState, now: number): { state: ElfState; ear
 export function applySkip(state: ElfState, kind: ElfSkip, now: number): ElfState | null {
   if (kind === 'hatch') return skipHatch(state, now)
   if (kind === 'grow') return growNow(state, now)
-  if (kind === 'energy') return boostEnergy(state, ENERGY_AD)
-  return careLeft(state, kind, now) >= careSpec(state, kind).charges ? null : refillCare(state, kind)
+  return boostEnergy(state, ENERGY_AD)
+}
+
+/* The day's reward doubled with an ad watched to the end, once and only
+   after the pick: the same reward again; null before the pick, once
+   doubled, or past the day's cap of ads. */
+export function doubleDailyReward(state: ElfState, now: number): ElfState | null {
+  const settled = ensureDay(applyElapsed(state, now), now).state
+  const picked = settled.daily.rewardPicked
+  const option = picked === null ? undefined : settled.daily.rewardOptions[picked]
+  if (!option || settled.daily.rewardDoubled) return null
+  const watched = recordAd(settled, now)
+  if (!watched) return null
+  return { ...watched, daily: { ...watched.daily, rewardDoubled: true }, wallet: { ...watched.wallet, [option.kind]: watched.wallet[option.kind] + option.amount } }
 }
 
 /* One more life in a lost round, paid in dust (DUST.revive) or with an ad
@@ -1823,9 +1900,21 @@ function normalizeGames(raw: unknown): Partial<Record<ElfGameId, ElfGameRecord>>
   return games
 }
 
-/* The rounds the elf's energy still allows, of any game. */
-export function gameRounds(state: ElfState): number {
-  return Math.floor(state.energy / GAME_ENERGY)
+/* How rested the elf is, in words the app can say without counting
+   rounds: full of energy (or brewed), lively, tiring (about a round
+   left), spent (too tired for a game). */
+export type ElfRest = 'full' | 'lively' | 'tiring' | 'spent'
+export function restOf(state: ElfState, now: number): ElfRest {
+  if (brewing(state, now) || state.energy >= 80) return 'full'
+  if (state.energy >= 2 * GAME_ENERGY) return 'lively'
+  if (state.energy >= GAME_ENERGY) return 'tiring'
+  return 'spent'
+}
+
+/* Whether a round of a game can be played: awake, with a round's energy
+   or the brew working. */
+export function gameReady(state: ElfState, now: number): boolean {
+  return state.hatched && !state.sleeping && (brewing(state, now) || state.energy >= GAME_ENERGY)
 }
 
 /* The event a game played raises beside 'game', for the requests. */
@@ -1837,36 +1926,86 @@ export function gameAcorns(state: ElfState, id: ElfGameId, points: number): numb
   return questAcorns(state, Math.max(0, Math.min(GAME_ACORNS_MAX, Math.floor(points / GAME_POINTS_PER_ACORN[id]))))
 }
 
-export type GameOutcome = { state: ElfState; acorns: number; xp: number; best: boolean; completed: ElfQuestPay[]; setBonus: boolean }
+/* What a happy elf finds on top of a round's pay, and the most the games
+   pay in a day (the rest of a day's rounds pay experience and the fun). */
+export const HAPPY_GAME_ACORNS = 5
+export const GAME_ACORNS_DAILY = 200
 
-/* A round played, with its points: the energy it took, the acorns and
-   the experience paid, the record kept, the day's quests and the request
-   told; null when the elf sleeps or has no energy for a round. */
-export function recordGame(state: ElfState, id: ElfGameId, points: number, now: number): GameOutcome | null {
+/* A round's pay: the acorns paid, the happy elf's share of them, whether
+   the day's cap held some back, the experience, a new best. */
+export type GameOutcome = { state: ElfState; acorns: number; happy: number; capped: boolean; xp: number; best: boolean; completed: ElfQuestPay[]; setBonus: boolean }
+
+/* A round played, with its points: the energy it took (none while the
+   brew works), the dirt and the hunger it left, the acorns paid (the
+   happy elf's bonus on top, all within the day's cap) and the experience,
+   the record kept, the day's quests and the request told; null when the
+   elf sleeps or is too tired for a round. A round begun while the brew
+   worked (startedAt) is free even when the brew ran out during it. */
+export function recordGame(state: ElfState, id: ElfGameId, points: number, now: number, startedAt = now): GameOutcome | null {
   const current = ensureDay(applyElapsed(state, now), now).state
-  if (current.sleeping || current.energy < GAME_ENERGY) return null
-  const acorns = gameAcorns(current, id, points)
+  const free = brewing(current, startedAt) || brewing(current, now)
+  if (!current.hatched || current.sleeping || (!free && current.energy < GAME_ENERGY)) return null
+  const happy = moodOf(current, now) === 'beaming' ? HAPPY_GAME_ACORNS : 0
+  const earned = gameAcorns(current, id, points) + happy
+  const acorns = Math.min(earned, Math.max(0, GAME_ACORNS_DAILY - current.daily.gameAcorns))
   const record = current.games[id] ?? { best: 0, played: 0 }
   const best = record.played > 0 && points > record.best
   const played: ElfState = {
     ...current,
-    energy: current.energy - GAME_ENERGY,
+    energy: free ? current.energy : current.energy - GAME_ENERGY,
+    needs: { ...current.needs, clean: clamp(current.needs.clean - dirtOf(current, GAME_DIRT)), fullness: clamp(current.needs.fullness - GAME_HUNGER) },
     games: { ...current.games, [id]: { best: Math.max(record.best, Math.floor(points)), played: record.played + 1 } },
     wallet: { ...current.wallet, acorns: current.wallet.acorns + acorns },
+    daily: { ...current.daily, gameAcorns: current.daily.gameAcorns + acorns },
     xp: current.xp + XP.game,
     lastInteraction: now,
     counts: counted(current.counts, 'games'),
   }
   const any = recordEvent(played, 'game')
   const named = recordEvent(any.state, GAME_EVENT[id])
-  return { state: named.state, acorns, xp: XP.game, best, completed: [...any.completed, ...named.completed], setBonus: any.setBonus || named.setBonus }
+  return { state: named.state, acorns, happy: Math.min(happy, acorns), capped: acorns < earned, xp: XP.game, best, completed: [...any.completed, ...named.completed], setBonus: any.setBonus || named.setBonus }
 }
 
-/* The elf's energy filled for its acorns (ENERGY_REFILL_ACORNS); null
-   when it is full or the acorns fall short. */
-export function refillEnergy(state: ElfState): ElfState | null {
-  if (state.energy >= ENERGY_MAX || state.wallet.acorns < ENERGY_REFILL_ACORNS) return null
-  return { ...state, energy: ENERGY_MAX, wallet: { ...state.wallet, acorns: state.wallet.acorns - ENERGY_REFILL_ACORNS } }
+/* What filling the bar costs now: the day's first fill
+   ENERGY_REFILL_ACORNS, each further fill that day ENERGY_REFILL_STEP more. */
+export function refillPrice(state: ElfState, now: number): number {
+  const today = state.refills.day === dayKey(now) ? state.refills.count : 0
+  return ENERGY_REFILL_ACORNS + today * ENERGY_REFILL_STEP
+}
+
+/* The elf's energy filled for its acorns (refillPrice); null when it is
+   full or the acorns fall short. */
+export function refillEnergy(state: ElfState, now: number): ElfState | null {
+  const price = refillPrice(state, now)
+  if (state.energy >= ENERGY_MAX || state.wallet.acorns < price) return null
+  const day = dayKey(now)
+  return {
+    ...state,
+    energy: ENERGY_MAX,
+    wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
+    refills: { day, count: (state.refills.day === day ? state.refills.count : 0) + 1 },
+  }
+}
+
+/* A draught of the star brew: half an hour without tiring (games and
+   play take no energy), from now or from the end of the one still
+   working, never further ahead than BREW_AHEAD_MS; it wakes a sleeping
+   elf, whose play it is. Null when it would reach too far. */
+export function drinkBrew(state: ElfState, now: number): ElfState | null {
+  const until = Math.max(now, state.brewUntil ?? 0) + BREW_MS
+  if (until - now > BREW_AHEAD_MS) return null
+  return { ...state, brewUntil: until, sleeping: false, tuckedAt: null }
+}
+
+/* Whether another draught would be taken now (not too far ahead). */
+export function canBrew(state: ElfState, now: number): boolean {
+  return drinkBrew(state, now) !== null
+}
+
+/* The brew bought for dust (DUST.brew); null when short or too far ahead. */
+export function buyBrew(state: ElfState, now: number): ElfState | null {
+  const brewed = drinkBrew(state, now)
+  return brewed ? spendDust(brewed, DUST.brew) : null
 }
 
 /* Energy given back (an ad's part), up to the full bar; null when full. */
@@ -1876,7 +2015,7 @@ export function boostEnergy(state: ElfState, amount: number): ElfState | null {
 
 /* ---------- The peddler ---------- */
 
-const WARE_ACORNS: Record<Exclude<ElfWareId, 'trick'>, number> = { treat: 20, toy: 25, soap: 30, cocoa: 15, dust: 60 }
+const WARE_ACORNS: Record<Exclude<ElfWareId, 'trick'>, number> = { treat: 20, toy: 25, cocoa: 15, brew: 60, dust: 60 }
 /* The peddler's trick costs this much less than the catalogue. */
 const TRICK_WARE_OFF = 10
 
@@ -1933,11 +2072,13 @@ export function buyWare(state: ElfState, id: ElfWareId, now: number): ElfState |
   if (!ware || ware.bought) return null
   const paid = spendAcorns(current, ware.acorns)
   if (!paid) return null
+  /* A brew that would reach too far ahead is not sold. */
+  const brewed = id === 'brew' ? drinkBrew(paid, now) : paid
+  if (!brewed) return null
   const day = dayKey(now)
-  let next: ElfState = { ...paid, peddler: { day, bought: [...(paid.peddler.day === day ? paid.peddler.bought : []), id], seenDay: day }, lastInteraction: now, counts: counted(paid.counts, 'wares') }
+  let next: ElfState = { ...brewed, peddler: { day, bought: [...(brewed.peddler.day === day ? brewed.peddler.bought : []), id], seenDay: day }, lastInteraction: now, counts: counted(brewed.counts, 'wares') }
   if (id === 'treat') next = { ...next, gifts: { ...next.gifts, feed: next.gifts.feed + 1 } }
   else if (id === 'toy') next = { ...next, gifts: { ...next.gifts, play: next.gifts.play + 1 } }
-  else if (id === 'soap') next = { ...next, gifts: { ...next.gifts, bath: next.gifts.bath + 1 } }
   else if (id === 'cocoa') next = { ...next, energy: Math.min(ENERGY_MAX, next.energy + COCOA_ENERGY) }
   else if (id === 'dust') next = addDust(next, 1)
   else if (ware.trick && !next.tricks[ware.trick]) next = { ...next, tricks: { ...next.tricks, [ware.trick]: { sessions: 0, day: null } } }
@@ -2023,11 +2164,11 @@ export function claimBadge(state: ElfState, id: ElfBadgeId): ElfState | null {
 
 /* What the app may tell the player while it is closed, as a reaction to
    something happening in the cottage, never at a time the player picks:
-   the egg ready to hatch (at that moment), the elf reaching a form by time
-   alone, a letter come, the plant grown (on their day), and the day's new
+   the egg ready to hatch and the elf waking rested from a nap (at that
+   moment), a letter come, the plant grown (on their day), and the day's new
    quests and reward (only on the first days after a visit, while the
    player has not come by yet). At most one a day, the most important of
-   the day's (egg, form, letter, plant, then the quests; an event inside
+   the day's (egg, the rested elf, letter, plant, then the quests; an event inside
    the days of the daily reminder mentions the quests too); never at night
    (an egg ready in the night waits for the morning); nothing on a day a
    cottage was found, which belongs to the expedition. The daily one comes
@@ -2035,7 +2176,7 @@ export function claimBadge(state: ElfState, id: ElfBadgeId): ElfState | null {
    an event of a day; four weeks after the last visit the cottage falls
    silent until the player comes back. The app schedules the list when it goes to the
    background and drops it when it comes back. */
-export type ElfReminderKind = 'egg' | 'letter' | 'plant' | 'day'
+export type ElfReminderKind = 'egg' | 'rested' | 'letter' | 'plant' | 'day'
 export type ElfReminder = {
   at: number
   kind: ElfReminderKind
@@ -2052,7 +2193,14 @@ const REMINDER_HORIZON_DAYS = 60
 /* After this many days without a visit nothing more is told. */
 const REMINDER_AWAY_DAYS = 28
 const REMINDERS_MAX = 8
-const REMINDER_RANK: Record<ElfReminderKind, number> = { egg: 5, letter: 3, plant: 2, day: 1 }
+const REMINDER_RANK: Record<ElfReminderKind, number> = { egg: 5, rested: 4, letter: 3, plant: 2, day: 1 }
+
+/* When a sleeping elf wakes on its own, rested; null while it is awake. */
+export function wakeAt(state: ElfState): number | null {
+  if (!state.hatched || !state.sleeping) return null
+  const napSoFar = state.tuckedAt === null ? SLEEP_MIN_HOURS : Math.max(0, (state.last - state.tuckedAt) / HOUR_MS)
+  return state.last + Math.max(hoursToRest(state, state.energy), SLEEP_MIN_HOURS - napSoFar) * HOUR_MS
+}
 
 /* The local moment of a day at a minute of it. */
 function atMinute(day: string, minute: number): number {
@@ -2080,6 +2228,9 @@ export function elfReminders(state: ElfState, now: number, finds: readonly ElfFi
   /* The egg: at the moment it is ready. */
   const ready = hatchAt(state)
   if (ready !== null && ready > now) candidates.push({ at: outOfQuiet(ready), kind: 'egg', quests: false })
+  /* The elf tucked in: when it wakes rested, ready to play. */
+  const wake = wakeAt(state)
+  if (wake !== null && wake > now) candidates.push({ at: outOfQuiet(wake), kind: 'rested', quests: false })
   const visitedToday = lastVisit === today
   for (let offset = 0; offset <= REMINDER_HORIZON_DAYS; offset += 1) {
     const day = dayAt(offset)

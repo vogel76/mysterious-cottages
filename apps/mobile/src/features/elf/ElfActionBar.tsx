@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { BathIcon, FeedIcon, GiftIcon, LullabyIcon, PressableScale, ProgressRing, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
-import { ELF_CARE_NEEDS, ENERGY_LOW, ENERGY_MAX, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfStage } from '@chatynkowo/core'
+import { ELF_CARE_NEEDS, ENERGY_LOW, ENERGY_MAX, NEED_WANT_BELOW, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfPantryCare, type ElfStage } from '@chatynkowo/core'
 import { elfKey } from './labels'
 import { TutorialHalo } from './TutorialHalo'
 
@@ -18,21 +18,20 @@ import { TutorialHalo } from './TutorialHalo'
    primary button, the sleep toggle the ghost face, each with a one-word
    label underneath, large enough for a child and clear of the tab bar. Around each care button a ring shows the need the
    care sees to (fullness, joy, cleanliness): green while comfortable,
-   gold once the elf would like it seen to, eased to each new value as
-   the needs drift; a care's gain floats up over the button as "+25" for
-   a moment. Under each care button the dots of its charges (three
-   feeds, two plays, one bath, each back some hours after it was spent,
-   the rules say how many), lit while they are left, so the player
-   sees before tapping what the day still allows, and after them the
-   peddler's gifts in the pantry for that care (a treat, a toy, a soap),
-   each a little gift mark instead of a dot: a gift is taken whatever
-   the charges and the belly, so a bought treat is eaten at once. While
-   the elf sleeps, or once a cap is used up with no gift at hand, the
-   button dims and tells assistive tech it is disabled, but it stays
-   pressable: the rules refuse the action and the elf says why, so a tap
-   is never met with silence. The sleep button wears the ring of the
-   elf's energy for the games (gold once it runs low: a tired elf yawns,
-   and sleep brings it back). The feed button
+   gold once the elf would like it seen to (hungry, dirty, or wanting a
+   game: NEED_WANT_BELOW), eased to each new value as the needs drift; a
+   care's gain floats up over the button as "+25" for a moment. There is
+   no count of the day's care: the elf eats when hungry, bathes when
+   dirty and plays while it has the energy. Under the feed and play
+   buttons the peddler's gifts in the pantry (treats, toys), a little
+   gift mark each: a treat is eaten whenever offered, a toy is played
+   with at no energy. While the elf sleeps, or when it would refuse the
+   care (full, clean, too tired), the button dims and tells assistive
+   tech it is disabled, but it stays pressable: the rules refuse the
+   action and the elf says why, so a tap is never met with silence. The
+   sleep button wears the ring of the elf's energy for the games and
+   play (gold once it runs low: a tired elf yawns, and sleep brings it
+   back; full while the star brew works). The feed button
    also lets the acorn be dragged: a pan that starts on it reports the
    finger's position in window coordinates to the tab, which floats an
    acorn under the finger, has the elf follow it with its eyes and feeds
@@ -48,14 +47,14 @@ export type ElfActionBarProps = {
   sleeping: boolean
   /* The needs, 0..100, for the rings around the care buttons. */
   needs: ElfNeeds
-  /* How many of each care the day still allows. */
-  careLeft: Record<ElfCareAction, number>
-  /* The charges each care has (the tree can add one). */
-  careCharges: Record<ElfCareAction, number>
-  /* The peddler's gifts in the pantry, one care each. */
-  gifts: Record<ElfCareAction, number>
-  /* The elf's energy for the games, 0..ENERGY_MAX, for the sleep button's ring. */
+  /* Whether each care would be taken now (the rules' careFor). */
+  ready: Record<ElfCareAction, boolean>
+  /* The peddler's gifts in the pantry: treats and toys. */
+  gifts: Record<ElfPantryCare, number>
+  /* The elf's energy for the games and play, 0..ENERGY_MAX, for the
+     sleep button's ring, and whether the star brew works (the ring full). */
   energy: number
+  brewing: boolean
   onCare: (id: ElfCareAction) => void
   onTendEgg: (id: ElfEggAction) => void
   onToggleSleep: () => void
@@ -75,9 +74,8 @@ type Action = {
      ring shows the energy instead. */
   need?: { id: ElfNeedId; value: number }
   energy?: number
-  /* The charges and what is left of them, as dots under the button, the
-     gifts after them, and the same in words for a screen reader. */
-  cap?: { total: number; left: number; gifts: number }
+  /* The gifts in the pantry for the care, as marks under the button. */
+  gifts?: number
   valueText?: string
   /* Lit for the tutorial. */
   lit?: boolean
@@ -88,37 +86,43 @@ const BUTTON = 56
 /* The ring around a care button: its box and its thickness. */
 const RING = 64
 const RING_STROKE = 3
-const DOT = 6
-/* A gift's mark under the button, a little bigger than a dot. */
+/* A gift's mark under the button. */
 const GIFT = 10
 /* The press feedback of the round buttons. */
 const PRESS_SCALE = 0.9
 /* How far the finger travels before a press on the acorn becomes a drag. */
 const DRAG_START = 10
-/* The ring turns gold where the rules name a want (under 60). There is no
-   danger tint: the needs never fall under the floor of 35, and an elf
-   left alone wants, it does not suffer. */
-const COMFORTABLE = 60
+/* The ring turns gold where the rules name a want (NEED_WANT_BELOW).
+   There is no danger tint: an elf left alone wants, it never suffers. */
 /* A rise of at least this much is a care, not a pet: it floats up as "+N". */
 const GAIN_SHOWN = 10
 const GAIN_MS = 1400
 
-export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gifts, energy, onCare, onTendEgg, onToggleSleep, onFeedDrag, highlight = null }: ElfActionBarProps) {
+/* The care's state in a word for a screen reader. */
+const CARE_WORD: Record<ElfCareAction, [string, string]> = {
+  feed: ['mobile:elf.careHungry', 'mobile:elf.careFull'],
+  play: ['', 'mobile:elf.careTired'],
+  bath: ['mobile:elf.careDirty', 'mobile:elf.careClean'],
+}
+
+export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, brewing, onCare, onTendEgg, onToggleSleep, onFeedDrag, highlight = null }: ElfActionBarProps) {
   const { t } = useTranslation()
   const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => {
     const needId = ELF_CARE_NEEDS[id]
     const value = needs[needId]
-    const left = careLeft[id] > 0 ? t('mobile:elf.careLeftAria', { left: careLeft[id], total: careCharges[id] }) : t('mobile:elf.careUsedAria')
-    const pantry = gifts[id] > 0 ? ` ${t('mobile:elf.careGiftsAria', { count: gifts[id] })}` : ''
+    const gift = id === 'bath' ? 0 : gifts[id]
+    const wordKey = CARE_WORD[id][ready[id] ? 0 : 1]
+    const word = wordKey ? ` ${t(wordKey)}.` : ''
+    const pantry = gift > 0 ? ` ${t('mobile:elf.careGiftsAria', { count: gift })}` : ''
     return {
       key: id,
       Glyph,
       label,
       face: 'primary',
-      disabled: sleeping || (careLeft[id] === 0 && gifts[id] === 0),
+      disabled: sleeping || !ready[id],
       need: { id: needId, value },
-      cap: { total: careCharges[id], left: careLeft[id], gifts: gifts[id] },
-      valueText: `${t('mobile:elf.needAria', { need: t(elfKey('need', needId)), value: Math.round(value) })}. ${left}${pantry}`,
+      gifts: id === 'bath' ? undefined : gift,
+      valueText: `${t('mobile:elf.needAria', { need: t(elfKey('need', needId)), value: Math.round(value) })}.${word}${pantry}`,
       lit: highlight === id,
       onPress: () => onCare(id),
     }
@@ -135,8 +139,8 @@ export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gi
           care('play', ToyIcon, t('mobile:elf.actionPlay')),
           care('bath', BathIcon, t('mobile:elf.actionBath')),
           sleeping
-            ? { key: 'wake', Glyph: WakeIcon, label: t('mobile:elf.actionWake'), face: 'ghost', energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep }
-            : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep },
+            ? { key: 'wake', Glyph: WakeIcon, label: t('mobile:elf.actionWake'), face: 'ghost', energy: brewing ? ENERGY_MAX : energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep }
+            : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', energy: brewing ? ENERGY_MAX : energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep },
         ]
 
   /* The first half to the left of the key, the rest to its right. */
@@ -153,12 +157,12 @@ export function ElfActionBar({ stage, sleeping, needs, careLeft, careCharges, gi
 }
 
 function ActionButton({ action }: { action: Action }) {
-  const { Glyph, label, face, disabled, need, energy, cap, valueText, lit, onPress } = action
+  const { Glyph, label, face, disabled, need, energy, gifts, valueText, lit, onPress } = action
   const primary = face === 'primary'
   return (
     <View style={[styles.item, disabled && styles.itemDisabled]}>
       <View style={styles.well}>
-        {need ? <NeedRing value={need.value} /> : null}
+        {need ? <NeedRing value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
         {energy !== undefined ? <EnergyRing value={energy} /> : null}
         {lit ? <TutorialHalo /> : null}
         <PressableScale
@@ -176,7 +180,7 @@ function ActionButton({ action }: { action: Action }) {
         </PressableScale>
         {need ? <NeedGain value={need.value} /> : null}
       </View>
-      <CapDots cap={cap} />
+      <GiftMarks count={gifts} />
       <Text variant="small" weight="bold" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.label}>
         {label}
       </Text>
@@ -187,10 +191,10 @@ function ActionButton({ action }: { action: Action }) {
 /* The need around the button: the arc is the need out of a hundred, in
    the colour of how it stands. The button describes the value, so the
    ring is decoration. */
-function NeedRing({ value }: { value: number }) {
+function NeedRing({ value, want }: { value: number; want: number }) {
   return (
     <View style={styles.ring} pointerEvents="none">
-      <ProgressRing size={RING} value={value} max={100} stroke={RING_STROKE} color={value >= COMFORTABLE ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
+      <ProgressRing size={RING} value={value} max={100} stroke={RING_STROKE} color={value >= want ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
     </View>
   )
 }
@@ -240,15 +244,16 @@ function NeedGain({ value }: { value: number }) {
   )
 }
 
-/* The charges under a care button: one dot per charge, lit while it is
-   back, then a gift mark for each gift in the pantry. The button's label
-   already says what the dots are for. A button without a cap keeps the
+/* The gifts in the pantry under a care button, a mark each (three at
+   most, a fourth would crowd the label). A button without gifts keeps the
    row's height, so every label sits on the same line. */
-function CapDots({ cap }: { cap?: { total: number; left: number; gifts: number } }) {
+const GIFTS_SHOWN = 3
+function GiftMarks({ count = 0 }: { count?: number }) {
   return (
     <View style={styles.dots} pointerEvents="none">
-      {cap ? Array.from({ length: cap.total }, (_, index) => <View key={index} style={[styles.dot, index < cap.left ? styles.dotLeft : styles.dotUsed]} />) : null}
-      {cap ? Array.from({ length: cap.gifts }, (_, index) => <GiftIcon key={`gift-${index}`} size={GIFT} weight="fill" color={colors.accentStrong} />) : null}
+      {Array.from({ length: Math.min(count, GIFTS_SHOWN) }, (_, index) => (
+        <GiftIcon key={index} size={GIFT} weight="fill" color={colors.accentStrong} />
+      ))}
     </View>
   )
 }
@@ -260,7 +265,7 @@ function CapDots({ cap }: { cap?: { total: number; left: number; gifts: number }
    name, and feeds on a screen reader's activate; its own press is left to
    the tap gesture so a finger feeds once. */
 function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: FeedDragHandler }) {
-  const { Glyph, label, disabled, need, cap, valueText, lit, onPress } = action
+  const { Glyph, label, disabled, need, gifts, valueText, lit, onPress } = action
 
   const gesture = useMemo(() => {
     const pan = Gesture.Pan()
@@ -286,7 +291,7 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
   return (
     <View style={[styles.item, disabled && styles.itemDisabled]}>
       <View style={styles.well}>
-        {need ? <NeedRing value={need.value} /> : null}
+        {need ? <NeedRing value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
         {lit ? <TutorialHalo /> : null}
         <GestureDetector gesture={gesture}>
           <PressableScale
@@ -304,7 +309,7 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
         </GestureDetector>
         {need ? <NeedGain value={need.value} /> : null}
       </View>
-      <CapDots cap={cap} />
+      <GiftMarks count={gifts} />
       <Text variant="small" weight="bold" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.label}>
         {label}
       </Text>
@@ -378,21 +383,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.xs,
     minHeight: GIFT,
-  },
-  dot: {
-    width: DOT,
-    height: DOT,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  dotLeft: {
-    backgroundColor: colors.accent,
-  },
-  /* A spent dot keeps its ring, so the charges stay countable. */
-  dotUsed: {
-    backgroundColor: 'transparent',
-    opacity: 0.6,
   },
   button: {
     width: BUTTON,

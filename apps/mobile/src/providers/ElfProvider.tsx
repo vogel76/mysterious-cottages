@@ -28,6 +28,11 @@ import {
   recordAd as recordElfAd,
   applySkip as applyElfSkip,
   refillEnergy as refillElfEnergy,
+  refillPrice as elfRefillPrice,
+  buyBrew as buyElfBrew,
+  doubleDailyReward as doubleElfReward,
+  restOf as elfRestOf,
+  gameReady as elfGameReady,
   payRevive as payElfRevive,
   nextForm as elfNextForm,
   growUp as growElf,
@@ -39,7 +44,6 @@ import {
   skipHatchFree as skipElfHatchFree,
   visitPeddler as visitElfPeddler,
   showTrick as showElfTrick,
-  gameRounds as elfGameRounds,
   claimBadge as claimElfBadge,
   recordGame,
   trainTrick as trainElfTrick,
@@ -64,6 +68,7 @@ import {
   type ElfMood,
   type ElfOutfit,
   type ElfQuestPay,
+  type ElfRest,
   type ElfStage,
   type ElfStarter,
   type ElfState,
@@ -211,13 +216,20 @@ export type ElfValue = {
   /* A learned skill shown at the player's word: the rules hear of it
      (the day's request); false unless learned and awake. */
   showTrick: (id: ElfTrickId) => boolean
-  /* The games: the elf's energy and the rounds it still allows (of any
-     game), a round finished with its points (what it paid, or null when
-     the elf has no energy for one), and the result the tab is to greet
-     next, cleared once greeted. */
+  /* The games: the elf's energy, how rested it is in words (restOf),
+     whether a round can be played, what filling the bar costs now in
+     acorns, until when the star brew works (null without one) and the
+     brew bought for dust (false when short), a round finished with its
+     points (what it paid, the happy elf's share, whether the day's cap
+     held some back; null when the elf cannot play one), and the result
+     the tab is to greet next, cleared once greeted. */
   energy: number
-  gameRounds: number
-  finishGame: (id: ElfGameId, points: number) => { acorns: number; xp: number; best: boolean } | null
+  rest: ElfRest
+  gameReady: boolean
+  refillPrice: number
+  brewUntil: number | null
+  buyBrew: () => boolean
+  finishGame: (id: ElfGameId, points: number, startedAt?: number) => { acorns: number; happy: number; capped: boolean; xp: number; best: boolean } | null
   gameResult: { id: ElfGameId; points: number; acorns: number; best: boolean; at: number } | null
   clearGameResult: () => void
   /* A ware bought from the peddler: false when it is not on offer today,
@@ -229,8 +241,11 @@ export type ElfValue = {
   claimBadge: (id: ElfBadgeId) => boolean
   /* The pieces the tree granted or the shop sold, free of the finds (slot:id). */
   granted: string[]
-  /* Picks one of the day's reward options, once a day. */
+  /* Picks one of the day's reward options, once a day, and the pick
+     doubled with an ad watched to the end (false before the pick, once
+     doubled, or past the day's cap). */
   claimDailyReward: (index: number) => void
+  doubleDailyReward: () => boolean
   pendingEvolution: ElfForm | null
   acknowledgeEvolution: () => void
   news: ElfNews | null
@@ -605,7 +620,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       }
       /* The energy alone is bought with acorns, and never with dust. */
       if (pay === 'acorns') {
-        const filled = kind === 'energy' ? refillElfEnergy(current) : null
+        const filled = kind === 'energy' ? refillElfEnergy(current, now) : null
         if (filled) commit(filled, true)
         return filled !== null
       }
@@ -709,17 +724,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   )
   const [gameResult, setGameResult] = useState<ElfValue['gameResult']>(null)
   const finishGame = useCallback(
-    (id: ElfGameId, points: number) => {
+    (id: ElfGameId, points: number, startedAt?: number) => {
       const current = stateRef.current
       if (!current) return null
       const now = elfNow()
       const { state: settled, day } = settle(current, now)
-      const outcome = recordGame(settled, id, points, now)
+      const outcome = recordGame(settled, id, points, now, startedAt)
       if (!outcome) return null
       commit(outcome.state, true)
       report(current, outcome, day)
       setGameResult({ id, points, acorns: outcome.acorns, best: outcome.best, at: now })
-      return { acorns: outcome.acorns, xp: outcome.xp, best: outcome.best }
+      return { acorns: outcome.acorns, happy: outcome.happy, capped: outcome.capped, xp: outcome.xp, best: outcome.best }
     },
     [commit, settle, report],
   )
@@ -794,6 +809,24 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [commit, settle, report],
   )
 
+  const doubleDailyReward = useCallback((): boolean => {
+    const current = stateRef.current
+    if (!current) return false
+    const next = doubleElfReward(current, elfNow())
+    if (!next) return false
+    commit(next, true)
+    return true
+  }, [commit])
+
+  const buyBrew = useCallback((): boolean => {
+    const current = stateRef.current
+    if (!current) return false
+    const next = buyElfBrew(current, elfNow())
+    if (!next) return false
+    commit(next, true)
+    return true
+  }, [commit])
+
   const acknowledgeEvolution = useCallback(() => {
     const current = stateRef.current
     if (!current || !pendingEvolution) return
@@ -848,7 +881,11 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       clearTrickPlay,
       showTrick,
       energy: state?.energy ?? 0,
-      gameRounds: state ? elfGameRounds(state) : 0,
+      rest: state ? elfRestOf(state, now) : 'spent',
+      gameReady: state ? elfGameReady(state, now) : false,
+      refillPrice: state ? elfRefillPrice(state, now) : 0,
+      brewUntil: state?.brewUntil ?? null,
+      buyBrew,
       finishGame,
       gameResult,
       clearGameResult,
@@ -857,6 +894,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       claimBadge,
       granted: state ? grantedItems(state) : [],
       claimDailyReward,
+      doubleDailyReward,
       pendingEvolution,
       acknowledgeEvolution,
       news,
@@ -865,7 +903,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       readLetter,
     }
   }, [state, loaded, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
-      thankSupport, earnAdDust, addDust, skip, reviveGame, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, showTrick, finishGame, gameResult, clearGameResult, buyWare, visitPeddler, claimBadge, claimDailyReward, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
+      thankSupport, earnAdDust, addDust, skip, reviveGame, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, showTrick, finishGame, gameResult, clearGameResult, buyWare, visitPeddler, claimBadge, claimDailyReward, doubleDailyReward, buyBrew, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>
 }

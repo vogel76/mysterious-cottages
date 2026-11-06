@@ -91,8 +91,8 @@ DEMO", installed beside the real app under the package with `.demo`
 appended (`app.config.ts`), so it starts with a fresh egg and never
 touches the real app's data. Its elf keeps a clock seventy-two times
 faster than the wall clock (`src/lib/elf-clock.ts`: a day in twenty
-minutes, an hour in fifty seconds), so the egg hatches, the care's
-charges come back, the peddler changes his wares, the letters arrive,
+minutes, an hour in fifty seconds), so the egg hatches, the elf gets
+hungry and dirty and rests, the peddler changes his wares, the letters arrive,
 the streak grows and the levels with their forms come within a
 presentation, and no reminder is scheduled.
 Give it Google's sample rewarded unit as well, so the dust shop's ad
@@ -252,10 +252,11 @@ app/                     expo-router routes
   elf-letter.tsx         a letter from the elves of the cottages, by its number (`n`), from the envelope in the room,
                          the away card or the shelf
   elf-shop.tsx           the shop of star dust: the balance, a rewarded ad for dust (up to a daily cap), the store's
-                         dust packs and the skips of the waiting (the hatch, a care's charges, the next form) for
-                         dust or an ad, a sheet from the plus on the star dust in the purse
+                         dust packs, the skips of the waiting (the hatch, the next form) for dust or an ad, the energy
+                         for acorns or an ad and the star brew for dust, a sheet from the plus on the star dust in the purse
   elf-hurry.tsx          the hurry of one wait (?kind=hatch, energy...): what is left of it and the ways to end it now,
-                         free for the first egg, else dust or an ad; a sheet from the egg's hurry button and countdown
+                         free for the first egg, else dust or an ad (the energy: acorns, an ad or the star brew); a sheet
+                         from the egg's hurry button and countdown
                          and from the games when the energy is out
   elf-tree.tsx           the elf's tree of development: the level with its rank, the experience bar, the points and
                          a trunk, three branches that fork and merge, three archetypes; a sheet from the name block in the strip
@@ -681,8 +682,11 @@ gold "hurry" button, free for the first egg), at
 the bottom `ElfActionBar.tsx` (the round care buttons on the tab bar,
 split around its discover key so neither covers the other, each ringed
 by the need it sees to, green while comfortable and gold when the elf
-would like it seen to, with the dots of its charges under it; the sleep
-button ringed by the elf's energy for the games; one-word labels large
+would like it seen to (hungry, dirty, wanting a game), with a gift mark
+under the feed and play buttons for each treat and toy in the pantry,
+and dimmed (still pressable, the elf says why) when the elf would
+refuse the care; the sleep button ringed by the elf's energy for the
+games and play, full while the star brew works; one-word labels large
 enough for a child, clear of the tab bar, the four buttons and the
 key's gap fitting a 375-point phone). Along the sides of the room
 `ElfRails.tsx` keeps the round buttons of what there is to do, each with
@@ -763,23 +767,27 @@ Star dust is the premium currency, and the plus on it in the purse
 opens its shop
 (`/elf-shop`, `ElfShopSheet.tsx`): the balance, then the two ways to get
 dust beyond the rules' streaks and quest sets, a rewarded ad (the
-support sheet's unit, `DUST.ad` dust a time; every rewarded ad, for dust
-or a skip, counts towards `DUST.adCap` a day in the state's `ads`;
+support sheet's unit, `DUST.ad` dust a time; every rewarded ad, for dust,
+a skip, the energy, one more life in a game or the day's reward doubled,
+counts towards `DUST.adCap` (5) a day in the state's `ads`;
 `earnAdDust`, `recordAd` in the rules) and the store's packs
 (`DUST_PACKS` in `tips.ts`, sold by `SupportProvider` beside the coffees
 and credited on payment with `addDust`), then the skips of the waiting
 the rules allow (`ElfSkip`, `applySkip`; the provider's `skip(kind,
 pay)` takes the dust of `SKIP_COST` or counts the ad first): the egg
-before its hour (`skipHatch` sets `hatchReadyAt`), a care's charges back
-at once (`refillCare`), the next form before its level (`growNow`;
+before its hour (`skipHatch` sets `hatchReadyAt`), the elf's energy (for
+acorns, `refillPrice`, dearer with each fill of the day, or two rounds
+of it for an ad), the next form before its level (`growNow`;
 `nextForm` says the form ahead, the level it asks for and whether the
 elf is there, in which case nothing is for sale: the elf grows for free
-at the player's word). The two ways to pay stand under each other as
-buttons of one width. Each row shows its countdown (`duration.ts` keeps
-the clock and the words, shared with the egg's chip and the elf's line
-when a care has no charge back) and a skip bought closes the sheet, so
-the player sees the egg ready, the dots relit or the elf grow in the
-room. The last card sells the furniture and hats the finds still lock
+at the player's word), and under them the star brew for dust
+(`DUST.brew`, `buyBrew`: half an hour of games and play without tiring,
+its time left while it works). The care itself is never sold. The two
+ways to pay stand under each other as buttons of one width. Each row
+shows its countdown or how rested the elf is (`duration.ts` keeps the
+clock and the words, shared with the egg's chip and the games) and a
+skip bought closes the sheet, so the player sees the egg ready, the elf
+rested or grown in the room. The last card sells the furniture and hats the finds still lock
 (`shopItems` in the rules: every entry of the unlock table the player has
 neither reached, been granted by the tree nor bought), each with a
 thumbnail from the decorating catalogue, the cottages it still needs and
@@ -816,14 +824,16 @@ a circle with its own picture (thirteen icon roles plus the acorns',
 the streak's and the bath's), filled when owned, outlined and breathing
 while a point waits to be spent, dim with a lock while shut; a tap
 picks it and the card under the tree says what it gives and offers the
-unlock. The effects are read by the rules themselves: the roots' charges
-back a quarter sooner; the belly's slower hunger and the smile's longer
-joy; the eye's extra sill find on a return; the pantry's fourth meal
-and the feast's bigger meals; the games' third game and the party's
-bigger games; the trail's streak that forgives one missed day and the
-luck's streak milestones paying double dust; the hearth's fullness
-holding through sleep; the fair's quests paying half as much again; the
-camp's second bath; and each archetype's piece free of the finds (the
+unlock. The effects are read by the rules themselves: the roots' energy
+back a quarter sooner, asleep and awake; the belly's slower hunger and
+the smile's longer joy; the eye's extra sill find on a return; the
+pantry's meal welcome from a lighter hunger (under 85) and the feast's
+bigger meals; the games' play at half the energy and the party's
+bigger joy from play; the trail's streak that forgives one missed day
+and the luck's streak milestones paying double dust; the hearth's
+fullness holding through sleep; the fair's quests and games paying
+half as much again; the camp's slower dirt (half of it from games and
+play, the coat easing half as slowly again); and each archetype's piece free of the finds (the
 cauldron, the hammock, the antlers: `grantedItems`, which also counts
 the shop's purchases, read by `decorFindsNeeded` wherever the catalogue
 is gated) with its title in the rank's place in the strip.
@@ -927,20 +937,25 @@ stars an acorn, an acorn found an acorn) up to
 twenty (half as much again with the fair, like a quest), five
 experience, and counts for the day's quest "Zagraj z elfem w grę" and
 for a request naming the game; the best points are kept as a record.
-The screen's card after a round shows the pay and offers once more or
-the way back, and the tab greets the result with the elf's cheer (a best
+The screen's card after a round shows the pay (the happy elf's share
+named, and a word when the day's cap of 200 game acorns held some back)
+and offers once more, or, when the elf is too tired, the hurry of the
+energy right there, or the way back; and the tab greets the result with the elf's cheer (a best
 or fifteen acorns and more) or its admiring clap.
 
 The travelling peddler (`/elf-peddler`, `ElfPeddlerSheet.tsx`;
 `peddlerWares`, `buyWare` in the rules) comes every day with three
 wares drawn from his basket by the day (the same on every device,
-different from the day before): a treat, a toy or a soap (20, 25 and 30
-acorns), which go to the pantry as gifts (`gifts` in the state): a gift
-mark after the charges' dots under the care button, and the care given
-with it whatever the charges and the belly, with a little joy on top and
-the elf's word of thanks (`performCare` returns `gift`), so a bought
-treat is eaten at once, the toast naming the button; a cup of cocoa,
-which gives the elf energy for two games (15, `COCOA_ENERGY`); a grain of dust (60); and
+different from the day before): a treat or a toy (20 and 25 acorns),
+which go to the pantry as gifts (`gifts` in the state), a gift mark
+under the feed or play button each: the feed button gives a treat
+first, eaten hungry or not (fullness +30 and joy +15), and the play
+button a toy first, played with at no energy (joy +40), each with the
+elf's word of thanks (`performCare` returns the `care` it became), the
+toast naming the button; a cup of cocoa, which gives the elf energy for
+two games (15, `COCOA_ENERGY`); the star brew (60), half an hour of
+games and play without tiring, which wakes a sleeping elf (`drinkBrew`);
+a grain of dust (60); and
 a skill, ten acorns under the skills' price (one of the six, drawn by
 the day like the rest: the draw never reads what the elf owns, so a
 purchase cannot re-deal the basket, and a skill the elf already has
@@ -988,8 +1003,8 @@ finds them.
 
 The rules (`packages/core`, `elf.ts`: pure functions over an immutable
 state with the moment injected, so a simulation can run a year in a
-second) are paced in days, not minutes: an absence never punishes, it
-only leaves the elf wanting, and the charges keep a visit short. They
+second) are paced in hours, so a visit or two a day finds something to
+do, and an absence never punishes, it only leaves the elf wanting. They
 carry the care loop, the day's quests, the purse and the streak, plus what
 the player chose: the outfit and the decor as the slots they changed
 (plain strings; the catalogues live in the cottage and the provider
@@ -999,35 +1014,69 @@ every care, pet, egg, sleep and swap:
 
 | Rule | Values |
 |---|---|
-| Needs | fullness, joy, clean; each 0 to 100, never under the floor of 35 |
-| Drift | each need eases towards the floor over days (about two thirds of the way in 4 days for fullness, 5 for joy, 7 for clean), at half pace at night; a day away leaves the elf content, three days wanting, a week missing the player |
-| Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under 60 (the name block names it); beaming from an average of 75 with no want; otherwise content |
-| Sleep | at the player's word, at any hour: the button tucks the elf in and the elf sleeps until woken or until its energy is full, when it wakes on its own, a nap lasting an hour at the least (`applyElapsed`, `SLEEP_MIN_HOURS`); nothing happens by the clock of the day |
+| Needs | fullness, joy, clean; each 0 to 100, never under the floor of 10; no sick state |
+| Drift | each need eases towards the floor over hours (about two thirds of the way in 10 hours for fullness, 14 for joy, 30 for clean), at half pace asleep: a meal is welcome again some four hours after the last, a bath about once a day; a round of a game leaves clean −10 and fullness −6, a play clean −6 |
+| Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under its mark (`NEED_WANT_BELOW`: fullness 70, joy 60, clean 60; the name block names the furthest under, the ring turns gold); beaming from an average of 75 with no want; otherwise content |
+| Sleep and energy | one bar of 100 for the games and play (a round 20, a play 10; the app speaks of rest, never of rounds: `restOf` full, lively, tiring, spent); at the player's word, at any hour, the button tucks the elf in and it sleeps until woken or rested (50 an hour), a nap lasting an hour at the least (`applyElapsed`, `SLEEP_MIN_HOURS`); awake it gets 5 an hour back; under 30 it yawns (`ENERGY_LOW`); before its sleep 40 acorns fill the bar, each further fill that day 20 more (`refillPrice`, `refillEnergy`), an ad or the peddler's cocoa give 40 back (`ENERGY_AD`, `COCOA_ENERGY`), and the star brew (`DUST.brew` 15 dust, or the peddler's 60 acorns) lets the elf play for 30 minutes without tiring, from the end of one still working, two hours ahead at most (`BREW_MS`, `drinkBrew`, `brewing`); a sleeping elf is woken by the brew and reminded of once rested (`wakeAt`) |
 | Egg | warm +18 and rock +13 warmth (a tap on the egg knocks on it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, less up to 2 hours at a full warmth (`EGG_WARMTH_HURRY_MS`), or at a cottage found while it waits, whichever comes first (the HUD counts the hours down; the hurry beside it is free for the first egg, `freeHatch`, `skipHatchFree`, else 20 dust or an ad), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
-| Care | feed fullness +25 (3 charges, refused at 90), play joy +30 (2 charges), bath clean +60 (1 charge); a charge spent comes back 4 hours later for a meal, 6 for a game, 12 for a bath (the moments spent in the state's `care`), and with none back the elf has had enough for now, saying when the next is; a refill for dust or an ad brings them all back; a gift of the peddler's in the pantry (`gifts`) is given instead whenever a charge or the belly would refuse, with joy +5 on top |
+| Care | gated by how the elf is, never by a count (`careFor`, `performCare`): a meal while hungry (fullness under 70, `HUNGRY_BELOW`) +35, refused full; a treat from the pantry whenever offered, hungry or not (fullness +30, joy +15); a play whenever the energy allows (10 of it, none under the brew) joy +25, refused tired; a toy from the pantry at no energy, joy +40; a bath while dirty (clean under 60, `DIRTY_BELOW`) back to 100 and joy +5, refused clean; a refusal costs nothing and the elf says why; the care is never sold |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
 | Experience | a find 40 (finds from before the egg appeared pay nothing), a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (once a day), a skill's practice 4, a game 5, the request 6 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
-| Tree | sixteen nodes, any parent owned opens a node, a point each: roots (charges back in three quarters of the time); belly (fullness eases half as fast), smile (joy eases half as fast), eye (one sill find more on a return); pantry (four meals), feast (a meal +35 instead of +25), games (three games), party (a game +45 instead of +30), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (two baths; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
+| Tree | sixteen nodes, any parent owned opens a node, a point each: roots (energy back a quarter sooner, asleep and awake); belly (fullness eases half as slowly again), smile (joy likewise), eye (one sill find more on a return); pantry (a meal welcome under 85), feast (a meal +45 instead of +35), games (a play takes 5 energy), party (a play joy +40 instead of +25), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest and game acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (half the dirt from games and play, the coat easing half as slowly again; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
 | Skills | six, for acorns (the tricks of the code): the wave 40 (2 sessions), the twirl 60 (3), the bow 60 (3), the cheer 80 (3), the applause 80 (4), the toast 100 (4); one practice session a day per skill, none asleep; learned at the last session, then shown on the elf's own now and then and on demand (`ELF_TRICKS`, `buyTrick`, `trainTrick`, `showTrick`, `learnedTricks`) |
-| Games | catch the acorns, memory, the forest echo, the star rain and under which mushroom, none while the elf sleeps; a round takes 20 of the elf's energy out of 100 (`GAME_ENERGY`, `ENERGY_MAX`), an hour of sleep gives 50 back, 40 acorns fill it (`ENERGY_REFILL_ACORNS`, never dust), an ad gives 40 back (`ENERGY_AD`), the cocoa gives 40, the elf yawns under 30 (`ENERGY_LOW`); a round pays its points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: 2 catches an acorn, 1 memory point an acorn, 1 echo round an acorn, 2 stars an acorn, 1 acorn found under a mushroom an acorn) up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns) and a request naming it; a lost round (the last heart, a miss too many, a wrong tile) may go on once with one more life for 5 dust (`DUST.revive`) or an ad within the day's cap, its energy still taken once at its end; the best points kept per game (`gameRounds`, `recordGame`, `refillEnergy`, `boostEnergy`, `payRevive`) |
-| Peddler | three wares a day (`WARES_A_DAY`) drawn by the day from treat 20, toy 25, soap 30 (a gift of that care into the pantry), cocoa 15 (energy for two games), dust 60 (one grain) and a skill at its price less 10 (one the elf has stands as bought); each once a day; the basket is new until looked at, which the sheet reports (`peddlerWares`, `buyWare`, `peddlerFresh`, `visitPeddler`) |
+| Games | catch the acorns, memory, the forest echo, the star rain and under which mushroom, none while the elf sleeps; a round takes 20 of the elf's energy (`GAME_ENERGY`; none under the brew, and a round begun under it stays free when it runs out), leaves clean −10 and fullness −6; a round pays its points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: 2 catches an acorn, 1 memory point an acorn, 1 echo round an acorn, 2 stars an acorn, 1 acorn found under a mushroom an acorn) up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, 5 acorns more while the elf is beaming (`HAPPY_GAME_ACORNS`), the games paying 200 acorns a day at most (`GAME_ACORNS_DAILY`, `daily.gameAcorns`), and counts for the quest gameOnce (8 acorns) and a request naming it; a lost round (the last heart, a miss too many, a wrong tile) may go on once with one more life for 5 dust (`DUST.revive`) or an ad within the day's cap, its energy still taken once at its end; the best points kept per game (`gameReady`, `recordGame`, `payRevive`) |
+| Peddler | three wares a day (`WARES_A_DAY`) drawn by the day from treat 20 and toy 25 (into the pantry), cocoa 15 (energy for two games), star brew 60 (30 minutes without tiring), dust 60 (one grain) and a skill at its price less 10 (one the elf has stands as bought); each once a day; the basket is new until looked at, which the sheet reports (`peddlerWares`, `buyWare`, `peddlerFresh`, `visitPeddler`) |
 | Badges | meals 10 (15 acorns) and 100 (2 dust), baths 10 (15), pets 50 (15), games 10 (20) and 50 (2 dust), letters read 5 (15), a skill learned (10) and all six (3 dust), wares bought 10 (20), level 5 (20) and 10 (2 dust), best streak 7 (1 dust) and 30 (3 dust), an archetype chosen (2 dust); a reward taken once (`ELF_BADGES`, `badgeStatus`, `claimBadge`) |
 | Forms | baby from the hatch; the next form at a level (`FORM_LEVELS`: young at 3, adult at 6, elder at 10) and only when the player lets the elf grow (`growUp`; the stored `form`); the shop sells the form ahead of its level (`growNow`), the finds count only through their experience |
 | Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
 | Request | one a day besides the quests, in the elf's words (`REQUEST_POOL`: play, a bath, three pets, a swap, a hat, a ware, a skill shown once one is learned, a game by its name, the tuck-in), drawn from what the quests do not ask for; 10 acorns and 6 experience when it comes (`daily.request`, `recordEvent`) |
-| Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |
-| Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3; a device date set back is no new day (the streak and the deal stay), and a date set forward and corrected pulls every stored moment back to now, so no charge or nap waits on a day that never comes |
+| Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust; once picked, doubled for an ad, once (`doubleDailyReward`, `daily.rewardDoubled`) |
+| Ads | rewarded only, always the player's choice, 5 a day in all (`DUST.adCap`): 5 dust in the shop, two rounds of energy, one more life in a lost round, the egg's or a form's wait, the day's reward doubled; the store's packs and every dust price sit beside them, so an ad is always a slower, smaller way to the same thing |
+| Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3; a device date set back is no new day (the streak and the deal stay), and a date set forward and corrected pulls every stored moment back to now, so no nap or hatch waits on a day that never comes |
 | Sill finds | the first visit of a day after an absence: one small thing for each calendar day away (a pine cone, a feather, a pebble, an acorn, a mushroom, an autumn leaf, berries, an ammonite), chosen by the day and the name, so settling a day twice finds the same; the newest three lie on the windowsill, every one is counted in the collection |
 | Letters | due on the 2nd, 5th and 9th day after the hatch, then every 7 days; one comes with the first visit after it is due (the ones due while the player was away are not heaped up); the odd ones are from a cottage found and not written from yet, the others an invitation from the nearest cottage not found yet (from the latest find), and the forest writes when there is neither; the last 12 are kept |
 | Plant | the pot on the sill grows with the days since the hatch: a seedling, a sprout at 7 days, a little plant at 30, a bush at 90, a bush in flower at 180 |
 | Away card | on the first visit after an absence of two days or more, or one that brought a letter or a new stage of the plant; a single night's find is said by the elf instead |
-| Reminders | only as a reaction to what happens, with no hours to choose (`elfReminders`): the egg ready to hatch (at that moment), a letter come, the plant grown, and the day's new quests on the first three days after a visit while the player has not come by yet; at most one a day (the most important, an event inside those three days mentioning the quests too), at the player's own hour (the median of the last seven first visits, 17:00 before any, kept between 8:00 and 20:30), never from 21:00 to 8:00 (an egg ready in the night waits for 8:00), nothing on a day a cottage was found, nothing four weeks after the last visit; the elf asks once, at the egg (or, for an elf hatched before, once it has its name), and the preferences hold the switch |
+| Reminders | only as a reaction to what happens, with no hours to choose (`elfReminders`): the egg ready to hatch and the elf waking rested from a nap (at that moment), a letter come, the plant grown, and the day's new quests on the first three days after a visit while the player has not come by yet; at most one a day (the most important, an event inside those three days mentioning the quests too), at the player's own hour (the median of the last seven first visits, 17:00 before any, kept between 8:00 and 20:30), never from 21:00 to 8:00 (an egg ready in the night waits for 8:00), nothing on a day a cottage was found, nothing four weeks after the last visit; the elf asks once, at the egg (or, for an elf hatched before, once it has its name), and the preferences hold the switch |
 
 Every action is refused while the elf sleeps (the buttons dim and tell
 assistive tech so, but stay pressable: the rules refuse and the elf says
-so from its bubble, waking excepted); a care with no charge back is
-refused the same way, with its dots dark before the tap; and the first
-form and fresh needs are set when the egg hatches.
+so from its bubble, waking excepted); a care the elf would refuse (a
+full belly, a clean coat, no energy for a play) is refused the same way,
+its button dimmed before the tap; and the first form and fresh needs
+are set when the egg hatches (a newborn is hungry, so its first meal is
+welcome at once).
+
+#### Why the rules are what they are
+
+The care and the economy follow what keeps a virtual pet and a casual
+game alive, within what suits a family app:
+
+- **State, not counters.** The player can always do what makes sense
+  (feed a hungry elf, bathe a dirty one, play while it has energy);
+  nothing waits behind an invisible count. The rings make the state
+  legible before the tap.
+- **A loop that feeds itself.** Games and play cost energy, make the elf
+  dirty and the games hungry; care brings it back; a beaming elf pays
+  more in the games; acorns buy energy, wares and skills; experience
+  grows the elf. Each step hands the player to the next.
+- **Hours, not days.** Needs drift over hours, so two or three short
+  visits a day each find something to do (the appointment that brings a
+  player back), and the reminders say when the elf has rested.
+- **One friction point, with honest offers.** Energy is the only real
+  limit, and it is where every offer sits: wait (sleep, two hours), pay
+  the soft currency (acorns, dearer with each fill of the day so the
+  loop cannot be farmed), watch an ad (smaller and opt-in), or buy the
+  star brew (dust, the premium shortcut). The games' daily cap of
+  acorns keeps the brew from becoming a mint.
+- **Rewarded ads only, at moments of want.** An ad is always offered
+  where the player wants something (more energy, a lost round, a double
+  reward, a wait), never shown unasked, capped at five a day.
+- **Positive, never punitive.** Neglect costs only the happy elf's
+  bonus and a wish on the elf's lips; there is no illness, no loss, and
+  the floor keeps a returning player's elf in reach of a few cares.
+- **Variable rewards.** The peddler's basket, the face-down cards and
+  the sill's finds keep the day's look-in worth making.
 
 ### What the days bring
 

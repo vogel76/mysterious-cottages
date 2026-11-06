@@ -108,6 +108,7 @@ export const MOBILE_ICON_ROLES = [
      treat, a toy, a soap in the pantry, marked under the care buttons). */
   'PeddlerIcon',
   'CocoaIcon',
+  'BrewIcon',
   'GiftIcon',
   /* The badges: the collection's medal, a level reached, the archetype chosen. */
   'BadgesIcon',

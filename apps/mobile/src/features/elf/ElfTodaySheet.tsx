@@ -4,8 +4,9 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { nextStreakMilestone, REQUEST_ACORNS, type ElfQuest, type ElfRequest, type ElfReward } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
-import { useElf } from '../../providers'
-import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
+import { useElf, useOnline } from '../../providers'
+import { AcornsIcon, Button, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, WatchAdIcon, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
+import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { elfKey, requestKey } from './labels'
 
 /* The elf's day, as a sheet over the tab, opened from the quests' ring
@@ -20,7 +21,9 @@ import { elfKey, requestKey } from './labels'
    request of the day in its own words, the same way. Then the day's
    reward as three cards face down, one of which the player turns (the
    rules hold what each card hides and remember the pick, so the sheet
-   shows the turned card and the two missed ones until tomorrow), the
+   shows the turned card and the two missed ones until tomorrow; once
+   turned, the card may be doubled with a rewarded ad, once a day, within
+   the day's cap of ads, doubleDailyReward), the
    way to the keepsake shelf, and at the end, in a line each, where the
    acorns, the dust and the streak come from and what they are for. One
    kind of mark per row and few pictures, so the eye finds what to read.
@@ -29,7 +32,14 @@ import { elfKey, requestKey } from './labels'
 export function ElfTodaySheet() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { state, claimDailyReward } = useElf()
+  const { state, claimDailyReward, doubleDailyReward, adsLeft } = useElf()
+  const online = useOnline()
+  const ad = useRewardedSupportAd(() => {
+    if (doubleDailyReward()) announce(t('mobile:elf.rewardDoubled'))
+  })
+  const adBusy = ad.status === 'loading' || ad.status === 'showing'
+  const adNote = rewardedAdNoteKey(ad.status, online)
+  const doubled = state?.daily.rewardDoubled ?? false
   const quests = state?.daily.quests ?? []
   const request = state?.daily.request ?? null
   const rewards = state?.daily.rewardOptions ?? []
@@ -102,6 +112,26 @@ export function ElfTodaySheet() {
               <RewardCard key={index} index={index} reward={reward} picked={picked} onPick={pick} />
             ))}
           </View>
+          {picked !== null && doubled ? (
+            <Text variant="small" weight="bold" tone="accent">
+              {t('mobile:elf.rewardDoubled')}
+            </Text>
+          ) : picked !== null && ad.offered ? (
+            <Button
+              block
+              busy={adBusy}
+              disabled={adBusy || online === false || adsLeft <= 0}
+              icon={<WatchAdIcon size={iconSize.md} color={colors.accentStrong} />}
+              onPress={ad.watch}
+            >
+              {t('mobile:elf.rewardDouble')}
+            </Button>
+          ) : null}
+          {picked !== null && !doubled && adNote ? (
+            <Text variant="small" tone="faint" accessibilityLiveRegion="polite">
+              {t(adNote)}
+            </Text>
+          ) : null}
         </View>
 
         <PressableScale onPress={() => router.push('/elf-shelf')} accessibilityLabel={`${t('mobile:elf.shelfOpen')}. ${t('mobile:elf.shelfOpenHint')}`} style={[styles.row, styles.link]}>

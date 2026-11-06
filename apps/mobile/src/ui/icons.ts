@@ -99,6 +99,7 @@ import { BasketIcon } from 'phosphor-react-native/src/icons/Basket'
 import { CloudLightningIcon } from 'phosphor-react-native/src/icons/CloudLightning'
 import { EyesIcon } from 'phosphor-react-native/src/icons/Eyes'
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
+import { FlaskIcon } from 'phosphor-react-native/src/icons/Flask'
 import { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront'
 import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife'
 import { ConfettiIcon } from 'phosphor-react-native/src/icons/Confetti'
@@ -268,7 +269,9 @@ export const MushroomsGameIcon = EyesIcon
 export const PeddlerIcon = BackpackIcon
 /* The peddler's cocoa, energy for the games. */
 export const CocoaIcon = PhosphorCoffee
-/* A gift of the peddler's in the pantry (a treat, a toy, a soap). */
+/* The star brew: half an hour of play without tiring. */
+export const BrewIcon = FlaskIcon
+/* A gift of the peddler's in the pantry (a treat, a toy). */
 export const GiftIcon = PhosphorGiftIcon
 export const TapHereIcon = HandTapIcon
 export const HurryIcon = LightningIcon
@@ -299,7 +302,7 @@ export const ICON_VOCABULARY = {
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
   TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
-  GamesIcon, MemoryGameIcon, EchoGameIcon, StarRainGameIcon, StormIcon, MushroomsGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, TapHereIcon, HurryIcon, GetMoreIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
+  GamesIcon, MemoryGameIcon, EchoGameIcon, StarRainGameIcon, StormIcon, MushroomsGameIcon, PeddlerIcon, CocoaIcon, BrewIcon, GiftIcon, TapHereIcon, HurryIcon, GetMoreIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */
