@@ -26,7 +26,8 @@ import {
   type Icon,
 } from '../../ui'
 
-/* The badges (the route /elf-badges), from the activities hub: how many
+/* The badges (the route /elf-badges), from the badges button on the
+   side of the cottage: how many
    are earned, and the fifteen in a list, each a row with its picture,
    its name, what it is for, how far it has come as a bar and its reward;
    a badge reached offers its reward to take, a taken one wears a mark.
@@ -70,7 +71,6 @@ export function ElfBadgesSheet() {
     <SheetRoute scroll>
       <View style={styles.column}>
         <View style={styles.head}>
-          <Text variant="eyebrow">{t('mobile:elf.activitiesKicker')}</Text>
           <Text variant="title" accessibilityRole="header">
             {t('mobile:elf.badgesTitle')}
           </Text>

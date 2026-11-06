@@ -28,12 +28,15 @@ The app plays them in `src/features/elf/useElfSounds.ts`.
 | `beckon.mp3` | the beckon towards the door | [Short Whistle](https://freesound.org/people/CressieCres/sounds/498167/) | CressieCres | CC0 1.0 |
 | `fire.mp3` | the fire's crackle under the room (a 10 s loop) | [fire ambience, flames, crackles, pops, burning](https://freesound.org/people/ahriik/sounds/508110/) | ahriik | CC0 1.0 |
 
-## The forest echo's notes
+## The synthesised sounds
 
-`echo1.wav` to `echo4.wav` (C5, E5, G5, C6: four soft bell tones on a
-major chord, so any order of them sounds like a tune) and `echo-wrong.wav`
-(the low buzz of a wrong tile) are synthesised, not recorded:
-`art/sounds/echo_notes.py` writes them (a sine with two quiet overtones
-under a fast attack and an exponential decay, 22.05 kHz 16-bit mono WAV).
-Nothing to credit; the game plays them in
-`src/features/elf/games/EchoGame.tsx`.
+Not recorded but synthesised, so nothing to credit:
+`art/sounds/synth.py` writes them as 22.05 kHz 16-bit mono WAV.
+
+| File | Plays for | Sound |
+|---|---|---|
+| `echo1.wav` to `echo4.wav` | the forest echo's four tiles (`src/features/elf/games/EchoGame.tsx`) | C5, E5, G5, C6: soft bell tones on a major chord, so any order of them sounds like a tune (a sine with two quiet overtones under a fast attack and an exponential decay) |
+| `echo-wrong.wav` | a wrong tile in the forest echo | a low buzz with a quick fade |
+| `egg-knock.wav` | a tap on the egg | a soft wooden knock on the shell |
+| `egg-warm.wav` | warming the egg | a warm hush (noise under a gentle low-pass and a slow swell) with a few ember crackles |
+| `egg-lullaby.wav` | rocking the egg | a short lullaby on soft bells (sol-mi, sol-mi, la-sol) |

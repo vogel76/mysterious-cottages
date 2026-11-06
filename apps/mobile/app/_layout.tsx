@@ -255,7 +255,8 @@ function RootStack() {
       <Stack.Screen name="elf-letter" options={sheetRoute} />
       <Stack.Screen name="elf-shop" options={sheetRoute} />
       <Stack.Screen name="elf-tree" options={sheetRoute} />
-      <Stack.Screen name="elf-activities" options={sheetRoute} />
+      <Stack.Screen name="elf-games" options={sheetRoute} />
+      <Stack.Screen name="elf-hurry" options={sheetRoute} />
       <Stack.Screen name="elf-tricks" options={sheetRoute} />
       <Stack.Screen name="elf-game/[id]" options={pageSheet} />
       <Stack.Screen name="elf-peddler" options={sheetRoute} />

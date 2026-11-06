@@ -3,6 +3,7 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { FadeIn, FlipInEasyY } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, BathIcon, DustIcon, EggIcon, GiftIcon, JarIcon, LetterIcon, PressableScale, StreakIcon, Text, ToyIcon, colors, radius, space, type Icon } from '../../../ui'
+import { GameStartCard, fitCell } from './GameStartCard'
 
 /* Memory: cards face down in pairs of the elf's own pictures (the
    acorns, the dust, the streak, a gift, a toy, a bath, an egg, a jar, a
@@ -12,7 +13,9 @@ import { AcornsIcon, BathIcon, DustIcon, EggIcon, GiftIcon, JarIcon, LetterIcon,
    pairs and two more: the last pair of a board opens the next after a
    breath, one miss too many ends the round, and the last board's last
    pair ends it in glory. Every pair found is a point and every board
-   cleared two more; the rules pay an acorn a point (GAME_POINTS_PER_ACORN). */
+   cleared two more; the rules pay an acorn a point (GAME_POINTS_PER_ACORN).
+   The cards fit the room they have, width and height, and how to play
+   waits over the first board with the start (GameStartCard). */
 
 const FACES: Icon[] = [AcornsIcon, DustIcon, StreakIcon, GiftIcon, ToyIcon, BathIcon, EggIcon, JarIcon, LetterIcon]
 /* The boards of a round, each with its pairs and its columns. */
@@ -57,13 +60,19 @@ export function MemoryGame({ onFinish }: Props) {
   const [points, setPoints] = useState(0)
   /* Between boards: the cleared one stays shown for a breath. */
   const [cleared, setCleared] = useState(false)
+  /* The first board waits under how to play until the start. */
+  const [started, setStarted] = useState(false)
   const miss = useRef<ReturnType<typeof setTimeout> | null>(null)
   const next = useRef<ReturnType<typeof setTimeout> | null>(null)
   const done = useRef(false)
-  /* The board's width decides the cards' size: squares, the board's columns to a row. */
-  const [width, setWidth] = useState(0)
-  const onLayout = (event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)
-  const cell = width > 0 ? Math.floor((width - GAP * (spec.columns - 1)) / spec.columns) : 0
+  /* The board's room decides the cards' size: squares, the board's
+     columns to a row, as large as both the width and the height allow. */
+  const [room, setRoom] = useState({ width: 0, height: 0 })
+  const onLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout
+    setRoom((current) => (current.width === width && current.height === height ? current : { width, height }))
+  }
+  const cell = fitCell(room.width, room.height, spec.columns, Math.ceil(deck.length / spec.columns), GAP)
   const allowed = spec.pairs + SPARE_MISSES
   useEffect(
     () => () => {
@@ -80,7 +89,7 @@ export function MemoryGame({ onFinish }: Props) {
   }
 
   const turn = (index: number) => {
-    if (cleared || done.current || up.length === 2 || up.includes(index) || matched.includes(index)) return
+    if (!started || cleared || done.current || up.length === 2 || up.includes(index) || matched.includes(index)) return
     const now = [...up, index]
     setUp(now)
     if (now.length < 2) return
@@ -120,7 +129,6 @@ export function MemoryGame({ onFinish }: Props) {
 
   return (
     <View style={styles.column}>
-      <Text tone="soft">{t('mobile:elf.gameMemoryHow')}</Text>
       <View style={styles.bar}>
         <Text variant="small" weight="bold">
           {t('mobile:elf.gameMemoryStage', { stage: stage + 1, total: STAGES.length })}
@@ -132,32 +140,37 @@ export function MemoryGame({ onFinish }: Props) {
           {t('mobile:elf.gameMemoryMisses', { count: misses, max: allowed })}
         </Text>
       </View>
-      <View key={stage} style={styles.board} onLayout={onLayout}>
-        {cell > 0 ? deck.map((face, index) => {
-          const shown = up.includes(index) || matched.includes(index)
-          const Glyph = FACES[face]!
-          return (
-            <PressableScale
-              key={index}
-              scaleTo={0.94}
-              pressedFill="transparent"
-              ripple={false}
-              disabled={shown || cleared}
-              accessibilityLabel={t('mobile:elf.gameCardAria', { n: index + 1 })}
-              accessibilityState={{ selected: shown }}
-              onPress={() => turn(index)}
-              style={[styles.card, { width: cell, height: cell }, shown && styles.cardUp, matched.includes(index) && styles.cardMatched]}
-            >
-              {shown ? (
-                <Animated.View entering={FlipInEasyY.duration(220)}>
-                  <Glyph size={Math.round(cell * 0.5)} weight="duotone" color={matched.includes(index) ? colors.accentInk : colors.accentStrong} />
-                </Animated.View>
-              ) : (
-                <View style={styles.back} />
-              )}
-            </PressableScale>
-          )
-        }) : null}
+      <View style={styles.stage} onLayout={onLayout}>
+        <View key={stage} style={[styles.board, { width: cell * spec.columns + GAP * (spec.columns - 1) }]}>
+          {cell > 0
+            ? deck.map((face, index) => {
+                const shown = up.includes(index) || matched.includes(index)
+                const Glyph = FACES[face]!
+                return (
+                  <PressableScale
+                    key={index}
+                    scaleTo={0.94}
+                    pressedFill="transparent"
+                    ripple={false}
+                    disabled={!started || shown || cleared}
+                    accessibilityLabel={t('mobile:elf.gameCardAria', { n: index + 1 })}
+                    accessibilityState={{ selected: shown }}
+                    onPress={() => turn(index)}
+                    style={[styles.card, { width: cell, height: cell }, shown && styles.cardUp, matched.includes(index) && styles.cardMatched]}
+                  >
+                    {shown ? (
+                      <Animated.View entering={FlipInEasyY.duration(220)}>
+                        <Glyph size={Math.round(cell * 0.5)} weight="duotone" color={matched.includes(index) ? colors.accentInk : colors.accentStrong} />
+                      </Animated.View>
+                    ) : (
+                      <View style={styles.back} />
+                    )}
+                  </PressableScale>
+                )
+              })
+            : null}
+        </View>
+        {!started ? <GameStartCard how={t('mobile:elf.gameMemoryHow')} onStart={() => setStarted(true)} /> : null}
       </View>
       {cleared ? (
         <Animated.View entering={FadeIn.duration(200)} accessibilityLiveRegion="polite">
@@ -172,7 +185,14 @@ export function MemoryGame({ onFinish }: Props) {
 
 const styles = StyleSheet.create({
   column: {
+    flex: 1,
     gap: space.md,
+  },
+  /* The room the board has: it is centred in it at the size that fits. */
+  stage: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bar: {
     flexDirection: 'row',

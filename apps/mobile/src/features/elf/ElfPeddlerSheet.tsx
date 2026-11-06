@@ -7,8 +7,8 @@ import { AcornsIcon, BathIcon, Button, CheckIcon, CocoaIcon, DustIcon, FeedIcon,
 import { trickKey } from './tricks'
 import { elfNow } from '../../lib/elf-clock'
 
-/* The travelling peddler (the route /elf-peddler), from the activities
-   hub: his greeting, the acorns at hand, and the day's three wares, each
+/* The travelling peddler (the route /elf-peddler), from his button on
+   the side of the cottage: his greeting, the acorns at hand, and the day's three wares, each
    a row with its picture, its name, what it does and its price in
    acorns, or a mark once bought today. The rules draw the wares by the
    day and do what a ware does as it is bought (packages/core:
@@ -59,7 +59,6 @@ export function ElfPeddlerSheet() {
     <SheetRoute scroll>
       <View style={styles.column}>
         <View style={styles.head}>
-          <Text variant="eyebrow">{t('mobile:elf.activitiesKicker')}</Text>
           <Text variant="title" accessibilityRole="header">
             {t('mobile:elf.peddlerTitle')}
           </Text>

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { AcornsIcon, Button, DustIcon, ForestIcon, JoyIcon, PressableScale, Text, colors, radius, space, type Icon } from '../../../ui'
+import { AcornsIcon, DustIcon, ForestIcon, JoyIcon, PressableScale, Text, colors, radius, space, type Icon } from '../../../ui'
 import { useSoundPool, type SoundSpec } from '../../../lib/sound-pool'
+import { GameStartCard, fitCell } from './GameStartCard'
 
 /* The forest echo: four tiles with the elf's pictures, and a melody the
    elf hums by lighting them one after another; the player echoes it by
@@ -11,11 +12,13 @@ import { useSoundPool, type SoundSpec } from '../../../lib/sound-pool'
    point; a wrong tile ends the round with the points so far, and the
    melody cannot grow past its longest. Between the humming and the
    echo the line under the tiles says whose turn it is. Each tile has
-   its note (four soft bell tones on a chord, art/sounds/echo_notes.py),
+   its note (four soft bell tones on a chord, art/sounds/synth.py),
    heard as the elf hums it and as the player taps it, and a wrong tile
    buzzes, so the tune can be followed by ear as well as by eye (the
-   sounds follow the elf's switch and the phone's silent mode). All
-   timing runs on timers in this component and dies with it. */
+   sounds follow the elf's switch and the phone's silent mode). The tiles
+   fit the room they have, width and height, and how to play waits over
+   them with the start (GameStartCard). All timing runs on timers in this
+   component and dies with it. */
 
 const TILES: { Glyph: Icon; tint: string }[] = [
   { Glyph: AcornsIcon, tint: colors.accent },
@@ -55,8 +58,12 @@ export function EchoGame({ onFinish }: Props) {
   const echoed = useRef(0)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const overRef = useRef(false)
-  const [cell, setCell] = useState(0)
-  const onLayout = (event: LayoutChangeEvent) => setCell(Math.floor((event.nativeEvent.layout.width - GAP * (COLUMNS - 1)) / COLUMNS))
+  const [room, setRoom] = useState({ width: 0, height: 0 })
+  const onLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout
+    setRoom((current) => (current.width === width && current.height === height ? current : { width, height }))
+  }
+  const cell = fitCell(room.width, room.height, COLUMNS, TILES.length / COLUMNS, GAP)
   const play = useSoundPool(SOUNDS, true)
 
   const later = (ms: number, run: () => void) => {
@@ -137,43 +144,37 @@ export function EchoGame({ onFinish }: Props) {
           {phase === 'humming' ? t('mobile:elf.gameEchoListen') : phase === 'echo' ? t('mobile:elf.gameEchoYourTurn') : ''}
         </Text>
       </View>
-      <View style={styles.board} onLayout={onLayout}>
-        {cell > 0
-          ? TILES.map(({ Glyph, tint }, index) => {
-              const on = lit === index
-              return (
-                <PressableScale
-                  key={index}
-                  scaleTo={0.94}
-                  pressedFill="transparent"
-                  ripple={false}
-                  disabled={phase !== 'echo'}
-                  accessibilityLabel={t('mobile:elf.gameEchoTileAria', { n: index + 1 })}
-                  onPress={() => tap(index)}
-                  style={[styles.tile, { width: cell, height: cell, borderColor: tint }, on && { backgroundColor: tint }]}
-                >
-                  <Glyph size={Math.round(cell * 0.45)} weight={on ? 'fill' : 'duotone'} color={on ? colors.accentInk : tint} />
-                </PressableScale>
-              )
-            })
-          : null}
-      </View>
-      {phase === 'ready' ? (
-        <View style={styles.ready}>
-          <Text tone="soft" align="center">
-            {t('mobile:elf.gameEchoHow')}
-          </Text>
-          <Button variant="primary" block onPress={start}>
-            {t('mobile:elf.gameStart')}
-          </Button>
+      <View style={styles.stage} onLayout={onLayout}>
+        <View style={[styles.board, { width: cell * COLUMNS + GAP * (COLUMNS - 1) }]}>
+          {cell > 0
+            ? TILES.map(({ Glyph, tint }, index) => {
+                const on = lit === index
+                return (
+                  <PressableScale
+                    key={index}
+                    scaleTo={0.94}
+                    pressedFill="transparent"
+                    ripple={false}
+                    disabled={phase !== 'echo'}
+                    accessibilityLabel={t('mobile:elf.gameEchoTileAria', { n: index + 1 })}
+                    onPress={() => tap(index)}
+                    style={[styles.tile, { width: cell, height: cell, borderColor: tint }, on && { backgroundColor: tint }]}
+                  >
+                    <Glyph size={Math.round(cell * 0.45)} weight={on ? 'fill' : 'duotone'} color={on ? colors.accentInk : tint} />
+                  </PressableScale>
+                )
+              })
+            : null}
         </View>
-      ) : null}
+        {phase === 'ready' ? <GameStartCard how={t('mobile:elf.gameEchoHow')} onStart={start} /> : null}
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   column: {
+    flex: 1,
     gap: space.md,
   },
   bar: {
@@ -181,6 +182,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: space.md,
+  },
+  /* The room the tiles have: they are centred in it at the size that fits. */
+  stage: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   board: {
     flexDirection: 'row',
@@ -193,8 +200,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  ready: {
-    gap: space.md,
   },
 })

@@ -12,8 +12,8 @@ import { ROOM } from './room'
    flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin,
    browLift)
    that the sprite elf and the egg bind to their Skia transforms, and a small
-   pool of particles (hearts, sparkles, bubbles, sleep puffs, crumbs) that the
-   reactions borrow. Everything moves on the UI thread through reanimated
+   pool of particles (hearts, sparkles, bubbles, sleep puffs, crumbs, music
+   notes, embers) that the reactions borrow. Everything moves on the UI thread through reanimated
    loops; the JS thread only starts and cancels them. The idle loops follow
    the mood (a beaming elf bounces, one that misses the player slumps, a
    sleeping one only breathes while sleep puffs rise every two seconds,
@@ -49,13 +49,19 @@ import { ROOM } from './room'
    Two reactions belong to the big moments: 'hatch' is the burst of
    sparkles as the shell splits, and 'evolve' the elf brightening in a
    rising spiral of sparkles before the evolution card.
+   The egg has three touches of its own, each with its own movement: a
+   tap is a quick wobble and hop ('egg', and 'eggReady' for the ready
+   egg's rocking on its own, which the scene keeps silent), the warming a
+   swell of its glow with embers rising round it ('warm'), the rocking a
+   slow cradle swing from side to side with music notes drifting up
+   ('rock').
    Asleep, the elf answers nothing but the wake, a cheer, the egg and an
    evolution, and
    neither its eyes nor its head follow a finger: the wardrobe and the
    decorating mode stay open over a sleeping elf, and a twirl or a clap
    with the eyes shut would read as a wake that never happened. */
 
-export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'hatch' | 'evolve' | 'cheer' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget' | 'refuse' | 'sip' | 'beckon'
+export type ReactionKind = 'pet' | 'feed' | 'play' | 'bath' | 'wake' | 'egg' | 'eggReady' | 'warm' | 'rock' | 'hatch' | 'evolve' | 'cheer' | 'stroke' | 'poke' | 'call' | 'greet' | 'twirl' | 'admire' | 'fidget' | 'refuse' | 'sip' | 'beckon'
 
 export type PuppetMotion = {
   /* 0..1 slow loop. */
@@ -96,8 +102,8 @@ export type PuppetMotion = {
   browLift: SharedValue<number>
 }
 
-export type ParticleKind = 'heart' | 'sparkle' | 'bubble' | 'puff' | 'crumb'
-export const PARTICLE_KINDS: readonly ParticleKind[] = ['heart', 'sparkle', 'bubble', 'puff', 'crumb']
+export type ParticleKind = 'heart' | 'sparkle' | 'bubble' | 'puff' | 'crumb' | 'note' | 'ember'
+export const PARTICLE_KINDS: readonly ParticleKind[] = ['heart', 'sparkle', 'bubble', 'puff', 'crumb', 'note', 'ember']
 export const PARTICLE_POOL = 10
 
 export type Particle = {
@@ -202,6 +208,9 @@ const REACTION_MS: Record<Exclude<ReactionKind, 'fidget'>, number> = {
   bath: 1500,
   wake: 900,
   egg: 900,
+  eggReady: 900,
+  warm: 1700,
+  rock: 2000,
   hatch: 1200,
   evolve: 2000,
   cheer: 1300,
@@ -240,6 +249,9 @@ const REACTION_PARTICLE: Partial<Record<ReactionKind, ParticleKind>> = {
   bath: 'bubble',
   wake: 'sparkle',
   egg: 'sparkle',
+  eggReady: 'sparkle',
+  warm: 'ember',
+  rock: 'note',
   hatch: 'sparkle',
   evolve: 'sparkle',
   cheer: 'sparkle',
@@ -672,7 +684,7 @@ export function useCottageMotion(options: Options): CottageMotion {
       const { stage, reduceMotion, paused, sleeping, mood, sleepy = false } = optionsRef.current
       if (paused) return false
       /* A sleeping elf only wakes, cheers, evolves or is rocked in its egg. */
-      if ((sleeping || mood === 'asleep') && kind !== 'wake' && kind !== 'cheer' && kind !== 'egg' && kind !== 'hatch' && kind !== 'evolve') return false
+      if ((sleeping || mood === 'asleep') && kind !== 'wake' && kind !== 'cheer' && kind !== 'egg' && kind !== 'eggReady' && kind !== 'warm' && kind !== 'rock' && kind !== 'hatch' && kind !== 'evolve') return false
       const now = Date.now()
       const active = now < reactionUntil.current
       /* The cheer's hop is not cut short by the care reaction behind it. */
@@ -785,7 +797,8 @@ export function useCottageMotion(options: Options): CottageMotion {
           spawn({ kind: 'sparkle', x: ox + 60, y: headY - 0.25 * height, dx: 30, dy: -70, duration: 700, scaleFrom: 0.4, scaleTo: 0.9 })
           break
         }
-        case 'egg': {
+        case 'egg':
+        case 'eggReady': {
           cancelAnimation(motion.tilt)
           cancelAnimation(motion.bob)
           cancelAnimation(motion.glow)
@@ -794,6 +807,34 @@ export function useCottageMotion(options: Options): CottageMotion {
           motion.glow.value = withSequence(withTiming(1, { duration: 200 }), withTiming(0.4, { duration: 500, easing: EASING.inOut }))
           const tips = [-40, 45]
           tips.forEach((dx, index) => spawn({ kind: 'sparkle', x: ox + dx, y: headY - 0.2 * height, dx: dx * 0.6, dy: -60, delay: index * 120, duration: 650, scaleFrom: 0.4, scaleTo: 0.9 }))
+          break
+        }
+        case 'warm': {
+          /* The shell glows up from within and breathes once, embers rising round it. */
+          cancelAnimation(motion.glow)
+          cancelAnimation(motion.squash)
+          cancelAnimation(motion.tilt)
+          motion.tilt.value = withTiming(0, { duration: 200 })
+          motion.glow.value = withSequence(withTiming(1, { duration: 450, easing: EASING.out }), withTiming(1, { duration: 650 }), withTiming(0.4, { duration: 600, easing: EASING.inOut }))
+          motion.squash.value = withSequence(withTiming(1.05, { duration: 500, easing: EASING.inOut }), withTiming(1, { duration: 600, easing: EASING.inOut }))
+          const embers = [-70, 60, -30, 85, 20]
+          embers.forEach((dx, index) => spawn({ kind: 'ember', x: ox + dx, y: bodyY + 0.25 * height, dx: dx * 0.15, dy: -150 - index * 15, delay: index * 160, duration: 1200, sway: 12, scaleFrom: 1, scaleTo: 1.7 }))
+          break
+        }
+        case 'rock': {
+          /* A slow cradle swing, side to side and settling, music notes drifting up. */
+          cancelAnimation(motion.tilt)
+          cancelAnimation(motion.bob)
+          motion.bob.value = withTiming(0, { duration: 200 })
+          motion.tilt.value = withSequence(
+            withTiming(0.17, { duration: 380, easing: EASING.inOut }),
+            withTiming(-0.17, { duration: 420, easing: EASING.inOut }),
+            withTiming(0.12, { duration: 400, easing: EASING.inOut }),
+            withTiming(-0.07, { duration: 380, easing: EASING.inOut }),
+            withTiming(0, { duration: 340, easing: EASING.inOut }),
+          )
+          const notes = [-60, 55, -20]
+          notes.forEach((dx, index) => spawn({ kind: 'note', x: ox + dx, y: headY, dx: dx * 0.8, dy: -140, delay: index * 420, duration: 1500, sway: 16, scaleFrom: 1.3, scaleTo: 2.1 }))
           break
         }
         case 'hatch': {

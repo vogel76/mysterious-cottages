@@ -34,6 +34,7 @@ import {
   buyItem as buyElfItem,
   buyTrick as buyElfTrick,
   buyWare as buyElfWare,
+  skipHatchFree as skipElfHatchFree,
   visitPeddler as visitElfPeddler,
   showTrick as showElfTrick,
   gameRounds as elfGameRounds,
@@ -182,7 +183,7 @@ export type ElfValue = {
   adsLeft: number
   earnAdDust: () => number
   addDust: (amount: number) => void
-  skip: (kind: ElfSkip, pay: 'dust' | 'ad') => boolean
+  skip: (kind: ElfSkip, pay: 'dust' | 'ad' | 'free') => boolean
   /* The form ahead, the level it asks for and whether the elf is there,
      null for the egg and the elder; the elf grown to it at the player's
      word (false before the level). */
@@ -586,10 +587,16 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   )
 
   const skip = useCallback(
-    (kind: ElfSkip, pay: 'dust' | 'ad'): boolean => {
+    (kind: ElfSkip, pay: 'dust' | 'ad' | 'free'): boolean => {
       const current = stateRef.current
       if (!current) return false
       const now = elfNow()
+      /* The first egg's wait is skipped for nothing (skipHatchFree). */
+      if (pay === 'free') {
+        const free = kind === 'hatch' ? skipElfHatchFree(current, now) : null
+        if (free) commit(free, true)
+        return free !== null
+      }
       const paid = pay === 'dust' ? spendElfDust(current, SKIP_COST[kind]) : recordElfAd(current, now)
       if (!paid) return false
       const next = applyElfSkip(paid, kind, now)

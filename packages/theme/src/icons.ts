@@ -87,9 +87,7 @@ export const MOBILE_ICON_ROLES = [
   'QuickHandsIcon',
   'AntlersIcon',
   'ForgivingStreakIcon',
-  /* The elf's activities: the hub on the bar and the tricks, one picture
-     each. */
-  'ActivitiesIcon',
+  /* The elf's skills (the tricks), one picture each. */
   'TricksIcon',
   'TrickWaveIcon',
   'TrickTwirlIcon',
@@ -116,6 +114,10 @@ export const MOBILE_ICON_ROLES = [
   'WatchAdIcon',
   /* The tutorial's pointer at what to tap. */
   'TapHereIcon',
+  /* A wait bought off (the egg's hatch, the elf's energy), and the plus on
+     the star dust in the purse that opens the shop. */
+  'HurryIcon',
+  'GetMoreIcon',
   /* The elf companion (apps/mobile/src/features/elf): the egg, the needs,
      the care actions, the purse, the streak, the day's quests, the jars of
      the cottages found and the lock on a piece they have not unlocked. */

@@ -39,9 +39,11 @@
    - Care has a pantry for the peddler's gifts (a treat, a toy, a soap):
      a gift is taken whatever the charges and the belly, with a little
      joy on top (performCare).
-   - The egg waits in the nest from the first visit and hatches at the
-     first opening six hours later, or the moment the first cottage story
-     is read; warming and rocking are play, not a gate.
+   - The egg waits in the nest from the first visit and is ready six
+     hours later, or the moment a cottage is found; its warmth (warming
+     and rocking it) brings the hour nearer, by up to two hours, and the
+     wait can be bought off for dust or an ad, the first egg's for free,
+     so a new player meets the elf in the first sitting.
    - A daily life: each calendar day deals three small quests from a pool
      (feed, play, bathe, pet, swap a piece of furniture, tuck the elf in,
      look in during the evening), paid in acorns, with a grain of star dust
@@ -199,9 +201,9 @@ export const ELF_TRICKS: readonly ElfTrickSpec[] = [
 ]
 export type ElfTrick = { sessions: number; day: string | null }
 
-/* The games played from the couch (the app holds the boards): a few
-   rounds a day each, a round paying acorns by its points, up to a cap,
-   and experience. */
+/* The games played from the couch (the app holds the boards): rounds on
+   the elf's energy, none while it sleeps, a round paying acorns by its
+   points, up to a cap, and experience. */
 export type ElfGameId = 'acorns' | 'memory' | 'echo'
 export const ELF_GAMES: readonly ElfGameId[] = ['acorns', 'memory', 'echo']
 export const GAME_ACORNS_MAX = 20
@@ -330,7 +332,8 @@ export type ElfState = {
   name: string
   starter: ElfStarter | null
   hatched: boolean
-  /* The egg's warmth, 0..100, a measure of the care it had, not a gate. */
+  /* The egg's warmth, 0..100, the care it had: it brings the hatch
+     nearer (EGG_WARMTH_HURRY_MS at a full hundred). */
   warmth: number
   /* When the egg appeared, and when it hatched (the same until it does);
      milliseconds since the epoch. */
@@ -387,6 +390,10 @@ export type ElfState = {
   gifts: Record<ElfCareAction, number>
   /* The hatch bought before its hour (the moment it was bought), or null. */
   hatchReadyAt: number | null
+  /* The egg's wait may still be skipped for free: true for a new egg
+     until its first skip (skipHatchFree), so the first hatch never asks
+     for dust or an ad. */
+  freeHatch: boolean
   /* The rewarded ads watched on a day (the day's cap, DUST.adCap): for
      dust or for a skip alike. */
   ads: { day: string; count: number }
@@ -506,6 +513,8 @@ export const PET_COOLDOWN_MS = 1400
 
 const EGG_WARMTH: Record<ElfEggAction, number> = { warm: 18, rock: 13 }
 const HATCH_AFTER_MS = 6 * 60 * 60 * 1000
+/* How much nearer a full warmth brings the hatch. */
+export const EGG_WARMTH_HURRY_MS = 2 * 60 * 60 * 1000
 const HATCHED_NEEDS: ElfNeeds = { fullness: 78, joy: 82, clean: 84 }
 
 /* Under this the lowest need is named as a want. */
@@ -759,6 +768,7 @@ export function newElf(now: number): ElfState {
     care: { feed: [], play: [], bath: [] },
     gifts: { feed: 0, play: 0, bath: 0 },
     hatchReadyAt: null,
+    freeHatch: true,
     ads: { day: '', count: 0 },
     xp: 0,
     nodes: [],
@@ -888,6 +898,8 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
     care: normalizeCare(raw.care),
     gifts: { feed: count(gifts.feed), play: count(gifts.play), bath: count(gifts.bath) },
     hatchReadyAt: typeof raw.hatchReadyAt === 'number' ? raw.hatchReadyAt : null,
+    /* An egg stored before the free skip existed gets it; a hatched elf has no use for it. */
+    freeHatch: typeof raw.freeHatch === 'boolean' ? raw.freeHatch : !hatched,
     ads: normalizeAds(raw.ads),
     xp: count(raw.xp),
     nodes: stringList(raw.nodes).filter(isNodeId),
@@ -1426,8 +1438,8 @@ export function pet(state: ElfState, now: number): PetOutcome {
 
 export type EggOutcome = { state: ElfState; completed: ElfQuestPay[]; setBonus: boolean }
 
-/* Warming or rocking the egg: care it remembers, and play the quests
-   count; it hatches on its own time (hatchDue). */
+/* Warming or rocking the egg: warmth it remembers, which brings its
+   hatch nearer (hatchAt), and play the quests count. */
 export function tendEgg(state: ElfState, id: ElfEggAction, now: number): EggOutcome {
   if (state.hatched) return { state, completed: [], setBonus: false }
   const current = ensureDay(state, now).state
@@ -1435,11 +1447,11 @@ export function tendEgg(state: ElfState, id: ElfEggAction, now: number): EggOutc
   return recordEvent(tended, 'egg')
 }
 
-/* When the egg hatches on its own (or, bought, at once), for a
-   countdown; null once hatched. */
+/* When the egg hatches on its own, sooner the warmer it is (or, bought,
+   at once), for a countdown; null once hatched. */
 export function hatchAt(state: ElfState): number | null {
   if (state.hatched) return null
-  const natural = state.eggAppearedAt + HATCH_AFTER_MS
+  const natural = state.eggAppearedAt + HATCH_AFTER_MS - (state.warmth / 100) * EGG_WARMTH_HURRY_MS
   return state.hatchReadyAt === null ? natural : Math.min(natural, state.hatchReadyAt)
 }
 
@@ -1458,6 +1470,14 @@ export function hatchDue(state: ElfState, now: number, finds: readonly ElfFind[]
 export function skipHatch(state: ElfState, now: number): ElfState | null {
   const at = hatchAt(state)
   return at === null || at <= now ? null : { ...state, hatchReadyAt: now }
+}
+
+/* The egg's wait skipped for free, once per egg; null when the free skip
+   is spent or there is nothing to skip. */
+export function skipHatchFree(state: ElfState, now: number): ElfState | null {
+  if (!state.freeHatch) return null
+  const next = skipHatch(state, now)
+  return next ? { ...next, freeHatch: false } : null
 }
 
 /* The hatched elf named and given its element by the player; the app
@@ -1802,10 +1822,10 @@ export type GameOutcome = { state: ElfState; acorns: number; xp: number; best: b
 
 /* A round played, with its points: the energy it took, the acorns and
    the experience paid, the record kept, the day's quests and the request
-   told; null when the elf has no energy for a round. */
+   told; null when the elf sleeps or has no energy for a round. */
 export function recordGame(state: ElfState, id: ElfGameId, points: number, now: number): GameOutcome | null {
   const current = ensureDay(applyElapsed(state, now), now).state
-  if (current.energy < GAME_ENERGY) return null
+  if (current.sleeping || current.energy < GAME_ENERGY) return null
   const acorns = gameAcorns(current, id, points)
   const record = current.games[id] ?? { best: 0, played: 0 }
   const best = record.played > 0 && points > record.best

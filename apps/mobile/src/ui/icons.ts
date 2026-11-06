@@ -31,7 +31,6 @@ import { HandWavingIcon } from 'phosphor-react-native/src/icons/HandWaving'
 import { HandsClappingIcon } from 'phosphor-react-native/src/icons/HandsClapping'
 import { MagicWandIcon } from 'phosphor-react-native/src/icons/MagicWand'
 import { PersonSimpleTaiChiIcon } from 'phosphor-react-native/src/icons/PersonSimpleTaiChi'
-import { PuzzlePieceIcon } from 'phosphor-react-native/src/icons/PuzzlePiece'
 import { SpiralIcon } from 'phosphor-react-native/src/icons/Spiral'
 import { StarIcon } from 'phosphor-react-native/src/icons/Star'
 import { BedIcon } from 'phosphor-react-native/src/icons/Bed'
@@ -240,10 +239,9 @@ export const SharpEyeIcon = EyeIcon
 export const QuickHandsIcon = LightningIcon
 export const AntlersIcon = TrophyIcon
 export const ForgivingStreakIcon = CalendarCheckIcon
-/* The elf's activities (apps/mobile/src/features/elf): the hub on the
-   bar, and the tricks it learns, one picture each: the wave, the twirl,
-   the bow, the cheer, the applause, the toast. */
-export const ActivitiesIcon = PuzzlePieceIcon
+/* The elf's skills (apps/mobile/src/features/elf, the tricks of the code),
+   one picture each: the wave, the twirl, the bow, the cheer, the applause,
+   the toast. */
 export const TricksIcon = MagicWandIcon
 export const TrickWaveIcon = HandWavingIcon
 export const TrickTwirlIcon = SpiralIcon
@@ -266,6 +264,8 @@ export const CocoaIcon = PhosphorCoffee
 /* A gift of the peddler's in the pantry (a treat, a toy, a soap). */
 export const GiftIcon = PhosphorGiftIcon
 export const TapHereIcon = HandTapIcon
+export const HurryIcon = LightningIcon
+export const GetMoreIcon = PlusIcon
 /* The badges: the medal of the collection, a level reached, the
    archetype chosen (the others borrow the care's, the games', the
    streak's, the tricks', the letters' and the peddler's icons). */
@@ -291,8 +291,8 @@ export const ICON_VOCABULARY = {
   DecorIcon, ShopIcon, PathGluttonIcon, PathPranksterIcon, PathTrackerIcon, LetterIcon, LetterOpenIcon,
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
-  ActivitiesIcon, TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
-  GamesIcon, MemoryGameIcon, EchoGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, TapHereIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
+  TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
+  GamesIcon, MemoryGameIcon, EchoGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, TapHereIcon, HurryIcon, GetMoreIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

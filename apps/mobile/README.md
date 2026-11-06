@@ -245,28 +245,31 @@ app/                     expo-router routes
   nickname.tsx           the nickname editor, a sheet from the account screen and the Ranking's "Change nickname" item
   elf-hatch.tsx          the hatch sheet, where the elf that has just hatched is named and given its element
   elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a later form is reached
-  elf-today.tsx          the elf's day: the quests with their progress, the reward to pick, the way to the keepsake
-                         shelf, the streak and what the ledger's figures mean, a sheet opened from the Elf tab's ledger
+  elf-today.tsx          the elf's day: the purse named, the quests with their progress, the reward to pick, the way to
+                         the keepsake shelf, where the figures come from; a sheet from the quests' ring and the purse
   elf-away.tsx           the 'while you were away' card: what an absence brought (the finds, a letter, the plant grown),
                          a sheet the Elf tab presents on the first visit back
   elf-letter.tsx         a letter from the elves of the cottages, by its number (`n`), from the envelope in the room,
                          the away card or the shelf
   elf-shop.tsx           the shop of star dust: the balance, a rewarded ad for dust (up to a daily cap), the store's
                          dust packs and the skips of the waiting (the hatch, a care's charges, the next form) for
-                         dust or an ad, a sheet from the shop button on the elf's bar and the egg's chip
+                         dust or an ad, a sheet from the plus on the star dust in the purse
+  elf-hurry.tsx          the hurry of one wait (?kind=hatch, energy...): what is left of it and the ways to end it now,
+                         free for the first egg, else dust or an ad; a sheet from the egg's hurry button and countdown
+                         and from the games when the energy is out
   elf-tree.tsx           the elf's tree of development: the level with its rank, the experience bar, the points and
-                         a trunk, three branches that fork and merge, three archetypes; a sheet from the name block on the elf's bar
+                         a trunk, three branches that fork and merge, three archetypes; a sheet from the name block in the strip
   elf-shelf.tsx          the keepsake shelf: the jars of the cottages found, the windowsill's treasures and the letters
-  elf-activities.tsx     the activities hub: what there is to do with the elf from the couch (the skills; the games,
-                         the peddler and the badges join as they come), a sheet from the activities button on the elf's bar
+  elf-games.tsx          the choice of a game: the elf's energy and the three games as big tiles; a sheet from the games
+                         button on the side of the cottage
   elf-tricks.tsx         the elf's skills: bought for acorns, practised once a day until learned, shown on its own and on demand; a sheet
-                         from the activities hub
-  elf-game/[id].tsx      a game from the couch (catch the acorns, memory, the forest echo), a page sheet from the activities
-                         hub: rounds on the elf's energy, a round paying acorns by its points and experience
+                         from the skills button on the side of the cottage
+  elf-game/[id].tsx      a game from the couch (catch the acorns, memory, the forest echo), a page sheet from the choice of
+                         a game: rounds on the elf's energy, none while it sleeps, a round paying acorns by its points and experience
   elf-peddler.tsx        the travelling peddler: three wares a day for acorns, each once (a gift of a care, a cup of cocoa
-                         for the games, a grain of dust, a skill under its price); a sheet from the activities hub
+                         for the games, a grain of dust, a skill under its price); a sheet from his button on the side of the cottage
   elf-badges.tsx         the badges: fifteen things done often enough, each with a bar and a reward to take; a sheet
-                         from the activities hub
+                         from the badges button on the side of the cottage
   +native-intent.tsx     where a URL handed to the app goes (plaque links with a code, story and reward links)
   +not-found.tsx         redirects to the Atlas
 src/
@@ -658,17 +661,35 @@ until it hatches, names the elf and picks its element in the hatch
 sheet, then feeds, plays with and bathes a
 small elf whose needs fall in real time, and watches it grow through four
 forms. The elf lives in its cottage, and the cottage is the whole tab: a
-painted room in Skia (`src/features/elf/cottage`) framed by two strips of
-solid chrome and never under them: at the top `ElfHud.tsx` (the name
-with the level in a gold pill and a thin bar of the experience under
-them, the form or what the elf asks for as a line between, the
-activities, shop and decorating buttons, and the ledger with the egg's
-countdown before the hatch), at
+painted room in Skia (`src/features/elf/cottage`) laid out like a game's
+home screen (the reasons are in the analysis the redesign followed: one
+screen, what is always there along its edges, everything else a sheet
+over it that closes back onto it, every thing to do a round button with
+its own one-word name, every wait with its hurry beside it). Two strips
+of solid chrome frame the room and it is never under them: at the top
+`ElfHud.tsx` (the name with the level in a gold pill and a thin bar of
+the experience along the block's foot, the form or what the elf asks
+for as a line between, and on the right the purse as three pills, the
+acorns, the star dust wearing the plus that opens the shop, the days in
+a row; before the hatch a second row with the egg's countdown and the
+gold "hurry" button, free for the first egg), at
 the bottom `ElfActionBar.tsx` (the round care buttons on the tab bar,
 split around its discover key so neither covers the other, each ringed
 by the need it sees to, green while comfortable and gold when the elf
 would like it seen to, with the dots of its charges under it; the sleep
-button ringed by the elf's energy for the games), and
+button ringed by the elf's energy for the games; one-word labels large
+enough for a child, clear of the tab bar, the four buttons and the
+key's gap fitting a 375-point phone). Along the sides of the room
+`ElfRails.tsx` keeps the round buttons of what there is to do, each with
+its name on a pill under it and a gold dot when something new waits
+behind it: on the left the day's quests (their count inside a ring of
+their progress, a dot while the day's reward waits) and the badges, on
+the right the games (`/elf-games`, the choice of a game), the skills
+(`/elf-tricks`), the peddler (`/elf-peddler`) and the decorating. Before
+the hatch the games, the skills and the peddler stand dimmed under a
+lock, so the player sees what is coming, and a tap says they open once
+the elf has hatched; the quests, the badges, the decorating and the shop
+work from the first visit. And
 `ElfSpeech.tsx`: the speech bubble over the elf's head (over its bed
 while it sleeps) for what it says, a refusal, a good night, a greeting,
 a quest done; the elf acts them too:
@@ -681,8 +702,15 @@ support ledger counts beyond what the elf has thanked for,
 (`sip`), once the tab is in view and the greeting is over. A form whose atlas lacks a clip (one packed before
 the clip existed) keeps its idle instead: the scene checks the drawn
 form's manifest before it plays a reaction. A tap on the elf pets it (within the pet
-cooldown it is poked instead, so it always answers), a tap on the egg
-rocks it. It touches nothing of the expedition flow: no cottage, code,
+cooldown it is poked instead, so it always answers). The egg has three
+touches, each with its own movement and sound: a tap is a knock on the
+shell (a wobble and a hop, `egg`), the warming a swell of its glow with
+embers rising round it and a warm hush (`warm`), the rocking a slow
+cradle swing with music notes and a lullaby (`rock`); the ready egg's
+rocking on its own is silent (`eggReady`). Warming and rocking also
+bring the hatch nearer, by up to two hours at a full warmth
+(`EGG_WARMTH_HURRY_MS` in the rules), so the countdown moves as the
+player cares for it. It touches nothing of the expedition flow: no cottage, code,
 story or reward knows about it, but the cottages found reach the elf:
 they pay the most experience, a find while the egg waits hatches it early (finds
 from before the egg appeared stay the expedition's past: no early hatch,
@@ -702,9 +730,10 @@ decorating catalogue dimmed, with a lock and how many more cottages it
 takes, and a tap on it lets the elf say so; what a player placed before
 stays.
 Starting the elf over lives in the Profile tab, not in the HUD. The day's quests, the purse
-(acorns and star dust) and the streak are counted by the rules and stand
-in the HUD's ledger with the quests done out of three, and a tap on it
-opens the day's sheet (`/elf-today`, `ElfTodaySheet.tsx`): the purse
+(acorns and star dust) and the streak are counted by the rules; the
+purse and the streak stand in the strip, the quests in their ring on the
+left rail, and a tap on either opens the day's sheet (`/elf-today`,
+`ElfTodaySheet.tsx`): the purse
 first as three named tiles (the acorns, the dust, the days in a row,
 with the streak's best and next milestone under them), the quests as
 plain rows (a tick circle, the words with the progress, the pay at the
@@ -715,8 +744,18 @@ each where the figures come from; what an action earned the elf says
 in its bubble. The egg's countdown chip keeps one width in tabular
 figures, so the row does not shift each minute.
 
-Star dust is the premium currency, and the shop button beside the
-decorating one (the egg's countdown chip too) opens its shop
+A wait is never a search: where it shows, its hurry stands beside it.
+The egg's countdown and its gold button, and the games when the energy
+is out, open `/elf-hurry` (`ElfHurrySheet.tsx`) for that one wait: what
+is left of it and the ways to end it now as big buttons, for the first
+egg a single free one (`freeHatch` in the state, `skipHatchFree` in the
+rules, the provider's `skip(kind, 'free')`: the first hatch never asks
+for anything, so a new player meets the elf in the first sitting),
+otherwise its dust and one rewarded ad; short of dust, the dust button
+itself opens the shop, where dust is bought.
+
+Star dust is the premium currency, and the plus on it in the purse
+opens its shop
 (`/elf-shop`, `ElfShopSheet.tsx`): the balance, then the two ways to get
 dust beyond the rules' streaks and quest sets, a rewarded ad (the
 support sheet's unit, `DUST.ad` dust a time; every rewarded ad, for dust
@@ -749,7 +788,7 @@ The elf grows in a second way, by experience (`XP` in the rules): the
 cottages found pay the most, then the day's quests, the full set and
 each day a streak goes on. The levels start forty points apart and
 widen (`xpForLevel`, `levelOf`), each one past the first gives a point,
-the level stands in a gold pill on the elf's bar with a thin bar of the
+the level stands in a gold pill in the strip with a thin bar of the
 experience under the name, and the rank by level (`rankOf`: Skrzat,
 Leśnik, Strażnik, Mędrzec, Legenda) heads the tree, which the name block
 opens (`/elf-tree`, `ElfTreeSheet.tsx`), drawn as one. The
@@ -782,7 +821,7 @@ holding through sleep; the fair's quests paying half as much again; the
 camp's second bath; and each archetype's piece free of the finds (the
 cauldron, the hammock, the antlers: `grantedItems`, which also counts
 the shop's purchases, read by `decorFindsNeeded` wherever the catalogue
-is gated) with its title in the rank's place on the elf's bar.
+is gated) with its title in the rank's place in the strip.
 Experience also comes from every care, a letter read and the tuck-in,
 so a day of looking after the elf moves the bar without a find. The
 ranking's use of the rank waits for the account sync.
@@ -798,22 +837,20 @@ reached; one form at a time (neither grows while a form's card still
 waits). The shop sells the form ahead of its level for dust or an ad
 (`growNow`); nothing else about time or the cottages decides a form.
 
-The activities button on the elf's bar (shown once the elf has hatched)
-opens the hub (`/elf-activities`, `ElfActivitiesSheet.tsx`), one row
-per thing to do from the couch, each with a word on where it stands and
-its own sheet or screen. The skills (the tricks of the code: `/elf-tricks`,
-`ElfTricksSheet.tsx`; `ELF_TRICKS`, `buyTrick`, `trainTrick`, `showTrick`,
-`learnedTricks` in the rules) are the first: six of them (the wave, the
+Each thing to do from the couch has its own round button on the side of
+the cottage (above), once the elf has hatched. The skills (the tricks of
+the code: `/elf-tricks`, `ElfTricksSheet.tsx`; `ELF_TRICKS`, `buyTrick`,
+`trainTrick`, `showTrick`, `learnedTricks` in the rules) are six (the wave, the
 twirl, the bow, the cheer, the applause, the toast), each bought for
 acorns, the soft currency's first sink, then practised once a day by an
 awake elf for the sessions it needs (two to four), a session paying
 experience, until learned. The purchase is followed at once by the
 first practice (a sleeping elf keeps the skill for the morning, the
 toast says so), the row in learning says how many practices are left or
-that today's is done, the hub's row names the skill whose practice
-waits today, and that practice lights the activities button's dot like
-a basket of the peddler's not yet looked at today or a badge's reward
-to take (`tricksToTrain`, `peddlerFresh`, `badgesToClaim`). A learned skill is the elf's
+that today's is done, and a practice waiting today lights the skills
+button's dot (`tricksToTrain`), as a basket of the peddler's not yet
+looked at today lights his (`peddlerFresh`) and a badge's reward to take
+the badges' (`badgesToClaim`). A learned skill is the elf's
 own: now and then, while the tab is in view and the elf awake with
 nothing else going on, it shows one unasked with its line (the tab's
 show-off timer, 25 to 60 seconds apart), and a tap on "Pokaż" in the
@@ -825,10 +862,18 @@ the twirl, the greeting's bow, the cheer, the admiring clap, the sip)
 with the elf's line in its bubble; a sleeping elf refuses both. The
 acorns' price and the sessions are in the rules' table.
 
-The games (`/elf-game/[id]`, `games/ElfGameScreen.tsx` around a board;
-`gameRounds`, `recordGame` in the rules) are three: catch the acorns
+The games (the games button opens their choice, `/elf-games`,
+`games/ElfGamesSheet.tsx`: the energy on top and the three as big tiles;
+each plays in `/elf-game/[id]`, `games/ElfGameScreen.tsx` around a board;
+`gameRounds`, `recordGame` in the rules) are three, and none is played
+while the elf sleeps: the games button has the elf say so, and the
+rules refuse a round. Every board fits the room between the screen's
+head and foot (width and height), and how to play waits over it on a
+card with the start (`GameStartCard.tsx`). Catch the acorns
 (`AcornsGame.tsx`: twelve spots, an acorn popping on one every so often
-and vanishing unless tapped, faster and shorter-lived until the
+and vanishing unless tapped, more of them at once as the round goes on
+(often two after a quarter of a minute, up to three by the end of the
+first), faster and shorter-lived until the
 quickest pace a minute in, no clock: three hearts, one lost for every
 acorn that gets away and every tap on an empty spot, a tap right after
 an acorn went excepted, each shown as a red cross on the spot for a
@@ -846,7 +891,9 @@ again; each round the melody grows by a note, a round echoed is a
 point, a wrong tile buzzes and ends the round). The games share the
 elf's energy (`energy` in the state, `ENERGY_MAX` 100): a round takes
 `GAME_ENERGY` (20), so a rested elf has five rounds of any game, and
-the hub, the game's header and the shop say how many are left. The
+the choice of a game, the game's header and the shop say how many are
+left; with none left, the choice and the game's card offer the hurry of
+the energy (`/elf-hurry?kind=energy`) right there. The
 energy comes back in sleep (`ENERGY_PER_HOUR_ASLEEP`, 50: a full bar in
 two hours) or at once for dust or an ad in the shop (the "Siły na gry"
 skip) or with the peddler's cocoa; under `ENERGY_LOW` (30) the elf
@@ -874,9 +921,9 @@ a skill, ten acorns under the skills' price (one of the six, drawn by
 the day like the rest: the draw never reads what the elf owns, so a
 purchase cannot re-deal the basket, and a skill the elf already has
 stands as bought). Each is bought once a day; the sheet marks
-what was bought, the hub's row counts what is left in the basket, and
-the activities button on the bar carries a dot while the basket holds
-something unbought, the day's small reason to look in.
+what was bought, and his button on the side of the cottage carries a
+dot until the day's basket has been looked at (`peddlerFresh`,
+`visitPeddler`), the day's small reason to look in.
 
 The badges (`/elf-badges`, `ElfBadgesSheet.tsx`; `ELF_BADGES`,
 `badgeProgress`, `badgeStatus`, `claimBadge` in the rules) are fifteen
@@ -889,8 +936,7 @@ sessions, the games and the wares (`counts`), and read the rest from
 where it is. Each badge has a reward, acorns for the near ones and a
 grain or three of dust for the long ones, taken with a tap once the
 badge is reached; the sheet shows every badge with its bar and reward,
-the hub's row counts the rewards waiting, and the activities button's
-dot also lights for them.
+and the badges button's dot lights while a reward waits.
 
 The elf's request of the day (`daily.request` in the state, `REQUEST_POOL`,
 `dealRequest`, paid through `recordEvent`) is one more thing to do,
@@ -933,13 +979,13 @@ every care, pet, egg, sleep and swap:
 | Drift | each need eases towards the floor over days (about two thirds of the way in 4 days for fullness, 5 for joy, 7 for clean), at half pace at night; a day away leaves the elf content, three days wanting, a week missing the player |
 | Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under 60 (the name block names it); beaming from an average of 75 with no want; otherwise content |
 | Sleep | at the player's word, at any hour: the button tucks the elf in and the elf sleeps until woken or until its energy is full, when it wakes on its own, a nap lasting an hour at the least (`applyElapsed`, `SLEEP_MIN_HOURS`); nothing happens by the clock of the day |
-| Egg | warm +18 and rock +13 warmth (a tap on the egg rocks it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, or at a cottage found while it waits, whichever comes first (the HUD counts the hours down), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
+| Egg | warm +18 and rock +13 warmth (a tap on the egg knocks on it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, less up to 2 hours at a full warmth (`EGG_WARMTH_HURRY_MS`), or at a cottage found while it waits, whichever comes first (the HUD counts the hours down; the hurry beside it is free for the first egg, `freeHatch`, `skipHatchFree`, else 20 dust or an ad), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
 | Care | feed fullness +25 (3 charges, refused at 90), play joy +30 (2 charges), bath clean +60 (1 charge); a charge spent comes back 4 hours later for a meal, 6 for a game, 12 for a bath (the moments spent in the state's `care`), and with none back the elf has had enough for now, saying when the next is; a refill for dust or an ad brings them all back; a gift of the peddler's in the pantry (`gifts`) is given instead whenever a charge or the belly would refuse, with joy +5 on top |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
 | Experience | a find 40 (finds from before the egg appeared pay nothing), a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (once a day), a skill's practice 4, a game 5, the request 6 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
 | Tree | sixteen nodes, any parent owned opens a node, a point each: roots (charges back in three quarters of the time); belly (fullness eases half as fast), smile (joy eases half as fast), eye (one sill find more on a return); pantry (four meals), feast (a meal +35 instead of +25), games (three games), party (a game +45 instead of +30), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (two baths; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
 | Skills | six, for acorns (the tricks of the code): the wave 40 (2 sessions), the twirl 60 (3), the bow 60 (3), the cheer 80 (3), the applause 80 (4), the toast 100 (4); one practice session a day per skill, none asleep; learned at the last session, then shown on the elf's own now and then and on demand (`ELF_TRICKS`, `buyTrick`, `trainTrick`, `showTrick`, `learnedTricks`) |
-| Games | catch the acorns, memory and the forest echo; a round takes 20 of the elf's energy out of 100 (`GAME_ENERGY`, `ENERGY_MAX`), an hour of sleep gives 50 back, the shop fills it for 5 dust or an ad, the cocoa gives 40, the elf yawns under 30 (`ENERGY_LOW`); a round pays its points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: 2 catches an acorn, 1 memory point an acorn, 1 echo round an acorn) up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns) and a request naming it; the best points kept per game (`gameRounds`, `recordGame`, `restoreEnergy`) |
+| Games | catch the acorns, memory and the forest echo, none while the elf sleeps; a round takes 20 of the elf's energy out of 100 (`GAME_ENERGY`, `ENERGY_MAX`), an hour of sleep gives 50 back, the shop fills it for 5 dust or an ad, the cocoa gives 40, the elf yawns under 30 (`ENERGY_LOW`); a round pays its points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: 2 catches an acorn, 1 memory point an acorn, 1 echo round an acorn) up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns) and a request naming it; the best points kept per game (`gameRounds`, `recordGame`, `restoreEnergy`) |
 | Peddler | three wares a day (`WARES_A_DAY`) drawn by the day from treat 20, toy 25, soap 30 (a gift of that care into the pantry), cocoa 15 (energy for two games), dust 60 (one grain) and a skill at its price less 10 (one the elf has stands as bought); each once a day; the basket is new until looked at, which the sheet reports (`peddlerWares`, `buyWare`, `peddlerFresh`, `visitPeddler`) |
 | Badges | meals 10 (15 acorns) and 100 (2 dust), baths 10 (15), pets 50 (15), games 10 (20) and 50 (2 dust), letters read 5 (15), a skill learned (10) and all six (3 dust), wares bought 10 (20), level 5 (20) and 10 (2 dust), best streak 7 (1 dust) and 30 (3 dust), an archetype chosen (2 dust); a reward taken once (`ELF_BADGES`, `badgeStatus`, `claimBadge`) |
 | Forms | baby from the hatch; the next form at a level (`FORM_LEVELS`: young at 3, adult at 6, elder at 10) and only when the player lets the elf grow (`growUp`; the stored `form`); the shop sells the form ahead of its level (`growNow`), the finds count only through their experience |
@@ -996,24 +1042,28 @@ Talking Tom, Neko Atsume, Finch) says, applied in the tab:
   the head toward a point on the screen (the sprite elf, with no separate
   head, leans towards it); a stroke over the body is the most alive input
   (eyes close, the head leans in, hearts trickle).
-- **The tutorial** (`useElfTutorial.ts`, `ElfTutorial.tsx`): cards above
-  the care band that a new player clicks through at their own pace, once
-  for the egg (rock it, warm it, open the ledger, what hatches it) and
-  once for the named elf (pet it, feed it, the charges and the night, the
-  decorating, the activities, the level with the tree, growing up and
-  what a cottage found brings); a step that asks for a move waits for
-  it (the feed's step takes the try, a full belly's refusal included, so
-  it never waits for a hunger hours away) and lights what it asks for
-  meanwhile (`TutorialHalo.tsx`: a breathing gold ring around the warm
-  or the feed button or the purse row, a bobbing hand on a gold disc
-  over the egg or the elf, out of the bubble's way; still with reduced
-  motion), skip ends the flow, and each flow is remembered per device.
+- **The tutorial** (`useElfTutorial.ts`, `ElfTutorial.tsx`): short cards
+  above the care band that a new player clicks through at their own
+  pace, once for the egg (tap it, warm and rock it, the quests' ring,
+  what waits for the hatch on the right, the free hurry) and once for
+  the named elf (pet it, feed it, the rings and the energy, the buttons
+  on the right, the quests and the badges on the left, the level with
+  the tree, the purse with the shop's plus); a step that asks for a move
+  waits for it (the feed's step takes the try, a full belly's refusal
+  included, so it never waits for a hunger hours away), and every step
+  lights what it is about, the move it waits for or the place it shows
+  (`TutorialHalo.tsx`: a breathing gold ring around a button of the care
+  band or the rails, the name block, the purse or the hurry, a bobbing
+  hand on a gold disc over the egg or the elf, out of the bubble's way;
+  still with reduced motion); skip ends the flow, and each flow is
+  remembered per device. The egg's flow pauses once the egg is ready
+  (the hatch has its own ritual), so a player who hurries it meets the
+  elf's flow next.
 - **Reduced motion** keeps a slow, shallow breath as the elf's only loop,
   so it is alive and not a statue; reactions are a blip of particles.
 - **Idle fidgets** every 8 to 15 seconds (an ear twitch, a yawn, a glance
-  at the fire, a shift of weight) keep it alive between actions; at
-  bedtime (from 19:00, until it is tucked in) the elf gets heavy lids and
-  yawns.
+  at the fire, a shift of weight) keep it alive between actions; when its
+  energy runs low (under `ENERGY_LOW`) the elf gets heavy lids and yawns.
 - **Drag-to-feed.** The acorn of the feed button can be dragged: it floats
   under the finger (an `Animated.View` over the tab, fed by the action
   bar's pan gesture in window coordinates), the elf follows it with its
@@ -1182,12 +1232,14 @@ The elf has sounds (`useElfSounds`, mounted by the tab while it is in
 view): a plop for a tap on its head, a crunch for a meal, a splash for a
 bath, a whoosh for a game and for the twirl of a new hat, a yawn among
 the fidgets, a snore with every breath of sleep in its bed, a hum when it
-wakes or greets the player, a crack for each crack of the egg, a sparkle
+wakes or greets the player, for the egg a knock on its shell, a warm hush
+when it is warmed and a lullaby when it is rocked, a crack for each crack of the egg, a sparkle
 for the hatch, a whoosh of magic for an evolution, a jingle for the day's
 quests and a streak's milestone, a page for a letter, and the fire's
 crackle as a quiet loop under the room (the forest echo has its own
 pool, `src/lib/sound-pool.ts`, of four synthesised bell notes and a
-buzz, `art/sounds/echo_notes.py`); a pat is silent, it comes too
+buzz, written by `art/sounds/synth.py` like the egg's knock, warm hush and
+lullaby); a pat is silent, it comes too
 often. A sound asked for again within its own gap (taps in a row) is let
 go. The preferences carry the one switch (`SoundsSection`, on by
 default, `src/lib/sounds-store.ts`). Left out on purpose: haptics (the

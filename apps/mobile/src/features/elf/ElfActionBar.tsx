@@ -15,8 +15,8 @@ import { TutorialHalo } from './TutorialHalo'
    and the buttons never cover one another and nothing floats over the
    rug: for an egg the two ways to hatch it, for an elf feeding, playing,
    bathing and sleep or wake. The care buttons take the gold face of a
-   primary button, the sleep toggle the ghost face, each with a short
-   label underneath. Around each care button a ring shows the need the
+   primary button, the sleep toggle the ghost face, each with a one-word
+   label underneath, large enough for a child and clear of the tab bar. Around each care button a ring shows the need the
    care sees to (fullness, joy, cleanliness): green while comfortable,
    gold once the elf would like it seen to, eased to each new value as
    the needs drift; a care's gain floats up over the button as "+25" for
@@ -177,7 +177,7 @@ function ActionButton({ action }: { action: Action }) {
         {need ? <NeedGain value={need.value} /> : null}
       </View>
       <CapDots cap={cap} />
-      <Text variant="label" weight="semibold" align="center" numberOfLines={1} style={styles.label}>
+      <Text variant="small" weight="bold" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.label}>
         {label}
       </Text>
     </View>
@@ -305,7 +305,7 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
         {need ? <NeedGain value={need.value} /> : null}
       </View>
       <CapDots cap={cap} />
-      <Text variant="label" weight="semibold" align="center" numberOfLines={1} style={styles.label}>
+      <Text variant="small" weight="bold" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.label}>
         {label}
       </Text>
     </View>
@@ -322,7 +322,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'center',
     paddingTop: space.sm,
-    paddingBottom: space.xs,
+    /* Clear of the tab bar beneath, so a thumb on a label never lands on it. */
+    paddingBottom: space.md,
     borderTopWidth: 1,
     borderTopColor: mapPalette.chromeBorder,
     backgroundColor: mapPalette.chromeSolid,
@@ -335,8 +336,9 @@ const styles = StyleSheet.create({
   keyGap: {
     width: KEY_GAP,
   },
+  /* Four of them and the key's gap fit a 375-point phone. */
   item: {
-    width: RING + space.md,
+    width: RING + space.sm,
     alignItems: 'center',
     gap: space.xs,
   },

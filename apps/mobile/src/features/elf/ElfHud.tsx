@@ -2,40 +2,43 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { type ElfMood, type ElfNeedId, type ElfStage, type ElfWallet, type ElfPath } from '@chatynkowo/core'
-import { AcornsIcon, ActivitiesIcon, DecorIcon, DustIcon, EggIcon, LevelBadgeIcon, NextIcon, PressableScale, QuestIcon, ShopIcon, StreakIcon, Text, colors, fade, iconSize, mapPalette, radius, space, type Icon, type TextProps } from '../../ui'
+import { AcornsIcon, DustIcon, EggIcon, GetMoreIcon, HurryIcon, LevelBadgeIcon, PressableScale, StreakIcon, Text, colors, fade, iconSize, mapPalette, radius, space, type Icon, type TextProps } from '../../ui'
 import { durationText, useClock } from './duration'
 import { elfKey, pathKey } from './labels'
 import { TutorialHalo } from './TutorialHalo'
 
 /* The strip over the cottage, in the dark chrome of the Atlas's cards so
-   the two full-bleed tabs read alike: two rows, and the room starts under
-   them, never behind them. The first row: the name block (the elf's
-   name, or "the egg", with the level in a gold pill at the end of the
-   line, which wears a dot while the elf may grow; under it the form
-   and, once chosen, the nature, or, when there is one, what the elf
-   asks for in gold: the need it wants seen to, or that it may grow, or,
-   for the egg, how it hatches; and a thin bar of the experience towards
-   the next level along the foot), which opens the tree of development,
-   and the buttons: the activities,
-   the shop and the decorating (the mode it opens lives inside the tab;
-   starting over lives in the profile, out of the way of a child's
-   thumb). The second row is the ledger: the acorns and the star dust in
-   the purse, the streak of days and the day's quests done out of three
-   (with a dot while the day's reward waits to be picked), one pressable
-   row that opens the day's sheet (/elf-today); before the hatch it starts
-   with the egg and how long until it hatches (the warmth the player gives
-   it shows in the scene's glow, not here: it does not decide the hatch).
-   The needs themselves are not here: they ring the care buttons at the
-   bottom (ElfActionBar), where the care is. What the elf has to say in the
-   moment (a refusal, a good night, a greeting, a quest done) is in the
-   speech bubble over its head (ElfSpeech). Every text here is plain and
-   in its ordinary case, so a child reads it at a glance; a value that
-   changes fades in anew and leaves nothing behind (no exit animation and
-   no layout transition, which can leave a ghost of the old words on a
-   strip that re-renders every few seconds). */
+   the two full-bleed tabs read alike, laid out the way a game's home
+   screen is: who the elf is on the left, the purse on the right, and the
+   room starts under it, never behind it. The name block holds the elf's
+   name (or "the egg") with the level in a gold pill at the end of the
+   line, which wears a dot while the elf may grow; under it what the elf
+   asks for in gold (the need it wants seen to, that it may grow, its
+   request of the day, that it misses the player), or else its form and,
+   once chosen, its nature; and a thin bar of the experience towards the
+   next level along the foot. A tap on it opens the tree of development.
+   The purse is a column of three pills, each a glyph and its figure: the
+   acorns and the days in a row open the day's sheet (/elf-today), where
+   the figures are named and explained, and the star dust wears the plus
+   that opens the shop, the way games put the way to more of a currency
+   on the currency itself. Before the hatch a second row holds the egg's
+   countdown, in one width and figures of one width so the row never
+   shifts, and beside it the gold "hurry" button, which opens the
+   skip of the wait (/elf-hurry): the first egg's is free, and the button
+   says so. Everything else the elf does is one tap away on the round
+   buttons along the sides of the room (ElfRails) and on the care band
+   at the bottom (ElfActionBar); what the elf says in the moment is in
+   its speech bubble (ElfSpeech). Every text here is plain and in its
+   ordinary case, so a child reads it at a glance; a value that changes
+   fades in anew and leaves nothing behind (no exit animation and no
+   layout transition, which can leave a ghost of the old words on a strip
+   that re-renders every few seconds). */
 
 /* Which panel of the tab is open, if any; the HUD leaves while one is. */
 export type ElfPanel = 'none' | 'decor'
+
+/* What a tutorial step can light on the strip. */
+export type HudSpot = 'name' | 'purse' | 'hurry'
 
 export type ElfHudProps = {
   name: string
@@ -45,22 +48,15 @@ export type ElfHudProps = {
   wantedNeed: ElfNeedId | null
   /* When the egg hatches on its own; null once hatched. */
   hatchAt: number | null
+  /* The first egg's wait is skipped for free. */
+  freeHatch: boolean
+  /* The egg is ready to crack (its hour came, a cottage was found, the
+     wait was bought): the countdown says "now" and the hurry goes, without
+     waiting for the countdown's clock to tick. */
+  hatchReady: boolean
   wallet: ElfWallet
   /* Days visited in a row. */
   streak: number
-  /* The day's quests done, out of three, and whether its reward still
-     waits to be picked. */
-  questsDone: number
-  rewardWaiting: boolean
-  onDecorate: () => void
-  /* Opens the shop of star dust. */
-  onShop: () => void
-  /* Opens the activities hub (the tricks, the games, the peddler, the badges). */
-  onActivities: () => void
-  /* The hub has something new (the peddler's basket not yet looked at
-     today, a badge's reward to take, a skill's practice today): a dot on
-     its button. */
-  activitiesFresh: boolean
   /* The elf's level and how far its experience has come towards the next
      level (0..1); the level is null for the egg, which has none. A tap on
      the name block opens the tree. */
@@ -74,14 +70,17 @@ export type ElfHudProps = {
   /* The elf's request of the day, in its words, while it is open. */
   request: string | null
   onTree: () => void
-  /* The ledger was tapped: the day's sheet (the quests, the reward to
-     pick, the streak, and what the figures mean). */
-  onLedger: () => void
-  /* The tutorial asks for the ledger: its row wears a breathing ring. */
-  highlightLedger?: boolean
+  /* The acorns or the streak tapped: the day's sheet. */
+  onPurse: () => void
+  /* The star dust tapped: the shop. */
+  onShop: () => void
+  /* The egg's hurry: the skip of its wait. */
+  onHurry: () => void
+  /* What a tutorial step lights. */
+  lit?: HudSpot | null
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak, questsDone, rewardWaiting, onDecorate, onShop, onActivities, activitiesFresh, level, xpFraction, archetype, growthReady, request, onTree, onLedger, highlightLedger = false }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, freeHatch, hatchReady, wallet, streak, level, xpFraction, archetype, growthReady, request, onTree, onPurse, onShop, onHurry, lit = null }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   const form = t(elfKey('stage', stage))
@@ -101,22 +100,25 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
           ripple={false}
           style={[styles.chrome, styles.identity]}
         >
-          {/* The name and the level share a line. */}
-          <View style={styles.nameRow}>
-            <Text weight="bold" variant="compact" numberOfLines={1} style={[styles.chromeInk, styles.name]}>
-              {shownName}
-            </Text>
-            {level !== null ? (
-              <View style={styles.level}>
-                <LevelBadgeIcon size={iconSize.xs} weight="fill" color={colors.accentInk} />
-                <Text variant="label" weight="bold" style={styles.levelInk}>
-                  {t('mobile:elf.hudLevel', { level })}
-                </Text>
-                {growthReady ? <View style={styles.growDot} /> : null}
-              </View>
-            ) : null}
+          {lit === 'name' ? <TutorialHalo style={styles.haloBlock} /> : null}
+          <View style={styles.identityWords}>
+            {/* The name and the level share a line. */}
+            <View style={styles.nameRow}>
+              <Text weight="bold" variant="compact" numberOfLines={1} style={[styles.chromeInk, styles.name]}>
+                {shownName}
+              </Text>
+              {level !== null ? (
+                <View style={styles.level}>
+                  <LevelBadgeIcon size={iconSize.xs} weight="fill" color={colors.accentInk} />
+                  <Text variant="label" weight="bold" style={styles.levelInk}>
+                    {t('mobile:elf.hudLevel', { level })}
+                  </Text>
+                  {growthReady ? <View style={styles.growDot} /> : null}
+                </View>
+              ) : null}
+            </View>
+            <StatusLine name={name} stage={stage} mood={mood} whatItIs={whatItIs} hatchAt={hatchAt} hatchReady={hatchReady} wantedNeed={wantedNeed} growthReady={growthReady} request={request} />
           </View>
-          <StatusLine name={name} stage={stage} mood={mood} whatItIs={whatItIs} hatchAt={hatchAt} wantedNeed={wantedNeed} growthReady={growthReady} request={request} />
           {/* The experience towards the next level, along the block's foot. */}
           {level !== null ? (
             <View style={styles.xpTrack}>
@@ -124,65 +126,23 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, wallet, streak,
             </View>
           ) : null}
         </PressableScale>
-        {/* The activities, the shop of star dust, then the decorating:
-            buttons as tall as the name block beside them; the room can be
-            arranged for the egg and the elf alike, the activities wait for
-            the hatch. */}
-        {!egg ? (
-          <PressableScale
-            onPress={onActivities}
-            accessibilityLabel={`${t('mobile:elf.activitiesOpen')}${activitiesFresh ? `. ${t('mobile:elf.activitiesFreshAria')}` : ''}`}
-            style={[styles.chrome, styles.control]}
-          >
-            <ActivitiesIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
-            {activitiesFresh ? <View style={styles.freshDot} /> : null}
-          </PressableScale>
-        ) : null}
-        <PressableScale onPress={onShop} accessibilityLabel={t('mobile:elf.shopOpen')} style={[styles.chrome, styles.control]}>
-          <ShopIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
-        </PressableScale>
-        <PressableScale onPress={onDecorate} accessibilityLabel={t('mobile:elf.decorate')} style={[styles.chrome, styles.control]}>
-          <DecorIcon size={iconSize.lg} color={mapPalette.chromeIcon} />
-        </PressableScale>
-      </View>
-      {/* The row hugs its chips and gives only the scale as feedback: a
-          fill or a ripple would paint the gaps between the pills. */}
-      <PressableScale
-        onPress={onLedger}
-        accessibilityLabel={`${t('mobile:elf.ledgerAria', { acorns: wallet.acorns, dust: wallet.dust, streak, done: questsDone, total: QUESTS_TOTAL })}${rewardWaiting ? ` ${t('mobile:elf.rewardWaitingAria')}` : ''}`}
-        accessibilityHint={t('mobile:elf.ledgerHint')}
-        hitSlop={{ top: 8, bottom: 8 }}
-        pressedFill="transparent"
-        ripple={false}
-        style={styles.ledger}
-      >
-        {highlightLedger ? <TutorialHalo /> : null}
-        {egg ? <EggChip hatchAt={hatchAt} onPress={onShop} /> : null}
-        <LedgerChip Glyph={AcornsIcon} value={wallet.acorns} />
-        <LedgerChip Glyph={DustIcon} value={wallet.dust} />
-        <LedgerChip Glyph={StreakIcon} value={streak} />
-        <View style={[styles.chrome, styles.ledgerChip]}>
-          <QuestIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
-          <FadeText value={t('mobile:elf.questsChip', { done: questsDone, total: QUESTS_TOTAL })} variant="small" weight="bold" style={styles.chromeInk} />
-          {/* The caret says the row opens something. */}
-          <NextIcon size={iconSize.xs} weight="bold" color={mapPalette.chromeIcon} />
-          {rewardWaiting ? <View style={styles.rewardDot} /> : null}
+        {/* The purse: the acorns, the star dust with its plus, the days in a row. */}
+        <View style={styles.purse} pointerEvents="box-none">
+          {lit === 'purse' ? <TutorialHalo style={styles.haloBlock} /> : null}
+          <PursePill Glyph={AcornsIcon} value={wallet.acorns} label={t('mobile:elf.purseAcornsAria', { count: wallet.acorns })} onPress={onPurse} />
+          <PursePill Glyph={DustIcon} value={wallet.dust} label={t('mobile:elf.purseDustAria', { count: wallet.dust })} onPress={onShop} more />
+          <PursePill Glyph={StreakIcon} value={streak} label={t('mobile:elf.purseStreakAria', { count: streak })} onPress={onPurse} />
         </View>
-      </PressableScale>
+      </View>
+      {egg ? (
+        <View style={styles.eggRow} pointerEvents="box-none">
+          <EggChip hatchAt={hatchAt} ready={hatchReady} onPress={onHurry} />
+          <HurryButton hatchAt={hatchAt} ready={hatchReady} free={freeHatch} lit={lit === 'hurry'} onPress={onHurry} />
+        </View>
+      ) : null}
     </View>
   )
 }
-
-/* The quests a day deals, as the chip counts them. */
-const QUESTS_TOTAL = 3
-/* The width of a button beside the name block. A fixed width, not a
-   square from the block's height: Yoga lays the row out in one pass, so
-   a button whose width followed its height would leave the block
-   measured too wide, its second line of text cut off once the buttons
-   took their room. */
-const CONTROL = 60
-/* The countdown chip's text keeps this width whatever the count says. */
-const COUNTDOWN_WIDTH = 100
 
 /* A text of the strip whose value changes in place: the new value fades
    in, keyed by its content; the old one simply goes (no exit animation,
@@ -195,44 +155,81 @@ function FadeText({ value, lineStyle, ...rest }: TextProps & { value: string; li
   )
 }
 
-/* The egg's countdown in words (duration.ts keeps the clock). */
-function useHatchWhen(hatchAt: number | null): { when: string; due: boolean } | null {
+/* The egg's countdown in words (duration.ts keeps the clock); a ready egg
+   is due at once, whatever the clock last said. */
+function useHatchWhen(hatchAt: number | null, ready = false): { when: string; due: boolean } | null {
   const { t } = useTranslation()
-  const now = useClock(hatchAt !== null)
+  const now = useClock(hatchAt !== null && !ready)
   if (hatchAt === null) return null
   const left = hatchAt - now
-  if (left <= 0) return { when: t('mobile:elf.hatchSoon'), due: true }
+  if (ready || left <= 0) return { when: t('mobile:elf.hatchSoon'), due: true }
   return { when: t('mobile:elf.hatchIn', { time: durationText(t, left) }), due: false }
 }
 
-/* Before the hatch: the egg and how long until it hatches, first in the
-   ledger row; a tap opens the shop, where the wait can be bought off. */
-function EggChip({ hatchAt, onPress }: { hatchAt: number; onPress: () => void }) {
+/* Before the hatch: the egg and how long until it hatches; a tap opens
+   the skip of the wait, like the button beside it. */
+function EggChip({ hatchAt, ready, onPress }: { hatchAt: number; ready: boolean; onPress: () => void }) {
   const { t } = useTranslation()
-  const hatch = useHatchWhen(hatchAt)
+  const hatch = useHatchWhen(hatchAt, ready)
   const when = hatch?.when ?? ''
   return (
     <PressableScale
       onPress={onPress}
+      disabled={hatch?.due}
       accessibilityLabel={t('mobile:elf.hatchAria', { when })}
       accessibilityHint={hatch?.due ? undefined : t('mobile:elf.hatchSkipHint')}
-      style={[styles.chrome, styles.ledgerChip]}
+      style={[styles.chrome, styles.pill]}
     >
       <EggIcon size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
       {/* One width for every count, in figures of one width: the row would otherwise shift each minute. */}
-      <FadeText value={when} variant="small" weight="bold" style={[styles.chromeInk, styles.countdown]} lineStyle={styles.countdownLine} />
+      <FadeText value={when} variant="small" weight="bold" style={[styles.chromeInk, styles.figures]} lineStyle={styles.countdownLine} />
     </PressableScale>
   )
 }
 
-/* One figure of the ledger: the glyph and the count, which fades in anew
-   when a quest pays; the row's label names them all for a screen reader. */
-function LedgerChip({ Glyph, value }: { Glyph: Icon; value: number }) {
+/* The gold button beside the countdown: the skip of the wait, free for
+   the first egg; gone once the egg is ready. */
+function HurryButton({ hatchAt, ready, free, lit, onPress }: { hatchAt: number; ready: boolean; free: boolean; lit: boolean; onPress: () => void }) {
+  const { t } = useTranslation()
+  const hatch = useHatchWhen(hatchAt, ready)
+  if (!hatch || hatch.due) return null
+  const label = t(free ? 'mobile:elf.hurryFreeChip' : 'mobile:elf.hurryAction')
   return (
-    <View style={[styles.chrome, styles.ledgerChip]}>
-      <Glyph size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
-      <FadeText value={String(value)} variant="small" weight="bold" style={styles.chromeInk} />
+    <View pointerEvents="box-none">
+      {lit ? <TutorialHalo /> : null}
+      <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={label} pressedFill={colors.accentBorder} style={styles.hurry}>
+        <HurryIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />
+        <Text variant="small" weight="bold" style={styles.levelInk}>
+          {label}
+        </Text>
+      </PressableScale>
     </View>
+  )
+}
+
+/* One figure of the purse: the glyph and the count, which fades in anew
+   when it changes; the star dust's pill wears the plus of the shop. */
+function PursePill({ Glyph, value, label, onPress, more = false }: { Glyph: Icon; value: number; label: string; onPress: () => void; more?: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={more ? t('mobile:elf.purseShopHint') : t('mobile:elf.purseHint')}
+      hitSlop={{ top: 3, bottom: 3 }}
+      style={[styles.chrome, styles.pill, styles.pursePill]}
+    >
+      <Glyph size={iconSize.sm} weight="fill" color={mapPalette.chromeIcon} />
+      <View style={styles.purseFigure}>
+        <FadeText value={String(value)} variant="small" weight="bold" style={[styles.chromeInk, styles.figures]} />
+      </View>
+      {more ? (
+        <View style={styles.more}>
+          <GetMoreIcon size={iconSize.xs} weight="bold" color={colors.accentInk} />
+        </View>
+      ) : null}
+    </PressableScale>
   )
 }
 
@@ -246,6 +243,7 @@ type StatusLineProps = {
   whatItIs: string
   /* When the egg is ready to hatch; null once hatched. */
   hatchAt: number | null
+  hatchReady: boolean
   wantedNeed: ElfNeedId | null
   growthReady: boolean
   request: string | null
@@ -257,15 +255,20 @@ type StatusLineProps = {
    The egg's line says how it hatches and stays the same until the hatch
    is due: the chip carries the countdown, and a line that changed every
    minute would be read out every minute. */
-function StatusLine({ name: given, stage, mood, whatItIs, hatchAt, wantedNeed, growthReady, request }: StatusLineProps) {
+function StatusLine({ name: given, stage, mood, whatItIs, hatchAt, hatchReady, wantedNeed, growthReady, request }: StatusLineProps) {
   const { t } = useTranslation()
   /* An elf still to be named (the hatch sheet is up) goes by the plain name. */
   const name = given || t('mobile:elf.defaultName')
-  const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null)
+  const hatch = useHatchWhen(stage === 'egg' ? hatchAt : null, hatchReady)
   if (hatch) return <FadeText value={hatch.due ? t('mobile:elf.moodEggDue') : t('mobile:elf.moodEgg')} variant="small" numberOfLines={2} style={hatch.due ? styles.want : styles.chromeInk} />
   const asks = wantedNeed ? t(elfKey('wants', wantedNeed), { name }) : growthReady ? t('mobile:elf.hudGrowReady') : request ?? (mood === 'misses' ? t(elfKey('mood', mood), { name }) : null)
   return <FadeText value={asks ?? whatItIs} variant="small" numberOfLines={2} style={asks ? styles.want : styles.stage} />
 }
+
+/* The purse's figures and the countdown keep one width whatever they say. */
+const PURSE_FIGURE = 40
+const COUNTDOWN_WIDTH = 100
+const MORE = 18
 
 const styles = StyleSheet.create({
   top: {
@@ -274,7 +277,6 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    justifyContent: 'space-between',
     gap: space.sm,
   },
   nameRow: {
@@ -288,12 +290,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.control,
     backgroundColor: mapPalette.chrome,
   },
-  /* The name block takes the width the controls leave, so the mood line
+  /* The name block takes the width the purse leaves, so the mood line
      has room for two lines. */
   identity: {
     flex: 1,
+    justifyContent: 'space-between',
     paddingVertical: space.sm,
     paddingHorizontal: space.md,
+    gap: 2,
+  },
+  /* The words at the top of the block, the experience along its foot. */
+  identityWords: {
     gap: 2,
   },
   chromeInk: {
@@ -301,13 +308,6 @@ const styles = StyleSheet.create({
   },
   fadeLine: {
     flexShrink: 1,
-  },
-  /* The egg's countdown: room for its longest form ("za 23 h 59 min"). */
-  countdownLine: {
-    minWidth: COUNTDOWN_WIDTH,
-  },
-  countdown: {
-    fontVariant: ['tabular-nums'],
   },
   name: {
     flexShrink: 1,
@@ -356,20 +356,13 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: colors.accent,
   },
-  /* A button beside the name block: a fixed width, as tall as the block. */
-  control: {
-    width: CONTROL,
-    alignItems: 'center',
-    justifyContent: 'center',
+  /* The purse: three pills under one another, as tall together as the
+     name block beside them. */
+  purse: {
+    justifyContent: 'space-between',
+    gap: space.xs,
   },
-  /* The ledger's chips take only the width of their figure, and the row
-     only that of its chips. */
-  ledger: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    gap: space.sm,
-  },
-  ledgerChip: {
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.xs,
@@ -377,29 +370,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: radius.pill,
   },
-  /* Something new behind the activities button: a dot in its corner. */
-  freshDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 10,
-    height: 10,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.accentInk,
-    backgroundColor: colors.accentStrong,
+  pursePill: {
+    paddingRight: 6,
   },
-  /* The reward waiting: a gold dot on the quests chip's corner. */
-  rewardDot: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    width: 10,
-    height: 10,
+  purseFigure: {
+    minWidth: PURSE_FIGURE,
+  },
+  figures: {
+    fontVariant: ['tabular-nums'],
+  },
+  /* The plus on the star dust: a small gold disc. */
+  more: {
+    width: MORE,
+    height: MORE,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radius.pill,
+    backgroundColor: colors.accent,
+  },
+  /* The egg's row: the countdown and the hurry. */
+  eggRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  countdownLine: {
+    minWidth: COUNTDOWN_WIDTH,
+  },
+  hurry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    paddingVertical: 6,
+    paddingHorizontal: space.md,
     borderWidth: 1,
-    borderColor: colors.accentInk,
-    backgroundColor: colors.accentStrong,
+    borderColor: colors.accentBorder,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent,
+  },
+  /* A tutorial's ring around a block rather than a round button. */
+  haloBlock: {
+    borderRadius: radius.control + 5,
   },
   want: {
     color: colors.accentStrong,
