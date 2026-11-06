@@ -5,6 +5,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import { useTranslation } from 'react-i18next'
 import { CloseIcon, DustIcon, JoyIcon, StarRainGameIcon, StormIcon, Text, colors, iconSize, radius, space } from '../../../ui'
 import { GameStartCard } from './GameStartCard'
+import { useGameSound } from './GameSounds'
 
 /* The star rain: stars fall from the top of the board and the player
    moves a basket along its foot with a finger (a drag, or a touch where
@@ -18,11 +19,13 @@ import { GameStartCard } from './GameStartCard'
    quarters of a minute in, the storms join after three seconds and grow
    to almost half of what falls, stars begin to fall slantwise, and a
    storm often falls right beside a star, so the basket has to be placed,
-   not just swept. The basket is narrow. Each falling thing is an
-   animation of its own on the UI thread, a fall over its time (slanted
-   by its drift), and the catch is decided once, when it reaches the
-   basket's rim, where it then is: so the game needs no frame loop, only
-   a timer per falling thing.
+   not just swept. The basket is drawn at its true width, and a star
+   that still overlaps its edge counts, so a near miss is seen to be one. A star caught twinkles, a storm caught
+   rumbles and a star on the ground bumps (GameSounds). Each falling
+   thing is an animation of its own on the UI thread, a fall over its
+   time (slanted by its drift), and the catch is decided once, when it
+   reaches the basket's opening, where it then is: so the game needs no
+   frame loop, only a timer per falling thing.
    How to play waits over the board with the start (GameStartCard). All
    timing runs on timers in this component and dies with it. */
 
@@ -47,12 +50,22 @@ const SLANT_FROM = 0.2
 const SLANT_MAX = 0.35
 const PAIR_FROM = 0.3
 const PAIR_GAP = [0.85, 1.25] as const
-/* The falling things' side, the basket's size, and how far past the
-   basket's edge a thing still counts as caught. */
+/* The falling things' side, the basket's width, and how far past the
+   basket's edge a star's middle may be and still count as caught: a
+   star still overlapping the edge by a good part of itself is in, while
+   a storm is caught only with its middle over the basket, so brushing
+   the rim never costs a heart. */
 const THING = 44
-const BASKET_WIDTH = 76
-const BASKET_HEIGHT = 54
-const SLACK = THING * 0.12
+const BASKET_WIDTH = 64
+const SLACK = THING * 0.3
+/* The basket's picture fills seven eighths of its box across, its foot
+   is 40 of the box's 256 units above the box's bottom and its opening
+   136 above its foot: the box is sized so the picture is as wide as the
+   catch, set so the foot stands on the board's foot, and a thing is
+   judged when its middle reaches the opening. */
+const BASKET_BOX = Math.round(BASKET_WIDTH / 0.875)
+const BASKET_FOOT = Math.round((BASKET_BOX * 40) / 256)
+const BASKET_RIM = Math.round((BASKET_BOX * 136) / 256)
 /* How long the cross of a lost heart stays. */
 const MARK_MS = 600
 
@@ -66,6 +79,7 @@ type Mark = { id: number; x: number; y: number }
 
 export function StarRainGame({ onFinish }: Props) {
   const { t } = useTranslation()
+  const play = useGameSound()
   const [phase, setPhase] = useState<Phase>('ready')
   const [caught, setCaught] = useState(0)
   const [hearts, setHearts] = useState(HEARTS)
@@ -146,8 +160,9 @@ export function StarRainGame({ onFinish }: Props) {
     setMarks([])
     falling.current = new Set()
     startedAt.current = Date.now()
-    /* Where the falling things' top reaches the basket's rim, as a share of the fall. */
-    const rimShare = (height - BASKET_HEIGHT - THING * 0.4 + THING) / (height + THING)
+    /* Where the falling things' middle reaches the basket's opening, as a
+       share of the fall (a thing's top goes from -THING to the height). */
+    const rimShare = (height - BASKET_RIM + THING / 2) / (height + THING)
     const inside = (x: number) => Math.min(width - THING / 2 - 4, Math.max(THING / 2 + 4, x))
     /* One thing falling from x, drifting by drift on its way down. */
     const dropOne = (kind: Thing['kind'], x: number, drift: number, fall: number) => {
@@ -159,16 +174,18 @@ export function StarRainGame({ onFinish }: Props) {
       later(fall * rimShare, () => {
         if (overRef.current) return
         const atRim = x + drift * rimShare
-        const inBasket = Math.abs(atRim - basketRef.current) <= BASKET_WIDTH / 2 + SLACK
+        const inBasket = Math.abs(atRim - basketRef.current) <= BASKET_WIDTH / 2 + (kind === 'star' ? SLACK : 0)
         if (!inBasket) return
         falling.current.delete(id)
         setThings((current) => current.filter((thing) => thing.id !== id))
         if (kind === 'star') {
+          play('twinkle')
           caughtRef.current += 1
           setCaught(caughtRef.current)
           basketPulse.value = withSequence(withTiming(1.12, { duration: 90 }), withTiming(1, { duration: 140 }))
         } else {
-          mark(basketRef.current, height - BASKET_HEIGHT / 2)
+          play('storm')
+          mark(basketRef.current, height - BASKET_RIM / 2)
           miss()
         }
       })
@@ -177,6 +194,7 @@ export function StarRainGame({ onFinish }: Props) {
         if (overRef.current || !falling.current.delete(id)) return
         setThings((current) => current.filter((thing) => thing.id !== id))
         if (kind === 'star') {
+          play('miss')
           mark(x + drift, height - THING / 2)
           miss()
         }
@@ -223,7 +241,7 @@ export function StarRainGame({ onFinish }: Props) {
   }
 
   const basketStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: basketX.value - BASKET_WIDTH / 2 }, { scale: basketPulse.value }],
+    transform: [{ translateX: basketX.value - BASKET_BOX / 2 }, { scale: basketPulse.value }],
   }))
 
   return (
@@ -250,7 +268,7 @@ export function StarRainGame({ onFinish }: Props) {
               </Animated.View>
             ))}
             <Animated.View style={[styles.basket, basketStyle]} pointerEvents="none">
-              <StarRainGameIcon size={BASKET_HEIGHT * 0.75} weight="fill" color={colors.accentStrong} />
+              <StarRainGameIcon size={BASKET_BOX} weight="fill" color={colors.accentStrong} />
             </Animated.View>
           </View>
         </GestureDetector>
@@ -321,12 +339,10 @@ const styles = StyleSheet.create({
   },
   basket: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -BASKET_FOOT,
     left: 0,
-    width: BASKET_WIDTH,
-    height: BASKET_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    width: BASKET_BOX,
+    height: BASKET_BOX,
   },
   mark: {
     position: 'absolute',

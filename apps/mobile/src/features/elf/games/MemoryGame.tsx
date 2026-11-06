@@ -4,6 +4,7 @@ import Animated, { FadeIn, FlipInEasyY } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, BathIcon, DustIcon, EggIcon, GiftIcon, JarIcon, LetterIcon, PressableScale, StreakIcon, Text, ToyIcon, colors, radius, space, type Icon } from '../../../ui'
 import { GameStartCard, fitCell } from './GameStartCard'
+import { useGameSound } from './GameSounds'
 
 /* Memory: cards face down in pairs of the elf's own pictures (the
    acorns, the dust, the streak, a gift, a toy, a bath, an egg, a jar, a
@@ -15,7 +16,9 @@ import { GameStartCard, fitCell } from './GameStartCard'
    pair ends it in glory. Every pair found is a point and every board
    cleared two more; the rules pay an acorn a point (GAME_POINTS_PER_ACORN).
    The cards fit the room they have, width and height, and how to play
-   waits over the first board with the start (GameStartCard). */
+   waits over the first board with the start (GameStartCard). A card
+   turned, up or back, is a soft paper flick, a pair a rising "ding-ding"
+   and a board cleared a little climb of notes (GameSounds). */
 
 const FACES: Icon[] = [AcornsIcon, DustIcon, StreakIcon, GiftIcon, ToyIcon, BathIcon, EggIcon, JarIcon, LetterIcon]
 /* The boards of a round, each with its pairs and its columns. */
@@ -51,6 +54,7 @@ function deal(pairs: number): number[] {
 
 export function MemoryGame({ onFinish }: Props) {
   const { t } = useTranslation()
+  const play = useGameSound()
   const [stage, setStage] = useState(0)
   const spec = STAGES[stage]!
   const deck = useMemo(() => deal(spec.pairs), [spec.pairs, stage])
@@ -92,6 +96,7 @@ export function MemoryGame({ onFinish }: Props) {
     if (!started || cleared || done.current || up.length === 2 || up.includes(index) || matched.includes(index)) return
     const now = [...up, index]
     setUp(now)
+    play('flip')
     if (now.length < 2) return
     const [first, second] = now as [number, number]
     if (deck[first] === deck[second]) {
@@ -100,14 +105,19 @@ export function MemoryGame({ onFinish }: Props) {
       setMatched(all)
       setUp([])
       setPoints(score)
-      if (all.length < deck.length) return
+      if (all.length < deck.length) {
+        play('right')
+        return
+      }
       /* The board is cleared: the bonus, then the next board or the end. */
       const total = score + CLEARED_BONUS
       setPoints(total)
       if (stage + 1 >= STAGES.length) {
+        play('right')
         finish(total)
         return
       }
+      play('cleared')
       setCleared(true)
       next.current = setTimeout(() => {
         next.current = null
@@ -123,7 +133,10 @@ export function MemoryGame({ onFinish }: Props) {
         finish(points)
         return
       }
-      miss.current = setTimeout(() => setUp([]), MISS_MS)
+      miss.current = setTimeout(() => {
+        play('flip')
+        setUp([])
+      }, MISS_MS)
     }
   }
 

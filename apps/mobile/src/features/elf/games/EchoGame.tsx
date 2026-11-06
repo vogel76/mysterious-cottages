@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, DustIcon, ForestIcon, JoyIcon, PressableScale, Text, colors, radius, space, type Icon } from '../../../ui'
-import { useSoundPool, type SoundSpec } from '../../../lib/sound-pool'
 import { GameStartCard, fitCell } from './GameStartCard'
+import { useGameSound, type GameSound } from './GameSounds'
 
 /* The forest echo: four tiles with the elf's pictures, and a melody the
    elf hums by lighting them one after another; the player echoes it by
@@ -14,8 +14,10 @@ import { GameStartCard, fitCell } from './GameStartCard'
    echo the line under the tiles says whose turn it is. Each tile has
    its note (four warm, low kalimba-like plucks on a pentatonic set,
    art/sounds/synth.py), heard as the elf hums it and as the player taps
-   it, and a wrong tile answers with a soft falling "oh-oh", so the tune can be followed by ear as well as by eye (the
-   sounds follow the elf's switch and the phone's silent mode). The tiles
+   it, a wrong tile answers with a soft falling "oh-oh" and a melody
+   echoed whole with a rising "ding-ding", so the tune can be followed by
+   ear as well as by eye (the games' sounds, GameSounds, held by the
+   frame, so the "oh-oh" that ends a round is heard to its end). The tiles
    fit the room they have, width and height, and how to play waits over
    them with the start (GameStartCard). All timing runs on timers in this
    component and dies with it. */
@@ -27,16 +29,10 @@ const TILES: { Glyph: Icon; tint: string }[] = [
   { Glyph: JoyIcon, tint: colors.danger },
 ]
 const LONGEST = 20
-/* The tiles' notes and the soft "oh-oh" of a wrong one. */
-type EchoSound = 'note1' | 'note2' | 'note3' | 'note4' | 'wrong'
-const NOTE_OF: EchoSound[] = ['note1', 'note2', 'note3', 'note4']
-const SOUNDS: Record<EchoSound, SoundSpec> = {
-  note1: { module: require('../../../../assets/elf/sounds/echo1.wav'), volume: 0.55, minGapMs: 60 },
-  note2: { module: require('../../../../assets/elf/sounds/echo2.wav'), volume: 0.55, minGapMs: 60 },
-  note3: { module: require('../../../../assets/elf/sounds/echo3.wav'), volume: 0.55, minGapMs: 60 },
-  note4: { module: require('../../../../assets/elf/sounds/echo4.wav'), volume: 0.55, minGapMs: 60 },
-  wrong: { module: require('../../../../assets/elf/sounds/echo-wrong.wav'), volume: 0.5, minGapMs: 200 },
-}
+/* Each tile's note. */
+const NOTE_OF: GameSound[] = ['note1', 'note2', 'note3', 'note4']
+/* The answer to a melody echoed whole, once its last note has rung a moment. */
+const ECHOED_MS = 300
 /* How long a note lights, the gap between notes, and the breath before
    the elf hums and before the next round. */
 const NOTE_MS = 520
@@ -64,7 +60,7 @@ export function EchoGame({ onFinish }: Props) {
     setRoom((current) => (current.width === width && current.height === height ? current : { width, height }))
   }
   const cell = fitCell(room.width, room.height, COLUMNS, TILES.length / COLUMNS, GAP)
-  const play = useSoundPool(SOUNDS, true)
+  const play = useGameSound()
 
   const later = (ms: number, run: () => void) => {
     const timer = setTimeout(run, ms)
@@ -124,6 +120,7 @@ export function EchoGame({ onFinish }: Props) {
     echoed.current += 1
     if (echoed.current < melody.length) return
     /* The whole melody echoed: a point, and a longer one. */
+    later(ECHOED_MS, () => play('right'))
     const score = points + 1
     setPoints(score)
     if (melody.length >= LONGEST) {
