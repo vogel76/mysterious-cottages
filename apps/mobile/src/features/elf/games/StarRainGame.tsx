@@ -13,35 +13,46 @@ import { GameStartCard } from './GameStartCard'
    acorn for two, GAME_POINTS_PER_ACORN); a heart goes when a star
    reaches the ground beside the basket or a storm lands in it, marked
    with a red cross where it happened, and the third ends the round. The
-   rain thickens as the round goes on: the stars come oftener and fall
-   faster until the quickest pace a minute in, and the storms join after
-   the first few seconds, more of them as it goes. Each falling thing
-   is an animation of its own on the UI thread, a straight fall over its
-   time, and the catch is decided once, when it reaches the basket's
-   rim: so the game needs no frame loop, only a timer per falling thing.
+   rain is quick from the start and thickens as the round goes on: the
+   stars come oftener and fall faster until the quickest pace three
+   quarters of a minute in, the storms join after three seconds and grow
+   to almost half of what falls, stars begin to fall slantwise, and a
+   storm often falls right beside a star, so the basket has to be placed,
+   not just swept. The basket is narrow. Each falling thing is an
+   animation of its own on the UI thread, a fall over its time (slanted
+   by its drift), and the catch is decided once, when it reaches the
+   basket's rim, where it then is: so the game needs no frame loop, only
+   a timer per falling thing.
    How to play waits over the board with the start (GameStartCard). All
    timing runs on timers in this component and dies with it. */
 
 const HEARTS = 3
 /* How long the pace takes to go from the gentlest to the quickest. */
-const RAMP_MS = 60_000
+const RAMP_MS = 45_000
 /* A new thing falls every so many milliseconds, and falls for so long,
    at the start and at the quickest. */
-const SPAWN_FROM = 1100
-const SPAWN_TO = 430
-const FALL_FROM = 2800
-const FALL_TO = 1300
+const SPAWN_FROM = 850
+const SPAWN_TO = 330
+const FALL_FROM = 2300
+const FALL_TO = 950
 /* The storms join this long into the round, and their share of what
    falls grows from the first value to the second. */
-const STORMS_AFTER_MS = 7000
-const STORM_SHARE_FROM = 0.15
-const STORM_SHARE_TO = 0.35
+const STORMS_AFTER_MS = 3000
+const STORM_SHARE_FROM = 0.25
+const STORM_SHARE_TO = 0.45
+/* From this share of the ramp a star may fall slantwise, drifting across
+   up to this share of the board; from the next, a storm may fall right
+   beside a star, this many basket widths away. */
+const SLANT_FROM = 0.2
+const SLANT_MAX = 0.35
+const PAIR_FROM = 0.3
+const PAIR_GAP = [0.85, 1.25] as const
 /* The falling things' side, the basket's size, and how far past the
    basket's edge a thing still counts as caught. */
 const THING = 44
-const BASKET_WIDTH = 92
-const BASKET_HEIGHT = 58
-const SLACK = THING * 0.25
+const BASKET_WIDTH = 76
+const BASKET_HEIGHT = 54
+const SLACK = THING * 0.12
 /* How long the cross of a lost heart stays. */
 const MARK_MS = 600
 
@@ -49,7 +60,8 @@ type Props = { onFinish: (points: number) => void }
 
 type Phase = 'ready' | 'playing' | 'over'
 
-type Thing = { id: number; kind: 'star' | 'storm'; x: number; fall: number }
+/* Where a thing starts across the board, and how far it drifts by the ground. */
+type Thing = { id: number; kind: 'star' | 'storm'; x: number; drift: number; fall: number }
 type Mark = { id: number; x: number; y: number }
 
 export function StarRainGame({ onFinish }: Props) {
@@ -136,20 +148,18 @@ export function StarRainGame({ onFinish }: Props) {
     startedAt.current = Date.now()
     /* Where the falling things' top reaches the basket's rim, as a share of the fall. */
     const rimShare = (height - BASKET_HEIGHT - THING * 0.4 + THING) / (height + THING)
-    const drop = () => {
-      if (overRef.current) return
+    const inside = (x: number) => Math.min(width - THING / 2 - 4, Math.max(THING / 2 + 4, x))
+    /* One thing falling from x, drifting by drift on its way down. */
+    const dropOne = (kind: Thing['kind'], x: number, drift: number, fall: number) => {
       seq.current += 1
       const id = seq.current
-      const stormy = Date.now() - startedAt.current > STORMS_AFTER_MS && Math.random() < lerp(STORM_SHARE_FROM, STORM_SHARE_TO)
-      const kind: Thing['kind'] = stormy ? 'storm' : 'star'
-      const x = THING / 2 + 4 + Math.random() * Math.max(1, width - THING - 8)
-      const fall = lerp(FALL_FROM, FALL_TO)
       falling.current.add(id)
-      setThings((current) => [...current, { id, kind, x, fall }])
-      /* At the rim: in the basket or past it. */
+      setThings((current) => [...current, { id, kind, x, drift, fall }])
+      /* At the rim, where it then is: in the basket or past it. */
       later(fall * rimShare, () => {
         if (overRef.current) return
-        const inBasket = Math.abs(x - basketRef.current) <= BASKET_WIDTH / 2 + SLACK
+        const atRim = x + drift * rimShare
+        const inBasket = Math.abs(atRim - basketRef.current) <= BASKET_WIDTH / 2 + SLACK
         if (!inBasket) return
         falling.current.delete(id)
         setThings((current) => current.filter((thing) => thing.id !== id))
@@ -167,10 +177,31 @@ export function StarRainGame({ onFinish }: Props) {
         if (overRef.current || !falling.current.delete(id)) return
         setThings((current) => current.filter((thing) => thing.id !== id))
         if (kind === 'star') {
-          mark(x, height - THING / 2)
+          mark(x + drift, height - THING / 2)
           miss()
         }
       })
+    }
+    const drop = () => {
+      if (overRef.current) return
+      const p = progress()
+      const fall = lerp(FALL_FROM, FALL_TO)
+      const x = inside(THING / 2 + 4 + Math.random() * Math.max(1, width - THING - 8))
+      const stormy = Date.now() - startedAt.current > STORMS_AFTER_MS && Math.random() < lerp(STORM_SHARE_FROM, STORM_SHARE_TO)
+      if (stormy) dropOne('storm', x, 0, fall)
+      else if (p >= PAIR_FROM && Math.random() < 0.3 + 0.4 * p) {
+        /* A star with a storm right beside it: the basket must be placed. */
+        const side = x > width / 2 ? -1 : 1
+        const gap = BASKET_WIDTH * (PAIR_GAP[0] + Math.random() * (PAIR_GAP[1] - PAIR_GAP[0]))
+        dropOne('star', x, 0, fall)
+        dropOne('storm', inside(x + side * gap), 0, fall)
+      } else {
+        /* A star, slantwise now and then once the rain has picked up. */
+        const slant = p >= SLANT_FROM && Math.random() < 0.5
+        const reach = slant ? (Math.random() < 0.5 ? -1 : 1) * width * SLANT_MAX * (0.4 + 0.6 * Math.random()) : 0
+        const drift = inside(x + reach) - x
+        dropOne('star', x, drift, fall)
+      }
       later(lerp(SPAWN_FROM, SPAWN_TO), drop)
     }
     drop()
@@ -230,15 +261,21 @@ export function StarRainGame({ onFinish }: Props) {
   )
 }
 
-/* One falling thing: a straight fall from above the board to its foot
-   over its own time, on the UI thread; gone when the game takes it. */
+/* One falling thing: a fall from above the board to its foot over its
+   own time, slanted by its drift, on the UI thread; gone when the game
+   takes it. */
 function Falling({ thing, height }: { thing: Thing; height: number }) {
   const y = useSharedValue(-THING)
+  const dx = useSharedValue(0)
   useEffect(() => {
     y.value = withTiming(height, { duration: thing.fall, easing: Easing.linear })
-    return () => cancelAnimation(y)
-  }, [y, height, thing.fall])
-  const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }))
+    dx.value = withTiming(thing.drift, { duration: thing.fall, easing: Easing.linear })
+    return () => {
+      cancelAnimation(y)
+      cancelAnimation(dx)
+    }
+  }, [y, dx, height, thing.fall, thing.drift])
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: dx.value }, { translateY: y.value }] }))
   const star = thing.kind === 'star'
   return (
     <Animated.View style={[styles.thing, { left: thing.x - THING / 2 }, style]} pointerEvents="none">

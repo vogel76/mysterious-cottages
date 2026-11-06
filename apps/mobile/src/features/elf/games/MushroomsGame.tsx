@@ -12,7 +12,10 @@ import { GameStartCard } from './GameStartCard'
    and the next round shuffles more and faster; from the fifth round a
    fourth cap joins. A wrong cap lifts to show nothing, the right one
    lifts to show where the acorn was, and a heart goes; the third ends
-   the round. A point pays an acorn (GAME_POINTS_PER_ACORN). The caps
+   the round. The acorn is on the board only while it is shown and when
+   the caps are lifted to tell the round: through the shuffle and the
+   choice it is not drawn at all, so a cap hopping over another never
+   lets it peek out from under its rim. A point pays an acorn (GAME_POINTS_PER_ACORN). The caps
    are drawn (a red dome with white spots), not pictures, and move on the
    UI thread; the board fits the room it has, and how to play waits over
    it with the start (GameStartCard). All timing runs on timers in this
@@ -210,7 +213,7 @@ export function MushroomsGame({ onFinish }: Props) {
                 top={room.height / 2 - capHeight / 2}
                 x={xs[index]!}
                 lift={lifts[index]!}
-                hidesAcorn={index === acorn}
+                hidesAcorn={index === acorn && (phase === 'showing' || phase === 'reveal' || phase === 'over')}
                 enabled={phase === 'pick'}
                 onPress={() => pick(index)}
               />
