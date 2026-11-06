@@ -95,6 +95,9 @@ import { SignOutIcon as PhosphorSignOut } from 'phosphor-react-native/src/icons/
 import { ShootingStarIcon } from 'phosphor-react-native/src/icons/ShootingStar'
 import { GiftIcon as PhosphorGiftIcon } from 'phosphor-react-native/src/icons/Gift'
 import { HandTapIcon } from 'phosphor-react-native/src/icons/HandTap'
+import { BasketIcon } from 'phosphor-react-native/src/icons/Basket'
+import { CloudLightningIcon } from 'phosphor-react-native/src/icons/CloudLightning'
+import { EyesIcon } from 'phosphor-react-native/src/icons/Eyes'
 import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
 import { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront'
 import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife'
@@ -249,13 +252,17 @@ export const TrickBowIcon = PersonSimpleTaiChiIcon
 export const TrickCheerIcon = StarIcon
 export const TrickApplauseIcon = HandsClappingIcon
 export const TrickToastIcon = CheersIcon
-/* The games from the couch: the games as a whole (the quest, the
-   hub), the acorns to tap (the acorns' own icon stands for it), the
-   memory of pairs, and a round's clock. */
+/* The games from the couch: the games as a whole (the quest, the games
+   button), the acorns to tap (the acorns' own icon stands for it), the
+   memory of pairs, the forest echo's melody to repeat, the star rain's
+   basket and the storm clouds to keep out of it, and the eyes that
+   follow the acorn under the mushrooms. */
 export const GamesIcon = GameControllerIcon
 export const MemoryGameIcon = CardsIcon
-/* The forest echo: a melody to repeat. */
 export const EchoGameIcon = MusicNotesIcon
+export const StarRainGameIcon = BasketIcon
+export const StormIcon = CloudLightningIcon
+export const MushroomsGameIcon = EyesIcon
 /* The travelling peddler with his basket, and his ticket to the games
    (his other wares borrow the care's, the dust's and the tricks' icons). */
 export const PeddlerIcon = BackpackIcon
@@ -292,7 +299,7 @@ export const ICON_VOCABULARY = {
   SlowHungerIcon, BigMealIcon, ExtraMealIcon, CauldronIcon, SoundSleepIcon, LongJoyIcon, ExtraGameIcon, HammockIcon,
   BigGameIcon, SharpEyeIcon, QuickHandsIcon, AntlersIcon, ForgivingStreakIcon,
   TricksIcon, TrickWaveIcon, TrickTwirlIcon, TrickBowIcon, TrickCheerIcon, TrickApplauseIcon, TrickToastIcon,
-  GamesIcon, MemoryGameIcon, EchoGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, TapHereIcon, HurryIcon, GetMoreIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
+  GamesIcon, MemoryGameIcon, EchoGameIcon, StarRainGameIcon, StormIcon, MushroomsGameIcon, PeddlerIcon, CocoaIcon, GiftIcon, TapHereIcon, HurryIcon, GetMoreIcon, BadgesIcon, LevelBadgeIcon, ArchetypeBadgeIcon,
 } satisfies Record<SharedIconRole | MobileIconRole, Icon>
 
 /* ---------- The tab bar and the native headers ---------- */

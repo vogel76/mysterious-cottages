@@ -1,9 +1,10 @@
 """The elf's synthesised sounds, written as short 16-bit mono WAV files into
 assets/elf/sounds (the recorded ones are CC0 previews, see CREDITS.md):
 
-- the forest echo's notes: four soft bell tones on a major chord (C5, E5,
-  G5, C6: any order of them sounds like a tune) and the low buzz of a
-  wrong tile;
+- the forest echo's notes: four warm, kalimba-like plucks low in the
+  voice (C4, E4, G4, A4, a pentatonic set, so any order of them sounds
+  like a tune), soft at the attack and quick to fade, so a long melody
+  never grates, and a gentle falling "oh-oh" for a wrong tile;
 - the egg's three touches, each its own sound: a soft wooden knock for a
   tap on the shell, a warm hush with a few ember crackles for the warming,
   and a short lullaby for the rocking.
@@ -28,10 +29,10 @@ OUT = Path(__file__).resolve().parents[2] / 'assets' / 'elf' / 'sounds'
 RATE = 22050
 
 NOTES = {
-    'echo1.wav': 523.25,  # C5
-    'echo2.wav': 659.25,  # E5
-    'echo3.wav': 783.99,  # G5
-    'echo4.wav': 1046.50,  # C6
+    'echo1.wav': 261.63,  # C4
+    'echo2.wav': 329.63,  # E4
+    'echo3.wav': 392.00,  # G4
+    'echo4.wav': 440.00,  # A4
 }
 
 # The lullaby: sol-mi, sol-mi, la-sol, as a mother hums it.
@@ -55,15 +56,43 @@ def tone(frequency: float, seconds: float, overtones: tuple[float, ...], decay: 
     return normalised(samples)
 
 
-def buzz(seconds: float) -> list[float]:
-    """A low, slightly rough buzz: a square-ish wave with a quick fade."""
+def lowpass(samples: list[float], amount: float) -> list[float]:
+    """A one-pole low-pass: the higher the amount, the darker."""
+    out, low = [], 0.0
+    for value in samples:
+        low += (1 - amount) * (value - low)
+        out.append(low)
+    return out
+
+
+def pluck(frequency: float, seconds: float = 0.45) -> list[float]:
+    """A warm kalimba-like pluck: the fundamental with a quiet octave that
+    fades first, a soft 15 ms rise (no click), a fade of under half a
+    second, and a gentle low-pass that keeps the top dark."""
     samples = []
     for i in range(int(RATE * seconds)):
         t = i / RATE
-        envelope = min(1.0, t / 0.004) * math.exp(-t * 9)
-        value = math.sin(2 * math.pi * 150 * t) + 0.5 * math.sin(2 * math.pi * 300 * t) + 0.25 * math.sin(2 * math.pi * 450 * t)
-        samples.append(envelope * max(-0.8, min(0.8, value)))
-    return normalised(samples)
+        rise = min(1.0, t / 0.015)
+        body = math.exp(-t * 7.5) * math.sin(2 * math.pi * frequency * t)
+        octave = 0.18 * math.exp(-t * 16) * math.sin(2 * math.pi * 2 * frequency * t)
+        samples.append(rise * (body + octave))
+    tail = int(RATE * 0.03)
+    for k in range(tail):
+        samples[-1 - k] *= k / tail
+    return normalised(lowpass(samples, 0.35))
+
+
+def oh_oh() -> list[float]:
+    """A wrong tile: two soft plucks falling a third (E4 to C4), gentle
+    rather than a buzz, so a miss is told, not scolded."""
+    first, second = pluck(329.63, 0.3), pluck(261.63, 0.5)
+    gap = int(RATE * 0.16)
+    mix = [0.0] * (gap + len(second))
+    for i, value in enumerate(first):
+        mix[i] += value
+    for i, value in enumerate(second):
+        mix[gap + i] += 0.9 * value
+    return normalised(mix)
 
 
 def knock(seconds: float = 0.18) -> list[float]:
@@ -119,8 +148,8 @@ def write(name: str, samples: list[float], volume: float) -> None:
 
 if __name__ == '__main__':
     for name, frequency in NOTES.items():
-        write(name, tone(frequency, 0.5, (0.35, 0.12), decay=5.5), volume=0.85)
-    write('echo-wrong.wav', buzz(0.3), volume=0.7)
+        write(name, pluck(frequency), volume=0.7)
+    write('echo-wrong.wav', oh_oh(), volume=0.55)
     write('egg-knock.wav', knock(), volume=0.8)
     write('egg-warm.wav', hush(), volume=0.6)
     write('egg-lullaby.wav', lullaby(), volume=0.8)

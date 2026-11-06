@@ -260,11 +260,11 @@ app/                     expo-router routes
   elf-tree.tsx           the elf's tree of development: the level with its rank, the experience bar, the points and
                          a trunk, three branches that fork and merge, three archetypes; a sheet from the name block in the strip
   elf-shelf.tsx          the keepsake shelf: the jars of the cottages found, the windowsill's treasures and the letters
-  elf-games.tsx          the choice of a game: the elf's energy and the three games as big tiles; a sheet from the games
+  elf-games.tsx          the choice of a game: the elf's energy and the five games as big tiles; a sheet from the games
                          button on the side of the cottage
   elf-tricks.tsx         the elf's skills: bought for acorns, practised once a day until learned, shown on its own and on demand; a sheet
                          from the skills button on the side of the cottage
-  elf-game/[id].tsx      a game from the couch (catch the acorns, memory, the forest echo), a page sheet from the choice of
+  elf-game/[id].tsx      a game from the couch (catch the acorns, memory, the forest echo, the star rain, the mushrooms), a page sheet from the choice of
                          a game: rounds on the elf's energy, none while it sleeps, a round paying acorns by its points and experience
   elf-peddler.tsx        the travelling peddler: three wares a day for acorns, each once (a gift of a care, a cup of cocoa
                          for the games, a grain of dust, a skill under its price); a sheet from his button on the side of the cottage
@@ -863,9 +863,9 @@ with the elf's line in its bubble; a sleeping elf refuses both. The
 acorns' price and the sessions are in the rules' table.
 
 The games (the games button opens their choice, `/elf-games`,
-`games/ElfGamesSheet.tsx`: the energy on top and the three as big tiles;
+`games/ElfGamesSheet.tsx`: the energy on top and the five as big tiles, three to a row;
 each plays in `/elf-game/[id]`, `games/ElfGameScreen.tsx` around a board;
-`gameRounds`, `recordGame` in the rules) are three, and none is played
+`gameRounds`, `recordGame` in the rules) are five, and none is played
 while the elf sleeps: the games button has the elf say so, and the
 rules refuse a round. Every board fits the room between the screen's
 head and foot (width and height), and how to play waits over it on a
@@ -888,7 +888,20 @@ echo (`EchoGame.tsx`: four tiles with the elf's pictures, a melody the
 elf hums by lighting them in turn, each with its note, which the
 player echoes by tapping them in the same order, hearing each note
 again; each round the melody grows by a note, a round echoed is a
-point, a wrong tile buzzes and ends the round). The games share the
+point, a wrong tile answers with a soft "oh-oh" and ends the round), the
+star rain (`StarRainGame.tsx`: stars fall from the top and a basket along
+the foot follows the finger, a drag or a touch where it should go; a star
+caught is a point, storm clouds fall among them from the seventh second,
+more as the round goes on, and a star that lands beside the basket or a
+storm caught costs a heart, marked by a red cross; the rain thickens to
+its quickest a minute in; every falling thing is its own animation on the
+UI thread and the catch is decided once, at the basket's rim, so the game
+has no frame loop) and under which mushroom (`MushroomsGame.tsx`: an acorn
+shown under one of three drawn toadstool caps, the caps shuffled two at a
+time, one hopping over the other, then the player taps the cap; found, a
+point, and the next round shuffles more and faster, a fourth cap from the
+fifth round; missed, the right cap lifts to show where it was and a heart
+goes). The games share the
 elf's energy (`energy` in the state, `ENERGY_MAX` 100): a round takes
 `GAME_ENERGY` (20), so a rested elf has five rounds of any game, and
 the choice of a game, the game's header and the shop say how many are
@@ -899,7 +912,8 @@ two hours) or at once for dust or an ad in the shop (the "Siły na gry"
 skip) or with the peddler's cocoa; under `ENERGY_LOW` (30) the elf
 yawns and droops, the sleep button's ring turns gold. A round pays its
 points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: two
-catches an acorn, a memory point an acorn, an echo round an acorn) up to
+catches an acorn, a memory point an acorn, an echo round an acorn, two
+stars an acorn, an acorn found an acorn) up to
 twenty (half as much again with the fair, like a quest), five
 experience, and counts for the day's quest "Zagraj z elfem w grę" and
 for a request naming the game; the best points are kept as a record.
@@ -985,11 +999,12 @@ every care, pet, egg, sleep and swap:
 | Experience | a find 40 (finds from before the egg appeared pay nothing), a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (once a day), a skill's practice 4, a game 5, the request 6 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |
 | Tree | sixteen nodes, any parent owned opens a node, a point each: roots (charges back in three quarters of the time); belly (fullness eases half as fast), smile (joy eases half as fast), eye (one sill find more on a return); pantry (four meals), feast (a meal +35 instead of +25), games (three games), party (a game +45 instead of +30), trail (one missed day forgiven by the streak), luck (streak milestones paying double dust); hearth (fullness holds through sleep; from the pantry, the feast or the games), fair (quest acorns one and a half times, rounded up; from the games, the party, the feast or the trail), camp (two baths; from the trail, the luck or the party); the archetypes glutton, prankster and tracker over them, one only, each granting its piece (the cauldron, the hammock, the antlers) free of the finds and its title on the bar |
 | Skills | six, for acorns (the tricks of the code): the wave 40 (2 sessions), the twirl 60 (3), the bow 60 (3), the cheer 80 (3), the applause 80 (4), the toast 100 (4); one practice session a day per skill, none asleep; learned at the last session, then shown on the elf's own now and then and on demand (`ELF_TRICKS`, `buyTrick`, `trainTrick`, `showTrick`, `learnedTricks`) |
-| Games | catch the acorns, memory and the forest echo, none while the elf sleeps; a round takes 20 of the elf's energy out of 100 (`GAME_ENERGY`, `ENERGY_MAX`), an hour of sleep gives 50 back, the shop fills it for 5 dust or an ad, the cocoa gives 40, the elf yawns under 30 (`ENERGY_LOW`); a round pays its points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: 2 catches an acorn, 1 memory point an acorn, 1 echo round an acorn) up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns) and a request naming it; the best points kept per game (`gameRounds`, `recordGame`, `restoreEnergy`) |
+| Games | catch the acorns, memory, the forest echo, the star rain and under which mushroom, none while the elf sleeps; a round takes 20 of the elf's energy out of 100 (`GAME_ENERGY`, `ENERGY_MAX`), an hour of sleep gives 50 back, the shop fills it for 5 dust or an ad, the cocoa gives 40, the elf yawns under 30 (`ENERGY_LOW`); a round pays its points in acorns at the game's rate (`GAME_POINTS_PER_ACORN`: 2 catches an acorn, 1 memory point an acorn, 1 echo round an acorn, 2 stars an acorn, 1 acorn found under a mushroom an acorn) up to 20 (`GAME_ACORNS_MAX`, half as much again with the fair) and 5 experience, and counts for the quest gameOnce (8 acorns) and a request naming it; the best points kept per game (`gameRounds`, `recordGame`, `restoreEnergy`) |
 | Peddler | three wares a day (`WARES_A_DAY`) drawn by the day from treat 20, toy 25, soap 30 (a gift of that care into the pantry), cocoa 15 (energy for two games), dust 60 (one grain) and a skill at its price less 10 (one the elf has stands as bought); each once a day; the basket is new until looked at, which the sheet reports (`peddlerWares`, `buyWare`, `peddlerFresh`, `visitPeddler`) |
 | Badges | meals 10 (15 acorns) and 100 (2 dust), baths 10 (15), pets 50 (15), games 10 (20) and 50 (2 dust), letters read 5 (15), a skill learned (10) and all six (3 dust), wares bought 10 (20), level 5 (20) and 10 (2 dust), best streak 7 (1 dust) and 30 (3 dust), an archetype chosen (2 dust); a reward taken once (`ELF_BADGES`, `badgeStatus`, `claimBadge`) |
 | Forms | baby from the hatch; the next form at a level (`FORM_LEVELS`: young at 3, adult at 6, elder at 10) and only when the player lets the elf grow (`growUp`; the stored `form`); the shop sells the form ahead of its level (`growNow`), the finds count only through their experience |
-\1\n| Request | one a day besides the quests, in the elf's words (`REQUEST_POOL`: play, a bath, three pets, a swap, a hat, a ware, a skill shown once one is learned, a game by its name, the tuck-in), drawn from what the quests do not ask for; 10 acorns and 6 experience when it comes (`daily.request`, `recordEvent`) |
+| Quests | three a day, dealt by the day and the name from a pool (feed once or twice, play, bathe, pet five or ten times, swap a piece, tuck in, tend the egg three times, an evening visit, a visit), each paying 3 to 9 acorns; on Friday, Saturday and Sunday one of the three is always "discover a cottage", paying 25 acorns and 1 star dust; the full set pays 1 star dust |
+| Request | one a day besides the quests, in the elf's words (`REQUEST_POOL`: play, a bath, three pets, a swap, a hat, a ware, a skill shown once one is learned, a game by its name, the tuck-in), drawn from what the quests do not ask for; 10 acorns and 6 experience when it comes (`daily.request`, `recordEvent`) |
 | Daily reward | one of three to pick, once a day: 15 or 30 acorns, and 20 acorns or (every third day or so) 1 star dust |
 | Streak | a visit on each day in a row; a missed day ends it (the elf says so, nothing is taken away); 7 days pay 1 star dust, 30 pay 3; a device date set back is no new day (the streak and the deal stay), and a date set forward and corrected pulls every stored moment back to now, so no charge or nap waits on a day that never comes |
 | Sill finds | the first visit of a day after an absence: one small thing for each calendar day away (a pine cone, a feather, a pebble, an acorn, a mushroom, an autumn leaf, berries, an ammonite), chosen by the day and the name, so settling a day twice finds the same; the newest three lie on the windowsill, every one is counted in the collection |
@@ -1237,8 +1252,8 @@ when it is warmed and a lullaby when it is rocked, a crack for each crack of the
 for the hatch, a whoosh of magic for an evolution, a jingle for the day's
 quests and a streak's milestone, a page for a letter, and the fire's
 crackle as a quiet loop under the room (the forest echo has its own
-pool, `src/lib/sound-pool.ts`, of four synthesised bell notes and a
-buzz, written by `art/sounds/synth.py` like the egg's knock, warm hush and
+pool, `src/lib/sound-pool.ts`, of four warm synthesised plucks and a
+soft "oh-oh" for a miss, written by `art/sounds/synth.py` like the egg's knock, warm hush and
 lullaby); a pat is silent, it comes too
 often. A sound asked for again within its own gap (taps in a row) is let
 go. The preferences carry the one switch (`SoundsSection`, on by

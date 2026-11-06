@@ -95,10 +95,15 @@ export const MOBILE_ICON_ROLES = [
   'TrickCheerIcon',
   'TrickApplauseIcon',
   'TrickToastIcon',
-  /* The games from the couch, the memory of pairs and the forest echo. */
+  /* The games from the couch, the memory of pairs, the forest echo, the
+     star rain with its basket and its storm clouds, and the mushrooms'
+     game of watching where the acorn goes. */
   'GamesIcon',
   'MemoryGameIcon',
   'EchoGameIcon',
+  'StarRainGameIcon',
+  'StormIcon',
+  'MushroomsGameIcon',
   /* The travelling peddler, his ticket to the games and his gifts (a
      treat, a toy, a soap in the pantry, marked under the care buttons). */
   'PeddlerIcon',
