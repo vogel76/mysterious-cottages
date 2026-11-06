@@ -89,7 +89,11 @@ export function SheetRoute({ snapPoints = ['100%'], fit = true, scroll = false, 
     [footer, insets.bottom, sides],
   )
 
-  const content = [readable, sides, { paddingBottom: footer ? footerHeight + space.md : insets.bottom + space.lg }]
+  /* One style, not a list: the sheet's views compose a list two at a time
+     (StyleSheet.compose) and drop the rest, which took the bottom padding
+     and left the end of the content under the footer and the home
+     indicator. */
+  const content = StyleSheet.flatten([readable, sides, { paddingBottom: footer ? footerHeight + space.md : insets.bottom + space.lg }])
   return (
     <View style={StyleSheet.absoluteFill}>
       <BottomSheet
