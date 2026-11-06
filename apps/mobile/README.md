@@ -894,11 +894,11 @@ the foot follows the finger, a drag or a touch where it should go; a star
 caught is a point, storm clouds fall among them from the third second,
 up to almost half of what falls, and a star that lands beside the
 basket or a storm caught costs a heart, marked by a red cross; the basket
-is narrow, the rain thickens to its quickest three quarters of a minute
+is drawn at its true width and a star still overlapping its edge counts, the rain thickens to its quickest three quarters of a minute
 in, stars begin to fall slantwise and a storm often falls right beside a
 star, so the basket has to be placed, not swept; every falling thing is
 its own animation on the UI thread and the catch is decided once, at the
-basket's rim, where the thing then is, so the game has no frame loop) and under which mushroom (`MushroomsGame.tsx`: an acorn
+basket's opening, where the thing then is, so the game has no frame loop) and under which mushroom (`MushroomsGame.tsx`: an acorn
 shown under one of three drawn toadstool caps, the caps shuffled two at a
 time, one hopping over the other, then the player taps the cap; found, a
 point, and the next round shuffles more and faster, a fourth cap from the
@@ -1254,11 +1254,20 @@ wakes or greets the player, for the egg a knock on its shell, a warm hush
 when it is warmed and a lullaby when it is rocked, a crack for each crack of the egg, a sparkle
 for the hatch, a whoosh of magic for an evolution, a jingle for the day's
 quests and a streak's milestone, a page for a letter, and the fire's
-crackle as a quiet loop under the room (the forest echo has its own
-pool, `src/lib/sound-pool.ts`, of four warm synthesised plucks and a
-soft "oh-oh" for a miss, written by `art/sounds/synth.py` like the egg's knock, warm hush and
-lullaby); a pat is silent, it comes too
-often. A sound asked for again within its own gap (taps in a row) is let
+crackle as a quiet loop under the room; a pat is silent, it comes too
+often. The games have a pool of their own (`games/GameSounds.tsx`, on
+`src/lib/sound-pool.ts` like the elf's), held by the game's frame so a
+round's last sound is not cut off by its card, its players made as the
+frame opens so the first catch is heard on time: the forest echo's four
+warm plucks, a soft "oh-oh" for a wrong choice, a bloop for an acorn
+caught, a twinkle for a star caught, a muffled bump for a heart lost, a
+rumble for a storm caught, a rising "ding-ding" for a right choice, a
+paper flick for a memory card, a wooden tock for a cap's hop, a climb of
+notes for a board cleared, and on the round's card a calm close or a
+small fanfare for a record; all synthesised by `art/sounds/synth.py`
+like the egg's knock, warm hush and lullaby, soft, short and low,
+nothing above 2 kHz to grate. A move in a game sounds, a button around
+it never does. A sound asked for again within its own gap (taps in a row) is let
 go. The preferences carry the one switch (`SoundsSection`, on by
 default, `src/lib/sounds-store.ts`). Left out on purpose: haptics (the
 product rule stands: the app vibrates only for a plaque code and a

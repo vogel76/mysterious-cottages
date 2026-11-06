@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +8,7 @@ import { useCloseModal, useElf } from '../../../providers'
 import { AcornsIcon, Button, CloseIcon, HurryIcon, IconButton, SleepIcon, Text, colors, iconSize, radius, space } from '../../../ui'
 import { AcornsGame } from './AcornsGame'
 import { EchoGame } from './EchoGame'
+import { GameSounds, useGameSound } from './GameSounds'
 import { MemoryGame } from './MemoryGame'
 import { MushroomsGame } from './MushroomsGame'
 import { StarRainGame } from './StarRainGame'
@@ -26,7 +27,10 @@ import { GAME_ICON, gameKey } from './games'
    iOS the page sheet starts below the status bar, so only Android's
    full-screen modal takes the top inset (as the cottage directory). The round
    is handed to the rules as it ends (finishGame in the provider), which
-   also leaves the result for the tab to greet with the elf's reaction. */
+   also leaves the result for the tab to greet with the elf's reaction.
+   The frame holds the games' sounds (GameSounds) for every board, and
+   the round's card is heard as it appears: a calm close, or a small
+   fanfare for a new record. */
 
 export function ElfGameScreen() {
   const { t } = useTranslation()
@@ -54,79 +58,95 @@ export function ElfGameScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: topInset + space.lg, paddingBottom: insets.bottom + space.lg }]}>
-      <View style={styles.head}>
-        <View style={styles.title}>
-          <Glyph size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
-          <View style={styles.titleWords}>
-            <Text variant="heading" accessibilityRole="header">
-              {t(gameKey(id))}
-            </Text>
-            <Text variant="small" tone="soft">
-              {left > 0 ? t('mobile:elf.energyRounds', { count: left }) : t('mobile:elf.energyNone')}
-              {best > 0 ? ` · ${t('mobile:elf.gameBest', { count: best })}` : ''}
-            </Text>
+    <GameSounds>
+      <View style={[styles.screen, { paddingTop: topInset + space.lg, paddingBottom: insets.bottom + space.lg }]}>
+        <View style={styles.head}>
+          <View style={styles.title}>
+            <Glyph size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
+            <View style={styles.titleWords}>
+              <Text variant="heading" accessibilityRole="header">
+                {t(gameKey(id))}
+              </Text>
+              <Text variant="small" tone="soft">
+                {left > 0 ? t('mobile:elf.energyRounds', { count: left }) : t('mobile:elf.energyNone')}
+                {best > 0 ? ` · ${t('mobile:elf.gameBest', { count: best })}` : ''}
+              </Text>
+            </View>
           </View>
+          <IconButton label={t('mobile:elf.gameClose')} onPress={close}>
+            <CloseIcon size={iconSize.md} color={colors.accentStrong} />
+          </IconButton>
         </View>
-        <IconButton label={t('mobile:elf.gameClose')} onPress={close}>
-          <CloseIcon size={iconSize.md} color={colors.accentStrong} />
-        </IconButton>
-      </View>
 
-      {result ? (
-        <View style={styles.card}>
-          <Text variant="eyebrow">{t('mobile:elf.gameOver')}</Text>
-          <Text variant="title" accessibilityRole="header">
-            {t('mobile:elf.gameOverPoints', { count: result.points })}
-          </Text>
-          {result.best ? (
-            <Text weight="bold" tone="accent">
-              {t('mobile:elf.gameNewBest')}
+        {result ? (
+          <View style={styles.card}>
+            <EndSound record={result.best} />
+            <Text variant="eyebrow">{t('mobile:elf.gameOver')}</Text>
+            <Text variant="title" accessibilityRole="header">
+              {t('mobile:elf.gameOverPoints', { count: result.points })}
             </Text>
-          ) : null}
-          <View style={styles.pay}>
-            <AcornsIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
-            <Text weight="semibold">{t('mobile:elf.gameOverAcorns', { count: result.acorns })}</Text>
-            <Text variant="small" tone="soft">
-              {t('mobile:elf.gameOverXp', { count: result.xp })}
-            </Text>
-          </View>
-          {left > 0 ? (
-            <Button variant="primary" block onPress={again}>
-              {t('mobile:elf.gameAgain')}
+            {result.best ? (
+              <Text weight="bold" tone="accent">
+                {t('mobile:elf.gameNewBest')}
+              </Text>
+            ) : null}
+            <View style={styles.pay}>
+              <AcornsIcon size={iconSize.md} weight="fill" color={colors.accentStrong} />
+              <Text weight="semibold">{t('mobile:elf.gameOverAcorns', { count: result.acorns })}</Text>
+              <Text variant="small" tone="soft">
+                {t('mobile:elf.gameOverXp', { count: result.xp })}
+              </Text>
+            </View>
+            {left > 0 ? (
+              <Button variant="primary" block onPress={again}>
+                {t('mobile:elf.gameAgain')}
+              </Button>
+            ) : null}
+            <Button block onPress={close}>
+              {t('mobile:elf.gameBack')}
             </Button>
-          ) : null}
-          <Button block onPress={close}>
-            {t('mobile:elf.gameBack')}
-          </Button>
-        </View>
-      ) : asleep ? (
-        <View style={styles.card}>
-          <View style={styles.pay}>
-            <SleepIcon size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
-            <Text style={styles.grow}>{t('mobile:elf.gameAsleepCard')}</Text>
           </View>
-          <Button block onPress={close}>
-            {t('mobile:elf.gameBack')}
-          </Button>
-        </View>
-      ) : left > 0 ? (
-        <View style={styles.board}>
-          <Board key={round} id={id} onFinish={onFinish} />
-        </View>
-      ) : (
-        <View style={styles.card}>
-          <Text tone="soft">{t('mobile:elf.energyNoneLong')}</Text>
-          <Button variant="primary" block icon={<HurryIcon size={iconSize.md} weight="fill" color={colors.accentInk} />} onPress={() => router.push({ pathname: '/elf-hurry', params: { kind: 'energy' } })}>
-            {t('mobile:elf.hurryAction')}
-          </Button>
-          <Button block onPress={close}>
-            {t('mobile:elf.gameBack')}
-          </Button>
-        </View>
-      )}
-    </View>
+        ) : asleep ? (
+          <View style={styles.card}>
+            <View style={styles.pay}>
+              <SleepIcon size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
+              <Text style={styles.grow}>{t('mobile:elf.gameAsleepCard')}</Text>
+            </View>
+            <Button block onPress={close}>
+              {t('mobile:elf.gameBack')}
+            </Button>
+          </View>
+        ) : left > 0 ? (
+          <View style={styles.board}>
+            <Board key={round} id={id} onFinish={onFinish} />
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Text tone="soft">{t('mobile:elf.energyNoneLong')}</Text>
+            <Button variant="primary" block icon={<HurryIcon size={iconSize.md} weight="fill" color={colors.accentInk} />} onPress={() => router.push({ pathname: '/elf-hurry', params: { kind: 'energy' } })}>
+              {t('mobile:elf.hurryAction')}
+            </Button>
+            <Button block onPress={close}>
+              {t('mobile:elf.gameBack')}
+            </Button>
+          </View>
+        )}
+      </View>
+    </GameSounds>
   )
+}
+
+/* The round's end, heard as its card appears: a moment after the
+   board's last sound (the heart that ended it), so the two never blur. */
+const END_SOUND_MS = 450
+
+function EndSound({ record }: { record: boolean }) {
+  const play = useGameSound()
+  useEffect(() => {
+    const timer = setTimeout(() => play(record ? 'record' : 'over'), END_SOUND_MS)
+    return () => clearTimeout(timer)
+  }, [play, record])
+  return null
 }
 
 /* The board of a game. */

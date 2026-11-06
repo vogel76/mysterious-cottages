@@ -35,8 +35,18 @@ Not recorded but synthesised, so nothing to credit:
 
 | File | Plays for | Sound |
 |---|---|---|
-| `echo1.wav` to `echo4.wav` | the forest echo's four tiles (`src/features/elf/games/EchoGame.tsx`) | C4, E4, G4, A4: warm kalimba-like plucks on a pentatonic set, so any order of them sounds like a tune (the fundamental with a quiet octave that fades first, a soft 15 ms rise, under half a second long, a gentle low-pass: nothing above 2 kHz, so a long melody never grates) |
-| `echo-wrong.wav` | a wrong tile in the forest echo | a soft "oh-oh": two of the same plucks falling a third, E4 to C4 |
+| `echo1.wav` to `echo4.wav` | the forest echo's four tiles (the games' sounds are played by `src/features/elf/games/GameSounds.tsx`) | C4, E4, G4, A4: warm kalimba-like plucks on a pentatonic set, so any order of them sounds like a tune (the fundamental with a quiet octave that fades first, a soft 15 ms rise, under half a second long, a gentle low-pass: nothing above 2 kHz, so a long melody never grates) |
+| `game-wrong.wav` | a wrong choice in a game (a tile in the forest echo, a cap in under which mushroom) | a soft "oh-oh": two of the same plucks falling a third, E4 to C4 |
+| `game-catch.wav` | an acorn caught | a short round "bloop", a soft tone sliding up from about D4 to C5 |
+| `game-twinkle.wav` | a star caught in the star rain | two quick plucks rising a fourth, E5 to A5 |
+| `game-miss.wav` | a heart lost (an acorn that got away, an empty spot tapped, a star beside the basket) | a soft, muffled "dum" sinking from E4 a fifth down |
+| `game-storm.wav` | a storm caught in the basket | a low rumble of dark noise under a sinking tone |
+| `game-right.wav` | a right choice (the acorn found, a pair, a melody echoed) | a rising "ding-ding", C5 to E5 |
+| `game-flip.wav` | a memory card turned, up or back | a soft paper flick over a tiny low pluck |
+| `game-hop.wav` | a cap's hop in under which mushroom | a light wooden tock |
+| `game-cleared.wav` | a memory board cleared | a climb of plucks, C4, E4, G4, C5 |
+| `game-over.wav` | a round's card | a calm close, G4 resolving to C4 and E4 together |
+| `game-record.wav` | a round's card with a new record | a small fanfare: a quick climb from C4 to E5, then a chord left to ring |
 | `egg-knock.wav` | a tap on the egg | a soft wooden knock on the shell |
 | `egg-warm.wav` | warming the egg | a warm hush (noise under a gentle low-pass and a slow swell) with a few ember crackles |
 | `egg-lullaby.wav` | rocking the egg | a short lullaby on soft bells (sol-mi, sol-mi, la-sol) |

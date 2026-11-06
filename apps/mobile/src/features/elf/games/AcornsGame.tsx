@@ -4,6 +4,7 @@ import Animated, { FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, CloseIcon, JoyIcon, PressableScale, Text, colors, iconSize, radius, space } from '../../../ui'
 import { GameStartCard, fitCell } from './GameStartCard'
+import { useGameSound } from './GameSounds'
 
 /* Catch the acorns: twelve spots in a grid, acorns popping up on them and
    vanishing again unless tapped, coming faster and staying shorter as the
@@ -18,7 +19,9 @@ import { GameStartCard, fitCell } from './GameStartCard'
    moment, and a tap on an empty spot draws the same cross there, so the
    lost heart is never a puzzle. The board fits the room it has, width and
    height, and how to play waits over it with the start (GameStartCard).
-   All timing runs on timers in this component and dies with it. */
+   A catch is heard as a soft bloop and a heart lost as a muffled bump
+   (GameSounds). All timing runs on timers in this component and dies
+   with it. */
 
 const HEARTS = 3
 const COLUMNS = 3
@@ -51,6 +54,7 @@ type Phase = 'ready' | 'playing' | 'over'
 
 export function AcornsGame({ onFinish }: Props) {
   const { t } = useTranslation()
+  const play = useGameSound()
   const [phase, setPhase] = useState<Phase>('ready')
   const [caught, setCaught] = useState(0)
   const [hearts, setHearts] = useState(HEARTS)
@@ -114,6 +118,7 @@ export function AcornsGame({ onFinish }: Props) {
   /* A heart lost; the last one ends the round with the catches so far. */
   const miss = useCallback(() => {
     if (overRef.current) return
+    play('miss')
     heartsRef.current -= 1
     setHearts(heartsRef.current)
     if (heartsRef.current > 0) return
@@ -122,7 +127,7 @@ export function AcornsGame({ onFinish }: Props) {
     place({})
     setPhase('over')
     onFinish(caughtRef.current)
-  }, [onFinish])
+  }, [onFinish, play])
 
   const start = () => {
     setPhase('playing')
@@ -179,11 +184,12 @@ export function AcornsGame({ onFinish }: Props) {
         clearTimeout(gone)
         delete away.current[spot]
       }
+      play('catch')
       caughtRef.current += 1
       setCaught(caughtRef.current)
       place(Object.fromEntries(Object.entries(held.current).filter(([key]) => Number(key) !== spot)) as Record<number, true>)
     },
-    [miss],
+    [miss, play],
   )
 
   return (

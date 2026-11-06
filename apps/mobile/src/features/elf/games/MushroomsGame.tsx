@@ -4,6 +4,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withT
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, JoyIcon, PressableScale, Text, colors, iconSize, space } from '../../../ui'
 import { GameStartCard } from './GameStartCard'
+import { useGameSound } from './GameSounds'
 
 /* Under which mushroom? The elf hides an acorn under one of the toadstool
    caps on the board, shows it for a moment, lowers the cap and shuffles
@@ -15,7 +16,9 @@ import { GameStartCard } from './GameStartCard'
    the round. The acorn is on the board only while it is shown and when
    the caps are lifted to tell the round: through the shuffle and the
    choice it is not drawn at all, so a cap hopping over another never
-   lets it peek out from under its rim. A point pays an acorn (GAME_POINTS_PER_ACORN). The caps
+   lets it peek out from under its rim. A point pays an acorn
+   (GAME_POINTS_PER_ACORN). Every hop is a light wooden tock, the acorn
+   found a rising "ding-ding" and a wrong cap a soft "oh-oh" (GameSounds). The caps
    are drawn (a red dome with white spots), not pictures, and move on the
    UI thread; the board fits the room it has, and how to play waits over
    it with the start (GameStartCard). All timing runs on timers in this
@@ -56,6 +59,7 @@ type Phase = 'ready' | 'showing' | 'shuffling' | 'pick' | 'reveal' | 'over'
 
 export function MushroomsGame({ onFinish }: Props) {
   const { t } = useTranslation()
+  const play = useGameSound()
   const [phase, setPhase] = useState<Phase>('ready')
   const [points, setPoints] = useState(0)
   const [hearts, setHearts] = useState(HEARTS)
@@ -142,6 +146,7 @@ export function MushroomsGame({ onFinish }: Props) {
         xs[capA]!.value = withTiming(leftOf(b, caps), timing)
         xs[capB]!.value = withTiming(leftOf(a, caps), timing)
         /* The one hops over the other. */
+        play('hop')
         lifts[capA]!.value = withSequence(withTiming(-hop, { duration: each / 2 }), withTiming(0, { duration: each / 2 }))
       })
     }
@@ -165,11 +170,13 @@ export function MushroomsGame({ onFinish }: Props) {
     const lift = Math.round(cap * 0.55)
     lifts[index]!.value = withTiming(-lift, { duration: LIFT_MS, easing: Easing.out(Easing.quad) })
     if (index === acornRef.current) {
+      play('right')
       pointsRef.current += 1
       setPoints(pointsRef.current)
       later(FOUND_MS, () => startRound(roundRef.current + 1))
       return
     }
+    play('wrong')
     later(LIFT_MS + 150, () => {
       lifts[acornRef.current]!.value = withTiming(-lift, { duration: LIFT_MS, easing: Easing.out(Easing.quad) })
     })

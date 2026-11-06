@@ -11,8 +11,10 @@ import { useSoundPrefs } from './sounds-store'
    sounds are switched off. The session is the effects' one
    (src/lib/audio.ts): the sounds mix with what else plays, never take
    the audio focus and keep quiet while the phone is on silent or
-   vibrate. The elf's sounds (features/elf/useElfSounds.ts) and the
-   forest echo's notes (features/elf/games/EchoGame.tsx) are such pools. */
+   vibrate. A pool that must answer at once (a game's catch) makes its
+   players up front, as it comes into view, instead of on a first play.
+   The elf's sounds (features/elf/useElfSounds.ts) and the games' sounds
+   (features/elf/games/GameSounds.tsx) are such pools. */
 
 export type SoundSpec = { module: number; volume: number; minGapMs: number }
 
@@ -34,7 +36,7 @@ export function useSoundsOn(inView: boolean): boolean {
   return inView && enabled
 }
 
-export function useSoundPool<K extends string>(specs: Record<K, SoundSpec>, inView: boolean): (sound: K) => void {
+export function useSoundPool<K extends string>(specs: Record<K, SoundSpec>, inView: boolean, preload = false): (sound: K) => void {
   const on = useSoundsOn(inView)
   const players = useRef(new Map<K, AudioPlayer>())
   const lastPlayed = useRef(new Map<K, number>())
@@ -42,33 +44,41 @@ export function useSoundPool<K extends string>(specs: Record<K, SoundSpec>, inVi
   const onRef = useRef(on)
   onRef.current = on
 
+  const playerFor = useCallback(
+    (sound: K) => {
+      let player = players.current.get(sound)
+      if (!player) {
+        player = createAudioPlayer(specs[sound].module)
+        player.volume = specs[sound].volume
+        players.current.set(sound, player)
+      }
+      return player
+    },
+    [specs],
+  )
+
   useEffect(() => {
     if (!on) return
     const pool = players.current
+    if (preload) (Object.keys(specs) as K[]).forEach(playerFor)
     return () => {
       pool.forEach(releasePlayer)
       pool.clear()
     }
-  }, [on])
+  }, [on, preload, specs, playerFor])
 
   return useCallback(
     (sound: K) => {
       if (!on) return
-      const spec = specs[sound]
       const now = Date.now()
-      if (now - (lastPlayed.current.get(sound) ?? 0) < spec.minGapMs) return
+      if (now - (lastPlayed.current.get(sound) ?? 0) < specs[sound].minGapMs) return
       lastPlayed.current.set(sound, now)
       void enterAudioSession('effects').then(() => {
         if (!onRef.current) return
-        let player = players.current.get(sound)
-        if (!player) {
-          player = createAudioPlayer(spec.module)
-          player.volume = spec.volume
-          players.current.set(sound, player)
-        }
+        const player = playerFor(sound)
         void player.seekTo(0).then(() => player.play())
       })
     },
-    [on, specs],
+    [on, specs, playerFor],
   )
 }
