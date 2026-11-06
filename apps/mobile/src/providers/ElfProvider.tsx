@@ -27,6 +27,7 @@ import {
   spendDust as spendElfDust,
   recordAd as recordElfAd,
   applySkip as applyElfSkip,
+  refillEnergy as refillElfEnergy,
   nextForm as elfNextForm,
   growUp as growElf,
   SKIP_COST,
@@ -178,12 +179,13 @@ export type ElfValue = {
   /* Star dust, the premium currency: how many rewarded ads may still be
      watched today (for dust or a skip), an ad watched for dust (its
      dust, or 0 past the cap), a pack bought in the store, and a wait
-     skipped, paid in dust (SKIP_COST) or with an ad watched to the end:
-     false when there was nothing to skip or the pay fell short. */
+     skipped, paid in dust (SKIP_COST) or with an ad watched to the end,
+     the energy in acorns (filled) or with an ad (a part back), never in
+     dust: false when there was nothing to skip or the pay fell short. */
   adsLeft: number
   earnAdDust: () => number
   addDust: (amount: number) => void
-  skip: (kind: ElfSkip, pay: 'dust' | 'ad' | 'free') => boolean
+  skip: (kind: ElfSkip, pay: 'dust' | 'ad' | 'free' | 'acorns') => boolean
   /* The form ahead, the level it asks for and whether the elf is there,
      null for the egg and the elder; the elf grown to it at the player's
      word (false before the level). */
@@ -587,7 +589,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   )
 
   const skip = useCallback(
-    (kind: ElfSkip, pay: 'dust' | 'ad' | 'free'): boolean => {
+    (kind: ElfSkip, pay: 'dust' | 'ad' | 'free' | 'acorns'): boolean => {
       const current = stateRef.current
       if (!current) return false
       const now = elfNow()
@@ -597,7 +599,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
         if (free) commit(free, true)
         return free !== null
       }
-      const paid = pay === 'dust' ? spendElfDust(current, SKIP_COST[kind]) : recordElfAd(current, now)
+      /* The energy alone is bought with acorns, and never with dust. */
+      if (pay === 'acorns') {
+        const filled = kind === 'energy' ? refillElfEnergy(current) : null
+        if (filled) commit(filled, true)
+        return filled !== null
+      }
+      let paid: ElfState | null
+      if (pay === 'dust') {
+        if (kind === 'energy') return false
+        paid = spendElfDust(current, SKIP_COST[kind])
+      } else paid = recordElfAd(current, now)
       if (!paid) return false
       const next = applyElfSkip(paid, kind, now)
       if (!next) {

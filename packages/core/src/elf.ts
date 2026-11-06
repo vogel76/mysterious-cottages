@@ -15,8 +15,8 @@
    - The elf sleeps when the player tucks it in, at any hour, and wakes
      when woken or once it is rested. Sleep is where its energy comes
      back: the games share one bar of it (a round takes a fifth), an hour
-     of sleep gives half of it back, and a tired elf yawns; star dust, an
-     ad or the peddler's cocoa fill it too. Nothing else runs by the
+     of sleep gives half of it back, and a tired elf yawns; acorns fill
+     it too, and an ad or the peddler's cocoa give some of it back. Nothing else runs by the
      clock of the day.
    - Skills (the tricks) are bought for acorns and practised once a day
      until learned; a learned skill the elf shows on its own now and then,
@@ -436,6 +436,11 @@ const SLEEP_MIN_HOURS = 1
 export const ENERGY_LOW = 30
 /* What the peddler's cocoa gives back. */
 export const COCOA_ENERGY = 40
+/* The energy bought before its sleep: the acorns that fill the bar, and
+   what an ad gives back (two rounds), so an ad never rests the elf fully.
+   Star dust does not buy it. */
+export const ENERGY_REFILL_ACORNS = 40
+export const ENERGY_AD = 2 * GAME_ENERGY
 
 /* Each care has a few charges; a charge spent comes back after its
    recharge (milliseconds), so three meals at once wait four hours
@@ -1555,12 +1560,15 @@ export function placeDecor(state: ElfState, slotId: string, id: string, now: num
    skips cost their price (the hatch before its hour, a care's charges
    before their time, a form before its days), or one ad; the store's
    packs (the app's product ids) add what they say. */
-export const DUST = { ad: 5, adCap: 3, hatchSkip: 20, careRefill: 5, growNow: 30, energy: 5 } as const
+export const DUST = { ad: 5, adCap: 3, hatchSkip: 20, careRefill: 5, growNow: 30 } as const
 
-/* The waits that can be bought, and what each costs in dust. */
+/* The waits that can be bought, and what each costs in dust; the elf's
+   energy is the one the dust does not buy: its acorns fill it
+   (refillEnergy) and an ad gives back a part (ENERGY_AD). */
 export type ElfSkip = 'hatch' | ElfCareAction | 'energy' | 'grow'
+export type ElfDustSkip = Exclude<ElfSkip, 'energy'>
 export const ELF_SKIPS: readonly ElfSkip[] = ['hatch', 'feed', 'play', 'bath', 'energy', 'grow']
-export const SKIP_COST: Record<ElfSkip, number> = { hatch: DUST.hatchSkip, feed: DUST.careRefill, play: DUST.careRefill, bath: DUST.careRefill, energy: DUST.energy, grow: DUST.growNow }
+export const SKIP_COST: Record<ElfDustSkip, number> = { hatch: DUST.hatchSkip, feed: DUST.careRefill, play: DUST.careRefill, bath: DUST.careRefill, grow: DUST.growNow }
 
 /* How many rewarded ads may still be watched today. */
 export function adsLeft(state: ElfState, now: number): number {
@@ -1580,12 +1588,13 @@ export function earnAdDust(state: ElfState, now: number): { state: ElfState; ear
   return counted ? { state: addDust(counted, DUST.ad), earned: DUST.ad } : { state, earned: 0 }
 }
 
-/* A wait skipped (paid for already, in dust or with an ad): the state
-   without it, or null when there was nothing to skip. */
+/* A wait skipped (paid for already, in dust or with an ad; the energy
+   only with an ad, which gives back ENERGY_AD): the state without it, or
+   null when there was nothing to skip. */
 export function applySkip(state: ElfState, kind: ElfSkip, now: number): ElfState | null {
   if (kind === 'hatch') return skipHatch(state, now)
   if (kind === 'grow') return growNow(state, now)
-  if (kind === 'energy') return restoreEnergy(state)
+  if (kind === 'energy') return boostEnergy(state, ENERGY_AD)
   return careLeft(state, kind, now) >= careSpec(state, kind).charges ? null : refillCare(state, kind)
 }
 
@@ -1844,9 +1853,16 @@ export function recordGame(state: ElfState, id: ElfGameId, points: number, now: 
   return { state: named.state, acorns, xp: XP.game, best, completed: [...any.completed, ...named.completed], setBonus: any.setBonus || named.setBonus }
 }
 
-/* The elf's energy filled (bought with dust or an ad); null when full. */
-export function restoreEnergy(state: ElfState): ElfState | null {
-  return state.energy >= ENERGY_MAX ? null : { ...state, energy: ENERGY_MAX }
+/* The elf's energy filled for its acorns (ENERGY_REFILL_ACORNS); null
+   when it is full or the acorns fall short. */
+export function refillEnergy(state: ElfState): ElfState | null {
+  if (state.energy >= ENERGY_MAX || state.wallet.acorns < ENERGY_REFILL_ACORNS) return null
+  return { ...state, energy: ENERGY_MAX, wallet: { ...state.wallet, acorns: state.wallet.acorns - ENERGY_REFILL_ACORNS } }
+}
+
+/* Energy given back (an ad's part), up to the full bar; null when full. */
+export function boostEnergy(state: ElfState, amount: number): ElfState | null {
+  return state.energy >= ENERGY_MAX ? null : { ...state, energy: Math.min(ENERGY_MAX, state.energy + amount) }
 }
 
 /* ---------- The peddler ---------- */

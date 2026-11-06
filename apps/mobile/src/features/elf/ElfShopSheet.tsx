@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, ENERGY_MAX, hatchAt, levelOf, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
+import { careCharges, careLeft, careNextAt, DUST, ELF_CARE_ACTIONS, ENERGY_AD, ENERGY_MAX, ENERGY_REFILL_ACORNS, GAME_ENERGY, hatchAt, levelOf, shopItems, SKIP_COST, type ElfCareAction, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
 import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport, useToast } from '../../providers'
-import { Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
+import { AcornsIcon, Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { packLabelKey } from '../support/tips'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { isSlotId } from './cottage/catalogue'
@@ -23,7 +23,8 @@ import { elfKey } from './labels'
    is reached is not for sale, the elf grows for free at the player's
    word), each for its dust (SKIP_COST) or for one ad, which counts
    towards the same daily cap, the two ways to pay as two buttons of one
-   width under each other,
+   width under each other (the energy for its acorns in place of dust,
+   ENERGY_REFILL_ACORNS, and an ad gives back only two rounds of it),
    and last the furniture and hats the finds still lock (shopItems: the
    unlock table's entries the player has neither reached, been granted by
    the tree nor bought), each with its catalogue thumbnail, the cottages
@@ -57,13 +58,15 @@ export function ElfShopSheet() {
   const adNote = rewardedAdNoteKey(ad.status, online)
   const storeNote = storeNoteKey(support, online)
   const dust = state?.wallet.dust ?? 0
+  const acorns = state?.wallet.acorns ?? 0
   const watchFor = (purpose: AdFor) => {
     adFor.current = purpose
     setEarned(0)
     ad.watch()
   }
+  /* The energy is paid in acorns, every other skip in dust. */
   const buyWithDust = (kind: ElfSkip) => {
-    if (skip(kind, 'dust')) close()
+    if (skip(kind, kind === 'energy' ? 'acorns' : 'dust')) close()
   }
   const adAllowed = ad.offered && online !== false && adsLeft > 0
   const items = state ? shopItems(state, finds.length) : []
@@ -215,8 +218,9 @@ export function ElfShopSheet() {
               {t('mobile:elf.shopSkipsLead')}
             </Text>
             {skips.map((entry) => {
-              const cost = SKIP_COST[entry.kind]
-              const short = dust < cost
+              const energy = entry.kind === 'energy'
+              const cost = entry.kind === 'energy' ? ENERGY_REFILL_ACORNS : SKIP_COST[entry.kind]
+              const short = energy ? acorns < cost : dust < cost
               const adHere = adBusy && adFor.current === entry.kind
               return (
                 <View key={entry.kind} style={styles.row}>
@@ -229,7 +233,7 @@ export function ElfShopSheet() {
                     </Text>
                     {entry.open && short ? (
                       <Text variant="small" tone="faint">
-                        {t('mobile:elf.shopPayShort')}
+                        {energy ? t('mobile:elf.wareShort') : t('mobile:elf.shopPayShort')}
                       </Text>
                     ) : null}
                   </View>
@@ -239,11 +243,17 @@ export function ElfShopSheet() {
                         variant="primary"
                         block
                         disabled={short || adBusy}
-                        accessibilityLabel={t('mobile:elf.shopPayDustAria', { what: entry.title, count: cost })}
-                        icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
+                        accessibilityLabel={energy ? t('mobile:elf.hurryEnergyAcorns', { count: cost }) : t('mobile:elf.shopPayDustAria', { what: entry.title, count: cost })}
+                        icon={
+                          energy ? (
+                            <AcornsIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />
+                          ) : (
+                            <DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />
+                          )
+                        }
                         onPress={() => buyWithDust(entry.kind)}
                       >
-                        {t('mobile:elf.shopPayDust', { count: cost })}
+                        {energy ? t('mobile:elf.acornsPrice', { count: cost }) : t('mobile:elf.shopPayDust', { count: cost })}
                       </Button>
                       {ad.offered ? (
                         <Button
@@ -254,7 +264,7 @@ export function ElfShopSheet() {
                           icon={<WatchAdIcon size={iconSize.sm} color={colors.accentStrong} />}
                           onPress={() => watchFor(entry.kind)}
                         >
-                          {t('mobile:elf.shopPayAd')}
+                          {energy ? t('mobile:elf.shopPayAdRounds', { count: ENERGY_AD / GAME_ENERGY }) : t('mobile:elf.shopPayAd')}
                         </Button>
                       ) : null}
                     </View>
