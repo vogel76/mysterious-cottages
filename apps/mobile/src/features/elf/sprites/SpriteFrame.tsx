@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Atlas, FilterMode, Group, MipmapMode, Skia, type SkImage } from '@shopify/react-native-skia'
+import { Atlas, FilterMode, Group, MipmapMode, Skia, type SkImage, type SkRSXform, type SkRect } from '@shopify/react-native-skia'
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
 import { sheetsOf, type SpriteManifest, type SpriteSheet } from './manifest'
 
@@ -9,7 +9,12 @@ import { sheetsOf, type SpriteManifest, type SpriteSheet } from './manifest'
    rectangle and the placement are values derived from the frame value,
    so a frame change is computed on the UI thread and touches no React
    tree, and only the sheet that holds the frame builds a rectangle; a
-   sheet that does not hold it gets an empty cell, which draws nothing.
+   sheet that does not hold it gets no sprite at all, so Skia returns
+   before it draws. An empty cell would not do: the draw has no cull
+   rectangle, so Skia would still need every sheet as a texture each
+   frame, and a form whose sheets outgrow the GPU cache (the young elf's
+   and every later one, beside the room) would decode its WebP sheets
+   again on every frame.
    The nodes belong to one atlas (keyed by it) and their first rectangle
    and placement are computed as they mount: a derived value changed
    later catches up on the UI thread a frame after the image does, so a
@@ -40,7 +45,6 @@ export type SpriteFrameProps = {
 }
 
 const SAMPLING = { filter: FilterMode.Linear, mipmap: MipmapMode.None }
-const NO_CELL = [Skia.XYWHRect(0, 0, 0, 0)]
 
 /* A key per manifest, so each atlas gets nodes of its own. */
 const atlasKeys = new WeakMap<SpriteManifest, number>()
@@ -70,12 +74,14 @@ function SheetAtlas({ image, sheet, first, frame, left: frameLeft, top: frameTop
   const { columns, frames: count, frameWidth: width, frameHeight: height } = sheet
   const left = frameLeft + sheet.offset.x * scale
   const top = frameTop + sheet.offset.y * scale
-  const sprites = useDerivedValue(() => {
+  const sprites = useDerivedValue((): SkRect[] => {
     const cell = frame.value - first
-    if (cell < 0 || cell >= count) return NO_CELL
+    if (cell < 0 || cell >= count) return []
     return [Skia.XYWHRect((cell % columns) * width, Math.floor(cell / columns) * height, width, height)]
   })
-  const transforms = useDerivedValue(() => [Skia.RSXform(scale, 0, left, top)])
+  /* As many placements as sprites (Skia refuses a mismatch), derived from
+     them so both change in the same pass. */
+  const transforms = useDerivedValue((): SkRSXform[] => (sprites.value.length ? [Skia.RSXform(scale, 0, left, top)] : []))
   return <Atlas image={image} sprites={sprites} transforms={transforms} sampling={SAMPLING} />
 }
 
