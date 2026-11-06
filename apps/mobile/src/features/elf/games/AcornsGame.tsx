@@ -4,6 +4,7 @@ import Animated, { FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, CloseIcon, JoyIcon, PressableScale, Text, colors, iconSize, radius, space } from '../../../ui'
 import { GameStartCard, fitCell } from './GameStartCard'
+import type { GameFinish } from './games'
 import { useGameSound } from './GameSounds'
 
 /* Catch the acorns: twelve spots in a grid, acorns popping up on them and
@@ -48,7 +49,7 @@ const GRACE_MS = 250
 const MARK_MS = 550
 const GAP = 8
 
-type Props = { onFinish: (points: number) => void }
+type Props = { onFinish: GameFinish }
 
 type Phase = 'ready' | 'playing' | 'over'
 
@@ -79,6 +80,10 @@ export function AcornsGame({ onFinish }: Props) {
   const caughtRef = useRef(0)
   const heartsRef = useRef(HEARTS)
   const overRef = useRef(false)
+  /* When the round was lost, and its revive for the frame: read through a
+     ref, so the loss hands over the one of the latest render. */
+  const outAt = useRef(0)
+  const reviveRef = useRef<() => void>(() => undefined)
   /* The board's room decides the spots' size: squares, three to a row,
      as large as both the width and the height allow. */
   const [room, setRoom] = useState({ width: 0, height: 0 })
@@ -115,7 +120,8 @@ export function AcornsGame({ onFinish }: Props) {
     timers.current.push(timer)
   }
 
-  /* A heart lost; the last one ends the round with the catches so far. */
+  /* A heart lost; the last one ends the round with the catches so far,
+     unless the frame gives one more life. */
   const miss = useCallback(() => {
     if (overRef.current) return
     play('miss')
@@ -123,23 +129,15 @@ export function AcornsGame({ onFinish }: Props) {
     setHearts(heartsRef.current)
     if (heartsRef.current > 0) return
     overRef.current = true
+    outAt.current = Date.now()
     clearTimers()
     place({})
     setPhase('over')
-    onFinish(caughtRef.current)
+    onFinish(caughtRef.current, () => reviveRef.current())
   }, [onFinish, play])
 
-  const start = () => {
-    setPhase('playing')
-    setCaught(0)
-    caughtRef.current = 0
-    setHearts(HEARTS)
-    heartsRef.current = HEARTS
-    overRef.current = false
-    vanishedAt.current = {}
-    place({})
-    setMarks({})
-    startedAt.current = Date.now()
+  /* The acorns popping up, from now until the round ends. */
+  const run = () => {
     const without = (spot: number) => Object.fromEntries(Object.entries(held.current).filter(([key]) => Number(key) !== spot)) as Record<number, true>
     /* One acorn on a free spot; left alone, it goes and takes a heart with it. */
     const popOne = () => {
@@ -166,6 +164,32 @@ export function AcornsGame({ onFinish }: Props) {
       timers.current.push(next)
     }
     pop()
+  }
+
+  const start = () => {
+    setPhase('playing')
+    setCaught(0)
+    caughtRef.current = 0
+    setHearts(HEARTS)
+    heartsRef.current = HEARTS
+    overRef.current = false
+    vanishedAt.current = {}
+    place({})
+    setMarks({})
+    startedAt.current = Date.now()
+    run()
+  }
+
+  /* One more life: the pace goes on where the round stopped. */
+  reviveRef.current = () => {
+    startedAt.current += Date.now() - outAt.current
+    heartsRef.current = 1
+    setHearts(1)
+    overRef.current = false
+    vanishedAt.current = {}
+    setMarks({})
+    setPhase('playing')
+    run()
   }
 
   /* A tap: an acorn there is a catch, an empty spot a miss. */

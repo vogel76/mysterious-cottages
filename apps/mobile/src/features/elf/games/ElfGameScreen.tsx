@@ -1,18 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ELF_GAMES, type ElfGameId } from '@chatynkowo/core'
-import { useCloseModal, useElf } from '../../../providers'
-import { AcornsIcon, Button, CloseIcon, HurryIcon, IconButton, SleepIcon, Text, colors, iconSize, radius, space } from '../../../ui'
+import { DUST, ELF_GAMES, type ElfGameId } from '@chatynkowo/core'
+import { useCloseModal, useElf, useOnline } from '../../../providers'
+import { AcornsIcon, Button, CloseIcon, DustIcon, HurryIcon, IconButton, JoyIcon, SleepIcon, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../../ui'
+import { rewardedAdNoteKey, useRewardedSupportAd } from '../../support/useRewardedSupportAd'
 import { AcornsGame } from './AcornsGame'
 import { EchoGame } from './EchoGame'
 import { GameSounds, useGameSound } from './GameSounds'
+import { GameVeil } from './GameStartCard'
 import { MemoryGame } from './MemoryGame'
 import { MushroomsGame } from './MushroomsGame'
 import { StarRainGame } from './StarRainGame'
-import { GAME_ICON, gameKey } from './games'
+import { GAME_ICON, gameKey, type GameFinish } from './games'
 
 /* A game with the elf (the route /elf-game/[id], a page sheet over the
    Elf tab): the frame around a board, with the game's name, the rounds
@@ -30,7 +32,12 @@ import { GAME_ICON, gameKey } from './games'
    also leaves the result for the tab to greet with the elf's reaction.
    The frame holds the games' sounds (GameSounds) for every board, and
    the round's card is heard as it appears: a calm close, or a small
-   fanfare for a new record. */
+   fanfare for a new record. A round lost that the board can undo (the
+   last heart, a miss too many, a wrong tile) is not settled at once: a
+   card over the board offers one more life, once a round, for its dust
+   (DUST.revive; short of it the button opens the shop) or for an ad
+   within the day's cap, and the board plays on from where it stopped;
+   ending there, or closing the game, settles the round as it stood. */
 
 export function ElfGameScreen() {
   const { t } = useTranslation()
@@ -39,20 +46,53 @@ export function ElfGameScreen() {
   const params = useLocalSearchParams<{ id?: string }>()
   const id: ElfGameId = (ELF_GAMES as readonly string[]).includes(params.id ?? '') ? (params.id as ElfGameId) : 'acorns'
   const router = useRouter()
-  const { state, gameRounds, finishGame } = useElf()
+  const { state, gameRounds, finishGame, reviveGame, adsLeft } = useElf()
+  const online = useOnline()
   const [round, setRound] = useState(0)
   const [result, setResult] = useState<{ points: number; acorns: number; xp: number; best: boolean } | null>(null)
+  /* The round lost and the way on while the offer of one more life
+     stands, and whether this round has had its life. */
+  const [out, setOut] = useState<{ points: number; revive: () => void } | null>(null)
+  const outRef = useRef(out)
+  outRef.current = out
+  const revived = useRef(false)
   const left = gameRounds
   const best = state?.games[id]?.best ?? 0
   const asleep = Boolean(state?.sleeping)
   const Glyph = GAME_ICON[id]
   const topInset = Platform.OS === 'android' ? insets.top : 0
 
-  const onFinish = (points: number) => {
+  const settle = (points: number) => {
+    setOut(null)
     const pay = finishGame(id, points)
     setResult({ points, acorns: pay?.acorns ?? 0, xp: pay?.xp ?? 0, best: pay?.best ?? false })
   }
+  const onFinish: GameFinish = (points, revive) => {
+    if (revive && !revived.current) setOut({ points, revive })
+    else settle(points)
+  }
+  /* One more life paid for: the board plays on. */
+  const playOn = (pay: 'dust' | 'ad') => {
+    const current = outRef.current
+    if (!current || !reviveGame(pay)) return
+    revived.current = true
+    setOut(null)
+    current.revive()
+  }
+  const ad = useRewardedSupportAd(() => playOn('ad'))
+  const adBusy = ad.status === 'loading' || ad.status === 'showing'
+  const adNote = rewardedAdNoteKey(ad.status, online)
+  const adAllowed = ad.offered && online !== false && adsLeft > 0
+  const dust = state?.wallet.dust ?? 0
+  const short = dust < DUST.revive
+  /* Closing while the offer stands settles the round as it stood. */
+  const leave = () => {
+    const current = outRef.current
+    if (current) finishGame(id, current.points)
+    close()
+  }
   const again = () => {
+    revived.current = false
     setResult(null)
     setRound((current) => current + 1)
   }
@@ -73,7 +113,7 @@ export function ElfGameScreen() {
               </Text>
             </View>
           </View>
-          <IconButton label={t('mobile:elf.gameClose')} onPress={close}>
+          <IconButton label={t('mobile:elf.gameClose')} onPress={leave}>
             <CloseIcon size={iconSize.md} color={colors.accentStrong} />
           </IconButton>
         </View>
@@ -119,6 +159,50 @@ export function ElfGameScreen() {
         ) : left > 0 ? (
           <View style={styles.board}>
             <Board key={round} id={id} onFinish={onFinish} />
+            {out ? (
+              <GameVeil>
+                <View style={styles.pay}>
+                  <JoyIcon size={iconSize.lg} weight="fill" color={colors.danger} />
+                  <Text variant="heading" accessibilityRole="header" style={styles.grow}>
+                    {t('mobile:elf.gameReviveTitle')}
+                  </Text>
+                </View>
+                <Text tone="soft">{t('mobile:elf.gameReviveLead')}</Text>
+                <Button
+                  variant="primary"
+                  block
+                  disabled={adBusy}
+                  icon={<DustIcon size={iconSize.md} weight="fill" color={colors.accentInk} />}
+                  onPress={() => (short ? router.push('/elf-shop') : playOn('dust'))}
+                >
+                  {t('mobile:elf.gameReviveDust', { count: DUST.revive })}
+                </Button>
+                {ad.offered ? (
+                  <Button
+                    block
+                    busy={adBusy}
+                    disabled={!adAllowed || adBusy}
+                    icon={<WatchAdIcon size={iconSize.md} color={colors.accentStrong} />}
+                    onPress={ad.watch}
+                  >
+                    {t('mobile:elf.gameReviveAd')}
+                  </Button>
+                ) : null}
+                {short ? (
+                  <Text variant="small" tone="soft" align="center">
+                    {t('mobile:elf.hurryShort', { count: dust })}
+                  </Text>
+                ) : null}
+                {adNote ? (
+                  <Text variant="small" tone="faint" align="center" accessibilityLiveRegion="polite">
+                    {t(adNote)}
+                  </Text>
+                ) : null}
+                <Button variant="subtle" block disabled={adBusy} onPress={() => settle(out.points)}>
+                  {t('mobile:elf.gameReviveEnd')}
+                </Button>
+              </GameVeil>
+            ) : null}
           </View>
         ) : (
           <View style={styles.card}>
@@ -150,7 +234,7 @@ function EndSound({ record }: { record: boolean }) {
 }
 
 /* The board of a game. */
-const BOARDS: Record<ElfGameId, (props: { onFinish: (points: number) => void }) => React.JSX.Element> = {
+const BOARDS: Record<ElfGameId, (props: { onFinish: GameFinish }) => React.JSX.Element> = {
   acorns: AcornsGame,
   memory: MemoryGame,
   echo: EchoGame,
@@ -158,7 +242,7 @@ const BOARDS: Record<ElfGameId, (props: { onFinish: (points: number) => void }) 
   mushrooms: MushroomsGame,
 }
 
-function Board({ id, onFinish }: { id: ElfGameId; onFinish: (points: number) => void }) {
+function Board({ id, onFinish }: { id: ElfGameId; onFinish: GameFinish }) {
   const Game = BOARDS[id]
   return <Game onFinish={onFinish} />
 }

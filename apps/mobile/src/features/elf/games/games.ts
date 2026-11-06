@@ -19,6 +19,12 @@ export const GAME_ICON: Record<ElfGameId, Icon> = {
   mushrooms: MushroomsGameIcon,
 }
 
+/* A round's end, as a board reports it: its points and, for a loss the
+   board can undo (the last heart gone, a miss too many, a wrong tile),
+   the way to play on with one more life. The frame offers that once a
+   round, for dust or an ad, and otherwise settles the round. */
+export type GameFinish = (points: number, revive?: () => void) => void
+
 export function gameKey(id: ElfGameId): string {
   return `mobile:elf.game${id.charAt(0).toUpperCase()}${id.slice(1)}`
 }

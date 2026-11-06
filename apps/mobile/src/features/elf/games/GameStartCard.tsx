@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
@@ -13,13 +14,21 @@ import { Button, Text, colors, fade, leave, radius, space, withAlpha } from '../
 export function GameStartCard({ how, onStart }: { how: string; onStart: () => void }) {
   const { t } = useTranslation()
   return (
+    <GameVeil>
+      <Text align="center">{how}</Text>
+      <Button variant="primary" block onPress={onStart}>
+        {t('mobile:elf.gameStart')}
+      </Button>
+    </GameVeil>
+  )
+}
+
+/* A card over the board under a veil: the start's, and the frame's offer
+   of one more life once a round is lost. */
+export function GameVeil({ children }: { children: ReactNode }) {
+  return (
     <Animated.View entering={fade()} exiting={leave()} style={styles.veil}>
-      <View style={styles.card}>
-        <Text align="center">{how}</Text>
-        <Button variant="primary" block onPress={onStart}>
-          {t('mobile:elf.gameStart')}
-        </Button>
-      </View>
+      <View style={styles.card}>{children}</View>
     </Animated.View>
   )
 }

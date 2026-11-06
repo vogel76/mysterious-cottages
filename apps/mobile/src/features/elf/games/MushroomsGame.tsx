@@ -4,6 +4,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withT
 import { useTranslation } from 'react-i18next'
 import { AcornsIcon, JoyIcon, PressableScale, Text, colors, iconSize, space } from '../../../ui'
 import { GameStartCard } from './GameStartCard'
+import type { GameFinish } from './games'
 import { useGameSound } from './GameSounds'
 
 /* Under which mushroom? The elf hides an acorn under one of the toadstool
@@ -53,7 +54,7 @@ const SPOTS = [
   [0.36, 0.5, 0.09],
 ] as const
 
-type Props = { onFinish: (points: number) => void }
+type Props = { onFinish: GameFinish }
 
 type Phase = 'ready' | 'showing' | 'shuffling' | 'pick' | 'reveal' | 'over'
 
@@ -88,6 +89,9 @@ export function MushroomsGame({ onFinish }: Props) {
   const pointsRef = useRef(0)
   const heartsRef = useRef(HEARTS)
   const acornRef = useRef(0)
+  /* The round's revive for the frame, read through a ref, so a loss
+     hands over the one of the latest render. */
+  const reviveRef = useRef<() => void>(() => undefined)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const later = (ms: number, run: () => void) => {
     const timer = setTimeout(run, ms)
@@ -188,8 +192,15 @@ export function MushroomsGame({ onFinish }: Props) {
     }
     later(MISSED_MS, () => {
       setPhase('over')
-      onFinish(pointsRef.current)
+      onFinish(pointsRef.current, () => reviveRef.current())
     })
+  }
+
+  /* One more life: the next round, as quick as the one lost. */
+  reviveRef.current = () => {
+    heartsRef.current = 1
+    setHearts(1)
+    startRound(roundRef.current + 1)
   }
 
   const status = phase === 'showing' || phase === 'shuffling' ? t('mobile:elf.gameMushroomsWatch') : phase === 'pick' ? t('mobile:elf.gameMushroomsPick') : ''

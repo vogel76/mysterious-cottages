@@ -5,6 +5,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import { useTranslation } from 'react-i18next'
 import { CloseIcon, DustIcon, JoyIcon, StarRainGameIcon, StormIcon, Text, colors, iconSize, radius, space } from '../../../ui'
 import { GameStartCard } from './GameStartCard'
+import type { GameFinish } from './games'
 import { useGameSound } from './GameSounds'
 
 /* The star rain: stars fall from the top of the board and the player
@@ -69,7 +70,7 @@ const BASKET_RIM = Math.round((BASKET_BOX * 136) / 256)
 /* How long the cross of a lost heart stays. */
 const MARK_MS = 600
 
-type Props = { onFinish: (points: number) => void }
+type Props = { onFinish: GameFinish }
 
 type Phase = 'ready' | 'playing' | 'over'
 
@@ -102,6 +103,10 @@ export function StarRainGame({ onFinish }: Props) {
   const caughtRef = useRef(0)
   const heartsRef = useRef(HEARTS)
   const overRef = useRef(false)
+  /* When the round was lost, and its revive for the frame: read through a
+     ref, so the loss hands over the one of the latest render. */
+  const outAt = useRef(0)
+  const reviveRef = useRef<() => void>(() => undefined)
   const seq = useRef(0)
   /* The things still falling, by id: a thing caught at the rim leaves
      it, so the ground knows what got away. */
@@ -134,32 +139,24 @@ export function StarRainGame({ onFinish }: Props) {
     later(MARK_MS, () => setMarks((current) => current.filter((entry) => entry.id !== id)))
   }
 
-  /* A heart lost; the last one ends the round with the catches so far. */
+  /* A heart lost; the last one ends the round with the catches so far,
+     unless the frame gives one more life. */
   const miss = useCallback(() => {
     if (overRef.current) return
     heartsRef.current -= 1
     setHearts(heartsRef.current)
     if (heartsRef.current > 0) return
     overRef.current = true
+    outAt.current = Date.now()
     clearTimers()
     setThings([])
     setPhase('over')
-    onFinish(caughtRef.current)
+    onFinish(caughtRef.current, () => reviveRef.current())
   }, [onFinish])
 
-  const start = () => {
+  /* The rain, from now until the round ends. */
+  const run = () => {
     const { width, height } = roomRef.current
-    if (width <= 0 || height <= 0) return
-    setPhase('playing')
-    setCaught(0)
-    caughtRef.current = 0
-    setHearts(HEARTS)
-    heartsRef.current = HEARTS
-    overRef.current = false
-    setThings([])
-    setMarks([])
-    falling.current = new Set()
-    startedAt.current = Date.now()
     /* Where the falling things' middle reaches the basket's opening, as a
        share of the fall (a thing's top goes from -THING to the height). */
     const rimShare = (height - BASKET_RIM + THING / 2) / (height + THING)
@@ -223,6 +220,35 @@ export function StarRainGame({ onFinish }: Props) {
       later(lerp(SPAWN_FROM, SPAWN_TO), drop)
     }
     drop()
+  }
+
+  const start = () => {
+    const { width, height } = roomRef.current
+    if (width <= 0 || height <= 0) return
+    setPhase('playing')
+    setCaught(0)
+    caughtRef.current = 0
+    setHearts(HEARTS)
+    heartsRef.current = HEARTS
+    overRef.current = false
+    setThings([])
+    setMarks([])
+    falling.current = new Set()
+    startedAt.current = Date.now()
+    run()
+  }
+
+  /* One more life: the rain goes on as thick as it was when the round stopped. */
+  reviveRef.current = () => {
+    startedAt.current += Date.now() - outAt.current
+    heartsRef.current = 1
+    setHearts(1)
+    overRef.current = false
+    setThings([])
+    setMarks([])
+    falling.current = new Set()
+    setPhase('playing')
+    run()
   }
 
   /* The finger moves the basket, kept inside the board. */
