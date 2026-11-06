@@ -11,8 +11,8 @@ import { durationText, useClock } from './duration'
 import { ElfThumb } from './ElfThumb'
 import { elfKey } from './labels'
 
-/* The shop of star dust (the route /elf-shop), from the shop button on
-   the elf's bar and the egg's chip: the balance, the two ways to get more
+/* The shop of star dust (the route /elf-shop), from the plus on the star
+   dust in the purse and from the hurry when the dust runs short: the balance, the two ways to get more
    dust beyond the streaks and quest sets of the rules (a rewarded ad, the
    same unit as the support sheet's, paying DUST.ad up to DUST.adCap ads
    a day, and the store's packs, consumable products the support provider

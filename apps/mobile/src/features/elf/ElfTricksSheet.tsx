@@ -6,7 +6,8 @@ import { AcornsIcon, Button, CheckIcon, SheetRoute, Text, colors, iconSize, radi
 import { TRICK_ICON, trickKey } from './tricks'
 import { elfNow } from '../../lib/elf-clock'
 
-/* The elf's tricks (the route /elf-tricks), from the activities hub: the
+/* The elf's skills (the route /elf-tricks), from the skills button on
+   the side of the cottage: the
    acorns at hand and the six tricks, each a row with its picture, its
    name, what the elf does and where it stands. A trick not yet bought
    offers its price in acorns, and the purchase is followed at once by
@@ -62,7 +63,6 @@ export function ElfTricksSheet() {
     <SheetRoute scroll>
       <View style={styles.column}>
         <View style={styles.head}>
-          <Text variant="eyebrow">{t('mobile:elf.activitiesKicker')}</Text>
           <Text variant="title" accessibilityRole="header">
             {t('mobile:elf.tricksTitle')}
           </Text>

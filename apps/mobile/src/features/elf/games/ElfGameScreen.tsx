@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Platform, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ELF_GAMES, type ElfGameId } from '@chatynkowo/core'
 import { useCloseModal, useElf } from '../../../providers'
-import { AcornsIcon, Button, CloseIcon, IconButton, Text, colors, iconSize, radius, space } from '../../../ui'
+import { AcornsIcon, Button, CloseIcon, HurryIcon, IconButton, SleepIcon, Text, colors, iconSize, radius, space } from '../../../ui'
 import { AcornsGame } from './AcornsGame'
 import { EchoGame } from './EchoGame'
 import { MemoryGame } from './MemoryGame'
@@ -17,7 +17,12 @@ import { GAME_ICON, gameKey } from './games'
    board in the middle, and once a round ends its card: the points, the
    acorns and the experience paid, a word on a new best, and the way on
    (once more while the energy lasts, or back to the elf); with no
-   energy left the card says sleep or the shop brings it back. The round
+   energy left the card says sleep brings it back and offers the hurry of
+   the energy (/elf-hurry) right there, and a sleeping elf does not play
+   at all: the card says to wake it first. The board takes the room
+   between the head and the foot, and each game fits itself into it. On
+   iOS the page sheet starts below the status bar, so only Android's
+   full-screen modal takes the top inset (as the cottage directory). The round
    is handed to the rules as it ends (finishGame in the provider), which
    also leaves the result for the tab to greet with the elf's reaction. */
 
@@ -27,12 +32,15 @@ export function ElfGameScreen() {
   const close = useCloseModal()
   const params = useLocalSearchParams<{ id?: string }>()
   const id: ElfGameId = (ELF_GAMES as readonly string[]).includes(params.id ?? '') ? (params.id as ElfGameId) : 'acorns'
+  const router = useRouter()
   const { state, gameRounds, finishGame } = useElf()
   const [round, setRound] = useState(0)
   const [result, setResult] = useState<{ points: number; acorns: number; xp: number; best: boolean } | null>(null)
   const left = gameRounds
   const best = state?.games[id]?.best ?? 0
+  const asleep = Boolean(state?.sleeping)
   const Glyph = GAME_ICON[id]
+  const topInset = Platform.OS === 'android' ? insets.top : 0
 
   const onFinish = (points: number) => {
     const pay = finishGame(id, points)
@@ -44,7 +52,7 @@ export function ElfGameScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + space.md, paddingBottom: insets.bottom + space.lg }]}>
+    <View style={[styles.screen, { paddingTop: topInset + space.lg, paddingBottom: insets.bottom + space.lg }]}>
       <View style={styles.head}>
         <View style={styles.title}>
           <Glyph size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
@@ -90,17 +98,32 @@ export function ElfGameScreen() {
             {t('mobile:elf.gameBack')}
           </Button>
         </View>
+      ) : asleep ? (
+        <View style={styles.card}>
+          <View style={styles.pay}>
+            <SleepIcon size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
+            <Text style={styles.grow}>{t('mobile:elf.gameAsleepCard')}</Text>
+          </View>
+          <Button block onPress={close}>
+            {t('mobile:elf.gameBack')}
+          </Button>
+        </View>
       ) : left > 0 ? (
-        id === 'acorns' ? (
-          <AcornsGame key={round} onFinish={onFinish} />
-        ) : id === 'memory' ? (
-          <MemoryGame key={round} onFinish={onFinish} />
-        ) : (
-          <EchoGame key={round} onFinish={onFinish} />
-        )
+        <View style={styles.board}>
+          {id === 'acorns' ? (
+            <AcornsGame key={round} onFinish={onFinish} />
+          ) : id === 'memory' ? (
+            <MemoryGame key={round} onFinish={onFinish} />
+          ) : (
+            <EchoGame key={round} onFinish={onFinish} />
+          )}
+        </View>
       ) : (
         <View style={styles.card}>
           <Text tone="soft">{t('mobile:elf.energyNoneLong')}</Text>
+          <Button variant="primary" block icon={<HurryIcon size={iconSize.md} weight="fill" color={colors.accentInk} />} onPress={() => router.push({ pathname: '/elf-hurry', params: { kind: 'energy' } })}>
+            {t('mobile:elf.hurryAction')}
+          </Button>
           <Button block onPress={close}>
             {t('mobile:elf.gameBack')}
           </Button>
@@ -145,5 +168,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm,
+  },
+  grow: {
+    flex: 1,
+  },
+  /* The room between the head and the foot, for the board. */
+  board: {
+    flex: 1,
   },
 })

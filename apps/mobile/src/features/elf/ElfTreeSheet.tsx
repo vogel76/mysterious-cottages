@@ -39,7 +39,7 @@ import {
 import { elfKey, nodeKey, pathKey, rankKey } from './labels'
 
 /* The elf's tree of development (the route /elf-tree), from the name
-   block on the elf's bar: the level with its rank and the experience
+   block at the top of the cottage: the level with its rank and the experience
    towards the next level, the points at hand (one per level past the
    first, less the nodes unlocked), the archetype once chosen, the next
    form (the level it waits for, or, once reached, the button that lets

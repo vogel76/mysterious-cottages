@@ -9,14 +9,15 @@ import { announce } from '../../lib/announce'
 import { requestNotificationPermission } from '../../lib/notifications'
 import { setReminders } from '../../lib/reminders-store'
 import { content } from '../../lib/content'
-import { useContent, useElf, useForeground, useProgress } from '../../providers'
+import { useContent, useElf, useForeground, useProgress, useToast } from '../../providers'
 import { useSupportLedger } from '../support/useSupportLedger'
 import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
 import type { RoomExtras } from './cottage/roomAssets'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
-import { ElfHud, type ElfPanel } from './ElfHud'
+import { ElfHud, type ElfPanel, type HudSpot } from './ElfHud'
+import { ElfRails, type RailId } from './ElfRails'
 import { DECOR_SLOTS, ElfDecorPanel, type CatalogueTab } from './ElfDecorPanel'
 import { ElfSpeech } from './ElfSpeech'
 import { ElfCard } from './ElfCard'
@@ -37,13 +38,19 @@ import { useReturnGreeting } from './useReturnGreeting'
    when it hatches, in the hatch sheet). The elf (or its egg) lives in a
    full-screen
    painted room (src/features/elf/cottage) that fills the whole tab, under
-   the status bar and the floating tab bar as the Atlas does, and a light
-   HUD floats over it: the name, the form and the elf's mood, the
-   decorating button, the needs and the ledger at the top, the round care
-   buttons on a band over the tab bar, split around its discover key; the
-   room in between stays clear, lifted so the rug stays above the band. A tap on the elf pets it
-   (and when the rules are still in their cooldown the elf is poked
-   instead, so it always answers), a tap on the egg rocks it. The acorn of
+   the status bar and the floating tab bar as the Atlas does, laid out
+   like a game's home screen: the strip at the top holds who the elf is
+   (the name, the level, what it wants) and the purse (ElfHud), round
+   buttons along the sides hold what there is to do (ElfRails: the
+   quests and the badges on the left, the games, the skills, the peddler
+   and the decorating on the right), and the round care buttons sit on a
+   band over the tab bar, split around its discover key; the room in
+   between stays clear, lifted so the rug stays above the band. A tap on
+   the elf pets it (and when the rules are still in their cooldown the
+   elf is poked instead, so it always answers); the egg has three
+   touches of its own, each moving and sounding its own way (a tap is a
+   knock, the warming a glow with embers, the rocking a cradle swing
+   with a lullaby). The acorn of
    the feed button can also be dragged to the elf: it floats under the
    finger, the elf follows it with its eyes (the sprite elf, with no
    separate head, leans towards it), and dropping it on the elf feeds it;
@@ -69,10 +76,10 @@ import { useReturnGreeting } from './useReturnGreeting'
    milestone) and what was lost (a streak that ended with a missed day)
    comes back as news and is said in the bubble line by line, the set and
    the milestone with a cheer in the scene; a new day is announced too.
-   The purse, the streak and the day's quests stand in the HUD's ledger,
-   and a tap on it opens the day's sheet (/elf-today): the quests with
-   their progress, the reward to pick, the streak and what the figures
-   mean.
+   The purse and the streak stand in the strip, the day's quests in
+   their ring on the left, and both open the day's sheet (/elf-today):
+   the purse named, the quests with their progress, the reward to pick,
+   the streak and where the figures come from.
 
    The room is the rendered art (the Blender plate, the furniture sprites
    and the elf's atlases, see apps/mobile/art/README.md). The wardrobe is
@@ -507,16 +514,31 @@ export function ElfTab() {
   }, [eggMoment])
 
   const togglePanel = useCallback((which: Exclude<ElfPanel, 'none'>) => setPanel((current) => (current === which ? 'none' : which)), [])
-  const onDecorate = useCallback(() => togglePanel('decor'), [togglePanel])
   const onShop = useCallback(() => router.push('/elf-shop'), [router])
-  const onActivities = useCallback(() => router.push('/elf-activities'), [router])
   const onTree = useCallback(() => router.push('/elf-tree'), [router])
-  /* The day's quests, the reward to pick and what the ledger's figures
-     mean: a sheet over the tab. */
-  const onLedger = useCallback(() => {
-    tutorial.note('ledger')
-    router.push('/elf-today')
-  }, [router, tutorial])
+  const onHurry = useCallback(() => router.push({ pathname: '/elf-hurry', params: { kind: 'hatch' } }), [router])
+  /* The day's quests, the reward to pick and what the purse's figures
+     mean: a sheet over the tab, from the quests' ring and the purse. */
+  const onPurse = useCallback(() => router.push('/elf-today'), [router])
+  /* The buttons on the sides of the room: each opens its own sheet; the
+     games wait while the elf sleeps (it says so, as for the care). */
+  const toast = useToast()
+  const onRail = useCallback(
+    (id: RailId) => {
+      if (id === 'quests') {
+        tutorial.note('quests')
+        router.push('/elf-today')
+      } else if (id === 'badges') router.push('/elf-badges')
+      else if (id === 'skills') router.push('/elf-tricks')
+      else if (id === 'peddler') router.push('/elf-peddler')
+      else if (id === 'decor') togglePanel('decor')
+      else if (stateRef.current?.sleeping) say(t('mobile:elf.gamesAsleepLine'))
+      else router.push('/elf-games')
+    },
+    [router, tutorial, togglePanel, say, t],
+  )
+  /* What the egg cannot have yet: a toast says it waits for the hatch. */
+  const onRailLocked = useCallback(() => toast.show({ tone: 'info', text: t('mobile:elf.lockedUntilHatch') }), [toast, t])
   const closePanel = useCallback(() => setPanel('none'), [])
 
   /* A slot tapped in the room while decorating picks the panel's tab; a
@@ -635,7 +657,7 @@ export function ElfTab() {
     if (!hatchReady || stage !== 'egg' || !focused || panel !== 'none') return
     cracks.current = 0
     setEggCracks(0)
-    const timer = setInterval(() => sceneRef.current?.react('egg'), HATCH_ROCK_MS)
+    const timer = setInterval(() => sceneRef.current?.react('eggReady'), HATCH_ROCK_MS)
     return () => clearInterval(timer)
   }, [hatchReady, stage, focused, panel])
   const onPetEgg = useCallback(() => {
@@ -716,7 +738,8 @@ export function ElfTab() {
   const onTendEgg = useCallback(
     (id: ElfEggAction) => {
       tendEgg(id)
-      sceneRef.current?.react('egg')
+      /* Each touch of the egg moves and sounds its own way. */
+      sceneRef.current?.react(id === 'warm' ? 'warm' : 'rock')
       tutorial.note(id === 'warm' ? 'warm' : 'egg')
     },
     [tendEgg, tutorial],
@@ -829,11 +852,15 @@ export function ElfTab() {
      the tutorial's card over it) or the decorating catalogue, both on the
      tab bar. */
   const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step || askReminders || askGrow ? cardHeight + space.md : 0) : tabBarHeight + panelHeight
-  /* What the tutorial's step asks for, lit where it is: the egg or the
+  /* What the tutorial's step is about, lit where it is: the egg or the
      elf in the room (a pointer over the head, out of the bubble's way),
-     a button of the care band, or the purse row. */
+     a button of the care band or of the rails, the name block, the
+     purse or the hurry. */
   const target = panel === 'none' ? (tutorial.step?.target ?? null) : null
   const pointAtFigure = (target === 'egg' || target === 'pet') && speech === null
+  const bandLit = target === 'warm' || target === 'rock' || target === 'feed' ? target : null
+  const railLit: RailId | null = target === 'quests' || target === 'games' ? target : null
+  const hudLit: HudSpot | null = target === 'name' || target === 'purse' || target === 'hurry' ? target : null
   /* The level and the way to the next, for the name block. */
   const level = levelOf(state.xp)
   const xpFraction = (state.xp - xpForLevel(level)) / (xpForLevel(level + 1) - xpForLevel(level))
@@ -881,7 +908,7 @@ export function ElfTab() {
         </View>
       ) : null}
 
-      {/* The strip at the top: the words and the ledger on solid chrome, and
+      {/* The strip at the top: the words and the purse on solid chrome, and
           the room starts under it (the scene is told its height), so
           nothing of the room is ever behind it; the bottom holds the care
           band or the open panel alone. */}
@@ -897,22 +924,20 @@ export function ElfTab() {
               mood={mood}
               wantedNeed={wanted}
               hatchAt={hatchTime}
+              freeHatch={state.freeHatch}
+              hatchReady={hatchReady}
               wallet={state.wallet}
               streak={state.streak}
-              questsDone={state.daily.quests.filter((quest) => quest.done).length}
-              rewardWaiting={state.daily.rewardPicked === null}
-              onDecorate={onDecorate}
-              onShop={onShop}
-              onActivities={onActivities}
-              activitiesFresh={peddlerFresh(state, now) || badgesToClaim(state).length > 0 || tricksToTrain(state, now).length > 0}
               level={stage === 'egg' ? null : level}
               xpFraction={xpFraction}
               archetype={archetypeOf(state)}
               growthReady={Boolean(elf.nextForm?.ready) && !pendingEvolution}
               request={request}
               onTree={onTree}
-              onLedger={onLedger}
-              highlightLedger={target === 'ledger'}
+              onPurse={onPurse}
+              onShop={onShop}
+              onHurry={onHurry}
+              lit={hudLit}
             />
           </Animated.View>
         ) : null}
@@ -932,6 +957,23 @@ export function ElfTab() {
           </Animated.View>
         ) : null}
       </View>
+
+      {/* The round buttons along the sides of the room, under the strip. */}
+      {panel === 'none' && hudHeight > 0 ? (
+        <ElfRails
+          top={hudHeight + space.sm}
+          egg={stage === 'egg'}
+          questsDone={state.daily.quests.filter((quest) => quest.done).length}
+          questsTotal={state.daily.quests.length}
+          rewardWaiting={state.daily.rewardPicked === null}
+          badgesToClaim={badgesToClaim(state).length > 0}
+          peddlerFresh={hatched && peddlerFresh(state, now)}
+          skillToTrain={tricksToTrain(state, now).length > 0}
+          lit={railLit}
+          onPress={onRail}
+          onLocked={onRailLocked}
+        />
+      ) : null}
 
       {/* The elf's line, over its head where the scene says it is. */}
       {size ? <ElfSpeech line={speech} anchor={figureTop} width={size.width} height={size.height} topLimit={hudHeight + space.sm} /> : null}
@@ -965,7 +1007,7 @@ export function ElfTab() {
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} energy={state.energy} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} highlight={target === 'warm' || target === 'feed' ? target : null} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} careLeft={left} careCharges={charges} gifts={state.gifts} energy={state.energy} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} highlight={bandLit} />
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>

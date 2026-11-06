@@ -3,7 +3,7 @@ import { useDerivedValue } from 'react-native-reanimated'
 import { PARTICLE_KINDS, type Particle, type ParticleKind } from './motion'
 
 /* The pool of particles over the puppet: hearts, sparkles, bubbles, sleep
-   puffs and crumbs, one Skia path per particle whose shape and colour follow the
+   puffs, crumbs, music notes and embers, one Skia path per particle whose shape and colour follow the
    particle's kind. Position, scale and opacity come straight from the
    shared values the motion hook animates, so a free particle (opacity 0)
    costs one invisible node and nothing per frame. The shapes are a few
@@ -24,6 +24,10 @@ const SHAPES: Record<ParticleKind, SkPath> = {
   bubble: svg('M 0,-13 A 13,13 0 1,1 0,13 A 13,13 0 1,1 0,-13 Z M 0,-10.5 A 10.5,10.5 0 1,0 0,10.5 A 10.5,10.5 0 1,0 0,-10.5 Z M -5,-7 A 2.4,2.4 0 1,0 -5,-2.2 A 2.4,2.4 0 1,0 -5,-7 Z'),
   puff: svg('M -12,6 A 6,6 0 0,1 -11,-2 A 7,7 0 0,1 -1,-8 A 7.5,7.5 0 0,1 10,-4 A 6,6 0 0,1 12,6 Z'),
   crumb: svg('M -5,0 A 5,3.4 0 1,0 5,0 A 5,3.4 0 1,0 -5,0 Z'),
+  /* An eighth note: the head, the stem and the flag. */
+  note: svg('M -9,8 A 6,4.5 -20 1,0 3,8 A 6,4.5 -20 1,0 -9,8 Z M 1.5,7 L 1.5,-13 L 4.5,-13 L 4.5,7 Z M 4.5,-13 C 9,-10 12,-6 10,0 C 9,-5 7,-7 4.5,-8 Z'),
+  /* An ember: a small flame-shaped spark. */
+  ember: svg('M 0,-11 C 4,-5 7,-1 5,4 C 4,8 -4,8 -5,4 C -7,-1 -3,-4 0,-11 Z'),
 }
 
 const COLORS: Record<ParticleKind, string> = {
@@ -32,6 +36,8 @@ const COLORS: Record<ParticleKind, string> = {
   bubble: '#cfe9ff',
   puff: '#e4ecfb',
   crumb: '#7a5230',
+  note: '#ffe08a',
+  ember: '#ff9a3c',
 }
 
 const SHAPE_BY_INDEX = PARTICLE_KINDS.map((kind) => SHAPES[kind])

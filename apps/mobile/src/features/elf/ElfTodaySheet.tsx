@@ -8,7 +8,8 @@ import { useElf } from '../../providers'
 import { AcornsIcon, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
 import { elfKey, requestKey } from './labels'
 
-/* The elf's day, as a sheet over the tab, opened from the HUD's ledger.
+/* The elf's day, as a sheet over the tab, opened from the quests' ring
+   on the side of the cottage and from the purse in the strip.
    The purse first, as three tiles that name their figures (the acorns,
    the star dust, the days in a row: the HUD's chips show the same
    figures by their glyphs alone, so this is where a child learns what

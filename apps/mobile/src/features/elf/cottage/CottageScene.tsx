@@ -215,6 +215,10 @@ const REACTION_CLIP: Partial<Record<ReactionKind, string>> = {
 }
 /* The sound of a reaction the motion took (a pat and a stroke are silent). */
 const REACTION_SOUND: Partial<Record<ReactionKind, ElfSound>> = {
+  /* The egg's three touches; its rocking on its own when ready stays silent. */
+  egg: 'eggTap',
+  warm: 'warm',
+  rock: 'lullaby',
   poke: 'poke',
   feed: 'feed',
   bath: 'bath',

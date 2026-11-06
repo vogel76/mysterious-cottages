@@ -3,22 +3,24 @@ import { useTranslation } from 'react-i18next'
 import { STORAGE_KEYS } from '../../config'
 import { readJson, writeJson } from '../../lib/storage'
 
-/* The tutorial of the Elf tab: a few cards the player clicks through at
-   their own pace, one flow for the egg (rock it, warm it, find the
-   ledger, what hatches it) and one for the hatched and named elf (pet
-   it, feed it, the caps and the night, the decorating, the activities,
-   the level with the tree, growing up and what a cottage found brings).
-   A step that asks for a move waits for it (the tab reports the moves
-   as they happen) before "next" lights up, and names the move as its
-   target, so the tab lights what the step asks for (TutorialHalo);
-   "skip" ends the flow. Each
+/* The tutorial of the Elf tab: a few short cards the player clicks
+   through at their own pace, one flow for the egg (tap it, warm and rock
+   it, the day's quests, what waits for the hatch, the free hurry) and
+   one for the hatched and named elf (pet it, feed it, the rings and the
+   energy, the buttons on the right, the quests and the badges on the
+   left, the level with the tree, the purse with the shop's plus). A step
+   that asks for a move waits for it (the tab reports the moves as they
+   happen) before "next" lights up; a step lights what it is about, the
+   move it waits for or the place it shows, so the tab can ring it
+   (TutorialHalo); "skip" ends the flow. Each
    flow is shown once per device, remembered in AsyncStorage, and a
    flow only starts while the tab is in view with no panel over it and
    the egg not yet ready to hatch (the hatch has its own ritual). */
 
 export type TutorialFlow = 'egg' | 'elf'
-/* The moves a step can wait for. */
-export type TutorialMove = 'egg' | 'warm' | 'ledger' | 'pet' | 'feed'
+/* The moves a step can wait for, and the places it can show. */
+export type TutorialMove = 'egg' | 'warm' | 'quests' | 'pet' | 'feed'
+export type TutorialSpot = TutorialMove | 'rock' | 'games' | 'hurry' | 'name' | 'purse'
 
 export type TutorialStep = {
   index: number
@@ -26,31 +28,33 @@ export type TutorialStep = {
   text: string
   /* The move this step waits for, still to be made. */
   waiting: boolean
-  /* The move still to be made, for the tab to light what it asks for
-     (the egg or the elf in the room, a button of the care band, the
-     purse row); null once made or for a step that only tells. */
-  target: TutorialMove | null
+  /* What to light: the move still to be made, else the place the step
+     is about (the egg or the elf in the room, a button of the care band
+     or the rails, the name block, the purse, the hurry); null for a step
+     that only tells. */
+  target: TutorialSpot | null
   last: boolean
 }
 
 type Flags = Partial<Record<TutorialFlow, boolean>>
-type StepSpec = { key: string; waits?: TutorialMove }
+type StepSpec = { key: string; waits?: TutorialMove; shows?: TutorialSpot }
 
 const FLOWS: Record<TutorialFlow, readonly StepSpec[]> = {
   egg: [
     { key: 'tutorialEgg1', waits: 'egg' },
-    { key: 'tutorialEgg2', waits: 'warm' },
-    { key: 'tutorialEgg3', waits: 'ledger' },
-    { key: 'tutorialEgg4' },
+    { key: 'tutorialEgg2', waits: 'warm', shows: 'rock' },
+    { key: 'tutorialEgg3', waits: 'quests' },
+    { key: 'tutorialEgg4', shows: 'games' },
+    { key: 'tutorialEgg5', shows: 'hurry' },
   ],
   elf: [
     { key: 'tutorialElf1', waits: 'pet' },
     { key: 'tutorialElf2', waits: 'feed' },
     { key: 'tutorialElf3' },
-    { key: 'tutorialElf4' },
-    { key: 'tutorialElf5' },
-    { key: 'tutorialElf6' },
-    { key: 'tutorialElf7' },
+    { key: 'tutorialElf4', shows: 'games' },
+    { key: 'tutorialElf5', shows: 'quests' },
+    { key: 'tutorialElf6', shows: 'name' },
+    { key: 'tutorialElf7', shows: 'purse' },
   ],
 }
 
@@ -126,7 +130,7 @@ export function useElfTutorial({ flow, ready }: { flow: TutorialFlow | null; rea
   const step = useMemo<TutorialStep | null>(() => {
     if (!active || !spec) return null
     const waiting = Boolean(spec.waits) && !made
-    return { index, total: specs.length, text: t(`mobile:elf.${spec.key}`), waiting, target: waiting ? (spec.waits ?? null) : null, last: index + 1 >= specs.length }
+    return { index, total: specs.length, text: t(`mobile:elf.${spec.key}`), waiting, target: (waiting ? spec.waits : undefined) ?? spec.shows ?? null, last: index + 1 >= specs.length }
   }, [active, spec, index, specs.length, made, t])
 
   return { step, next, skip: finish, note }
