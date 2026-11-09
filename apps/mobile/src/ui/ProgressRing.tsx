@@ -13,7 +13,10 @@ import { colors } from './tokens'
    render draws the value in place; only real changes animate. */
 
 export type ProgressRingProps = {
-  size: 24 | 34 | 40 | 56 | 64
+  /* The ring's box in points: the usual sizes are 24, 34, 40, 56 and 64,
+     and a ring that follows a measured layout (the elf's care band on a
+     narrow window) takes whatever that gives it. */
+  size: number
   value: number
   max: number
   /* Ring thickness; a tenth of the size by default. */

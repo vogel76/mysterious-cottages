@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
 import { ELF_GAMES } from '@chatynkowo/core'
 import { useElf } from '../../../providers'
-import { Button, HurryIcon, PressableScale, SheetRoute, SleepIcon, Text, colors, iconSize, radius, space } from '../../../ui'
+import { Button, HurryIcon, PressableScale, SheetRoute, SleepIcon, Text, colors, iconSize, radius, space, useNarrow } from '../../../ui'
 import { elfNow } from '../../../lib/elf-clock'
 import { restText } from '../duration'
 import { GAME_ICON, gameKey } from './games'
@@ -14,7 +14,8 @@ import { GAME_ICON, gameKey } from './games'
    games as big tiles three to a row (a shorter last row centred), each
    its picture, its name and its record (or a word on how it goes before
    the first round); a tap starts that game's screen in place of this
-   sheet. Too tired for a round, the line
+   sheet. On a narrow window the tiles go two to a row, so a name like
+   "Gwiezdny deszcz" keeps its words whole. Too tired for a round, the line
    says so and a button beside it opens the hurry of the energy
    (/elf-hurry), so the way back to play is never a search. A sleeping
    elf never gets here (the tab has it say so), but should it, the tiles
@@ -24,6 +25,7 @@ export function ElfGamesSheet() {
   const { t } = useTranslation()
   const router = useRouter()
   const { state, gameReady, rest, brewUntil } = useElf()
+  const narrow = useNarrow()
   if (!state) return <SheetRoute>{null}</SheetRoute>
   const asleep = state.sleeping
   const playable = gameReady
@@ -60,7 +62,7 @@ export function ElfGamesSheet() {
                 accessibilityState={{ disabled: !playable }}
                 disabled={!playable}
                 onPress={() => router.replace({ pathname: '/elf-game/[id]', params: { id } })}
-                style={[styles.tile, !playable && styles.tileWaiting]}
+                style={[styles.tile, narrow && styles.tileNarrow, !playable && styles.tileWaiting]}
               >
                 <View style={styles.picture}>
                   <Glyph size={iconSize.emblem} weight="duotone" color={colors.accentStrong} />
@@ -116,6 +118,9 @@ const styles = StyleSheet.create({
     borderColor: colors.accentBorder,
     borderRadius: radius.card,
     backgroundColor: colors.surface,
+  },
+  tileNarrow: {
+    width: '48%',
   },
   tileWaiting: {
     opacity: 0.5,

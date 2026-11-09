@@ -40,6 +40,21 @@ runs apps in windows of any shape, reading content keeps to the readable
 width (`sizes.readable`, the `readable` column style in `src/ui`) while the
 Atlas stays full-bleed.
 
+Narrow windows are first-class too. An iPhone in its zoomed display gives
+an app 320 points across (Display Zoom, "Large" in iOS 27 under Settings,
+Appearance; it is offered at the phone's first setup, so a tester may have
+it on without knowing), Android's largest display size about the same,
+and both come with larger text. Every layout holds at 320 with the text at
+1.2x: a row that cannot keep its button beside its words wraps it under
+them, four fixed columns shrink to what a quarter of the width allows, and
+nothing runs off the screen or truncates to a letter. Below `sizes.narrow`
+(360) `useNarrow()` in `src/ui` says a layout should take its compact
+form; the elf's care band measures itself to the width instead
+(`barSizes` in `ElfActionBar.tsx`). To see the app that way on any Android
+device or emulator: `python3 tools/ui.py narrow on` (the density raised so
+the screen is 320 dp wide, the system text at 1.2x; `narrow off` puts
+both back), on an iPhone the Display Zoom setting itself.
+
 Configuration comes from `EXPO_PUBLIC_*` variables in `apps/mobile/.env`
 (template: `.env.example`); without the file the app uses the production
 Supabase project and `https://www.chatynkowo.pl` as the content origin.
@@ -324,7 +339,8 @@ src/
                          packer, the decoded sheets, a UI-thread frame clock,
                          SpritePlayer and LayeredSprite on Skia's Atlas)
 tools/                   the measuring tools, system Python and adb (see "Measuring the elf"): ui.py drives the app by the
-                         words on screen, memtable.py samples the app's memory, sftable.py reads the frames the cottage presents
+                         words on screen and shows it at an iPhone's zoomed width (narrow on|off), memtable.py samples
+                         the app's memory, sftable.py reads the frames the cottage presents
 art/                     the Blender art pipeline (art/README.md): common.py with the shared scene, camera, light
                          and materials, elf.py (the character, its rig and clips) and room.py (the room plate and
                          the furniture), pack.py (frames to WebP atlases and a manifest), the contact sheets;
@@ -1345,7 +1361,8 @@ same code, same bundle, a different signature.
 
 The tools under `tools/` run with the system Python and adb against the
 one device attached (or `--serial`): `ui.py` presses controls by the words
-on screen and takes screenshots, `memtable.py` prints one row of memory
+on screen, takes screenshots and shows the app at an iPhone's zoomed width
+(`narrow on`, see "Running"), `memtable.py` prints one row of memory
 figures per sample (PSS, the native heap where Skia's decoded sheets
 live, the graphics total with its GL and EGL parts, which the GPU keeps
 until Skia's budget is hit), `sftable.py` reads the frames the cottage's

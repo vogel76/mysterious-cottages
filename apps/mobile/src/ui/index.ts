@@ -11,7 +11,7 @@ export { Text, type TextProps, type TextTone, type TextVariant, type TextWeight 
 export { Button, LinkButton, IconButton, type ButtonProps, type ButtonSurface, type IconButtonProps, type LinkButtonProps } from './Button'
 export { PressableScale, type PressableScaleProps } from './PressableScale'
 export { Screen, type ScreenProps } from './Screen'
-export { readable, useReadablePadding } from './layout'
+export { readable, useNarrow, useReadablePadding } from './layout'
 export { MarkdownView } from './Markdown'
 export { TextField, type TextFieldHandle, type TextFieldProps } from './TextField'
 export { ContentImage, cachedContentFile, prefetchContent, type ContentImageProps } from './ContentImage'

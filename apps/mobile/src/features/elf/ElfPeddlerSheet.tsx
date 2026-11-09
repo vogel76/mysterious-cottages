@@ -111,15 +111,17 @@ export function ElfPeddlerSheet() {
                   </Text>
                 </View>
               ) : (
-                <Button
-                  variant="primary"
-                  disabled={short}
-                  accessibilityLabel={t('mobile:elf.wareBuyAria', { name, count: ware.acorns })}
-                  icon={<AcornsIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
-                  onPress={() => buy(ware)}
-                >
-                  {t('mobile:elf.acornsPrice', { count: ware.acorns })}
-                </Button>
+                <View style={styles.action}>
+                  <Button
+                    variant="primary"
+                    disabled={short}
+                    accessibilityLabel={t('mobile:elf.wareBuyAria', { name, count: ware.acorns })}
+                    icon={<AcornsIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
+                    onPress={() => buy(ware)}
+                  >
+                    {t('mobile:elf.acornsPrice', { count: ware.acorns })}
+                  </Button>
+                </View>
               )}
             </View>
           )
@@ -128,6 +130,9 @@ export function ElfPeddlerSheet() {
     </SheetRoute>
   )
 }
+
+/* The least the words of a row take beside the button before it wraps under them. */
+const WORDS_MIN = 110
 
 const styles = StyleSheet.create({
   column: {
@@ -151,8 +156,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.xs,
   },
+  /* The picture, the words and the button in a row; the words keep a
+     width to read in, so on a narrow window (or with large text) the
+     button wraps under them, at the right, instead of squeezing the
+     words to a letter a line. */
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: space.md,
     paddingVertical: space.sm,
@@ -174,8 +184,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentWash,
   },
   words: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: WORDS_MIN,
+    minWidth: WORDS_MIN,
     gap: 2,
+  },
+  action: {
+    marginLeft: 'auto',
   },
   mark: {
     alignItems: 'center',

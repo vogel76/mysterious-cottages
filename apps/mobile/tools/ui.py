@@ -10,6 +10,9 @@ accessibility label, takes screenshots, launches the app.
                                                                   the race against the scene's pan gesture)
     python3 tools/ui.py tapxy 540 1300                            press a point
     python3 tools/ui.py shot NAME [--out DIR]                     screenshot to DIR/NAME.png
+    python3 tools/ui.py narrow on|off                             the screen as an iPhone's zoomed display: 320 dp
+                                                                  across (the density raised to suit) and the system
+                                                                  text at 1.2x; "off" puts both back
 
 Matching is by substring, case-insensitive, text first, then the
 accessibility label (content description), so a control is found by the
@@ -55,6 +58,33 @@ def press(serial: str, x: int, y: int, ms: int = 80) -> None:
     shell(serial, f'input swipe {x} {y} {x} {y} {ms}')
 
 
+# The width, in dp, of an iPhone in its zoomed display (Display Zoom, "Large"
+# in iOS 27, where it is offered at the phone's first setup), the narrowest
+# window the app supports; and the system text scale that goes with it.
+NARROW_DP = 320
+NARROW_TEXT = 1.2
+
+
+def set_narrow(serial: str, on: bool) -> None:
+    """The device's density raised so its screen is NARROW_DP wide (the
+    physical pixels stay), and the system text at NARROW_TEXT; or both put
+    back. The app relays out at once; a screen that does not can be
+    relaunched."""
+    if on:
+        physical = re.search(r'Physical size: (\d+)x(\d+)', shell(serial, 'wm size'))
+        if not physical:
+            sys.exit('ui: cannot read the physical screen size')
+        width_px, height_px = int(physical.group(1)), int(physical.group(2))
+        density = round(width_px * 160 / NARROW_DP)
+        shell(serial, f'wm density {density}')
+        shell(serial, f'settings put system font_scale {NARROW_TEXT}')
+        print(f'narrow: density {density}, {NARROW_DP}x{round(height_px * 160 / density)} dp, text {NARROW_TEXT}x')
+    else:
+        shell(serial, 'wm density reset')
+        shell(serial, 'settings put system font_scale 1.0')
+        print('narrow off: density and text scale restored')
+
+
 def main(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--serial')
@@ -70,6 +100,7 @@ def main(argv: list[str]) -> None:
     shot = sub.add_parser('shot')
     shot.add_argument('name')
     shot.add_argument('--out', default='.')
+    sub.add_parser('narrow').add_argument('state', choices=['on', 'off'])
     args = parser.parse_args(argv)
     serial = pick_serial(args.serial)
     package = app_package()
@@ -103,6 +134,8 @@ def main(argv: list[str]) -> None:
         with open(path, 'wb') as handle:
             handle.write(adb(serial, 'exec-out', 'screencap', '-p', binary=True))
         print(path)
+    elif args.command == 'narrow':
+        set_narrow(serial, args.state == 'on')
 
 
 if __name__ == '__main__':
