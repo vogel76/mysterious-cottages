@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { BadgesIcon, DecorIcon, GamesIcon, LockIcon, PeddlerIcon, PressableScale, ProgressRing, Text, TricksIcon, colors, iconSize, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
+import { BadgesIcon, DecorIcon, GamesIcon, LockIcon, PeddlerIcon, PressableScale, ProgressRing, Text, TricksIcon, colors, iconSize, mapPalette, radius, space, useNarrow, withAlpha, type Icon } from '../../ui'
 import { TutorialHalo } from './TutorialHalo'
 
 /* The round buttons along the sides of the cottage, the way a game's home
@@ -14,7 +14,11 @@ import { TutorialHalo } from './TutorialHalo'
    seen, so the player knows what is coming, and a tap says they open once
    the elf has hatched (the tab says it). A tutorial step can light one
    button with a breathing ring. The rails take no touch between their
-   buttons, so the room under them stays alive. */
+   buttons, so the room under them stays alive. On a narrow window (a
+   phone in its zoomed display, 320 points) the columns, buttons and
+   rings take their compact size (RAIL_SIZES), so the two rails cover
+   less of the room and the left one clears the bed the elf sleeps in,
+   and a name too long for its pill shrinks instead of being cut. */
 
 export type RailId = 'quests' | 'badges' | 'games' | 'skills' | 'peddler' | 'decor'
 
@@ -39,13 +43,17 @@ export type ElfRailsProps = {
 type Rail = { id: RailId; Glyph: Icon; label: string; dot?: boolean; locked?: boolean }
 
 /* The button's circle, the ring's box around it, and the column's width
-   (the longest one-word name fits under the circle). */
-const BUTTON = 50
-const RING = 56
-const COLUMN = 92
+   (the longest one-word name fits under the circle), at full size and
+   compact for a narrow window. */
+type RailSizes = { button: number; ring: number; column: number }
+const RAIL_SIZES: Record<'full' | 'compact', RailSizes> = {
+  full: { button: 50, ring: 56, column: 92 },
+  compact: { button: 44, ring: 50, column: 72 },
+}
 
 export function ElfRails({ top, egg, questsDone, questsTotal, rewardWaiting, badgesToClaim, peddlerFresh, skillToTrain, lit = null, onPress, onLocked }: ElfRailsProps) {
   const { t } = useTranslation()
+  const size = RAIL_SIZES[useNarrow() ? 'compact' : 'full']
   const left: Rail[] = [{ id: 'badges', Glyph: BadgesIcon, label: t('mobile:elf.railBadges'), dot: badgesToClaim }]
   const right: Rail[] = [
     { id: 'games', Glyph: GamesIcon, label: t('mobile:elf.railGames'), locked: egg },
@@ -56,15 +64,15 @@ export function ElfRails({ top, egg, questsDone, questsTotal, rewardWaiting, bad
   const press = (rail: Rail) => (rail.locked ? onLocked(rail.id) : onPress(rail.id))
   return (
     <>
-      <View style={[styles.rail, styles.left, { top }]} pointerEvents="box-none">
-        <QuestsButton done={questsDone} total={questsTotal} rewardWaiting={rewardWaiting} lit={lit === 'quests'} onPress={() => onPress('quests')} />
+      <View style={[styles.rail, styles.left, { top, width: size.column }]} pointerEvents="box-none">
+        <QuestsButton done={questsDone} total={questsTotal} rewardWaiting={rewardWaiting} lit={lit === 'quests'} size={size} onPress={() => onPress('quests')} />
         {left.map((rail) => (
-          <RailButton key={rail.id} rail={rail} lit={lit === rail.id} onPress={() => press(rail)} />
+          <RailButton key={rail.id} rail={rail} lit={lit === rail.id} size={size} onPress={() => press(rail)} />
         ))}
       </View>
-      <View style={[styles.rail, styles.right, { top }]} pointerEvents="box-none">
+      <View style={[styles.rail, styles.right, { top, width: size.column }]} pointerEvents="box-none">
         {right.map((rail) => (
-          <RailButton key={rail.id} rail={rail} lit={lit === rail.id} onPress={() => press(rail)} />
+          <RailButton key={rail.id} rail={rail} lit={lit === rail.id} size={size} onPress={() => press(rail)} />
         ))}
       </View>
     </>
@@ -73,12 +81,12 @@ export function ElfRails({ top, egg, questsDone, questsTotal, rewardWaiting, bad
 
 /* One round button with its name; a dot for something new, a lock while
    it waits for the hatch. */
-function RailButton({ rail, lit, onPress }: { rail: Rail; lit: boolean; onPress: () => void }) {
+function RailButton({ rail, lit, size, onPress }: { rail: Rail; lit: boolean; size: RailSizes; onPress: () => void }) {
   const { t } = useTranslation()
   const { Glyph, label, dot, locked } = rail
   return (
     <View style={styles.item} pointerEvents="box-none">
-      <View style={styles.well}>
+      <View style={[styles.well, { width: size.ring, height: size.ring }]}>
         {lit ? <TutorialHalo /> : null}
         <PressableScale
           onPress={onPress}
@@ -86,9 +94,9 @@ function RailButton({ rail, lit, onPress }: { rail: Rail; lit: boolean; onPress:
           accessibilityRole="button"
           accessibilityLabel={locked ? t('mobile:elf.railLockedAria', { name: label }) : dot ? `${label}. ${t('mobile:elf.railFreshAria')}` : label}
           pressedFill={colors.accentWash}
-          style={[styles.button, locked && styles.buttonLocked]}
+          style={[styles.button, { width: size.button, height: size.button }, locked && styles.buttonLocked]}
         >
-          <Glyph size={iconSize.lg} weight="duotone" color={locked ? mapPalette.chromeInk : colors.accentStrong} />
+          <Glyph size={size.button < RAIL_SIZES.full.button ? iconSize.md : iconSize.lg} weight="duotone" color={locked ? mapPalette.chromeInk : colors.accentStrong} />
         </PressableScale>
         {dot && !locked ? <View style={styles.dot} pointerEvents="none" /> : null}
         {locked ? (
@@ -97,19 +105,19 @@ function RailButton({ rail, lit, onPress }: { rail: Rail; lit: boolean; onPress:
           </View>
         ) : null}
       </View>
-      <Name text={label} dim={locked} />
+      <Name text={label} width={size.column} dim={locked} />
     </View>
   )
 }
 
 /* The day's quests: the count inside a ring of their progress, a dot
    while the day's reward waits. */
-function QuestsButton({ done, total, rewardWaiting, lit, onPress }: { done: number; total: number; rewardWaiting: boolean; lit: boolean; onPress: () => void }) {
+function QuestsButton({ done, total, rewardWaiting, lit, size, onPress }: { done: number; total: number; rewardWaiting: boolean; lit: boolean; size: RailSizes; onPress: () => void }) {
   const { t } = useTranslation()
   const label = t('mobile:elf.railQuests')
   return (
     <View style={styles.item} pointerEvents="box-none">
-      <View style={styles.well}>
+      <View style={[styles.well, { width: size.ring, height: size.ring }]}>
         {lit ? <TutorialHalo /> : null}
         <PressableScale
           onPress={onPress}
@@ -117,27 +125,28 @@ function QuestsButton({ done, total, rewardWaiting, lit, onPress }: { done: numb
           accessibilityRole="button"
           accessibilityLabel={`${t('mobile:elf.railQuestsAria', { done, total })}${rewardWaiting ? ` ${t('mobile:elf.rewardWaitingAria')}` : ''}`}
           pressedFill={colors.accentWash}
-          style={styles.button}
+          style={[styles.button, { width: size.button, height: size.button }]}
         >
           <Text weight="bold" variant="compact" style={styles.count}>
             {done}/{total}
           </Text>
         </PressableScale>
         <View style={styles.ring} pointerEvents="none">
-          <ProgressRing size={RING} value={done} max={Math.max(1, total)} stroke={3} color={done >= total ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
+          <ProgressRing size={size.ring} value={done} max={Math.max(1, total)} stroke={3} color={done >= total ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
         </View>
         {rewardWaiting ? <View style={styles.dot} pointerEvents="none" /> : null}
       </View>
-      <Name text={label} />
+      <Name text={label} width={size.column} />
     </View>
   )
 }
 
-/* A button's name on a pill of the chrome, so it reads over the room. */
-function Name({ text, dim = false }: { text: string; dim?: boolean }) {
+/* A button's name on a pill of the chrome, so it reads over the room; a
+   name longer than the pill shrinks to fit rather than being cut. */
+function Name({ text, width, dim = false }: { text: string; width: number; dim?: boolean }) {
   return (
-    <View style={styles.name} pointerEvents="none">
-      <Text variant="small" weight="semibold" align="center" numberOfLines={1} style={[styles.nameInk, dim && styles.nameDim]}>
+    <View style={[styles.name, { maxWidth: width }]} pointerEvents="none">
+      <Text variant="small" weight="semibold" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.nameInk, dim && styles.nameDim]}>
         {text}
       </Text>
     </View>
@@ -150,7 +159,6 @@ const LOCK = 20
 const styles = StyleSheet.create({
   rail: {
     position: 'absolute',
-    width: COLUMN,
     gap: space.sm,
     alignItems: 'center',
   },
@@ -165,14 +173,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   well: {
-    width: RING,
-    height: RING,
     alignItems: 'center',
     justifyContent: 'center',
   },
   button: {
-    width: BUTTON,
-    height: BUTTON,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
@@ -218,7 +222,6 @@ const styles = StyleSheet.create({
     backgroundColor: mapPalette.chromeSolid,
   },
   name: {
-    maxWidth: COLUMN,
     paddingHorizontal: space.sm,
     paddingVertical: 1,
     borderRadius: radius.pill,

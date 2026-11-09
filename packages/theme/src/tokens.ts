@@ -57,6 +57,10 @@ export const sizes = {
   /* The widest a column of reading content grows on a tablet or in a wide
      window; centred beyond that. */
   readable: 640,
+  /* Under this width a window is narrow: an iPhone in its zoomed display
+     (320 points across) or a phone at Android's largest display size.
+     Layouts that cannot fit at 320 take a compact form below it. */
+  narrow: 360,
 } as const
 
 /* One scale for every icon in both clients. Pick by role, not by taste:

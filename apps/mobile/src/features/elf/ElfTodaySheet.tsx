@@ -169,7 +169,7 @@ function Tile({ Glyph, value, label }: { Glyph: Icon; value: number; label: stri
     <View style={styles.tile}>
       <Glyph size={iconSize.md} weight="fill" color={colors.accentStrong} />
       <Text variant="heading">{value}</Text>
-      <Text variant="small" tone="faint" align="center" numberOfLines={1}>
+      <Text variant="small" tone="faint" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
         {label}
       </Text>
     </View>

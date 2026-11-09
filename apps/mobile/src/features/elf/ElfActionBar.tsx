@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native'
+import { StyleSheet, View, useWindowDimensions, type AccessibilityActionEvent } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
@@ -20,7 +20,12 @@ import { TutorialHalo } from './TutorialHalo'
    care sees to (fullness, joy, cleanliness): green while comfortable,
    gold once the elf would like it seen to (hungry, dirty, or wanting a
    game: NEED_WANT_BELOW), eased to each new value as the needs drift; a
-   care's gain floats up over the button as "+25" for a moment. There is
+   care's gain floats up over the button as "+25" for a moment. The
+   band is measured at the window's width (barSizes): four items and the
+   key's gap at full size from 390 points up, and on a narrower window (a
+   phone in its zoomed display gives 320) the items narrow and the
+   buttons and rings shrink with them, never under a 44-point button, so
+   the band never runs off the screen. There is
    no count of the day's care: the elf eats when hungry, bathes when
    dirty and plays while it has the energy. Under the feed and play
    buttons the peddler's gifts in the pantry (treats, toys), a little
@@ -86,6 +91,8 @@ const BUTTON = 56
 /* The ring around a care button: its box and its thickness. */
 const RING = 64
 const RING_STROKE = 3
+/* The least a button shrinks to on a narrow window: a finger's target. */
+const BUTTON_MIN = 44
 /* A gift's mark under the button. */
 const GIFT = 10
 /* The press feedback of the round buttons. */
@@ -107,6 +114,7 @@ const CARE_WORD: Record<ElfCareAction, [string, string]> = {
 
 export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, brewing, onCare, onTendEgg, onToggleSleep, onFeedDrag, highlight = null }: ElfActionBarProps) {
   const { t } = useTranslation()
+  const bar = barSizes(useWindowDimensions().width)
   const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => {
     const needId = ELF_CARE_NEEDS[id]
     const value = needs[needId]
@@ -146,7 +154,7 @@ export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, bre
   /* The first half to the left of the key, the rest to its right. */
   const split = Math.ceil(actions.length / 2)
   const render = (action: Action) =>
-    action.key === 'feed' && onFeedDrag ? <DraggableActionButton key={action.key} action={action} onDrag={onFeedDrag} /> : <ActionButton key={action.key} action={action} />
+    action.key === 'feed' && onFeedDrag ? <DraggableActionButton key={action.key} action={action} bar={bar} onDrag={onFeedDrag} /> : <ActionButton key={action.key} action={action} bar={bar} />
   return (
     <View style={styles.band}>
       <View style={styles.side}>{actions.slice(0, split).map(render)}</View>
@@ -156,14 +164,14 @@ export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, bre
   )
 }
 
-function ActionButton({ action }: { action: Action }) {
+function ActionButton({ action, bar }: { action: Action; bar: BarSizes }) {
   const { Glyph, label, face, disabled, need, energy, gifts, valueText, lit, onPress } = action
   const primary = face === 'primary'
   return (
-    <View style={[styles.item, disabled && styles.itemDisabled]}>
-      <View style={styles.well}>
-        {need ? <NeedRing value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
-        {energy !== undefined ? <EnergyRing value={energy} /> : null}
+    <View style={[styles.item, { width: bar.item }, disabled && styles.itemDisabled]}>
+      <View style={[styles.well, { width: bar.ring, height: bar.ring }]}>
+        {need ? <NeedRing size={bar.ring} value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
+        {energy !== undefined ? <EnergyRing size={bar.ring} value={energy} /> : null}
         {lit ? <TutorialHalo /> : null}
         <PressableScale
           onPress={onPress}
@@ -174,9 +182,9 @@ function ActionButton({ action }: { action: Action }) {
           /* The accent wash is invisible on the gold face; the lighter border
              gold reads as a pressed shade there, as on the primary button. */
           pressedFill={primary ? colors.accentBorder : colors.accentWash}
-          style={[styles.button, primary ? styles.primary : styles.ghost]}
+          style={[styles.button, { width: bar.button, height: bar.button }, primary ? styles.primary : styles.ghost]}
         >
-          <Glyph size={iconSize.lg} weight={primary ? 'fill' : 'duotone'} color={primary ? colors.accentInk : colors.ink} />
+          <Glyph size={bar.icon} weight={primary ? 'fill' : 'duotone'} color={primary ? colors.accentInk : colors.ink} />
         </PressableScale>
         {need ? <NeedGain value={need.value} /> : null}
       </View>
@@ -191,19 +199,19 @@ function ActionButton({ action }: { action: Action }) {
 /* The need around the button: the arc is the need out of a hundred, in
    the colour of how it stands. The button describes the value, so the
    ring is decoration. */
-function NeedRing({ value, want }: { value: number; want: number }) {
+function NeedRing({ size, value, want }: { size: number; value: number; want: number }) {
   return (
     <View style={styles.ring} pointerEvents="none">
-      <ProgressRing size={RING} value={value} max={100} stroke={RING_STROKE} color={value >= want ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
+      <ProgressRing size={size} value={value} max={100} stroke={RING_STROKE} color={value >= want ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
     </View>
   )
 }
 
 /* The energy around the sleep button: full at ENERGY_MAX, gold once low. */
-function EnergyRing({ value }: { value: number }) {
+function EnergyRing({ size, value }: { size: number; value: number }) {
   return (
     <View style={styles.ring} pointerEvents="none">
-      <ProgressRing size={RING} value={value} max={ENERGY_MAX} stroke={RING_STROKE} color={value < ENERGY_LOW ? colors.accent : colors.success} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
+      <ProgressRing size={size} value={value} max={ENERGY_MAX} stroke={RING_STROKE} color={value < ENERGY_LOW ? colors.accent : colors.success} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
     </View>
   )
 }
@@ -264,7 +272,7 @@ function GiftMarks({ count = 0 }: { count?: number }) {
    touch. The pressable underneath keeps the press feel and the accessible
    name, and feeds on a screen reader's activate; its own press is left to
    the tap gesture so a finger feeds once. */
-function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: FeedDragHandler }) {
+function DraggableActionButton({ action, bar, onDrag }: { action: Action; bar: BarSizes; onDrag: FeedDragHandler }) {
   const { Glyph, label, disabled, need, gifts, valueText, lit, onPress } = action
 
   const gesture = useMemo(() => {
@@ -289,9 +297,9 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
   }
 
   return (
-    <View style={[styles.item, disabled && styles.itemDisabled]}>
-      <View style={styles.well}>
-        {need ? <NeedRing value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
+    <View style={[styles.item, { width: bar.item }, disabled && styles.itemDisabled]}>
+      <View style={[styles.well, { width: bar.ring, height: bar.ring }]}>
+        {need ? <NeedRing size={bar.ring} value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
         {lit ? <TutorialHalo /> : null}
         <GestureDetector gesture={gesture}>
           <PressableScale
@@ -302,9 +310,9 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
             accessibilityActions={[{ name: 'activate' }]}
             onAccessibilityAction={onAccessibilityAction}
             pressedFill={colors.accentBorder}
-            style={[styles.button, styles.primary]}
+            style={[styles.button, { width: bar.button, height: bar.button }, styles.primary]}
           >
-            <Glyph size={iconSize.lg} weight="fill" color={colors.accentInk} />
+            <Glyph size={bar.icon} weight="fill" color={colors.accentInk} />
           </PressableScale>
         </GestureDetector>
         {need ? <NeedGain value={need.value} /> : null}
@@ -321,6 +329,20 @@ function DraggableActionButton({ action, onDrag }: { action: Action; onDrag: Fee
    and a little air on each side. */
 const KEY_GAP = TAB_BAR_OVERHANG * 2 + space.lg
 
+/* The band's measure at a window's width: an item's column, the ring's
+   box, the button and its glyph. Four items, the gaps between them, the
+   key's gap and the band's edges fit at full size from 390 points up;
+   narrower, the column is what a quarter of the rest allows and the
+   button and ring shrink in step, the button never under BUTTON_MIN (so
+   at 320 points the ring is 50 and the button 44). */
+export type BarSizes = { item: number; ring: number; button: number; icon: number }
+const ITEM_FULL = RING + space.sm
+export function barSizes(width: number): BarSizes {
+  const item = Math.min(ITEM_FULL, Math.floor((width - KEY_GAP - 2 * space.sm - 2 * space.xs) / 4))
+  const scale = Math.max(BUTTON_MIN / BUTTON, Math.min(1, item / ITEM_FULL))
+  return { item, ring: Math.round(RING * scale), button: Math.round(BUTTON * scale), icon: scale < 1 ? iconSize.md : iconSize.lg }
+}
+
 const styles = StyleSheet.create({
   band: {
     flexDirection: 'row',
@@ -329,6 +351,7 @@ const styles = StyleSheet.create({
     paddingTop: space.sm,
     /* Clear of the tab bar beneath, so a thumb on a label never lands on it. */
     paddingBottom: space.md,
+    paddingHorizontal: space.xs,
     borderTopWidth: 1,
     borderTopColor: mapPalette.chromeBorder,
     backgroundColor: mapPalette.chromeSolid,
@@ -341,19 +364,16 @@ const styles = StyleSheet.create({
   keyGap: {
     width: KEY_GAP,
   },
-  /* Four of them and the key's gap fit a 375-point phone. */
+  /* The column's width comes from the band's measure (barSizes). */
   item: {
-    width: RING + space.sm,
     alignItems: 'center',
     gap: space.xs,
   },
   itemDisabled: {
     opacity: 0.5,
   },
-  /* The button in the middle of its ring's box. */
+  /* The button in the middle of its ring's box; the box's size is the bar's. */
   well: {
-    width: RING,
-    height: RING,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -385,8 +405,6 @@ const styles = StyleSheet.create({
     minHeight: GIFT,
   },
   button: {
-    width: BUTTON,
-    height: BUTTON,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

@@ -107,25 +107,27 @@ export function ElfTricksSheet() {
                   </Text>
                 ) : null}
               </View>
-              {status === 'unowned' ? (
-                <Button
-                  variant="primary"
-                  disabled={short}
-                  accessibilityLabel={t('mobile:elf.trickBuyAria', { name, count: spec.acorns })}
-                  icon={<AcornsIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
-                  onPress={() => buy(spec.id)}
-                >
-                  {t('mobile:elf.acornsPrice', { count: spec.acorns })}
-                </Button>
-              ) : status === 'learning' ? (
-                <Button variant="primary" disabled={trainedToday} accessibilityLabel={t('mobile:elf.trickTrainAria', { name })} onPress={() => train(spec.id)}>
-                  {trainedToday ? t('mobile:elf.trickTrainedToday') : t('mobile:elf.trickTrain')}
-                </Button>
-              ) : (
-                <Button accessibilityLabel={t('mobile:elf.trickShowAria', { name })} icon={<CheckIcon size={iconSize.sm} weight="bold" color={colors.accentStrong} />} onPress={() => show(spec.id)}>
-                  {t('mobile:elf.trickShow')}
-                </Button>
-              )}
+              <View style={styles.action}>
+                {status === 'unowned' ? (
+                  <Button
+                    variant="primary"
+                    disabled={short}
+                    accessibilityLabel={t('mobile:elf.trickBuyAria', { name, count: spec.acorns })}
+                    icon={<AcornsIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
+                    onPress={() => buy(spec.id)}
+                  >
+                    {t('mobile:elf.acornsPrice', { count: spec.acorns })}
+                  </Button>
+                ) : status === 'learning' ? (
+                  <Button variant="primary" disabled={trainedToday} accessibilityLabel={t('mobile:elf.trickTrainAria', { name })} onPress={() => train(spec.id)}>
+                    {trainedToday ? t('mobile:elf.trickTrainedToday') : t('mobile:elf.trickTrain')}
+                  </Button>
+                ) : (
+                  <Button accessibilityLabel={t('mobile:elf.trickShowAria', { name })} icon={<CheckIcon size={iconSize.sm} weight="bold" color={colors.accentStrong} />} onPress={() => show(spec.id)}>
+                    {t('mobile:elf.trickShow')}
+                  </Button>
+                )}
+              </View>
             </View>
           )
         })}
@@ -133,6 +135,9 @@ export function ElfTricksSheet() {
     </SheetRoute>
   )
 }
+
+/* The least the words of a row take beside the button before it wraps under them. */
+const WORDS_MIN = 110
 
 const styles = StyleSheet.create({
   column: {
@@ -148,8 +153,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.xs,
   },
+  /* The picture, the words and the button in a row; the words keep a
+     width to read in, so on a narrow window (or with large text) the
+     button wraps under them, at the right, instead of squeezing the
+     words to a letter a line. */
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: space.md,
     paddingVertical: space.sm,
@@ -171,7 +181,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentStrong,
   },
   words: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: WORDS_MIN,
+    minWidth: WORDS_MIN,
     gap: 2,
+  },
+  action: {
+    marginLeft: 'auto',
   },
 })

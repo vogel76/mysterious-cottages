@@ -389,8 +389,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   /* The egg's row: the countdown and the hurry. */
+  /* The countdown and the hurry side by side; on a narrow window the
+     hurry wraps under the countdown rather than running off the strip. */
   eggRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: space.sm,
   },

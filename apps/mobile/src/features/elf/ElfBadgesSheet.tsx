@@ -117,9 +117,11 @@ export function ElfBadgesSheet() {
                 </View>
               </View>
               {status === 'earned' ? (
-                <Button variant="primary" accessibilityLabel={t('mobile:elf.badgeClaimAria', { name })} onPress={() => claim(badge.id)}>
-                  {t('mobile:elf.badgeClaim')}
-                </Button>
+                <View style={styles.action}>
+                  <Button variant="primary" accessibilityLabel={t('mobile:elf.badgeClaimAria', { name })} onPress={() => claim(badge.id)}>
+                    {t('mobile:elf.badgeClaim')}
+                  </Button>
+                </View>
               ) : status === 'claimed' ? (
                 <View style={styles.mark}>
                   <CheckIcon size={iconSize.md} weight="bold" color={colors.success} />
@@ -133,6 +135,9 @@ export function ElfBadgesSheet() {
   )
 }
 
+/* The least the words of a row take beside the button before it wraps under them. */
+const WORDS_MIN = 110
+
 const styles = StyleSheet.create({
   column: {
     gap: space.md,
@@ -142,8 +147,13 @@ const styles = StyleSheet.create({
     gap: space.xs,
     marginBottom: space.xs,
   },
+  /* The picture, the words and the button in a row; the words keep a
+     width to read in, so on a narrow window (or with large text) the
+     button wraps under them, at the right, instead of squeezing the
+     words to a letter a line. */
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: space.md,
     paddingVertical: space.sm,
@@ -168,8 +178,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentStrong,
   },
   words: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: WORDS_MIN,
+    minWidth: WORDS_MIN,
     gap: 4,
+  },
+  action: {
+    marginLeft: 'auto',
   },
   /* How far the badge has come, as a bar. */
   track: {

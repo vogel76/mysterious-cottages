@@ -20,3 +20,13 @@ export function useReadablePadding(base: number): { paddingLeft: number; padding
   const margin = Math.max(0, (width - sizes.readable) / 2)
   return { paddingLeft: base + Math.max(0, left - margin), paddingRight: base + Math.max(0, right - margin) }
 }
+
+/* Whether the window is narrow (under `sizes.narrow`): an iPhone in its
+   zoomed display gives an app 320 points across, Android's largest
+   display size about the same, and both are chosen by people who want
+   everything bigger, so a layout that cannot fit four fixed columns or a
+   button beside its words there takes its compact form instead of
+   running off the screen. */
+export function useNarrow(): boolean {
+  return useWindowDimensions().width < sizes.narrow
+}

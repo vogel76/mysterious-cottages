@@ -342,15 +342,17 @@ export function ElfShopSheet() {
                       </Text>
                     ) : null}
                   </View>
-                  <Button
-                    variant="primary"
-                    disabled={short}
-                    accessibilityLabel={t('mobile:elf.shopItemBuyAria', { name, count: item.cost })}
-                    icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
-                    onPress={() => buy(item, name)}
-                  >
-                    {t('mobile:elf.shopPayDust', { count: item.cost })}
-                  </Button>
+                  <View style={styles.action}>
+                    <Button
+                      variant="primary"
+                      disabled={short}
+                      accessibilityLabel={t('mobile:elf.shopItemBuyAria', { name, count: item.cost })}
+                      icon={<DustIcon size={iconSize.sm} weight="fill" color={colors.accentInk} />}
+                      onPress={() => buy(item, name)}
+                    >
+                      {t('mobile:elf.shopPayDust', { count: item.cost })}
+                    </Button>
+                  </View>
                 </View>
               )
             })
@@ -363,6 +365,9 @@ export function ElfShopSheet() {
 
 /* The side of a piece's thumbnail in the items card, points. */
 const THUMB = 56
+
+/* The least the words of a row take beside the ways to pay before they wrap under them. */
+const WORDS_MIN = 110
 
 const styles = StyleSheet.create({
   column: {
@@ -396,9 +401,12 @@ const styles = StyleSheet.create({
     marginVertical: space.sm,
   },
   /* A pack or a skip: its words on the left, the price or the two ways
-     to pay on the right. */
+     to pay on the right; the words keep a width to read in, so on a
+     narrow window (or with large text) the ways to pay wrap under them,
+     at the right, instead of squeezing the words to a letter a line. */
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: space.md,
@@ -416,8 +424,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   rowWords: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: WORDS_MIN,
+    minWidth: WORDS_MIN,
     gap: 2,
+  },
+  /* An item's one button, at the right when it wraps. */
+  action: {
+    marginLeft: 'auto',
   },
   brewTitle: {
     flexDirection: 'row',
@@ -433,5 +448,6 @@ const styles = StyleSheet.create({
   pays: {
     gap: space.xs,
     alignItems: 'stretch',
+    marginLeft: 'auto',
   },
 })
