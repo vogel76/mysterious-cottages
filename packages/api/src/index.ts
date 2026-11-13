@@ -13,4 +13,5 @@
 export { createChatynkowoClient, type ChatynkowoClient, type ChatynkowoClientConfig } from './client'
 export type { Database, Json, Tables } from './database.types'
 export * from './ranking'
+export * from './supporters'
 export type { Session, User } from '@supabase/supabase-js'

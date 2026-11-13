@@ -106,6 +106,23 @@ export function AccountScreen() {
     }
   }
 
+  /* The supporters' board: the answer is saved the moment the switch
+     moves, like the photo; the switch follows the profile, so a refused
+     save leaves it where it was. */
+  async function toggleSupporter(next: boolean) {
+    if (!profile || busy) return
+    setSaving(true)
+    try {
+      await account.saveSupporter(next)
+      toast.show({ tone: 'success', text: next ? t('mobile:supporters.joined') : t('mobile:supporters.left') })
+    } catch (error) {
+      console.error('[support] board answer', error)
+      toast.show({ tone: 'error', text: t('mobile:supporters.saveFailed') })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const confirmSignOut = () =>
     Alert.alert(t('profile.signOutConfirm'), t('profile.signOutBody'), [
       { text: t('profile.signOutCancel'), style: 'cancel' },
@@ -196,6 +213,26 @@ export function AccountScreen() {
         <SettingsRow label={t('mobile:profile.findsRow')} value={String(Math.max(0, foundCount - pendingCount))} />
         <SettingsRow label={t('mobile:profile.openRanking')} trailing="chevron" onPress={unlessBusy(() => router.navigate('/kronika/ranking', { withAnchor: true }))} />
       </SettingsSection>
+
+      {/* Nothing for a backend that does not know the board yet. */}
+      {profile && profile.listed_as_supporter !== undefined ? (
+        <SettingsSection title={t('mobile:supporters.title')} footer={t('mobile:supporters.accountFooter')}>
+          <SettingsRow
+            label={t('mobile:supporters.accountRow')}
+            trailing={
+              <Switch
+                value={profile.listed_as_supporter === true}
+                disabled={busy}
+                onValueChange={(next) => void toggleSupporter(next)}
+                trackColor={{ true: colors.accent, false: colors.surfaceSoft }}
+                thumbColor={colors.ink}
+                accessibilityLabel={t('mobile:supporters.accountRow')}
+              />
+            }
+          />
+          <SettingsRow label={t('mobile:supporters.open')} trailing="chevron" onPress={unlessBusy(() => router.navigate('/kronika/supporters', { withAnchor: true }))} />
+        </SettingsSection>
+      ) : null}
 
       <SettingsSection title={t('mobile:preferences.title')} footer={t('mobile:preferences.rowFooter')}>
         <SettingsRow icon={<ShieldIcon size={iconSize.md} color={colors.accentStrong} />} label={t('mobile:preferences.row')} trailing="chevron" onPress={unlessBusy(() => router.push('/profile/preferences'))} />

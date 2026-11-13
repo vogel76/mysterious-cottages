@@ -66,8 +66,15 @@ export const STORAGE_KEYS = {
   /* The maps app the seeker chose for "Navigate"; a device preference. */
   mapsApp: 'chatynkowo:maps-app',
   /* The support ledger (src/lib/support-store.ts): how many coffees and
-     ads the player has given, on this device only. */
+     ads the player has given on this device. It goes up to the account
+     only for a seeker who chose to be on the supporters' board. */
   support: 'chatynkowo:support:v1',
+  /* This install's name for itself (src/lib/support-export.ts): the
+     account keeps one support ledger per device, and adds them up. */
+  deviceId: 'chatynkowo:device-id',
+  /* The account that was asked, on this device, whether it wants to be on
+     the supporters' board: nobody is asked twice. */
+  supportersAsked: 'chatynkowo:supporters-asked:v1',
   /* The elf companion (src/features/elf, on the rules in packages/core):
      the egg or the elf, its needs, the day's quests, the purse and the
      streak. */

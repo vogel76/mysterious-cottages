@@ -18,6 +18,9 @@ export type Database = {
           avatar_url: string | null
           completed_at: string | null
           created_at: string
+          /* Whether the account is on the supporters' board: true or false
+             once the seeker answered, null until then. */
+          listed_as_supporter: boolean | null
         }
         Insert: {
           id: string
@@ -26,6 +29,7 @@ export type Database = {
           avatar_url?: string | null
           completed_at?: string | null
           created_at?: string
+          listed_as_supporter?: boolean | null
         }
         Update: {
           id?: string
@@ -34,7 +38,39 @@ export type Database = {
           avatar_url?: string | null
           completed_at?: string | null
           created_at?: string
+          listed_as_supporter?: boolean | null
         }
+        Relationships: []
+      }
+      /* What an account gave (coffees bought, ads watched to the end), one
+         row per device it gave from, since each device keeps its own
+         ledger; the board adds the rows up. */
+      support_ledgers: {
+        Row: {
+          user_id: string
+          device_id: string
+          coffees: number
+          ads: number
+          last_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          device_id: string
+          coffees?: number
+          ads?: number
+          last_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          device_id?: string
+          coffees?: number
+          ads?: number
+          last_at?: string | null
+          updated_at?: string
+        }
+        /* user_id references auth.users, like finds. */
         Relationships: []
       }
       finds: {
@@ -73,6 +109,19 @@ export type Database = {
           elapsed_seconds: number | null
           first_found: string
           last_found: string
+        }[]
+      }
+      /* The supporters_board() SQL function: the accounts that chose to be
+         listed, with what they gave added up over their devices, the most
+         coffees first. The sums are bigints, numbers within JS range. */
+      supporters_board: {
+        Args: Record<never, never>
+        Returns: {
+          public_id: string
+          display_name: string
+          avatar_url: string | null
+          coffees: number
+          ads: number
         }[]
       }
     }

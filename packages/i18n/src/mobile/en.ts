@@ -241,6 +241,28 @@ export const mobileEn: typeof mobilePl = {
     thanksTitle: 'Thank you for your support',
     thanksLead: 'The elves remember every coffee. If you feel like another one, you know where to find us.',
   },
+  supporters: {
+    title: 'Friends of the Elves',
+    lead: 'Those who buy the elves a coffee and watch ads for them.',
+    open: 'See the Friends of the Elves',
+    signIn: 'Sign in to join',
+    join: 'Join the Friends of the Elves',
+    listed: 'You are on the list: {{gave}}.',
+    listedEmpty: 'You are on the list. You will show on it after your first coffee or ad.',
+    empty: 'Nobody is here yet. The first coffee opens the list.',
+    loading: 'Loading the list',
+    loadError: 'The list could not be loaded.',
+    askTitle: 'Will you join the Friends of the Elves?',
+    askBody: 'It is the list of those who buy the elves a coffee and watch ads for them. Everyone will see your nickname on it, and how many coffees and ads you gave.',
+    askYes: 'I am in',
+    askNo: 'No, thank you',
+    askNote: 'You can change your mind in the account settings.',
+    joined: 'You are among the Friends of the Elves.',
+    left: 'You are no longer on the list.',
+    saveFailed: 'It could not be saved. Try again.',
+    accountRow: 'Show me on the list',
+    accountFooter: 'The list shows your nickname and how many coffees and ads you gave.',
+  },
   /* The elf's reminders (src/features/elf/useElfReminders.ts): local
      notifications, the elf's question and the preferences' switch. */
   reminders: {

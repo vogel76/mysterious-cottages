@@ -239,7 +239,9 @@ app/                     expo-router routes
                          and the parchment cottage sheet (a gesture sheet with three snaps)
   (tabs)/kronika/        its own native stack: the collection grid with the progress card and the Ranking's card,
                          and ranking.tsx pushed on top: the leaderboard list, the rules and share header items (the
-                         stack is anchored at the collection, so a link from the account screen still has a back)
+                         stack is anchored at the collection, so a link from the account screen still has a back);
+                         supporters.tsx, pushed the same way: the supporters' board, who gave the elves how many
+                         coffees and ads
   (tabs)/elf/            its own native stack (_layout.tsx, no bar on the screen) and one screen (index.tsx): the elf
                          companion prototype, the full-screen cottage drawn in Skia with the HUD floating over it
   (tabs)/profile/        its own native stack: grouped settings (account, language, preferences, lore, help, legal,
@@ -259,6 +261,7 @@ app/                     expo-router routes
   support.tsx            supporting Chatynkowo, a sheet opened by the support invitations: a coffee for the elf (a purchase
                          through the store) or a rewarded ad watched instead
   nickname.tsx           the nickname editor, a sheet from the account screen and the Ranking's "Change nickname" item
+  supporters-ask.tsx     the question about the supporters' board, a sheet asked once after a sign-in and from the board
   elf-hatch.tsx          the hatch sheet, where the elf that has just hatched is named and given its element
   elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a later form is reached
   elf-today.tsx          the elf's day: the purse named, the quests with their progress, the reward to pick, the way to
@@ -466,6 +469,24 @@ through `src/lib/haptics.ts`.
   because the server does not turn http into https and a browser keeps
   the two addresses' storage apart. Making a report reads and never
   writes, and the app sends nothing on its own.
+- **Supporters' board** (`src/features/supporters`, `app/(tabs)/kronika/supporters.tsx`,
+  `app/supporters-ask.tsx`): "Przyjaciele elfów", who gave the elves how
+  many coffees and ads, for the accounts that chose to be on it. A
+  signed-in seeker is asked once (`SupportersPrompt` opens the sheet when
+  a tab has been in front for a moment; the profile's
+  `listed_as_supporter` holds the answer, so another phone does not ask
+  again, and this device remembers having asked, so a sheet swiped away
+  is not shown twice). The answer can be changed with the switch on the
+  account screen, and the board is reached from the support sheet and
+  from there. `SupportExport` sends this device's ledger
+  (`src/lib/support-store.ts`) to the account only while the seeker is
+  listed: the whole count over the device's own row (`deviceId` in
+  `src/lib/support-export.ts`), once per launch and after every coffee or
+  ad, retried like the finds. The counted ads are the ones watched in the
+  support sheet, as the ledger has always counted; the elf's ads for dust,
+  time and lives are a trade and stay out. The backend side is in
+  `supabase/README.md`, "The supporters' board"; with the account preview
+  on, the board shows a few made-up supporters.
 - **Account preview** (`src/lib/account-preview.ts`): with
   `EXPO_PUBLIC_ACCOUNT_PREVIEW=1` in `apps/mobile/.env` a development
   build behaves as if a Google account were signed in, so the account
