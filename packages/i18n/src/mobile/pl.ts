@@ -268,6 +268,34 @@ export const mobilePl = {
     thanksTitle: 'Dziękujemy za wsparcie',
     thanksLead: 'Elfy pamiętają każdą kawę. Jeśli masz ochotę na kolejną, wiesz, gdzie nas znaleźć.',
   },
+  /* The supporters' board (src/features/supporters): who gave the elves
+     how many coffees and ads, for the seekers who chose to be on it; the
+     question a signed-in seeker is asked once, and its row on the account
+     screen. The counts use the support sheet's own words. */
+  supporters: {
+    title: 'Przyjaciele elfów',
+    lead: 'Ci, którzy stawiają elfom kawę i oglądają dla nich reklamy.',
+    open: 'Zobacz Przyjaciół elfów',
+    signIn: 'Zaloguj się, aby dołączyć',
+    join: 'Dołącz do Przyjaciół elfów',
+    listed: 'Jesteś na liście: {{gave}}.',
+    listedEmpty: 'Jesteś na liście. Pojawisz się na niej po pierwszej kawie albo reklamie.',
+    empty: 'Nikogo tu jeszcze nie ma. Pierwsza kawa otworzy listę.',
+    loading: 'Wczytuję listę',
+    loadError: 'Nie udało się wczytać listy.',
+    /* The question (the sheet at /supporters-ask). */
+    askTitle: 'Dołączysz do Przyjaciół elfów?',
+    askBody: 'To lista tych, którzy stawiają elfom kawę i oglądają dla nich reklamy. Każdy zobaczy na niej Twój pseudonim oraz liczbę Twoich kaw i reklam.',
+    askYes: 'Dołączam',
+    askNo: 'Nie, dziękuję',
+    askNote: 'Zdanie zmienisz w ustawieniach konta.',
+    joined: 'Jesteś wśród Przyjaciół elfów.',
+    left: 'Nie ma Cię już na liście.',
+    saveFailed: 'Nie udało się zapisać. Spróbuj ponownie.',
+    /* The account screen's section. */
+    accountRow: 'Pokaż mnie na liście',
+    accountFooter: 'Na liście widać Twój pseudonim oraz liczbę kaw i reklam.',
+  },
   /* The elf companion prototype: the egg, the care loop, the full-screen
      cottage and its HUD, the evolution card. */
   /* The elf's reminders (src/features/elf/useElfReminders.ts): local

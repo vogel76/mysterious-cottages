@@ -8,7 +8,8 @@ import * as AppleAuthentication from 'expo-apple-authentication'
 import * as Crypto from 'expo-crypto'
 import i18n, { LANGUAGES } from '../i18n'
 import { APPLE_SIGN_IN, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID, SUPABASE_ANON_KEY, SUPABASE_URL } from '../config'
-import { previewEnabled, previewProfile, previewSession, updatePreviewProfile } from './account-preview'
+import { previewEnabled, previewProfile, previewSession, previewSupporters, updatePreviewProfile, updatePreviewSupporter } from './account-preview'
+import { getSnapshot as supportLedger } from './support-store'
 
 /* The app's instance of the shared backend client plus the account
    functions bound to it — a thin wrapper over @chatynkowo/api, the mirror
@@ -18,7 +19,7 @@ import { previewEnabled, previewProfile, previewSession, updatePreviewProfile } 
    A development build with the account preview on (account-preview.ts)
    answers every account call from a stand-in account instead. */
 
-export type { LeaderboardRow, OAuthProvider, Profile, Session } from '@chatynkowo/api'
+export type { LeaderboardRow, OAuthProvider, Profile, Session, SupporterRow } from '@chatynkowo/api'
 
 export type SignInResult =
   | { kind: 'ok'; session: Session; displayName: string | null }
@@ -244,4 +245,34 @@ export async function fetchFinds(session: Session): Promise<Record<string, Store
 
 export async function fetchLeaderboard(total: number) {
   return supabase ? api.fetchLeaderboard(supabase, total) : []
+}
+
+/* The supporters' board (see @chatynkowo/api supporters.ts): who gave the
+   elves how many coffees and ads, for the accounts that chose to be on
+   it. Throws when the backend cannot be read or does not answer in time. */
+export async function fetchSupporters(): Promise<api.SupporterRow[]> {
+  if (previewEnabled) return previewSupporters(supportLedger())
+  return supabase ? withTimeout(api.fetchSupporters(supabase), ATTEMPT_TIMEOUT_MS) : []
+}
+
+/* This device's support ledger to the account. Resolves to false when the
+   backend refused, is unreachable or did not answer in time, so the
+   caller tries again; the reason goes to the console. */
+export async function pushSupportLedger(session: Session, device: string, ledger: api.SupportCounts): Promise<boolean> {
+  if (previewEnabled || !supabase) return true
+  try {
+    await withTimeout(api.pushSupportLedger(supabase, session, device, ledger), ATTEMPT_TIMEOUT_MS)
+    return true
+  } catch (error) {
+    console.error('[support] export', error)
+    return false
+  }
+}
+
+/* The seeker's answer about the board: the profile with the answer in it.
+   A no also takes the account's ledgers out of the backend. Throws when
+   the backend refused or is unreachable. */
+export async function setListedAsSupporter(session: Session, listed: boolean) {
+  if (previewEnabled) return updatePreviewSupporter(listed)
+  return supabase ? withTimeout(api.setListedAsSupporter(supabase, session, listed), ATTEMPT_TIMEOUT_MS) : null
 }

@@ -8,10 +8,12 @@ import {
   getSession,
   isDefaultName,
   onSessionChange,
+  setListedAsSupporter,
   signIn as nativeSignIn,
   signOut as nativeSignOut,
   updateProfile,
 } from '../lib/sync'
+import { notifySupportExported } from '../lib/support-export'
 import { useReconnect } from './NetworkProvider'
 
 /* The account: the Supabase session, the profile row and native sign-in.
@@ -44,6 +46,10 @@ type SessionValue = {
   settleNameRequest: () => void
   /* Throws when the backend refused or is unreachable. */
   saveProfile: (patch: Pick<Profile, 'display_name' | 'avatar_url'>) => Promise<void>
+  /* The seeker's answer about the supporters' board (src/features/supporters):
+     listed with what they gave, or not, in which case the backend keeps
+     none of it. Throws when the backend refused or is unreachable. */
+  saveSupporter: (listed: boolean) => Promise<void>
 }
 
 const SessionContext = createContext<SessionValue | null>(null)
@@ -170,11 +176,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [session],
   )
 
+  const saveSupporter = useCallback(
+    async (listed: boolean) => {
+      if (!session) return
+      const updated = await setListedAsSupporter(session, listed)
+      if (!updated) return
+      setProfile(updated)
+      /* The board on screen, if any, has one seeker more or fewer. */
+      notifySupportExported()
+    },
+    [session],
+  )
+
   const settleNameRequest = useCallback(() => setNameRequested(false), [])
 
   const value = useMemo<SessionValue>(
-    () => ({ providers, enabled: providers.length > 0, session, profile, busy, signIn, signOut, deleteAccount, nameRequested, settleNameRequest, saveProfile }),
-    [session, profile, busy, signIn, signOut, deleteAccount, nameRequested, settleNameRequest, saveProfile],
+    () => ({ providers, enabled: providers.length > 0, session, profile, busy, signIn, signOut, deleteAccount, nameRequested, settleNameRequest, saveProfile, saveSupporter }),
+    [session, profile, busy, signIn, signOut, deleteAccount, nameRequested, settleNameRequest, saveProfile, saveSupporter],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

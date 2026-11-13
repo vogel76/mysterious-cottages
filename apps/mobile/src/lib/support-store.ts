@@ -1,9 +1,11 @@
 import { STORAGE_KEYS } from '../config'
 import { readJson, writeJson } from './storage'
 
-/* The support ledger: how many coffees and ads the player has given, kept
-   on this device only (nothing reaches the account; the ledger is a
-   keepsake, not a currency, since support unlocks nothing). One store
+/* The support ledger: how many coffees and ads the player has given on
+   this device (a keepsake, not a currency, since support unlocks
+   nothing). It stays on the device unless the seeker chose to be on the
+   supporters' board; then it goes up to the account as this device's
+   count (src/features/supporters/SupportExport.tsx). One store
    behind one read of AsyncStorage, the same shape as the reachability
    store (network.ts): subscribers read one snapshot and re-render on a
    change; the hook on top lives in src/features/support. A coffee is what

@@ -1,4 +1,4 @@
-import type { Profile, Session } from '@chatynkowo/api'
+import type { Profile, Session, SupportCounts, SupporterRow } from '@chatynkowo/api'
 import { ACCOUNT_PREVIEW } from '../config'
 
 /* A stand-in account for development builds only: with
@@ -45,6 +45,7 @@ let profile: Profile = {
   avatar_url: PREVIEW_PICTURE,
   completed_at: null,
   created_at: PREVIEW_CREATED_AT,
+  listed_as_supporter: null,
 }
 
 export function previewProfile(): Profile {
@@ -54,4 +55,24 @@ export function previewProfile(): Profile {
 export function updatePreviewProfile(patch: Pick<Profile, 'display_name' | 'avatar_url'>): Profile {
   profile = { ...profile, ...patch }
   return profile
+}
+
+export function updatePreviewSupporter(listed: boolean): Profile {
+  profile = { ...profile, listed_as_supporter: listed }
+  return profile
+}
+
+/* A board to look at: a few made-up supporters, and the stand-in account
+   among them with this device's own ledger once it chose to be listed. */
+export function previewSupporters(ledger: SupportCounts): SupporterRow[] {
+  const rows: SupporterRow[] = [
+    { public_id: 'previewoak', display_name: 'Dąbrówka', avatar_url: null, coffees: 7, ads: 12 },
+    { public_id: 'previewfern', display_name: 'Paprotka', avatar_url: null, coffees: 3, ads: 31 },
+    { public_id: 'previewmoss', display_name: 'Mech', avatar_url: null, coffees: 1, ads: 4 },
+    { public_id: 'previewowl', display_name: 'Sowa z Jury', avatar_url: null, coffees: 0, ads: 9 },
+  ]
+  if (profile.listed_as_supporter && ledger.coffees + ledger.ads > 0) {
+    rows.push({ public_id: profile.public_id, display_name: profile.display_name, avatar_url: profile.avatar_url, coffees: ledger.coffees, ads: ledger.ads })
+  }
+  return rows.sort((a, b) => b.coffees - a.coffees || b.ads - a.ads)
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { STORE_NAME } from '../../lib/billing'
 import { storeNoteKey, useCloseModal, useOnline, useSupport } from '../../providers'
@@ -23,6 +24,7 @@ import { useSupportLedger } from './useSupportLedger'
 
 export function SupportSheet() {
   const { t } = useTranslation()
+  const router = useRouter()
   const close = useCloseModal()
   const online = useOnline()
   const support = useSupport()
@@ -155,6 +157,18 @@ export function SupportSheet() {
             {t('mobile:support.ledgerTitle')}: {given.join(', ')}
           </Text>
         ) : null}
+        {/* The way to the supporters' board: the sheet closes first, so
+            the board opens on the Kronika's stack and not on top of it. */}
+        <Button
+          variant="subtle"
+          block
+          onPress={() => {
+            close()
+            router.navigate('/kronika/supporters', { withAnchor: true })
+          }}
+        >
+          {t('mobile:supporters.open')}
+        </Button>
         <Text variant="small" tone="faint" align="center">
           {t('mobile:support.note')}
         </Text>
