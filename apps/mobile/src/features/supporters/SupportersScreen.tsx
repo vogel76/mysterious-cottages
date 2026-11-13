@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import type { SupporterRow as Row } from '@chatynkowo/api'
 import { useOnline, useSession, useSupport } from '../../providers'
-import { Button, CoffeeIcon, EmptyState, ProfileIcon, SettingsRow, SettingsSection, ShieldIcon, SkeletonRow, Text, WatchAdIcon, colors, iconSize, radius, readable, space, useReadablePadding, useTabBarClearance } from '../../ui'
+import { Button, CoffeeIcon, EmptyState, ProfileIcon, SettingsRow, SettingsSection, ShieldIcon, SkeletonRow, Text, WatchAdIcon, colors, iconSize, radius, readable, space, useNarrow, useReadablePadding, useTabBarClearance } from '../../ui'
 import { RewardedAdNote } from '../support/RewardedAdNote'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { SUPPORTER_ROW_HEIGHT, SupporterRow } from './SupporterRow'
@@ -17,9 +17,10 @@ import { useSupporters } from './useSupporters'
    bought beside each name, for the accounts that chose to be in it.
 
    It is built to be climbed. Above the rows stands the seeker's own
-   card: their place, what they gave, how many ads short of the next
-   place they are, and the button that plays an ad right here, so the
-   place moves while they look at it. An account that is not in the
+   card: their place, what they gave (the ads and the coffees, each with
+   its icon, as in the rows), how many ads short of the next place they
+   are, and the button that plays an ad right here, so the place moves
+   while they look at it. An account that is not in the
    ranking gets the way in instead (the question's sheet), a signed-out
    seeker the way to the profile. The tab bar floats over the list, so it
    pads its end by the bar's height. */
@@ -41,7 +42,8 @@ export function SupportersScreen() {
   const adBusy = ad.status === 'loading' || ad.status === 'showing'
 
   const myId = account.profile?.public_id ?? null
-  const renderRow = useCallback(({ item, index }: { item: Row; index: number }) => <SupporterRow row={item} place={index + 1} mine={item.public_id === myId} />, [myId])
+  const narrow = useNarrow()
+  const renderRow = useCallback(({ item, index }: { item: Row; index: number }) => <SupporterRow row={item} place={index + 1} mine={item.public_id === myId} compact={narrow} />, [myId, narrow])
 
   const watch = ad.offered ? (
     <>
@@ -64,7 +66,9 @@ export function SupportersScreen() {
       )
     }
     if (standing.listed === undefined) return null
-    const gave = [t('mobile:support.ledgerAds', { count: standing.ads }), standing.coffees > 0 ? t('mobile:support.ledgerCoffees', { count: standing.coffees }) : null].filter(Boolean).join(', ')
+    const ads = t('mobile:support.ledgerAds', { count: standing.ads })
+    const coffees = t('mobile:support.ledgerCoffees', { count: standing.coffees })
+    const gave = standing.coffees > 0 ? `${ads}, ${coffees}` : ads
     if (!standing.listed) {
       return (
         <View style={styles.card}>
@@ -85,7 +89,16 @@ export function SupportersScreen() {
             </Text>
             <View style={styles.standingText}>
               <Text variant="eyebrow">{t('mobile:supporters.yourPlace')}</Text>
-              <Text weight="bold">{gave}</Text>
+              <View style={styles.gave}>
+                <View style={styles.figure}>
+                  <WatchAdIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />
+                  <Text weight="bold">{ads}</Text>
+                </View>
+                <View style={styles.figure}>
+                  <CoffeeIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />
+                  <Text weight="bold">{coffees}</Text>
+                </View>
+              </View>
             </View>
           </View>
         ) : null}
@@ -181,6 +194,19 @@ const styles = StyleSheet.create({
   },
   standingText: {
     flex: 1,
+    gap: space.xs,
+  },
+  /* What the seeker gave, the two figures side by side; they wrap in a
+     narrow window. */
+  gave: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: space.lg,
+    rowGap: space.xs,
+  },
+  figure: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: space.xs,
   },
 })
