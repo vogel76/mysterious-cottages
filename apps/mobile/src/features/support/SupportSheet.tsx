@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { STORE_NAME } from '../../lib/billing'
 import { storeNoteKey, useCloseModal, useOnline, useSupport } from '../../providers'
 import { Button, CoffeeIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
+import { RewardedAdNote } from './RewardedAdNote'
 import { DEFAULT_TIP, tipLabelKey } from './tips'
 import { rewardedAdNoteKey, useRewardedSupportAd } from './useRewardedSupportAd'
 import { useSupportLedger } from './useSupportLedger'
@@ -139,11 +140,7 @@ export function SupportSheet() {
               >
                 {t('mobile:support.adAction')}
               </Button>
-              {adNote ? (
-                <Text variant="small" tone="faint" accessibilityLiveRegion="polite">
-                  {t(adNote)}
-                </Text>
-              ) : null}
+              <RewardedAdNote note={adNote} offered />
             </>
           ) : (
             <Text variant="small" tone="faint">
@@ -157,8 +154,8 @@ export function SupportSheet() {
             {t('mobile:support.ledgerTitle')}: {given.join(', ')}
           </Text>
         ) : null}
-        {/* The way to the supporters' board: the sheet closes first, so
-            the board opens on the Kronika's stack and not on top of it. */}
+        {/* The way to the support ranking: the sheet closes first, so
+            the ranking opens on the Kronika's stack and not on top of it. */}
         <Button
           variant="subtle"
           block

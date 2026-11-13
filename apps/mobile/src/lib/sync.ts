@@ -247,7 +247,7 @@ export async function fetchLeaderboard(total: number) {
   return supabase ? api.fetchLeaderboard(supabase, total) : []
 }
 
-/* The supporters' board (see @chatynkowo/api supporters.ts): who gave the
+/* The support ranking (see @chatynkowo/api supporters.ts): who gave the
    elves how many coffees and ads, for the accounts that chose to be on
    it. Throws when the backend cannot be read or does not answer in time. */
 export async function fetchSupporters(): Promise<api.SupporterRow[]> {

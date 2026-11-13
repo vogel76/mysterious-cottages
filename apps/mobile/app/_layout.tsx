@@ -26,6 +26,7 @@ import {
   useToast,
 } from '../src/providers'
 import { SupportExport } from '../src/features/supporters/SupportExport'
+import { SupportRankWatch } from '../src/features/supporters/SupportRankWatch'
 import { SupportersPrompt } from '../src/features/supporters/SupportersPrompt'
 import { TabBarHeightProvider, ToastHost, colors, fonts, headerRightItems, useAppFonts } from '../src/ui'
 
@@ -167,6 +168,7 @@ function AppShell() {
                   <NamePrompt />
                   <SupportersPrompt />
                   <SupportExport />
+                  <SupportRankWatch />
                   <Toasts />
                 </SupportProvider>
               </ToastProvider>
@@ -274,8 +276,8 @@ function RootStack() {
       {/* The nickname editor (src/features/profile): a sheet from the
           account screen and the Ranking. */}
       <Stack.Screen name="nickname" options={sheetRoute} />
-      {/* The question about the supporters' board (src/features/supporters):
-          a sheet asked once after a sign-in, and from the board. */}
+      {/* The question about the support ranking (src/features/supporters):
+          a sheet asked once after a sign-in, and from the ranking. */}
       <Stack.Screen name="supporters-ask" options={sheetRoute} />
       {/* The elf companion (src/features/elf): the hatch sheet, where the
           elf is named, and the evolution card, a transparent modal like

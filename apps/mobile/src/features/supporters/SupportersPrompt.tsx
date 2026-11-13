@@ -5,7 +5,7 @@ import { readJson, writeJson } from '../../lib/storage'
 import { useSession } from '../../providers'
 
 /* Asks a signed-in seeker, once, whether they want to be on the
-   supporters' board: the sheet at /supporters-ask. Mounted once, under
+   support ranking: the sheet at /supporters-ask. Mounted once, under
    the providers; it draws nothing.
 
    The question is for an account that has not answered (the profile says

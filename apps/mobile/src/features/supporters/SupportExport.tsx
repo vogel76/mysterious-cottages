@@ -6,7 +6,7 @@ import { useForeground, useOnline, useReconnect, useSession } from '../../provid
 import { useSupportLedger } from '../support/useSupportLedger'
 
 /* Sends this device's support ledger (the coffees and the ads given here)
-   to the account, for a seeker who chose to be on the supporters' board
+   to the account, for a seeker who chose to be in the support ranking
    and for nobody else: an account that was not asked, or said no, keeps
    its ledger on the device. Mounted once, under the providers; it draws
    nothing.

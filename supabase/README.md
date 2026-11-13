@@ -13,7 +13,7 @@ versioned in the repository: changes are made in the project, and a local
 | `profiles` — nickname, avatar, `public_id`, `completed_at` | Postgres | leaderboard, profile |
 | `finds` — discovered cottages per account | Postgres | Kronika sync |
 | `leaderboard(p_total)` — the ranking | SQL function | `/ranking.html` |
-| `profiles.listed_as_supporter`, `support_ledgers`, `supporters_board()` — who gave the elves how many coffees and ads | Postgres, SQL function | the app's supporters' board |
+| `profiles.listed_as_supporter`, `support_ledgers`, `supporters_board()` — who watched how many ads and bought how many coffees | Postgres, SQL function | the app's support ranking |
 | `delete-account` — removes the caller's finds, profile and auth user | Edge Function (`functions/delete-account/`) | the app's account screen, `/delete-account.html`, `/profile.html` |
 
 What the backend does **not** do, and should not do without a reason: it does
@@ -78,12 +78,13 @@ schema. Put the local project's URL and key into `apps/web/.env`.
 - **Content** stays in the repository and the `/admin/` editor; the app
   fetches it from `https://www.chatynkowo.pl`.
 
-## The supporters' board
+## The support ranking
 
-The app keeps a support ledger on each device: how many coffees were
-bought and how many ads were watched to the end. A signed-in seeker is
-asked once whether they want to be on the supporters' board ("Przyjaciele
-elfów"); only then does the ledger leave the device.
+The app keeps a support ledger on each device: how many ads were watched
+to the end, wherever in the game they were offered, and how many coffees
+were bought. A signed-in seeker is asked once whether they want to be in
+the support ranking ("Ranking wsparcia"); only then does the ledger leave
+the device.
 
 - `profiles.listed_as_supporter` (boolean, nullable): the answer. Null
   means not asked yet, so the app asks; true lists the account; false is
@@ -98,7 +99,7 @@ elfów"); only then does the ledger leave the device.
 - `supporters_board()` (security definer, callable by `anon` and
   `authenticated`): for accounts with `listed_as_supporter`, the public
   id, the nickname, the photo and the two sums over the account's
-  devices, the most coffees first, then the most ads; accounts that gave
+  devices, the most ads first, then the most coffees; accounts that gave
   nothing are left out.
 
 Saying no (or switching the row off on the account screen) deletes the
@@ -107,14 +108,16 @@ nothing the seeker did not agree to show; a later yes sends them again
 from each device. The client code is `packages/api/src/supporters.ts`.
 
 The counts are the client's word: nothing checks a purchase with the
-store or an ad with the ad network. That is enough for a board of
-thanks. Before anything of value hangs on it, count on the backend
-instead (an Edge Function that verifies the store's receipt, AdMob's
-server-side verification callback for the ads).
+store or an ad with the ad network. Now that the ranking is a race, a
+tampered client could claim a place it did not earn; that is tolerable
+while only the place is at stake. Before anything of value hangs on it,
+or if made-up counts show up, count on the backend instead (AdMob's
+server-side verification callback for the ads, an Edge Function that
+verifies the store's receipt for the coffees).
 
 As with the rest of the schema, these objects are created in the
 project's SQL editor and are not versioned here; an app that reaches a
-backend without them asks nobody and shows the board as unavailable.
+backend without them asks nobody and shows the ranking as unavailable.
 
 ## Deleting an account
 

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useCloseModal, useSession, useToast } from '../../providers'
 import { Button, SheetRoute, Text, space } from '../../ui'
 
-/* The question about the supporters' board (the route /supporters-ask):
+/* The question about the support ranking (the route /supporters-ask):
    a sheet with what the board is, what it would show of the seeker, and
    the two answers. Yes lists the account and lets its ledger go up
    (SupportExport); no is kept too, so the question is not asked again on

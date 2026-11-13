@@ -106,7 +106,7 @@ export function AccountScreen() {
     }
   }
 
-  /* The supporters' board: the answer is saved the moment the switch
+  /* The support ranking: the answer is saved the moment the switch
      moves, like the photo; the switch follows the profile, so a refused
      save leaves it where it was. */
   async function toggleSupporter(next: boolean) {

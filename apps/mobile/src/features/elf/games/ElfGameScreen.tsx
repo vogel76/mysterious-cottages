@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { DUST, ELF_GAMES, type ElfGameId } from '@chatynkowo/core'
 import { useCloseModal, useElf, useOnline } from '../../../providers'
 import { AcornsIcon, Button, CloseIcon, DustIcon, HurryIcon, IconButton, JoyIcon, SleepIcon, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../../ui'
+import { RewardedAdNote } from '../../support/RewardedAdNote'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../../support/useRewardedSupportAd'
 import { AcornsGame } from './AcornsGame'
 import { EchoGame } from './EchoGame'
@@ -224,11 +225,7 @@ export function ElfGameScreen() {
                     {t('mobile:elf.hurryShort', { count: dust })}
                   </Text>
                 ) : null}
-                {adNote ? (
-                  <Text variant="small" tone="faint" align="center" accessibilityLiveRegion="polite">
-                    {t(adNote)}
-                  </Text>
-                ) : null}
+                <RewardedAdNote note={adNote} offered={ad.offered && adsLeft > 0} align="center" />
                 <Button variant="subtle" block disabled={adBusy} onPress={() => settle(out.points)}>
                   {t('mobile:elf.gameReviveEnd')}
                 </Button>

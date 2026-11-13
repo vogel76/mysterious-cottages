@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AdEventType, RewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads'
 import { REWARDED_AD_UNIT_ID, adsOffered, prepareAds, type AdsPermission } from '../../lib/ads'
+import { recordSupport } from '../../lib/support-store'
 
-/* The rewarded ad of the support sheet, the one place the app shows an
-   ad: the player asks for it, watches it to the end and that is the
-   support (nothing is unlocked by it). One ad per request, loaded when
-   asked for and shown as soon as it is in; the hook reports where the
-   request stands so the sheet can say so, and calls back once the ad
-   network says the ad was watched to the end.
+/* The rewarded ad, wherever the app offers one (the support sheet, the
+   support ranking, the elf's sheets and games): the player asks for it
+   and watches it to the end. One ad per request, loaded when asked for
+   and shown as soon as it is in; the hook reports where the request
+   stands so the caller can say so, and calls back once the ad network
+   says the ad was watched to the end. Every ad that ends this way is
+   counted in the support ledger here, whatever it was watched for, which
+   is what the support ranking ranks by.
 
    Before the first request the consent flow and the SDK are readied by
    src/lib/ads.ts (Google's User Messaging Platform: in the EEA the form
@@ -91,6 +94,7 @@ export function useRewardedSupportAd(onRewarded: () => void): { offered: boolean
       const reward = () => {
         release()
         setStatus('idle')
+        recordSupport('ad')
         onRewardedRef.current()
       }
       const fail = (error: unknown) => {

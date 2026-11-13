@@ -46,7 +46,7 @@ type SessionValue = {
   settleNameRequest: () => void
   /* Throws when the backend refused or is unreachable. */
   saveProfile: (patch: Pick<Profile, 'display_name' | 'avatar_url'>) => Promise<void>
-  /* The seeker's answer about the supporters' board (src/features/supporters):
+  /* The seeker's answer about the support ranking (src/features/supporters):
      listed with what they gave, or not, in which case the backend keeps
      none of it. Throws when the backend refused or is unreachable. */
   saveSupporter: (listed: boolean) => Promise<void>
