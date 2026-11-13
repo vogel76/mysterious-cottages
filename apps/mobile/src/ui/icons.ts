@@ -45,6 +45,7 @@ import { SmileyIcon } from 'phosphor-react-native/src/icons/Smiley'
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp'
 import { BalloonIcon } from 'phosphor-react-native/src/icons/Balloon'
 import { BookOpenTextIcon } from 'phosphor-react-native/src/icons/BookOpenText'
+import { BugIcon } from 'phosphor-react-native/src/icons/Bug'
 import { CameraIcon as PhosphorCamera } from 'phosphor-react-native/src/icons/Camera'
 import { CalendarCheckIcon } from 'phosphor-react-native/src/icons/CalendarCheck'
 import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown'
@@ -141,6 +142,8 @@ export const LocateIcon = GpsFixIcon
 export const SpinnerIcon = CircleNotchIcon
 export const SearchIcon = MagnifyingGlassIcon
 export const DownloadIcon = DownloadSimpleIcon
+export const ReportIcon = BugIcon
+export const MailIcon = EnvelopeSimpleIcon
 
 /* ---------- Domain: the expedition ---------- */
 export const CottageIcon = HouseLineIcon
@@ -291,6 +294,7 @@ export const LetterOpenIcon = EnvelopeSimpleOpenIcon
 export const ICON_VOCABULARY = {
   CloseIcon, BackIcon, ForwardIcon, PreviousIcon, NextIcon, ExpandIcon, CheckIcon, PlayIcon, PauseIcon,
   SoundOnIcon, SoundOffIcon, ZoomInIcon, ZoomOutIcon, ResetViewIcon, LocateIcon, SpinnerIcon, SearchIcon, DownloadIcon,
+  ReportIcon, MailIcon,
   CottageIcon, FoundIcon, PinIcon, NavigateIcon, BearingIcon, AtlasIcon, TrailIcon, KeyIcon, SealIcon, QrIcon, ShieldIcon,
   ChronicleIcon, RewardIcon, NotebookIcon, StoryAudioIcon, LoreIcon, CreedIcon, ElfIcon, ForestIcon,
   InstagramIcon, FacebookIcon,

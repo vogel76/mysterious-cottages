@@ -10,7 +10,7 @@ import { useElf } from '../../../src/providers'
 import { SupportCard } from '../../../src/features/support/SupportCard'
 import { LANGUAGES, setLanguage, toLanguage } from '../../../src/i18n'
 import { appVersion } from '../../../src/lib/version'
-import { ElfIcon, FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, SettingsRow, SettingsSection, ShieldIcon, Text, colors, iconSize, readable, space, useReadablePadding, useTabBarClearance } from '../../../src/ui'
+import { ElfIcon, FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, ReportIcon, SettingsRow, SettingsSection, ShieldIcon, Text, colors, iconSize, readable, space, useReadablePadding, useTabBarClearance } from '../../../src/ui'
 
 /* The Profile tab: grouped settings in the system idiom. The account block
    (who is signed in, the way to the account screen, or the sign-in), the
@@ -18,9 +18,10 @@ import { ElfIcon, FacebookIcon, InstagramIcon, LoreIcon, NotebookIcon, SettingsR
    seen), the language, the preferences (the consent to ads, here for a
    signed-out seeker too; the account screen repeats the row), the elf
    (the way to start it over, here rather than in its tab, out of the way
-   of a child's thumb), the lore (how to play, about), the legal pages in
-   an in-app browser, the social profiles and, last, the installed version
-   with the commit it was built from, for a bug report. Sign-out and
+   of a child's thumb), the lore (how to play, about), the way to report a
+   problem (the screen that makes the diagnostics report and sends it),
+   the legal pages in an in-app browser, the social profiles and, last,
+   the installed version with the commit it was built from. Sign-out and
    account deletion live on the account screen. */
 
 type Block = { key: string; node: ReactElement }
@@ -106,6 +107,20 @@ export default function ProfileScreen() {
             label={t('nav.about')}
             trailing="chevron"
             onPress={() => router.push('/profile/about')}
+          />
+        </SettingsSection>
+      ),
+    },
+    {
+      key: 'help',
+      node: (
+        <SettingsSection title={t('mobile:report.section')}>
+          <SettingsRow
+            icon={<ReportIcon size={iconSize.md} color={colors.accentStrong} />}
+            label={t('mobile:report.row')}
+            trailing="chevron"
+            accessibilityHint={t('mobile:report.rowHint')}
+            onPress={() => router.push('/profile/report')}
           />
         </SettingsSection>
       ),
