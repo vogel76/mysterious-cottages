@@ -172,7 +172,7 @@ export const mobilePl = {
     title: 'Preferencje',
     row: 'Powiadomienia i prywatność',
     rowFooter: 'Przypomnienia i dźwięki elfa, zgoda na reklamy i to, czy mogą być dopasowane do Ciebie.',
-    lead: 'Jedyna reklama w aplikacji to ta, o którą sam poprosisz w arkuszu wsparcia. Formularz zgody Google decyduje, czy może być dopasowana do Ciebie. Zgodę zmienisz albo cofniesz tutaj w każdej chwili, tak samo łatwo, jak ją wyrażasz.',
+    lead: 'Reklamę zobaczysz tylko wtedy, gdy o nią poprosisz. Formularz zgody Google decyduje, czy może być dopasowana do Ciebie. Zgodę zmienisz albo cofniesz tutaj w każdej chwili, tak samo łatwo, jak ją wyrażasz.',
     adsTitle: 'Reklamy',
     consentRow: 'Zgoda na reklamy',
     statusLoading: 'Sprawdzam',
@@ -268,33 +268,58 @@ export const mobilePl = {
     thanksTitle: 'Dziękujemy za wsparcie',
     thanksLead: 'Elfy pamiętają każdą kawę. Jeśli masz ochotę na kolejną, wiesz, gdzie nas znaleźć.',
   },
-  /* The supporters' board (src/features/supporters): who gave the elves
-     how many coffees and ads, for the seekers who chose to be on it; the
-     question a signed-in seeker is asked once, and its row on the account
-     screen. The counts use the support sheet's own words. */
+  /* The support ranking (src/features/supporters): who watched the most
+     ads for Chatynkowo, with the coffees bought beside each name, for the
+     seekers who chose to be in it. It is there to be climbed, so it speaks
+     wherever an ad is offered: the line under every ad button, the toast
+     on a climb, the Kronika's card, the seeker's own card over the rows.
+     Also the question a signed-in seeker is asked once, and its row on
+     the account screen. The counts use the support sheet's own words. */
   supporters: {
-    title: 'Przyjaciele elfów',
-    lead: 'Ci, którzy stawiają elfom kawę i oglądają dla nich reklamy.',
-    open: 'Zobacz Przyjaciół elfów',
-    signIn: 'Zaloguj się, aby dołączyć',
-    join: 'Dołącz do Przyjaciół elfów',
-    listed: 'Jesteś na liście: {{gave}}.',
-    listedEmpty: 'Jesteś na liście. Pojawisz się na niej po pierwszej kawie albo reklamie.',
-    empty: 'Nikogo tu jeszcze nie ma. Pierwsza kawa otworzy listę.',
-    loading: 'Wczytuję listę',
-    loadError: 'Nie udało się wczytać listy.',
+    title: 'Ranking wsparcia',
+    lead: 'O miejscu decydują reklamy obejrzane do końca, gdziekolwiek w grze. Przy remisie wyżej jest ten, kto postawił elfom więcej kaw.',
+    open: 'Zobacz ranking wsparcia',
+    signIn: 'Zaloguj się, aby wejść do rankingu',
+    /* The seeker's own card over the rows. */
+    yourPlace: 'Twoje miejsce',
+    toNext_one: 'Do {{place}}. miejsca brakuje Ci jednej reklamy.',
+    toNext_few: 'Do {{place}}. miejsca brakuje Ci {{count}} reklam.',
+    toNext_many: 'Do {{place}}. miejsca brakuje Ci {{count}} reklam.',
+    toNext_other: 'Do {{place}}. miejsca brakuje Ci {{count}} reklam.',
+    leading: 'Prowadzisz! Oglądaj dalej, żeby nikt Cię nie dogonił.',
+    firstAd: 'Obejrzyj pierwszą reklamę, a pojawisz się w rankingu.',
+    join: 'Dołącz do rankingu',
+    joinLead: 'Nie ma Cię jeszcze w rankingu. Dołącz, a każda obejrzana reklama przesunie Cię wyżej.',
+    joinLeadGave: 'Twoje wsparcie do tej pory: {{gave}}. Dołącz do rankingu i zobacz, które to miejsce.',
+    empty: 'Nikogo tu jeszcze nie ma. Pierwsza obejrzana reklama daje pierwsze miejsce.',
+    loading: 'Wczytuję ranking',
+    loadError: 'Nie udało się wczytać rankingu.',
+    /* The line under an ad button (src/features/support/RewardedAdNote). */
+    adCounts: 'Ta reklama liczy się w rankingu wsparcia.',
+    adLeading: 'Prowadzisz w rankingu wsparcia. Ta reklama powiększy przewagę.',
+    adToNext_one: 'Do {{place}}. miejsca w rankingu wsparcia brakuje Ci jednej reklamy.',
+    adToNext_few: 'Do {{place}}. miejsca w rankingu wsparcia brakuje Ci {{count}} reklam.',
+    adToNext_many: 'Do {{place}}. miejsca w rankingu wsparcia brakuje Ci {{count}} reklam.',
+    adToNext_other: 'Do {{place}}. miejsca w rankingu wsparcia brakuje Ci {{count}} reklam.',
+    /* The toasts on a better standing (SupportRankWatch). */
+    entered: 'Jesteś w rankingu wsparcia: {{place}}. miejsce!',
+    rankUp: 'Awans w rankingu wsparcia: {{place}}. miejsce!',
+    /* The Kronika's card. */
+    kronikaCard: 'Kto obejrzał najwięcej reklam dla Chatynkowa i które miejsce zajmujesz Ty',
+    kronikaPlace: '{{place}}. miejsce',
+    kronikaCardAria: 'Otwórz ranking wsparcia',
     /* The question (the sheet at /supporters-ask). */
-    askTitle: 'Dołączysz do Przyjaciół elfów?',
-    askBody: 'To lista tych, którzy stawiają elfom kawę i oglądają dla nich reklamy. Każdy zobaczy na niej Twój pseudonim oraz liczbę Twoich kaw i reklam.',
+    askTitle: 'Dołączysz do rankingu wsparcia?',
+    askBody: 'Ranking pokazuje, kto obejrzał najwięcej reklam dla Chatynkowa i ile kaw postawił elfom. Każdy zobaczy w nim Twój pseudonim i Twoje liczby.',
     askYes: 'Dołączam',
     askNo: 'Nie, dziękuję',
     askNote: 'Zdanie zmienisz w ustawieniach konta.',
-    joined: 'Jesteś wśród Przyjaciół elfów.',
-    left: 'Nie ma Cię już na liście.',
+    joined: 'Jesteś w rankingu wsparcia.',
+    left: 'Nie ma Cię już w rankingu.',
     saveFailed: 'Nie udało się zapisać. Spróbuj ponownie.',
     /* The account screen's section. */
-    accountRow: 'Pokaż mnie na liście',
-    accountFooter: 'Na liście widać Twój pseudonim oraz liczbę kaw i reklam.',
+    accountRow: 'Pokaż mnie w rankingu',
+    accountFooter: 'W rankingu widać Twój pseudonim oraz liczbę obejrzanych reklam i postawionych kaw.',
   },
   /* The elf companion prototype: the egg, the care loop, the full-screen
      cottage and its HUD, the evolution card. */

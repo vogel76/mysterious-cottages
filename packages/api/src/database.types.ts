@@ -18,7 +18,7 @@ export type Database = {
           avatar_url: string | null
           completed_at: string | null
           created_at: string
-          /* Whether the account is on the supporters' board: true or false
+          /* Whether the account is in the support ranking: true or false
              once the seeker answered, null until then. */
           listed_as_supporter: boolean | null
         }
@@ -113,7 +113,7 @@ export type Database = {
       }
       /* The supporters_board() SQL function: the accounts that chose to be
          listed, with what they gave added up over their devices, the most
-         coffees first. The sums are bigints, numbers within JS range. */
+         ads first. The sums are bigints, numbers within JS range. */
       supporters_board: {
         Args: Record<never, never>
         Returns: {

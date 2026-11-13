@@ -3,7 +3,7 @@ import { Stack } from 'expo-router'
 import { TabStack } from '../../../src/ui'
 
 /* The Kronika tab's own stack: the collection under a standard title, and
-   the Ranking and the supporters' board pushed on top under their own
+   the Ranking and the support ranking pushed on top under their own
    titles with the native back button. The collection's title is the reward config's treasury title,
    so index.tsx sets it with Stack.Screen once the content is known; the
    Ranking's short title is read here so it follows the language switch

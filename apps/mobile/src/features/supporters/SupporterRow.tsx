@@ -3,11 +3,11 @@ import { StyleSheet, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import type { SupporterRow as Row } from '@chatynkowo/api'
-import { Avatar, Text, colors, enterDown, radius, space } from '../../ui'
+import { Avatar, Text, WatchAdIcon, colors, enterDown, iconSize, radius, space } from '../../ui'
 
-/* One line of the supporters' board, the leaderboard's row with other
-   figures: place, avatar or initials, name, and under it what the seeker
-   gave, in the support sheet's own words (so many coffees, so many ads).
+/* One line of the support ranking, the leaderboard's row with other
+   figures: place, avatar or initials, name with the coffees bought under
+   it, and at the end the number the ranking goes by, the ads watched.
    The height is fixed so the list can lay rows out without measuring. */
 
 export const SUPPORTER_ROW_HEIGHT = 64
@@ -22,16 +22,12 @@ type SupporterRowProps = { row: Row; place: number; mine: boolean }
 
 export const SupporterRow = memo(function SupporterRow({ row, place, mine }: SupporterRowProps) {
   const { t } = useTranslation()
-  const gave = [
-    row.coffees > 0 ? t('mobile:support.ledgerCoffees', { count: row.coffees }) : null,
-    row.ads > 0 ? t('mobile:support.ledgerAds', { count: row.ads }) : null,
-  ]
-    .filter(Boolean)
-    .join(', ')
+  const ads = t('mobile:support.ledgerAds', { count: row.ads })
+  const coffees = row.coffees > 0 ? t('mobile:support.ledgerCoffees', { count: row.coffees }) : null
   const name = row.display_name + (mine ? ` ${t('ranking.you')}` : '')
   const entering = place <= ANIMATED_ROWS ? enterDown(Math.min(place - 1, MAX_STAGGER_STEPS) * STAGGER_MS) : undefined
   return (
-    <Animated.View entering={entering} style={[styles.row, mine && styles.rowMine]} accessible accessibilityLabel={[`${place}.`, name, gave].join(', ')}>
+    <Animated.View entering={entering} style={[styles.row, mine && styles.rowMine]} accessible accessibilityLabel={[`${place}.`, name, ads, coffees].filter(Boolean).join(', ')}>
       <Text variant="heading" tone={place <= 3 ? 'accent' : 'faint'} style={styles.place}>
         {place}
       </Text>
@@ -40,9 +36,17 @@ export const SupporterRow = memo(function SupporterRow({ row, place, mine }: Sup
         <Text weight={mine ? 'bold' : 'semibold'} numberOfLines={1}>
           {name}
         </Text>
-        <Text variant="small" tone="faint" numberOfLines={1}>
-          {gave}
+        {coffees ? (
+          <Text variant="small" tone="faint" numberOfLines={1}>
+            {coffees}
+          </Text>
+        ) : null}
+      </View>
+      <View style={styles.score}>
+        <Text weight="bold" tone={place <= 3 ? 'accent' : 'ink'}>
+          {row.ads}
         </Text>
+        <WatchAdIcon size={iconSize.sm} color={colors.inkFaint} />
       </View>
     </Animated.View>
   )
@@ -69,5 +73,10 @@ const styles = StyleSheet.create({
   },
   name: {
     flex: 1,
+  },
+  score: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
   },
 })

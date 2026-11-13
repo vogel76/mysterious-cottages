@@ -62,8 +62,9 @@ export function updatePreviewSupporter(listed: boolean): Profile {
   return profile
 }
 
-/* A board to look at: a few made-up supporters, and the stand-in account
-   among them with this device's own ledger once it chose to be listed. */
+/* A ranking to look at: a few made-up supporters, and the stand-in account
+   among them with this device's own ledger once it chose to be listed, in
+   the ranking's order (the most ads first, then the most coffees). */
 export function previewSupporters(ledger: SupportCounts): SupporterRow[] {
   const rows: SupporterRow[] = [
     { public_id: 'previewoak', display_name: 'Dąbrówka', avatar_url: null, coffees: 7, ads: 12 },
@@ -74,5 +75,5 @@ export function previewSupporters(ledger: SupportCounts): SupporterRow[] {
   if (profile.listed_as_supporter && ledger.coffees + ledger.ads > 0) {
     rows.push({ public_id: profile.public_id, display_name: profile.display_name, avatar_url: profile.avatar_url, coffees: ledger.coffees, ads: ledger.ads })
   }
-  return rows.sort((a, b) => b.coffees - a.coffees || b.ads - a.ads)
+  return rows.sort((a, b) => b.ads - a.ads || b.coffees - a.coffees)
 }

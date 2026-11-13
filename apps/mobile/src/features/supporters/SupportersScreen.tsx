@@ -3,20 +3,26 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import type { SupporterRow as Row } from '@chatynkowo/api'
-import { useOnline, useSession } from '../../providers'
-import { Button, CoffeeIcon, EmptyState, ProfileIcon, SettingsRow, SettingsSection, ShieldIcon, SkeletonRow, Text, colors, iconSize, readable, space, useReadablePadding, useTabBarClearance } from '../../ui'
-import { useSupportLedger } from '../support/useSupportLedger'
+import { useOnline, useSession, useSupport } from '../../providers'
+import { Button, CoffeeIcon, EmptyState, ProfileIcon, SettingsRow, SettingsSection, ShieldIcon, SkeletonRow, Text, WatchAdIcon, colors, iconSize, radius, readable, space, useReadablePadding, useTabBarClearance } from '../../ui'
+import { RewardedAdNote } from '../support/RewardedAdNote'
+import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { SUPPORTER_ROW_HEIGHT, SupporterRow } from './SupporterRow'
+import { nextPlaceLine, useSupportStanding } from './useSupportStanding'
 import { useSupporters } from './useSupporters'
 
-/* The supporters' board (the route /kronika/supporters, pushed on the
-   Kronika's stack from the support sheet and the account screen): who
-   gave the elves how many coffees and ads, for the accounts that chose to
-   be on it, the most coffees first. Above the rows, one line on what the
-   board is and the seeker's own standing: the way to the profile when
-   signed out, the way onto the board (the question's sheet) for an
-   account that is not on it, and what it shows for one that is. The tab
-   bar floats over the list, so it pads its end by the bar's height. */
+/* The support ranking (the route /kronika/supporters, pushed on the
+   Kronika's stack from the Kronika's card, the support sheet and the
+   account screen): who watched the most ads for Chatynkowo, the coffees
+   bought beside each name, for the accounts that chose to be in it.
+
+   It is built to be climbed. Above the rows stands the seeker's own
+   card: their place, what they gave, how many ads short of the next
+   place they are, and the button that plays an ad right here, so the
+   place moves while they look at it. An account that is not in the
+   ranking gets the way in instead (the question's sheet), a signed-out
+   seeker the way to the profile. The tab bar floats over the list, so it
+   pads its end by the bar's height. */
 
 const SKELETON_ROWS = 6
 
@@ -25,17 +31,30 @@ export function SupportersScreen() {
   const router = useRouter()
   const online = useOnline()
   const account = useSession()
-  const ledger = useSupportLedger()
+  const support = useSupport()
+  const standing = useSupportStanding()
   const tabBarClearance = useTabBarClearance()
   const sides = useReadablePadding(space.lg)
   const { rows, updatedAt, refreshing, error, refresh } = useSupporters()
+  const ad = useRewardedSupportAd(support.receiveAd)
+  const adNote = rewardedAdNoteKey(ad.status, online)
+  const adBusy = ad.status === 'loading' || ad.status === 'showing'
 
   const myId = account.profile?.public_id ?? null
   const renderRow = useCallback(({ item, index }: { item: Row; index: number }) => <SupporterRow row={item} place={index + 1} mine={item.public_id === myId} />, [myId])
 
-  /* The seeker's own standing. An account whose profile says nothing of
-     the board (a backend that does not know it yet) is shown nothing. */
-  function standing(): ReactNode {
+  const watch = ad.offered ? (
+    <>
+      <Button variant="primary" block busy={adBusy} disabled={online === false} icon={<WatchAdIcon size={iconSize.md} color={colors.accentInk} />} onPress={ad.watch}>
+        {t('mobile:support.adAction')}
+      </Button>
+      {adNote ? <RewardedAdNote note={adNote} offered align="center" /> : null}
+    </>
+  ) : null
+
+  /* The seeker's own card. An account whose profile says nothing of the
+     ranking (a backend that does not know it yet) is shown nothing. */
+  function mine(): ReactNode {
     if (!account.enabled) return null
     if (!account.session) {
       return (
@@ -44,39 +63,48 @@ export function SupportersScreen() {
         </SettingsSection>
       )
     }
-    const listed = account.profile?.listed_as_supporter
-    if (listed === undefined) return null
-    if (!listed) {
+    if (standing.listed === undefined) return null
+    const gave = [t('mobile:support.ledgerAds', { count: standing.ads }), standing.coffees > 0 ? t('mobile:support.ledgerCoffees', { count: standing.coffees }) : null].filter(Boolean).join(', ')
+    if (!standing.listed) {
       return (
-        <Button variant="primary" block onPress={() => router.push('/supporters-ask')}>
-          {t('mobile:supporters.join')}
-        </Button>
+        <View style={styles.card}>
+          <Text tone="soft">{standing.ads + standing.coffees > 0 ? t('mobile:supporters.joinLeadGave', { gave }) : t('mobile:supporters.joinLead')}</Text>
+          <Button variant="primary" block onPress={() => router.push('/supporters-ask')}>
+            {t('mobile:supporters.join')}
+          </Button>
+        </View>
       )
     }
-    const gave = [
-      ledger.coffees > 0 ? t('mobile:support.ledgerCoffees', { count: ledger.coffees }) : null,
-      ledger.ads > 0 ? t('mobile:support.ledgerAds', { count: ledger.ads }) : null,
-    ].filter(Boolean)
+    const next = nextPlaceLine(standing, t) ?? t('mobile:supporters.firstAd')
     return (
-      <Text variant="small" tone="soft" accessibilityLiveRegion="polite">
-        {gave.length ? t('mobile:supporters.listed', { gave: gave.join(', ') }) : t('mobile:supporters.listedEmpty')}
-      </Text>
+      <View style={styles.card} accessibilityLiveRegion="polite">
+        {standing.place !== null ? (
+          <View style={styles.standing} accessible accessibilityLabel={`${t('mobile:supporters.yourPlace')}: ${standing.place}. ${gave}`}>
+            <Text variant="display" tone="accent" style={styles.place}>
+              {standing.place}
+            </Text>
+            <View style={styles.standingText}>
+              <Text variant="eyebrow">{t('mobile:supporters.yourPlace')}</Text>
+              <Text weight="bold">{gave}</Text>
+            </View>
+          </View>
+        ) : null}
+        <Text tone="soft">{next}</Text>
+        {watch}
+      </View>
     )
   }
 
   const header = (
     <View style={styles.header}>
-      <View style={styles.lead}>
-        <Text variant="eyebrow">{t('mobile:support.eyebrow')}</Text>
-        <Text tone="soft">{t('mobile:supporters.lead')}</Text>
-      </View>
-      {standing()}
+      <Text tone="soft">{t('mobile:supporters.lead')}</Text>
+      {mine()}
     </View>
   )
 
   /* Rows are never cleared by a refetch, so this only shows before the
      first success: a skeleton while fetching, the reason when it failed,
-     the way to the first coffee when nobody is on the board. */
+     the way to the first place when nobody is in the ranking. */
   const empty = error ? (
     <EmptyState
       icon={ShieldIcon}
@@ -90,7 +118,7 @@ export function SupportersScreen() {
       ))}
     </View>
   ) : (
-    <EmptyState icon={CoffeeIcon} title={t('mobile:supporters.empty')} action={{ label: t('mobile:support.action'), onPress: () => router.push('/support') }} />
+    <EmptyState icon={CoffeeIcon} title={t('mobile:supporters.empty')} />
   )
 
   return (
@@ -132,7 +160,27 @@ const styles = StyleSheet.create({
     gap: space.lg,
     paddingBottom: space.md,
   },
-  lead: {
+  /* The support card's look (features/support/SupportCard), so the
+     ranking and the sheet it sends to read as one. */
+  card: {
+    gap: space.md,
+    padding: space.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+  },
+  standing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.lg,
+  },
+  place: {
+    minWidth: 56,
+    textAlign: 'center',
+  },
+  standingText: {
+    flex: 1,
     gap: space.xs,
   },
 })

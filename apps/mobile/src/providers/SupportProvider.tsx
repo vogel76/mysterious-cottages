@@ -66,9 +66,11 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   const connection = useRef<BillingConnection | null>(null)
   const listeners = useRef(new Set<(kind: SupportKind) => void>())
 
+  /* A coffee is counted here, where the store's receipt arrives; an ad
+     was counted where it ended (useRewardedSupportAd), like every ad. */
   const received = useCallback(
     (kind: SupportKind) => {
-      recordSupport(kind)
+      if (kind === 'coffee') recordSupport('coffee')
       toast.show({ tone: 'success', text: t('mobile:support.thanksToast') })
       for (const listener of listeners.current) listener(kind)
     },

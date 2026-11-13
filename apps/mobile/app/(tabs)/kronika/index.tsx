@@ -7,7 +7,8 @@ import { CollectionHeader } from '../../../src/features/kronika/CollectionHeader
 import { ELF_ENABLED } from '../../../src/config'
 import { RewardCard } from '../../../src/features/kronika/RewardCard'
 import { SupportCard } from '../../../src/features/support/SupportCard'
-import { useContent, useProgress, useElf } from '../../../src/providers'
+import { nextPlaceLine, useSupportStanding } from '../../../src/features/supporters/useSupportStanding'
+import { useContent, useProgress, useElf, useSession } from '../../../src/providers'
 import { ChronicleIcon, EmptyState, LinkButton, SkeletonCard, colors, readable, space, useReadablePadding, useTabBarClearance } from '../../../src/ui'
 
 /* The Kronika tab: the collection of reward levels, earned and still locked,
@@ -43,6 +44,12 @@ export default function KronikaScreen() {
   const elf = useElf()
   /* The elf's lessons next to the seals: the two loops meet here. */
   const lessons = ELF_ENABLED && elf.state?.hatched ? { name: elf.state.name, count: elf.state.findsCelebrated.length } : null
+  /* The support ranking's card: for every seeker of a build with accounts,
+     except an account whose backend does not know the ranking yet; with
+     the seeker's place once they are in it. */
+  const account = useSession()
+  const standing = useSupportStanding()
+  const support = account.enabled && !(account.profile && standing.listed === undefined) ? { place: standing.place, line: nextPlaceLine(standing, t) } : null
   const tabBarClearance = useTabBarClearance()
   const sides = useReadablePadding(space.lg)
   const [refreshing, setRefreshing] = useState(false)
@@ -100,6 +107,7 @@ export default function KronikaScreen() {
   const openReward = useCallback((id: string) => router.push({ pathname: '/reward/[id]', params: { id } }), [router])
   const openDirectory = useCallback(() => router.push('/cottages'), [router])
   const openRanking = useCallback(() => router.push('/kronika/ranking'), [router])
+  const openSupportRanking = useCallback(() => router.push('/kronika/supporters'), [router])
 
   const renderCell = useCallback(
     ({ item, index }: { item: Cell; index: number }) => {
@@ -137,6 +145,8 @@ export default function KronikaScreen() {
       lessons={lessons}
       onOpenList={openDirectory}
       onOpenRanking={openRanking}
+      support={support}
+      onOpenSupportRanking={openSupportRanking}
     />
   )
 

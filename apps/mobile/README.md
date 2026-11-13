@@ -237,11 +237,11 @@ app/                     expo-router routes
                          among its tabs)
   (tabs)/index.tsx       the Atlas: the full-bleed map with floating chrome, the quest card, the seeker's position
                          and the parchment cottage sheet (a gesture sheet with three snaps)
-  (tabs)/kronika/        its own native stack: the collection grid with the progress card and the Ranking's card,
-                         and ranking.tsx pushed on top: the leaderboard list, the rules and share header items (the
-                         stack is anchored at the collection, so a link from the account screen still has a back);
-                         supporters.tsx, pushed the same way: the supporters' board, who gave the elves how many
-                         coffees and ads
+  (tabs)/kronika/        its own native stack: the collection grid with the progress card and the two rankings'
+                         cards, and ranking.tsx pushed on top: the leaderboard list, the rules and share header items
+                         (the stack is anchored at the collection, so a link from the account screen still has a
+                         back); supporters.tsx, pushed the same way: the support ranking, who watched the most ads
+                         for Chatynkowo, with the seeker's own place and an ad button over the rows
   (tabs)/elf/            its own native stack (_layout.tsx, no bar on the screen) and one screen (index.tsx): the elf
                          companion prototype, the full-screen cottage drawn in Skia with the HUD floating over it
   (tabs)/profile/        its own native stack: grouped settings (account, language, preferences, lore, help, legal,
@@ -261,7 +261,7 @@ app/                     expo-router routes
   support.tsx            supporting Chatynkowo, a sheet opened by the support invitations: a coffee for the elf (a purchase
                          through the store) or a rewarded ad watched instead
   nickname.tsx           the nickname editor, a sheet from the account screen and the Ranking's "Change nickname" item
-  supporters-ask.tsx     the question about the supporters' board, a sheet asked once after a sign-in and from the board
+  supporters-ask.tsx     the question about the support ranking, a sheet asked once after a sign-in and from the ranking
   elf-hatch.tsx          the hatch sheet, where the elf that has just hatched is named and given its element
   elf-evolve.tsx         the evolution card, a transparent modal the Elf tab presents when a later form is reached
   elf-today.tsx          the elf's day: the purse named, the quests with their progress, the reward to pick, the way to
@@ -469,24 +469,41 @@ through `src/lib/haptics.ts`.
   because the server does not turn http into https and a browser keeps
   the two addresses' storage apart. Making a report reads and never
   writes, and the app sends nothing on its own.
-- **Supporters' board** (`src/features/supporters`, `app/(tabs)/kronika/supporters.tsx`,
-  `app/supporters-ask.tsx`): "Przyjaciele elfów", who gave the elves how
-  many coffees and ads, for the accounts that chose to be on it. A
-  signed-in seeker is asked once (`SupportersPrompt` opens the sheet when
-  a tab has been in front for a moment; the profile's
-  `listed_as_supporter` holds the answer, so another phone does not ask
-  again, and this device remembers having asked, so a sheet swiped away
-  is not shown twice). The answer can be changed with the switch on the
-  account screen, and the board is reached from the support sheet and
-  from there. `SupportExport` sends this device's ledger
-  (`src/lib/support-store.ts`) to the account only while the seeker is
-  listed: the whole count over the device's own row (`deviceId` in
-  `src/lib/support-export.ts`), once per launch and after every coffee or
-  ad, retried like the finds. The counted ads are the ones watched in the
-  support sheet, as the ledger has always counted; the elf's ads for dust,
-  time and lives are a trade and stay out. The backend side is in
-  `supabase/README.md`, "The supporters' board"; with the account preview
-  on, the board shows a few made-up supporters.
+- **Support ranking** (`src/features/supporters`, `app/(tabs)/kronika/supporters.tsx`,
+  `app/supporters-ask.tsx`): "Ranking wsparcia", who watched the most ads
+  for Chatynkowo, with the coffees bought beside each name, for the
+  accounts that chose to be in it. It exists to make the voluntary ads a
+  friendly race, so it is in view wherever an ad is offered rather than
+  on one screen. Ads decide the place and coffees break a tie; every ad
+  watched to the end counts, wherever it was offered (the support sheet,
+  the elf's dust, time and lives): `useRewardedSupportAd` records it in
+  the ledger (`src/lib/support-store.ts`), the provider records the
+  coffees. Where the ranking shows:
+  - under every ad button, `RewardedAdNote` says how many ads short of
+    the next place the seeker is (or that they lead, or that the ad
+    counts);
+  - `SupportRankWatch` reloads the ranking after every export and toasts
+    the first entry and every climb;
+  - the Kronika has its card with the seeker's place
+    (`CollectionHeader`);
+  - the screen itself opens with the seeker's card: the place, what they
+    gave, the gap to the next place and an ad button, so the place moves
+    while they look at it; the way in for an account that is not listed,
+    the way to the profile for a signed-out seeker.
+
+  The rows live in one module store (`src/lib/supporters-board.ts`) all
+  of these read (`useSupportStanding`, `useSupporters`). A signed-in
+  seeker is asked once (`SupportersPrompt` opens the sheet when a tab has
+  been in front for a moment; the profile's `listed_as_supporter` holds
+  the answer, so another phone does not ask again, and this device
+  remembers having asked, so a sheet swiped away is not shown twice). The
+  answer can be changed with the switch on the account screen.
+  `SupportExport` sends this device's ledger to the account only while
+  the seeker is listed: the whole count over the device's own row
+  (`deviceId` in `src/lib/support-export.ts`), once per launch and after
+  every coffee or ad, retried like the finds. The backend side is in
+  `supabase/README.md`, "The support ranking"; with the account preview
+  on, the ranking shows a few made-up supporters.
 - **Account preview** (`src/lib/account-preview.ts`): with
   `EXPO_PUBLIC_ACCOUNT_PREVIEW=1` in `apps/mobile/.env` a development
   build behaves as if a Google account were signed in, so the account
@@ -550,7 +567,7 @@ through `src/lib/haptics.ts`.
 | Legal pages | `expo-web-browser` | the terms and privacy pages open in an in-app browser sheet |
 | Problem report | `expo-device`, `expo-mail-composer` | the phone's brand, model and system for the diagnostics report (the device's own name, which is the owner's, is not read); the system mail composer with the report attached (`MFMailComposeViewController` on iOS, a mail intent on Android). The composer's config plugin is left out: it only declares mail apps' URL schemes for `getClients()`, which the app does not call |
 | Store billing | `expo-iap` | the coffee for the elf and the elf's star dust packs as consumable products through Google Play Billing and StoreKit 2 (`src/lib/billing.ts`, driven by `SupportProvider`): listeners registered before the connection opens and kept for the life of the app, every paid purchase finished at once (consumed on Android), the leftovers settled at launch and on every return to the foreground, pending purchases (cash, Ask to Buy) reported and left alone until paid; prices come from the store's product records, the app carries only the product ids (`src/features/support/tips.ts`) |
-| Ads | `react-native-google-mobile-ads` | one rewarded ad, only in the support sheet and the elf's shop and only when asked for (`src/features/support/useRewardedSupportAd.ts`); Google's consent flow (UMP) runs before the first request and decides between personalised and non-personalised requests, the SDK initialises after it (`delayAppMeasurementInit`); the AdMob app ids reach the native manifests through the plugin in `app.config.ts`, the rewarded units come from `EXPO_PUBLIC_ADMOB_REWARDED_*_UNIT_ID`, and without one a development build shows Google's test ad while a release build offers no ad |
+| Ads | `react-native-google-mobile-ads` | a rewarded ad, only when asked for: in the support sheet, on the support ranking and in the elf's sheets and games (`src/features/support/useRewardedSupportAd.ts`, which also counts each one watched to the end for the ranking); Google's consent flow (UMP) runs before the first request and decides between personalised and non-personalised requests, the SDK initialises after it (`delayAppMeasurementInit`); the AdMob app ids reach the native manifests through the plugin in `app.config.ts`, the rewarded units come from `EXPO_PUBLIC_ADMOB_REWARDED_*_UNIT_ID`, and without one a development build shows Google's test ad while a release build offers no ad |
 | Fonts | `expo-font` + `@expo-google-fonts/*` | Cormorant Garamond and Cinzel Decorative, imported per weight; the repository's woff2 files cannot be used natively |
 | Locale | `expo-localization` | the device language picks the dictionary and, through `detectCountry`, the map's home country (never geolocation) |
 | Country names | `@formatjs/intl-displaynames` | Hermes has no `Intl.DisplayNames`; the polyfill with Polish and English data names a cottage's country in the map panel, as the site does |

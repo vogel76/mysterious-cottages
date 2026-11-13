@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { DUST, ELF_SKIPS, ENERGY_AD, ENERGY_MAX, ENERGY_REFILL_ACORNS, GAME_ENERGY, hatchAt, SKIP_COST, type ElfSkip } from '@chatynkowo/core'
 import { useCloseModal, useElf, useOnline } from '../../providers'
 import { AcornsIcon, BrewIcon, Button, DustIcon, EggIcon, HurryIcon, SheetRoute, SleepIcon, Text, WatchAdIcon, colors, iconSize, space, type Icon } from '../../ui'
+import { RewardedAdNote } from '../support/RewardedAdNote'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { durationText, restText, useClock } from './duration'
 
@@ -163,11 +164,7 @@ export function ElfHurrySheet() {
                   {energy ? t('mobile:elf.hurryEnergyShort', { count: acorns }) : t('mobile:elf.hurryShort', { count: dust })}
                 </Text>
               ) : null}
-              {adNote ? (
-                <Text variant="small" tone="faint" align="center" accessibilityLiveRegion="polite">
-                  {t(adNote)}
-                </Text>
-              ) : null}
+              <RewardedAdNote note={adNote} offered={ad.offered && adsLeft > 0} align="center" />
               {failed ? (
                 <Text variant="small" tone="faint" align="center" accessibilityLiveRegion="polite">
                   {t('mobile:elf.hurryEndedAlready')}

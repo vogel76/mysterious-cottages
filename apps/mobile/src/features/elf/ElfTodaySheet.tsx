@@ -6,6 +6,7 @@ import { nextStreakMilestone, REQUEST_ACORNS, type ElfQuest, type ElfRequest, ty
 import { announce } from '../../lib/announce'
 import { useElf, useOnline } from '../../providers'
 import { AcornsIcon, Button, CheckIcon, DustIcon, ElfIcon, JarIcon, NextIcon, PressableScale, SheetRoute, StreakIcon, Text, WatchAdIcon, colors, fade, iconSize, radius, space, type Icon } from '../../ui'
+import { RewardedAdNote } from '../support/RewardedAdNote'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { elfKey, requestKey } from './labels'
 
@@ -127,11 +128,7 @@ export function ElfTodaySheet() {
               {t('mobile:elf.rewardDouble')}
             </Button>
           ) : null}
-          {picked !== null && !doubled && adNote ? (
-            <Text variant="small" tone="faint" accessibilityLiveRegion="polite">
-              {t(adNote)}
-            </Text>
-          ) : null}
+          {picked !== null && !doubled ? <RewardedAdNote note={adNote} offered={ad.offered && adsLeft > 0} /> : null}
         </View>
 
         <PressableScale onPress={() => router.push('/elf-shelf')} accessibilityLabel={`${t('mobile:elf.shelfOpen')}. ${t('mobile:elf.shelfOpenHint')}`} style={[styles.row, styles.link]}>

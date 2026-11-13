@@ -5,6 +5,7 @@ import { canBrew, DUST, ENERGY_AD, ENERGY_MAX, GAME_ENERGY, hatchAt, levelOf, sh
 import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport, useToast } from '../../providers'
 import { AcornsIcon, BrewIcon, Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { packLabelKey } from '../support/tips'
+import { RewardedAdNote } from '../support/RewardedAdNote'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { isSlotId } from './cottage/catalogue'
 import { durationText, restText, useClock } from './duration'
@@ -137,11 +138,7 @@ export function ElfShopSheet() {
                 {earned > 0 ? `${t('mobile:elf.shopDustAdded', { dust: earned })} · ` : ''}
                 {adsLeft > 0 ? t('mobile:elf.shopAdLeft', { count: adsLeft }) : t('mobile:elf.shopAdDone')}
               </Text>
-              {adNote ? (
-                <Text variant="small" tone="faint" accessibilityLiveRegion="polite">
-                  {t(adNote)}
-                </Text>
-              ) : null}
+              <RewardedAdNote note={adNote} offered={adsLeft > 0} />
             </>
           ) : (
             <Text variant="small" tone="faint">

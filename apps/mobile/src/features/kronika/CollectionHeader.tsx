@@ -1,13 +1,15 @@
 import { StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import type { RewardLevel } from '@chatynkowo/core'
-import { ChronicleIcon, MarkdownView, NextIcon, PressableScale, ProgressRing, RewardIcon, Text, colors, iconSize, radius, space } from '../../ui'
+import { ChronicleIcon, MarkdownView, NextIcon, PressableScale, ProgressRing, RewardIcon, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 
 /* The head of the Kronika grid: the subtitle with the chronicle emblem, the
    progress card (finds out of the total as a ring, the next level to earn;
    pressing it opens the cottage directory), the Ranking's card in the same
-   form (it opens the leaderboard on the Kronika's stack) and the intro the
-   editor published for the collection. */
+   form (it opens the leaderboard on the Kronika's stack), the support
+   ranking's card under it (the seeker's place and how far the next one
+   is, once they are in it) and the intro the editor published for the
+   collection. */
 
 const RING_SIZE = 64
 
@@ -28,14 +30,23 @@ export type CollectionHeaderProps = {
   onOpenList: () => void
   /* Opens the Ranking. */
   onOpenRanking: () => void
+  /* The support ranking's card: the seeker's place in it and the line
+     under it (how far the next place is), both null for a seeker who is
+     not in it; the whole card is left out when `support` is null (a build
+     without accounts). */
+  support: { place: number | null; line: string | null } | null
+  /* Opens the support ranking. */
+  onOpenSupportRanking: () => void
 }
 
-export function CollectionHeader({ found, total, next, intro, note, lessons, onOpenList, onOpenRanking }: CollectionHeaderProps) {
+export function CollectionHeader({ found, total, next, intro, note, lessons, onOpenList, onOpenRanking, support, onOpenSupportRanking }: CollectionHeaderProps) {
   const { t } = useTranslation()
   /* Nothing to say about levels until the cottages are known. */
   const quest = total <= 0 ? null : next ? t('quest.nextLevel', { name: next.level.name, count: next.remaining }) : t('quest.allFound')
   const progress = t('mobile:atlas.progress', { found, total })
   const lessonsLine = lessons ? (lessons.count ? t('mobile:kronika.elfLessons', { name: lessons.name, count: lessons.count }) : t('mobile:kronika.elfLessonsNone', { name: lessons.name })) : null
+  const supportTitle = support?.place ? `${t('mobile:supporters.title')}: ${t('mobile:supporters.kronikaPlace', { place: support.place })}` : t('mobile:supporters.title')
+  const supportLine = support?.line ?? t('mobile:supporters.kronikaCard')
 
   return (
     <View style={styles.header}>
@@ -78,6 +89,20 @@ export function CollectionHeader({ found, total, next, intro, note, lessons, onO
         </View>
         <NextIcon size={iconSize.md} color={colors.inkFaint} />
       </PressableScale>
+      {support ? (
+        <PressableScale onPress={onOpenSupportRanking} accessibilityLabel={`${supportTitle}. ${supportLine}`} accessibilityHint={t('mobile:supporters.kronikaCardAria')} style={styles.card}>
+          <View style={styles.emblem}>
+            <WatchAdIcon size={iconSize.xl} weight="duotone" color={colors.accentStrong} />
+          </View>
+          <View style={styles.cardText}>
+            <Text weight="bold">{supportTitle}</Text>
+            <Text variant="small" tone="soft">
+              {supportLine}
+            </Text>
+          </View>
+          <NextIcon size={iconSize.md} color={colors.inkFaint} />
+        </PressableScale>
+      ) : null}
       {intro ? <MarkdownView>{intro}</MarkdownView> : note ? <Text tone="soft">{note}</Text> : null}
     </View>
   )
@@ -110,7 +135,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: space.xs,
   },
-  /* The trophy in the ring's place, so the two cards line up. */
+  /* The emblem in the ring's place, so the cards line up. */
   emblem: {
     width: RING_SIZE,
     alignItems: 'center',

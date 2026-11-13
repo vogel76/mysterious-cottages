@@ -3,16 +3,17 @@ import type { ChatynkowoClient } from './client'
 import type { Database } from './database.types'
 import type { Profile } from './ranking'
 
-/* The supporters' board: who bought the elves how many coffees and
-   watched how many ads for them, for the accounts that chose to be on it.
+/* The support ranking: who watched how many ads for Chatynkowo and
+   bought the elves how many coffees, for the accounts that chose to be in
+   it.
 
    The counts are a client's own ledger (the app keeps one per device),
    sent as that device's row and added up by the board, so two phones on
    one account never overwrite each other. They are the client's word:
    nothing here checks a purchase or an ad with the store or the ad
-   network, which is fine for a board of thanks and not for anything of
-   value. Nothing is sent for an account that is not listed, and leaving
-   the board takes its rows away. Every function throws when the backend
+   network, which will do for a ranking played for the place alone and
+   not for anything of value. Nothing is sent for an account that is not
+   listed, and leaving the ranking takes its rows away. Every function throws when the backend
    refused or is unreachable. */
 
 export type SupporterRow = Database['public']['Functions']['supporters_board']['Returns'][number]
@@ -26,7 +27,7 @@ export type SupportCounts = {
   lastAt: number
 }
 
-/* The board, in its order: the most coffees first, then the most ads. */
+/* The ranking, in its order: the most ads first, then the most coffees. */
 export async function fetchSupporters(client: ChatynkowoClient): Promise<SupporterRow[]> {
   const { data, error } = await client.rpc('supporters_board')
   if (error) throw error
