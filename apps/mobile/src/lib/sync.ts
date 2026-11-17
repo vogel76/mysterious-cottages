@@ -247,9 +247,9 @@ export async function fetchLeaderboard(total: number) {
   return supabase ? api.fetchLeaderboard(supabase, total) : []
 }
 
-/* The support ranking (see @chatynkowo/api supporters.ts): who gave the
-   elves how many coffees and ads, for the accounts that chose to be on
-   it. Throws when the backend cannot be read or does not answer in time. */
+/* The support ranking (see @chatynkowo/api supporters.ts): who supported
+   Chatynkowo the most, in points, with the coffees and the ads behind
+   them, for the accounts that chose to be on it. Throws when the backend cannot be read or does not answer in time. */
 export async function fetchSupporters(): Promise<api.SupporterRow[]> {
   if (previewEnabled) return previewSupporters(supportLedger())
   return supabase ? withTimeout(api.fetchSupporters(supabase), ATTEMPT_TIMEOUT_MS) : []

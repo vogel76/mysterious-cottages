@@ -13,7 +13,7 @@ versioned in the repository: changes are made in the project, and a local
 | `profiles` — nickname, avatar, `public_id`, `completed_at` | Postgres | leaderboard, profile |
 | `finds` — discovered cottages per account | Postgres | Kronika sync |
 | `leaderboard(p_total)` — the ranking | SQL function | `/ranking.html` |
-| `profiles.listed_as_supporter`, `support_ledgers`, `supporters_board()` — who watched how many ads and bought how many coffees | Postgres, SQL function | the app's support ranking |
+| `profiles.listed_as_supporter`, `support_ledgers`, `supporters_board()` — who supports Chatynkowo the most, in points from ads watched and coffees bought | Postgres, SQL function | the app's support ranking |
 | `delete-account` — removes the caller's finds, profile and auth user | Edge Function (`functions/delete-account/`) | the app's account screen, `/delete-account.html`, `/profile.html` |
 
 What the backend does **not** do, and should not do without a reason: it does
@@ -82,24 +82,29 @@ schema. Put the local project's URL and key into `apps/web/.env`.
 
 The app keeps a support ledger on each device: how many ads were watched
 to the end, wherever in the game they were offered, and how many coffees
-were bought. A signed-in seeker is asked once whether they want to be in
-the support ranking ("Ranking wsparcia"); only then does the ledger leave
-the device.
+were bought, by size. The ranking goes by points: an ad is one, a coffee
+25, 50, 100 or 250 by its size (the weights live in the app alone,
+`apps/mobile/src/lib/support-store.ts`, which sends the coffees' points
+ready-made), so a coffee lifts a seeker far and a patient watcher of ads
+can still catch up. A signed-in seeker is asked once whether they want
+to be in the support ranking ("Ranking wsparcia"); only then does the
+ledger leave the device.
 
 - `profiles.listed_as_supporter` (boolean, nullable): the answer. Null
   means not asked yet, so the app asks; true lists the account; false is
   a no that is not asked again on another phone.
 - `support_ledgers` (`user_id` references `auth.users` with
-  `on delete cascade`, `device_id`, `coffees`, `ads`, `last_at`,
-  `updated_at`; the key is `user_id, device_id`): one row per device the
+  `on delete cascade`, `device_id`, `coffees`, `coffee_points`, `ads`,
+  `last_at`, `updated_at`; the key is `user_id, device_id`): one row per device the
   account gave from, written over by that device with its whole count, so
   two phones never overwrite each other and a count sent twice changes
   nothing. "Own rows" RLS for select, insert, update and delete. The
   cascade is what makes `delete-account` take the ledgers with the user.
 - `supporters_board()` (security definer, callable by `anon` and
   `authenticated`): for accounts with `listed_as_supporter`, the public
-  id, the nickname, the photo and the two sums over the account's
-  devices, the most ads first, then the most coffees; accounts that gave
+  id, the nickname, the photo, the coffees and the ads summed over the
+  account's devices and the points (the ads plus the coffees' points),
+  the most points first, then the most coffees; accounts that gave
   nothing are left out.
 
 Saying no (or switching the row off on the account screen) deletes the

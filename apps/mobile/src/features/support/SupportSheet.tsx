@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { STORE_NAME } from '../../lib/billing'
 import { storeNoteKey, useCloseModal, useOnline, useSupport } from '../../providers'
 import { Button, CoffeeIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
+import { CoffeeRankNote } from './CoffeeRankNote'
 import { RewardedAdNote } from './RewardedAdNote'
 import { DEFAULT_TIP, tipLabelKey } from './tips'
 import { rewardedAdNoteKey, useRewardedSupportAd } from './useRewardedSupportAd'
@@ -38,6 +39,7 @@ export function SupportSheet() {
 
   /* The default size, or the first one the store sells. */
   const chosen = tip ?? support.menu.find((item) => item.tip.id === DEFAULT_TIP)?.product.id ?? support.menu[0]?.product.id ?? null
+  const chosenSize = support.menu.find((item) => item.product.id === chosen)?.tip.id ?? null
 
   const coffeeNote = storeNoteKey(support, online)
   const adNote = rewardedAdNoteKey(ad.status, online)
@@ -110,10 +112,13 @@ export function SupportSheet() {
               >
                 {t('mobile:support.tipAction')}
               </Button>
+              {/* The store's word first; otherwise what the coffee does in the ranking. */}
               {coffeeNote ? (
                 <Text variant="small" tone="faint" accessibilityLiveRegion="polite">
                   {t(coffeeNote)}
                 </Text>
+              ) : chosenSize ? (
+                <CoffeeRankNote size={chosenSize} />
               ) : null}
             </>
           )}

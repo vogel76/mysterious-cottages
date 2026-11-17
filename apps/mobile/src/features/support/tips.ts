@@ -1,13 +1,17 @@
 /* The coffee for the elf: a consumable product per size, sold through the
    store the build came from (Google Play Billing, the App Store), so the
-   payment never leaves the app. The app carries only the product ids;
+   payment never leaves the app. The sizes are the support ledger's
+   (lib/support-store.ts, which also says what each is worth in the
+   support ranking). The app carries only the product ids;
    the names are the dictionary's (support.tip<Id>), the prices are the
    store's own, in the player's currency, read with the products. The
    same ids must exist in both consoles (see "Supporting Chatynkowo" in
    the README). Nothing here reaches the elf's rules: a coffee changes
    nothing in the game. */
 
-export type TipId = 'small' | 'regular' | 'large' | 'pot'
+import type { CoffeeSize } from '../../lib/support-store'
+
+export type TipId = CoffeeSize
 
 export type Tip = {
   id: TipId

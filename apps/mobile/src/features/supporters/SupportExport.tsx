@@ -3,9 +3,11 @@ import { retryDelay } from '@chatynkowo/core'
 import { deviceId, notifySupportExported } from '../../lib/support-export'
 import { pushSupportLedger } from '../../lib/sync'
 import { useForeground, useOnline, useReconnect, useSession } from '../../providers'
+import { ledgerCoffeePoints } from '../../lib/support-store'
 import { useSupportLedger } from '../support/useSupportLedger'
 
-/* Sends this device's support ledger (the coffees and the ads given here)
+/* Sends this device's support ledger (the coffees, what they are worth in
+   the ranking by their sizes, and the ads given here)
    to the account, for a seeker who chose to be in the support ranking
    and for nobody else: an account that was not asked, or said no, keeps
    its ledger on the device. Mounted once, under the providers; it draws
@@ -19,7 +21,7 @@ import { useSupportLedger } from '../support/useSupportLedger'
    on a reconnect, on a return to the foreground and, while the app stays
    open, after a growing pause. */
 
-type Sent = { userId: string; coffees: number; ads: number }
+type Sent = { userId: string; coffees: number; coffeePoints: number; ads: number }
 
 export function SupportExport() {
   const { session, profile } = useSession()
@@ -50,11 +52,12 @@ export function SupportExport() {
   )
 
   const run = useCallback(async () => {
-    const { session: active, listed: wanted, ledger: counts, online: reachable } = latest.current
+    const { session: active, listed: wanted, ledger, online: reachable } = latest.current
     if (!active || !wanted || sending.current || reachable === false) return
-    if (counts.coffees + counts.ads === 0) return
+    if (ledger.coffees + ledger.ads === 0) return
+    const counts = { coffees: ledger.coffees, coffeePoints: ledgerCoffeePoints(ledger), ads: ledger.ads, lastAt: ledger.lastAt }
     const last = sent.current
-    if (last && last.userId === active.user.id && last.coffees === counts.coffees && last.ads === counts.ads) return
+    if (last && last.userId === active.user.id && last.coffees === counts.coffees && last.coffeePoints === counts.coffeePoints && last.ads === counts.ads) return
     if (timer.current) {
       clearTimeout(timer.current)
       timer.current = null
@@ -75,7 +78,7 @@ export function SupportExport() {
       }, retryDelay(failures.current))
       return
     }
-    sent.current = { userId: active.user.id, coffees: counts.coffees, ads: counts.ads }
+    sent.current = { userId: active.user.id, coffees: counts.coffees, coffeePoints: counts.coffeePoints, ads: counts.ads }
     failures.current = 0
     notifySupportExported()
     /* A coffee or an ad given while the push was in flight goes up next. */

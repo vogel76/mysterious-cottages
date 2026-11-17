@@ -9,8 +9,8 @@ import { recordSupport } from '../../lib/support-store'
    and shown as soon as it is in; the hook reports where the request
    stands so the caller can say so, and calls back once the ad network
    says the ad was watched to the end. Every ad that ends this way is
-   counted in the support ledger here, whatever it was watched for, which
-   is what the support ranking ranks by.
+   counted in the support ledger here, whatever it was watched for, and
+   is a point in the support ranking.
 
    Before the first request the consent flow and the SDK are readied by
    src/lib/ads.ts (Google's User Messaging Platform: in the EEA the form
@@ -94,7 +94,7 @@ export function useRewardedSupportAd(onRewarded: () => void): { offered: boolean
       const reward = () => {
         release()
         setStatus('idle')
-        recordSupport('ad')
+        recordSupport({ kind: 'ad' })
         onRewardedRef.current()
       }
       const fail = (error: unknown) => {

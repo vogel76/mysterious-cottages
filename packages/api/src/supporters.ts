@@ -3,9 +3,10 @@ import type { ChatynkowoClient } from './client'
 import type { Database } from './database.types'
 import type { Profile } from './ranking'
 
-/* The support ranking: who watched how many ads for Chatynkowo and
-   bought the elves how many coffees, for the accounts that chose to be in
-   it.
+/* The support ranking: who supported Chatynkowo the most, in points (an
+   ad watched is one, a coffee many by its size: the app's
+   lib/support-store.ts holds the weights), with the ads and the coffees
+   behind them, for the accounts that chose to be in it.
 
    The counts are a client's own ledger (the app keeps one per device),
    sent as that device's row and added up by the board, so two phones on
@@ -21,13 +22,15 @@ export type SupporterRow = Database['public']['Functions']['supporters_board']['
 /* What one device has given: the app's support ledger. */
 export type SupportCounts = {
   coffees: number
+  /* What the coffees are worth in the ranking, by their sizes. */
+  coffeePoints: number
   ads: number
   /* When the last one was given, in milliseconds since the epoch; 0 for
      none. */
   lastAt: number
 }
 
-/* The ranking, in its order: the most ads first, then the most coffees. */
+/* The ranking, in its order: the most points first, then the most coffees. */
 export async function fetchSupporters(client: ChatynkowoClient): Promise<SupporterRow[]> {
   const { data, error } = await client.rpc('supporters_board')
   if (error) throw error
@@ -42,6 +45,7 @@ export async function pushSupportLedger(client: ChatynkowoClient, session: Sessi
       user_id: session.user.id,
       device_id: deviceId,
       coffees: counts.coffees,
+      coffee_points: counts.coffeePoints,
       ads: counts.ads,
       last_at: counts.lastAt ? new Date(counts.lastAt).toISOString() : null,
       updated_at: new Date().toISOString(),

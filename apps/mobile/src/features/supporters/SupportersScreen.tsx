@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { SupporterRow as Row } from '@chatynkowo/api'
 import { useOnline, useSession, useSupport } from '../../providers'
 import { Button, CoffeeIcon, EmptyState, ProfileIcon, SettingsRow, SettingsSection, ShieldIcon, SkeletonRow, Text, WatchAdIcon, colors, iconSize, radius, readable, space, useNarrow, useReadablePadding, useTabBarClearance } from '../../ui'
+import { COFFEE_POINTS } from '../../lib/support-store'
 import { RewardedAdNote } from '../support/RewardedAdNote'
 import { rewardedAdNoteKey, useRewardedSupportAd } from '../support/useRewardedSupportAd'
 import { SUPPORTER_ROW_HEIGHT, SupporterRow } from './SupporterRow'
@@ -13,16 +14,21 @@ import { useSupporters } from './useSupporters'
 
 /* The support ranking (the route /kronika/supporters, pushed on the
    Kronika's stack from the Kronika's card, the support sheet and the
-   account screen): who watched the most ads for Chatynkowo, the coffees
-   bought beside each name, for the accounts that chose to be in it.
+   account screen): who supports Chatynkowo the most, in points (an ad
+   is one, a coffee many by its size: lib/support-store.ts), for the
+   accounts that chose to be in it.
 
    It is built to be climbed. Above the rows stands the seeker's own
-   card: their place, what they gave (the ads and the coffees, each with
-   its icon, as in the rows), how many ads short of the next place they
-   are, and the button that plays an ad right here, so the place moves
-   while they look at it. An account that is not in the
-   ranking gets the way in instead (the question's sheet), a signed-out
-   seeker the way to the profile. The tab bar floats over the list, so it
+   card: their place, their points and what they come from (the coffees
+   and the ads, each with its icon, as in the rows), how many points
+   short of the next place they are, and the button that plays an ad
+   right here, as often as the seeker likes (only the elf's ads, which
+   give something in the game, have a daily cap), so the place moves
+   while they look at it; under it a line says they take part and where
+   that is changed. An account that is not in the ranking is told so,
+   and that it can change that, with the way in (the question's sheet):
+   one that was never asked is invited, one that said no is told nobody
+   sees its support. A signed-out seeker gets the way to the profile. The tab bar floats over the list, so it
    pads its end by the bar's height. */
 
 const SKELETON_ROWS = 6
@@ -70,9 +76,11 @@ export function SupportersScreen() {
     const coffees = t('mobile:support.ledgerCoffees', { count: standing.coffees })
     const gave = standing.coffees > 0 ? `${ads}, ${coffees}` : ads
     if (!standing.listed) {
+      const has = standing.ads + standing.coffees > 0
+      const said = standing.listed === false
       return (
         <View style={styles.card}>
-          <Text tone="soft">{standing.ads + standing.coffees > 0 ? t('mobile:supporters.joinLeadGave', { gave }) : t('mobile:supporters.joinLead')}</Text>
+          <Text tone="soft">{t(said ? (has ? 'mobile:supporters.notInGave' : 'mobile:supporters.notIn') : has ? 'mobile:supporters.joinLeadGave' : 'mobile:supporters.joinLead', { gave })}</Text>
           <Button variant="primary" block onPress={() => router.push('/supporters-ask')}>
             {t('mobile:supporters.join')}
           </Button>
@@ -83,20 +91,27 @@ export function SupportersScreen() {
     return (
       <View style={styles.card} accessibilityLiveRegion="polite">
         {standing.place !== null ? (
-          <View style={styles.standing} accessible accessibilityLabel={`${t('mobile:supporters.yourPlace')}: ${standing.place}. ${gave}`}>
+          <View style={styles.standing} accessible accessibilityLabel={`${t('mobile:supporters.yourPlace')}: ${standing.place}. ${t('mobile:supporters.pointsAria', { count: standing.points })}. ${gave}`}>
             <Text variant="display" tone="accent" style={styles.place}>
               {standing.place}
             </Text>
             <View style={styles.standingText}>
               <Text variant="eyebrow">{t('mobile:supporters.yourPlace')}</Text>
+              <Text variant="heading">{t('mobile:supporters.pointsAria', { count: standing.points })}</Text>
               <View style={styles.gave}>
+                {standing.coffees > 0 ? (
+                  <View style={styles.figure}>
+                    <CoffeeIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />
+                    <Text weight="semibold" tone="soft">
+                      {coffees}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={styles.figure}>
                   <WatchAdIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />
-                  <Text weight="bold">{ads}</Text>
-                </View>
-                <View style={styles.figure}>
-                  <CoffeeIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />
-                  <Text weight="bold">{coffees}</Text>
+                  <Text weight="semibold" tone="soft">
+                    {ads}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -104,13 +119,19 @@ export function SupportersScreen() {
         ) : null}
         <Text tone="soft">{next}</Text>
         {watch}
+        <Text variant="small" tone="faint" align="center">
+          {t('mobile:supporters.inNote')}{' '}
+          <Text variant="small" tone="accent" accessibilityRole="link" onPress={() => router.navigate('/profile/account')}>
+            {t('mobile:supporters.inChange')}
+          </Text>
+        </Text>
       </View>
     )
   }
 
   const header = (
     <View style={styles.header}>
-      <Text tone="soft">{t('mobile:supporters.lead')}</Text>
+      <Text tone="soft">{t('mobile:supporters.lead', { from: COFFEE_POINTS.small, to: COFFEE_POINTS.pot })}</Text>
       {mine()}
     </View>
   )

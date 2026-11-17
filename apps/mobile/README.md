@@ -240,7 +240,7 @@ app/                     expo-router routes
   (tabs)/kronika/        its own native stack: the collection grid with the progress card and the two rankings'
                          cards, and ranking.tsx pushed on top: the leaderboard list, the rules and share header items
                          (the stack is anchored at the collection, so a link from the account screen still has a
-                         back); supporters.tsx, pushed the same way: the support ranking, who watched the most ads
+                         back); supporters.tsx, pushed the same way: the support ranking, who supports Chatynkowo the most
                          for Chatynkowo, with the seeker's own place and an ad button over the rows
   (tabs)/elf/            its own native stack (_layout.tsx, no bar on the screen) and one screen (index.tsx): the elf
                          companion prototype, the full-screen cottage drawn in Skia with the HUD floating over it
@@ -470,26 +470,41 @@ through `src/lib/haptics.ts`.
   the two addresses' storage apart. Making a report reads and never
   writes, and the app sends nothing on its own.
 - **Support ranking** (`src/features/supporters`, `app/(tabs)/kronika/supporters.tsx`,
-  `app/supporters-ask.tsx`): "Ranking wsparcia", who watched the most ads
-  for Chatynkowo, with the coffees bought beside each name, for the
-  accounts that chose to be in it. It exists to make the voluntary ads a
-  friendly race, so it is in view wherever an ad is offered rather than
-  on one screen. Ads decide the place and coffees break a tie; every ad
-  watched to the end counts, wherever it was offered (the support sheet,
-  the elf's dust, time and lives): `useRewardedSupportAd` records it in
-  the ledger (`src/lib/support-store.ts`), the provider records the
-  coffees. Where the ranking shows:
-  - under every ad button, `RewardedAdNote` says how many ads short of
-    the next place the seeker is (or that they lead, or that the ad
-    counts);
+  `app/supporters-ask.tsx`): "Ranking wsparcia", who supports Chatynkowo
+  the most, for the accounts that chose to be in it. It exists to make
+  the voluntary support a friendly race, so it is in view wherever an ad
+  or a coffee is offered rather than on one screen. Points decide the
+  place (`COFFEE_POINTS`, `AD_POINTS` in `src/lib/support-store.ts`): an
+  ad watched to the end is one point, wherever it was offered (the
+  support sheet, the ranking itself, the elf's dust, time and lives), a
+  coffee 25, 50, 100 or 250 by its size, about five points a zloty. So
+  buying is by far the quicker way up, as the owner asked, and a seeker
+  who watches a handful of ads a day still passes a small coffee within
+  the week; coffees break a tie in points. The ledger keeps the coffees
+  by size and the points are worked out when shown or sent, so a change
+  of weights re-scores every device on its next export (a coffee counted
+  before the sizes were kept is taken for a regular one). Only the elf's
+  ads, which give something in the game, have a daily cap; the support
+  sheet's and the ranking's own can be watched as often as the seeker
+  likes. `useRewardedSupportAd` records an ad in the ledger, the provider
+  a coffee with its size. Where the ranking shows:
+  - under every ad button, `RewardedAdNote` says how many points short of
+    the next place the seeker is (or that this ad takes it, that they
+    lead, or that the ad is a point);
+  - under the coffees of the support sheet, `CoffeeRankNote` says what
+    the chosen coffee is worth and the place it would take;
   - `SupportRankWatch` reloads the ranking after every export and toasts
     the first entry and every climb;
   - the Kronika has its card with the seeker's place
     (`CollectionHeader`);
-  - the screen itself opens with the seeker's card: the place, what they
-    gave, the gap to the next place and an ad button, so the place moves
-    while they look at it; the way in for an account that is not listed,
-    the way to the profile for a signed-out seeker.
+  - the screen itself opens with the seeker's card: the place, the
+    points with the coffees and the ads behind them, the gap to the next
+    place and an ad button, so the place moves while they look at it,
+    and a line that they take part with the way to change it; an account
+    that is not listed is told so and that it can change that (one that
+    said no is told nobody sees its support), with the way in; a
+    signed-out seeker gets the way to the profile. A row shows the name
+    over the coffees and the ads, and the points at its end.
 
   The rows live in one module store (`src/lib/supporters-board.ts`) all
   of these read (`useSupportStanding`, `useSupporters`). A signed-in

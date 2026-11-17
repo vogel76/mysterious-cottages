@@ -50,6 +50,8 @@ export type Database = {
           user_id: string
           device_id: string
           coffees: number
+          /* What the coffees are worth in the ranking, by their sizes. */
+          coffee_points: number
           ads: number
           last_at: string | null
           updated_at: string
@@ -58,6 +60,7 @@ export type Database = {
           user_id: string
           device_id: string
           coffees?: number
+          coffee_points?: number
           ads?: number
           last_at?: string | null
           updated_at?: string
@@ -66,6 +69,7 @@ export type Database = {
           user_id?: string
           device_id?: string
           coffees?: number
+          coffee_points?: number
           ads?: number
           last_at?: string | null
           updated_at?: string
@@ -113,7 +117,8 @@ export type Database = {
       }
       /* The supporters_board() SQL function: the accounts that chose to be
          listed, with what they gave added up over their devices, the most
-         ads first. The sums are bigints, numbers within JS range. */
+         points first (an ad is a point, a coffee its points by size). The
+         sums are bigints, numbers within JS range. */
       supporters_board: {
         Args: Record<never, never>
         Returns: {
@@ -122,6 +127,7 @@ export type Database = {
           avatar_url: string | null
           coffees: number
           ads: number
+          points: number
         }[]
       }
     }

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useTranslation } from 'react-i18next'
 import { TIP_MENU, TIP_PRODUCT_IDS, tipForProduct, packForProduct, DUST_PACKS, DUST_PRODUCT_IDS, type DustPack, type Tip } from '../features/support/tips'
 import { connectBilling, type BillingConnection, type BillingEvent, type StoreProduct } from '../lib/billing'
-import { recordSupport, type SupportKind } from '../lib/support-store'
+import { recordSupport, type CoffeeSize, type SupportKind } from '../lib/support-store'
 import { useForeground } from './NetworkProvider'
 import { useToast } from './ToastProvider'
 import { useElf } from './ElfProvider'
@@ -66,11 +66,12 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   const connection = useRef<BillingConnection | null>(null)
   const listeners = useRef(new Set<(kind: SupportKind) => void>())
 
-  /* A coffee is counted here, where the store's receipt arrives; an ad
-     was counted where it ended (useRewardedSupportAd), like every ad. */
+  /* A coffee is counted here, with its size, where the store's receipt
+     arrives; an ad was counted where it ended (useRewardedSupportAd),
+     like every ad. */
   const received = useCallback(
-    (kind: SupportKind) => {
-      if (kind === 'coffee') recordSupport('coffee')
+    (kind: SupportKind, size?: CoffeeSize) => {
+      if (kind === 'coffee' && size) recordSupport({ kind: 'coffee', size })
       toast.show({ tone: 'success', text: t('mobile:support.thanksToast') })
       for (const listener of listeners.current) listener(kind)
     },
@@ -90,10 +91,12 @@ export function SupportProvider({ children }: { children: ReactNode }) {
           setPending(false)
           setFailure(null)
           dustRef.current(pack.dust)
-        } else if (tipForProduct(event.productId)) {
+        } else {
+          const tip = tipForProduct(event.productId)
+          if (!tip) return
           setPending(false)
           setFailure(null)
-          receivedRef.current('coffee')
+          receivedRef.current('coffee', tip.id)
         }
         return
       }

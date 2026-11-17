@@ -1,5 +1,6 @@
-import type { Profile, Session, SupportCounts, SupporterRow } from '@chatynkowo/api'
+import type { Profile, Session, SupporterRow } from '@chatynkowo/api'
 import { ACCOUNT_PREVIEW } from '../config'
+import { ledgerPoints, type SupportLedger } from './support-store'
 
 /* A stand-in account for development builds only: with
    EXPO_PUBLIC_ACCOUNT_PREVIEW=1 the app behaves as if a Google account
@@ -64,16 +65,16 @@ export function updatePreviewSupporter(listed: boolean): Profile {
 
 /* A ranking to look at: a few made-up supporters, and the stand-in account
    among them with this device's own ledger once it chose to be listed, in
-   the ranking's order (the most ads first, then the most coffees). */
-export function previewSupporters(ledger: SupportCounts): SupporterRow[] {
+   the ranking's order (the most points first, then the most coffees). */
+export function previewSupporters(ledger: SupportLedger): SupporterRow[] {
   const rows: SupporterRow[] = [
-    { public_id: 'previewoak', display_name: 'Dąbrówka', avatar_url: null, coffees: 7, ads: 12 },
-    { public_id: 'previewfern', display_name: 'Paprotka', avatar_url: null, coffees: 3, ads: 31 },
-    { public_id: 'previewmoss', display_name: 'Mech', avatar_url: null, coffees: 1, ads: 4 },
-    { public_id: 'previewowl', display_name: 'Sowa z Jury', avatar_url: null, coffees: 0, ads: 9 },
+    { public_id: 'previewoak', display_name: 'Dąbrówka', avatar_url: null, coffees: 7, ads: 12, points: 437 },
+    { public_id: 'previewfern', display_name: 'Paprotka', avatar_url: null, coffees: 3, ads: 31, points: 156 },
+    { public_id: 'previewmoss', display_name: 'Mech', avatar_url: null, coffees: 1, ads: 4, points: 54 },
+    { public_id: 'previewowl', display_name: 'Sowa z Jury', avatar_url: null, coffees: 0, ads: 9, points: 9 },
   ]
   if (profile.listed_as_supporter && ledger.coffees + ledger.ads > 0) {
-    rows.push({ public_id: profile.public_id, display_name: profile.display_name, avatar_url: profile.avatar_url, coffees: ledger.coffees, ads: ledger.ads })
+    rows.push({ public_id: profile.public_id, display_name: profile.display_name, avatar_url: profile.avatar_url, coffees: ledger.coffees, ads: ledger.ads, points: ledgerPoints(ledger) })
   }
-  return rows.sort((a, b) => b.ads - a.ads || b.coffees - a.coffees)
+  return rows.sort((a, b) => b.points - a.points || b.coffees - a.coffees)
 }
