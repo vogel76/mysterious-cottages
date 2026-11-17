@@ -125,10 +125,10 @@ export const webPl = {
     removesTitle: 'Co zostanie usunięte',
     removesAccount: 'konto, czyli powiązanie z Twoim logowaniem Google lub Apple,',
     removesProfile: 'profil: pseudonim i zdjęcie, a z nimi Twój wpis w Rankingu Zdobywców,',
-    removesFinds: 'odkrycia zapisane w koncie.',
+    removesFinds: 'odkrycia i elf zapisane w koncie oraz Twoje dane w Rankingu wsparcia.',
     keepsTitle: 'Co zostaje',
     keepsBody:
-      'Kronika zapisana w przeglądarce i w aplikacji na Twoich urządzeniach, bo przechowujemy ją lokalnie, nie na serwerze. Możesz ją wyczyścić, usuwając dane strony w przeglądarce albo odinstalowując aplikację. Nie przechowujemy innych danych o Tobie (patrz polityka prywatności).',
+      'Kronika zapisana w przeglądarce i w aplikacji oraz elf w aplikacji na Twoich urządzeniach, bo te kopie są przechowywane lokalnie, nie na serwerze. Możesz je wyczyścić, usuwając dane strony w przeglądarce albo odinstalowując aplikację. Nie przechowujemy innych danych o Tobie (patrz polityka prywatności).',
     howTitle: 'Jak usunąć konto',
     howApp: 'W aplikacji: Profil, Konto, Usuń konto, potwierdź.',
     howWeb: 'Na tej stronie: zaloguj się kontem, które chcesz usunąć, naciśnij „Usuń konto” i potwierdź.',

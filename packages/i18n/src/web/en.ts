@@ -107,10 +107,10 @@ export const webEn: typeof webPl = {
     removesTitle: 'What is deleted',
     removesAccount: 'the account, that is the link to your Google or Apple sign-in,',
     removesProfile: "the profile: the nickname and the photo, and with them your entry in the Explorers' Leaderboard,",
-    removesFinds: 'the discoveries saved to the account.',
+    removesFinds: "the discoveries and the elf saved to the account, and your data on the Supporters' Leaderboard.",
     keepsTitle: 'What stays',
     keepsBody:
-      'The Chronicle kept in the browser and in the app on your devices, because it is stored locally, not on a server. You can clear it by removing the site data in your browser or by uninstalling the app. We keep no other data about you (see the privacy policy).',
+      'The Chronicle kept in the browser and in the app, and the elf in the app, on your devices, because those copies are stored locally, not on a server. You can clear them by removing the site data in your browser or by uninstalling the app. We keep no other data about you (see the privacy policy).',
     howTitle: 'How to delete the account',
     howApp: 'In the app: Profile, Account, Delete account, confirm.',
     howWeb: 'On this page: sign in with the account you want to delete, press "Delete account" and confirm.',
