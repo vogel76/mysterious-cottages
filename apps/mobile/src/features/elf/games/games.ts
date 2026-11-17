@@ -25,6 +25,12 @@ export const GAME_ICON: Record<ElfGameId, Icon> = {
    round, for dust or an ad, and otherwise settles the round. */
 export type GameFinish = (points: number, revive?: () => void) => void
 
+/* The breath a game against the clock takes before it goes on with one
+   more life: the player comes back from an ad or the card with a single
+   heart, and an acorn or a star already on its way would take it before
+   the thumb is back on the board. */
+export const REVIVE_BREATH_MS = 1500
+
 export function gameKey(id: ElfGameId): string {
   return `mobile:elf.game${id.charAt(0).toUpperCase()}${id.slice(1)}`
 }

@@ -5,7 +5,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import { useTranslation } from 'react-i18next'
 import { CloseIcon, DustIcon, JoyIcon, StarRainGameIcon, StormIcon, Text, colors, iconSize, radius, space } from '../../../ui'
 import { GameStartCard } from './GameStartCard'
-import type { GameFinish } from './games'
+import { REVIVE_BREATH_MS, type GameFinish } from './games'
 import { useGameSound } from './GameSounds'
 
 /* The star rain: stars fall from the top of the board and the player
@@ -240,7 +240,8 @@ export function StarRainGame({ onFinish }: Props) {
 
   /* One more life: the rain goes on as thick as it was when the round stopped. */
   reviveRef.current = () => {
-    startedAt.current += Date.now() - outAt.current
+    /* The pace stays where it was: the time away and the breath do not count. */
+    startedAt.current += Date.now() - outAt.current + REVIVE_BREATH_MS
     heartsRef.current = 1
     setHearts(1)
     overRef.current = false
@@ -248,7 +249,7 @@ export function StarRainGame({ onFinish }: Props) {
     setMarks([])
     falling.current = new Set()
     setPhase('playing')
-    run()
+    later(REVIVE_BREATH_MS, run)
   }
 
   /* The finger moves the basket, kept inside the board. */
