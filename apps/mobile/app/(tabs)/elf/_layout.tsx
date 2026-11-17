@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Stack } from 'expo-router'
 import { TabStack } from '../../../src/ui'
 
-/* The Elf tab's own stack: the companion prototype. Its one screen is the
+/* The Elf tab's own stack: the elf companion. Its one screen is the
    full-screen cottage scene with its own floating HUD, so the native bar is
    off there and the scene runs under the status bar as the Atlas does. The
    title is still read here (and follows the language switch) so the route

@@ -37,8 +37,8 @@ import { TabBarHeightProvider, ToastHost, colors, fonts, headerRightItems, useAp
    Atlas with cached pins later. The providers (boot, network, account,
    content, progress, toasts, support) wrap a native stack whose gated first screens
    are the welcome pager and the tab bar, and whose other screens are
-   sheets and modals presented on top (among them the elf prototype's catch
-   view and evolution card). New top-level surfaces are added here as
+   sheets and modals presented on top (among them the elf's sheets, its
+   games and the evolution card). New top-level surfaces are added here as
    further Stack.Screen entries, new tabs in (tabs)/_layout.tsx. */
 
 void SplashScreen.preventAutoHideAsync()

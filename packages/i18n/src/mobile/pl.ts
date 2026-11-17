@@ -1,6 +1,6 @@
 /* Polish copy that exists only in the mobile app: tab names, the QR scanner,
    offline notices, native sign-in, recordings kept on the device, the
-   support sheet, the elf companion prototype. Everything the app shares
+   support sheet, the elf companion. Everything the app shares
    with the site (the code gate, the story, the Kronika, the ranking)
    comes from the shared dictionary in ../shared/pl.ts. */
 export const mobilePl = {
@@ -344,7 +344,7 @@ export const mobilePl = {
     accountRow: 'Pokaż mnie w rankingu',
     accountFooter: 'W rankingu widać Twój pseudonim, punkty oraz liczbę obejrzanych reklam i postawionych kaw.',
   },
-  /* The elf companion prototype: the egg, the care loop, the full-screen
+  /* The elf companion: the egg, the care loop, the full-screen
      cottage and its HUD, the evolution card. */
   /* The elf's reminders (src/features/elf/useElfReminders.ts): local
      notifications, the elf's question and the preferences' switch. */

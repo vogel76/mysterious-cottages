@@ -3,6 +3,8 @@ title: GANEK
 slug: ganek
 occupant: "elf Ganek"
 virtue: "bycie nie idealnym"
+letterFound: "Jestem Ganek. Naprawdę mam na imię Garnek, ale nie umiem wymówić „r”, więc wszyscy mówią na mnie Ganek. Dziś odwiedziliście mój dom w starym czajniku. Dziękuję, że nikt z Was nie śmiał się z mojej fryzury. Nasze hasło to: nie trzeba być idealnym. To, czym się różnicie od innych, jest po prostu Wasze."
+letterInvite: "Jestem Ganek. Mieszkam w starym czajniku, który znalazłem na złomowisku, tuż obok fabryki, gdzie garnki robią prawie stuletnie maszyny. Lubię patrzeć, jak pracują. Przyjdźcie mnie odwiedzić. Zaparzę herbatę i pokażę Wam, że stare rzeczy mogą dostać drugie życie."
 ---
 
 # GANEK

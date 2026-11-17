@@ -9,7 +9,7 @@ import { useBoot, useElf, useProgress, useToast } from '../../src/providers'
 import { TAB_ICONS, TabBar, colors, type DiscoverAction, type Icon } from '../../src/ui'
 
 /* The expedition loop as tabs around one raised action: the Atlas (the
-   play field) and the Elf (the companion prototype, see src/features/elf)
+   play field) and the Elf (the elf companion, see src/features/elf)
    on the left, the Kronika (the collection, with the Ranking on its stack)
    and the Profile on the right, with the gold
    "discover" button in the middle of the bar opening the code sheet (a

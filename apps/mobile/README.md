@@ -5,7 +5,7 @@ The expedition loop of the site as a native app, offline-first: the Atlas
 with its recording, the Kronika (rewards), the leaderboard and a profile,
 plus a sheet to support Chatynkowo with a coffee for the elf (a store
 purchase) or a rewarded ad (see "Supporting Chatynkowo" at the end) and
-the elf companion prototype as a tab of its own (see "The elf companion"
+the elf companion as a tab of its own (see "The elf companion"
 at the end). Expo SDK 57, TypeScript, expo-router, a development client
 (native modules are used, so Expo Go cannot run it).
 
@@ -243,7 +243,7 @@ app/                     expo-router routes
                          back); supporters.tsx, pushed the same way: the support ranking, who supports Chatynkowo the most
                          for Chatynkowo, with the seeker's own place and an ad button over the rows
   (tabs)/elf/            its own native stack (_layout.tsx, no bar on the screen) and one screen (index.tsx): the elf
-                         companion prototype, the full-screen cottage drawn in Skia with the HUD floating over it
+                         elf companion, the full-screen cottage drawn in Skia with the HUD floating over it
   (tabs)/profile/        its own native stack: grouped settings (account, language, preferences, lore, help, legal,
                          social) with the support invitation, account.tsx (the signed-in account: identity,
                          leaderboard entry, finds, preferences, sign-out, deletion), preferences.tsx (the consent to
@@ -319,7 +319,7 @@ src/
                          (SoundsSection.tsx), where the
                          consent to ads stands and the row that opens Google's form again (the privacy options in the
                          EEA), with the consent hook on top of src/lib/ads.ts
-  features/elf/          the companion prototype, on the rules in packages/core (elf.ts: the needs, the day's quests,
+  features/elf/          the elf companion, on the rules in packages/core (elf.ts: the needs, the day's quests,
                          the purse and the streak, the cottages found credited and celebrated, the furniture the finds
                          unlock, the stored outfit and decor, what an absence brings: the sill's finds, the letters,
                          the plant), cottage/ (the full-screen Skia room:
@@ -785,7 +785,7 @@ of it in the repository:
    Play and the App Privacy answers on the App Store list the advertising
    identifier and the purchase history accordingly.
 
-## The elf companion (prototype)
+## The elf companion
 
 A care loop like a virtual pet, in the spirit of Pou: an egg waits in the
 nest from the first visit (nothing to fill in), the seeker keeps it warm
