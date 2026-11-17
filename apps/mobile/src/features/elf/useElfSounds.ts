@@ -7,7 +7,8 @@ import { releasePlayer, useSoundPool, useSoundsOn, type SoundSpec } from '../../
    its head, a meal, a bath, a game, a yawn, a snore in its sleep, waking
    up, the egg's knock, its warming and its lullaby, its cracks and its
    hatch, an evolution, a cheer, a letter,
-   a refused care, the sip that thanks for a coffee, a beckon;
+   a refused care (a wordless "mm-mm", so it says no in every language),
+   the sip that thanks for a coffee, a beckon;
    a pat is silent, it comes too often), never for a tap on the chrome,
    and the fire's crackle under the room while it is in view. Every sound
    is CC0 or synthesised (assets/elf/sounds/CREDITS.md). The sounds are a pool
@@ -32,7 +33,7 @@ const SOUNDS: Record<ElfSound, SoundSpec> = {
   hatch: { module: require('../../../assets/elf/sounds/hatch.mp3'), volume: 0.8, minGapMs: 1000 },
   evolve: { module: require('../../../assets/elf/sounds/evolve.mp3'), volume: 0.8, minGapMs: 1000 },
   cheer: { module: require('../../../assets/elf/sounds/cheer.mp3'), volume: 0.7, minGapMs: 1000 },
-  refuse: { module: require('../../../assets/elf/sounds/refuse.mp3'), volume: 0.6, minGapMs: 800 },
+  refuse: { module: require('../../../assets/elf/sounds/refuse.wav'), volume: 0.6, minGapMs: 800 },
   sip: { module: require('../../../assets/elf/sounds/sip.mp3'), volume: 0.7, minGapMs: 2000 },
   beckon: { module: require('../../../assets/elf/sounds/beckon.mp3'), volume: 0.5, minGapMs: 1500 },
   letter: { module: require('../../../assets/elf/sounds/letter.mp3'), volume: 0.7, minGapMs: 600 },

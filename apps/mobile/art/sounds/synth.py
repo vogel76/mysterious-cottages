@@ -13,6 +13,9 @@ assets/elf/sounds (the recorded ones are CC0 previews, see CREDITS.md):
   cleared, a calm close for the end of a round and a small fanfare for
   a new record, all made of the same plucks and soft noise, so the games
   sound of one forest;
+- the elf's refusal of a care: a wordless "mm-mm", two short hums, the
+  second lower, the sound of a shaken head in any language (it took the
+  place of a recorded English "no");
 - the egg's three touches, each its own sound: a soft wooden knock for a
   tap on the shell, a warm hush with a few ember crackles for the warming,
   and a short lullaby for the rocking.
@@ -209,6 +212,29 @@ def fanfare() -> list[float]:
     return mixed(parts)
 
 
+def hum(start: float, end: float, seconds: float) -> list[float]:
+    """A closed-mouth hum sliding from start to end: a voice rather than an
+    instrument, so it holds its level (no pluck's fade) between a soft 25 ms
+    rise and a 45 ms release, with two quiet harmonics for the mouth's
+    colour and a low-pass that keeps it dark."""
+    samples, phase = [], 0.0
+    count = int(RATE * seconds)
+    for i in range(count):
+        t = i / RATE
+        frequency = start + (end - start) * (i / count)
+        phase += 2 * math.pi * frequency / RATE
+        envelope = min(1.0, t / 0.025) * min(1.0, (seconds - t) / 0.045)
+        samples.append(envelope * (math.sin(phase) + 0.4 * math.sin(2 * phase) + 0.15 * math.sin(3 * phase)))
+    return normalised(lowpass(samples, 0.4))
+
+
+def mm_mm() -> list[float]:
+    """The elf's refusal: "mm-mm", two short hums a major third apart, each
+    dipping a little, the second lower: no word in it, so it says no in
+    every language."""
+    return mixed([(0.0, hum(392.0, 370.0, 0.17), 1.0), (0.26, hum(311.13, 277.18, 0.24), 0.95)])
+
+
 def knock(seconds: float = 0.18) -> list[float]:
     """A soft wooden knock on the shell: a low ringing body under a short click."""
     rng = random.Random(7)
@@ -281,7 +307,8 @@ if __name__ == '__main__':
         write(name, pluck(frequency), volume=0.7)
     for name, (make, volume) in GAME_SOUNDS.items():
         write(name, make(), volume=volume)
+    write('refuse.wav', mm_mm(), volume=0.7)
     write('egg-knock.wav', knock(), volume=0.8)
     write('egg-warm.wav', hush(), volume=0.6)
     write('egg-lullaby.wav', lullaby(), volume=0.8)
-    print('written', ', '.join([*NOTES, *GAME_SOUNDS, 'egg-knock.wav', 'egg-warm.wav', 'egg-lullaby.wav']), 'to', OUT)
+    print('written', ', '.join([*NOTES, *GAME_SOUNDS, 'refuse.wav', 'egg-knock.wav', 'egg-warm.wav', 'egg-lullaby.wav']), 'to', OUT)

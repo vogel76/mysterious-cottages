@@ -23,7 +23,6 @@ The app plays them in `src/features/elf/useElfSounds.ts`.
 | `evolve.mp3` | an evolution | [Danny Phantom Transform](https://freesound.org/people/plasterbrain/sounds/395442/) | plasterbrain | CC0 1.0 |
 | `cheer.mp3` | the day's quests done, a streak's milestone | [Congrats](https://freesound.org/people/Fupicat/sounds/607207/) | Fupicat | CC0 1.0 |
 | `letter.mp3` | opening a letter | [turnPage.mp3](https://freesound.org/people/partheeban/sounds/457767/) | partheeban | CC0 1.0 |
-| `refuse.mp3` | a refused care (a full belly, the day's cap) | [No. Squeaky Low Voice](https://freesound.org/people/9voltfan/sounds/784922/) | 9voltfan | CC0 1.0 |
 | `sip.mp3` | the sip of coffee that thanks for the player's support (the two sips and the sigh, 0.85 to 3.5 s of the preview) | [Sip of coffee, swallow then "ah"](https://freesound.org/people/odditonic/sounds/194808/) | odditonic | CC0 1.0 |
 | `beckon.mp3` | the beckon towards the door | [Short Whistle](https://freesound.org/people/CressieCres/sounds/498167/) | CressieCres | CC0 1.0 |
 | `fire.mp3` | the fire's crackle under the room (a 10 s loop) | [fire ambience, flames, crackles, pops, burning](https://freesound.org/people/ahriik/sounds/508110/) | ahriik | CC0 1.0 |
@@ -35,6 +34,7 @@ Not recorded but synthesised, so nothing to credit:
 
 | File | Plays for | Sound |
 |---|---|---|
+| `refuse.wav` | a refused care (a full belly, a clean coat, no energy for a play, a sleeping elf), played by `src/features/elf/useElfSounds.ts` | a wordless "mm-mm": two short closed-mouth hums, G4 then E-flat 4, each dipping a little; no word in it, so it says no in every language (it took the place of a recorded English "no") |
 | `echo1.wav` to `echo4.wav` | the forest echo's four tiles (the games' sounds are played by `src/features/elf/games/GameSounds.tsx`) | C4, E4, G4, A4: warm kalimba-like plucks on a pentatonic set, so any order of them sounds like a tune (the fundamental with a quiet octave that fades first, a soft 15 ms rise, under half a second long, a gentle low-pass: nothing above 2 kHz, so a long melody never grates) |
 | `game-wrong.wav` | a wrong choice in a game (a tile in the forest echo, a cap in under which mushroom) | a soft "oh-oh": two of the same plucks falling a third, E4 to C4 |
 | `game-catch.wav` | an acorn caught | a short round "bloop", a soft tone sliding up from about D4 to C5 |

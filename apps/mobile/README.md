@@ -1435,7 +1435,9 @@ the fidgets, a snore with every breath of sleep in its bed, a hum when it
 wakes or greets the player, for the egg a knock on its shell, a warm hush
 when it is warmed and a lullaby when it is rocked, a crack for each crack of the egg, a sparkle
 for the hatch, a whoosh of magic for an evolution, a jingle for the day's
-quests and a streak's milestone, a page for a letter, and the fire's
+quests and a streak's milestone, a page for a letter, a wordless "mm-mm"
+for a care it refuses (synthesised: no word in it, so it is a no in every
+language), and the fire's
 crackle as a quiet loop under the room; a pat is silent, it comes too
 often. The games have a pool of their own (`games/GameSounds.tsx`, on
 `src/lib/sound-pool.ts` like the elf's), held by the game's frame so a
