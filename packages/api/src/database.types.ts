@@ -77,6 +77,33 @@ export type Database = {
         /* user_id references auth.users, like finds. */
         Relationships: []
       }
+      /* The elf on the account: its whole state as the app keeps it, the
+         moment the player last changed it and the revision of the write. */
+      elves: {
+        Row: {
+          user_id: string
+          state: Json
+          changed_at: string
+          rev: number
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          state: Json
+          changed_at: string
+          rev?: number
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          state?: Json
+          changed_at?: string
+          rev?: number
+          updated_at?: string
+        }
+        /* user_id references auth.users, like finds. */
+        Relationships: []
+      }
       finds: {
         Row: {
           user_id: string

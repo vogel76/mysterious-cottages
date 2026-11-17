@@ -255,6 +255,22 @@ export async function fetchSupporters(): Promise<api.SupporterRow[]> {
   return supabase ? withTimeout(api.fetchSupporters(supabase), ATTEMPT_TIMEOUT_MS) : []
 }
 
+/* The account's elf (see @chatynkowo/api elf.ts), or null when it holds
+   none; with the account preview on there is no account to hold one.
+   Throws when the backend cannot be read or does not answer in time. */
+export async function fetchElf(session: Session): Promise<api.ElfRecord | null> {
+  if (previewEnabled || !supabase) return null
+  return withTimeout(api.fetchElf(supabase, session), ATTEMPT_TIMEOUT_MS)
+}
+
+/* The elf written to the account over the revision named. Resolves to the
+   new revision, or to null when another phone wrote first. Throws when
+   the backend refused, is unreachable or did not answer in time. */
+export async function pushElf(session: Session, state: api.Json, changedAt: number, baseRev: number): Promise<number | null> {
+  if (previewEnabled || !supabase) return baseRev + 1
+  return withTimeout(api.pushElf(supabase, session, state, changedAt, baseRev), ATTEMPT_TIMEOUT_MS)
+}
+
 /* This device's support ledger to the account. Resolves to false when the
    backend refused, is unreachable or did not answer in time, so the
    caller tries again; the reason goes to the console. */

@@ -174,9 +174,9 @@ export const sharedEn: typeof sharedPl = {
     save: 'Save',
     deleteAccount: 'Delete account',
     deleteAccountLead:
-      'Deleting the account cannot be undone: the profile, the nickname, the photo and the discoveries saved to the account disappear, and your place on the leaderboard is given up. The Chronicle kept on this device stays.',
+      'Deleting the account cannot be undone: the profile, the nickname, the photo, and the discoveries and the elf saved to the account disappear, and your places on the leaderboards are given up. The Chronicle and the elf kept on this device stay.',
     deleteAccountConfirm: 'Delete the account for good?',
-    deleteAccountBody: 'This cannot be undone. The account, the leaderboard entry and the discoveries saved to the account disappear. The discoveries kept on this device stay.',
+    deleteAccountBody: 'This cannot be undone. The account, the leaderboard entries, and the discoveries and the elf saved to the account disappear. The discoveries and the elf kept on this device stay.',
     deleteAccountCancel: 'Cancel',
     deleteAccountDone: 'The account has been deleted.',
     deleteAccountFailed: 'The account could not be deleted. Check the connection and try again.',

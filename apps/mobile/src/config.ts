@@ -79,6 +79,10 @@ export const STORAGE_KEYS = {
      the egg or the elf, its needs, the day's quests, the purse and the
      streak. */
   elf: 'chatynkowo:elf:v2',
+  /* What this device and the signed-in account last agreed on about the
+     elf (src/features/elf/ElfSync.tsx): the account, its revision and the
+     elf's last change then. */
+  elfSync: 'chatynkowo:elf-sync:v1',
   /* Which of the Elf tab's tutorials (the egg's, the elf's) were seen. */
   elfTutorial: 'chatynkowo:elf-tutorial:v1',
   /* The elf's reminders (src/lib/reminders-store.ts): whether the player

@@ -131,7 +131,7 @@ export const mobilePl = {
     findsTitle: 'Odkrycia',
     findsRow: 'Zapisane w koncie',
     openRanking: 'Zobacz swoje miejsce w rankingu',
-    signOutFooter: 'Odkrycia zostaną na tym urządzeniu i wrócą do konta po ponownym zalogowaniu.',
+    signOutFooter: 'Odkrycia i elf zostaną na tym urządzeniu i wrócą do konta po ponownym zalogowaniu.',
     deleteTitle: 'Usuwanie konta',
     deleteAppleCancelled: 'Konto zostaje. Usunięcie trzeba potwierdzić przez Apple.',
   },
@@ -533,6 +533,10 @@ export const mobilePl = {
     shopPackLarge: 'Skrzynka pyłu',
     shopPackAria: '{{name}}, pył: {{dust}}, {{price}}',
     shopPacksUnavailable: 'Sklep telefonu nie podaje teraz paczek pyłu. Spróbuj później.',
+    /* Under the packs, for a seeker without an account: where the dust is kept. */
+    shopNoAccount: 'Zaloguj się w Profilu, a elf i pył będą bezpieczne na Twoim koncie. Bez konta mieszkają tylko na tym telefonie.',
+    /* The account's elf took the place of the one on this phone (ElfSync). */
+    syncArrived: 'Elf z Twojego konta wrócił do chatki!',
     shopSkipsTitle: 'Przyspieszenia',
     shopSkipsLead: 'Pył albo jedna reklama skracają czekanie. Siły na gry kupisz za żołędzie, a gwiezdny napar za pył. Reklamy to te same, które dają pył, a na dziś jest ich kilka.',
     shopSkipHatch: 'Wyklucie jajka',
@@ -887,7 +891,7 @@ export const mobilePl = {
     cottageAria: 'Twój elf w swojej chatce',
     /* Starting over, from the profile */
     startOver: 'Zacznij elfa od nowa',
-    resetFooter: 'Elf mieszka tylko na tym telefonie. Jeśli zaczniesz od nowa, zniknie razem z całym swoim światem: żołędziami, pyłem, serią, zadaniami i meblami w chatce. Odkryte Chatynki zostają.',
+    resetFooter: 'Jeśli zaczniesz od nowa, elf zniknie z tego telefonu i z Twojego konta razem z całym swoim światem: żołędziami, pyłem, serią, zadaniami i meblami w chatce. Odkryte Chatynki zostają.',
     resetTitle: 'Zacząć od nowa?',
     resetBody: 'Twój obecny elf i cały jego świat przepadną: żołędzie, pył, seria, zadania i meble w chatce. W gnieździe pojawi się nowe jajko. Odkryte Chatynki zostają. Tej magii nie da się cofnąć.',
     resetConfirm: 'Tak, od nowa',

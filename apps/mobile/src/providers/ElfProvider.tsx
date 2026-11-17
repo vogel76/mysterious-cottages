@@ -13,6 +13,8 @@ import {
   markFormShown,
   moodOf,
   newElf,
+  restartElf,
+  touchElf,
   normalizeElf,
   pendingForm,
   performCare,
@@ -161,6 +163,8 @@ export type ElfValue = {
   /* The hatched elf named and given its element, which marks the first
      form as seen is the tab's business (acknowledgeEvolution). */
   christen: (name: string, starter: ElfStarter) => void
+  /* The account's elf in place of the device's (ElfSync). */
+  replace: (next: ElfState) => void
   /* Lets the elf go: a fresh egg takes the nest. */
   reset: () => void
   /* The tab came into view: the day is settled and the visit counted; the
@@ -348,13 +352,17 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   }, [])
 
   /* Every change goes through here: the ref for the next caller, the state
-     for React, the device when asked. */
+     for React, the device when asked. What the player did is stamped
+     (touchElf), which is what the account's copy is brought up to date by
+     (ElfSync); what the clock did (`passed`: the drift, the day's
+     settling, a visit) is not, since every device works that out alone. */
   const commit = useCallback(
-    (next: ElfState | null, save: boolean) => {
-      stateRef.current = next
-      setState(next)
-      refreshPending(next)
-      if (save) persist(next)
+    (next: ElfState | null, save: boolean, passed = false) => {
+      const stamped = next && !passed ? touchElf(next, elfNow()) : next
+      stateRef.current = stamped
+      setState(stamped)
+      refreshPending(stamped)
+      if (save) persist(stamped)
       else dirtyRef.current = true
     },
     [persist, refreshPending],
@@ -384,6 +392,9 @@ export function ElfProvider({ children }: { children: ReactNode }) {
         stateRef.current = next
         setState(next)
         refreshPending(next)
+        /* An elf stored before it had a name for itself keeps the one it
+           was just given. */
+        if (next && (raw as { id?: unknown }).id !== next.id) void writeJson(STORAGE_KEYS.elf, next)
         setLoaded(true)
       } catch {
         if (!current) return
@@ -442,7 +453,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       if (next === current) return
       const save = now - lastSave >= DRIFT_SAVE_MS || day.newDay
       if (save) lastSave = now
-      commit(next, save)
+      commit(next, save, true)
       if (day.newDay || day.completed.length) report(current, { state: next, completed: [], setBonus: false }, day)
     }
     let timer: ReturnType<typeof setInterval> | null = AppState.currentState === 'active' ? setInterval(tick, TICK_MS) : null
@@ -471,11 +482,24 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
+  /* A new egg by the player's choice: it remembers the elf it replaces,
+     so the account gives way to it too. */
   const reset = useCallback(() => {
-    commit(newElf(elfNow()), true)
+    commit(restartElf(stateRef.current, elfNow()), true)
     setNews(null)
     setAway(null)
   }, [commit])
+
+  /* The account's elf takes the place of the device's (ElfSync), brought
+     up to the present; it comes as it was written, so nothing is stamped. */
+  const replace = useCallback(
+    (next: ElfState) => {
+      commit(applyElapsed(next, elfNow()), true, true)
+      setNews(null)
+      setAway(null)
+    },
+    [commit],
+  )
 
   const dismissAway = useCallback(() => setAway(null), [])
   const readLetter = useCallback(
@@ -494,7 +518,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
     const current = stateRef.current ?? newElf(now)
     const { state: settled, day } = settle(current, now)
     const outcome = visitElf(settled, now, findsRef.current, invitesRef.current)
-    if (outcome.state !== current) commit(outcome.state, true)
+    if (outcome.state !== current) commit(outcome.state, true, true)
     report(current, outcome, day)
   }, [commit, settle, report])
 
@@ -854,6 +878,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       decor,
       lastInteraction: state?.lastInteraction ?? 0,
       christen,
+      replace,
       reset,
       visit,
       care,
@@ -902,7 +927,7 @@ export function ElfProvider({ children }: { children: ReactNode }) {
       dismissAway,
       readLetter,
     }
-  }, [state, loaded, finds, outfit, decor, christen, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
+  }, [state, loaded, finds, outfit, decor, christen, replace, reset, visit, care, tend, toggleSleep, pet, hatchNow, equip, placeDecor,
       thankSupport, earnAdDust, addDust, skip, reviveGame, growUp, unlockNode, buyItem, buyTrick, trainTrick, trickPlay, playTrick, clearTrickPlay, showTrick, finishGame, gameResult, clearGameResult, buyWare, visitPeddler, claimBadge, claimDailyReward, doubleDailyReward, buyBrew, pendingEvolution, acknowledgeEvolution, news, away, dismissAway, readLetter])
 
   return <ElfContext.Provider value={value}>{children}</ElfContext.Provider>

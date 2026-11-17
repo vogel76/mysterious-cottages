@@ -25,6 +25,7 @@ import {
   useSession,
   useToast,
 } from '../src/providers'
+import { ElfSync } from '../src/features/elf/ElfSync'
 import { SupportExport } from '../src/features/supporters/SupportExport'
 import { SupportRankWatch } from '../src/features/supporters/SupportRankWatch'
 import { SupportersPrompt } from '../src/features/supporters/SupportersPrompt'
@@ -168,6 +169,7 @@ function AppShell() {
                   <NamePrompt />
                   <SupportersPrompt />
                   <SupportExport />
+                  <ElfSync />
                   <SupportRankWatch />
                   <Toasts />
                 </SupportProvider>

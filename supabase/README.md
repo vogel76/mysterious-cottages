@@ -14,6 +14,7 @@ versioned in the repository: changes are made in the project, and a local
 | `finds` — discovered cottages per account | Postgres | Kronika sync |
 | `leaderboard(p_total)` — the ranking | SQL function | `/ranking.html` |
 | `profiles.listed_as_supporter`, `support_ledgers`, `supporters_board()` — who supports Chatynkowo the most, in points from ads watched and coffees bought | Postgres, SQL function | the app's support ranking |
+| `elves` — the elf of an account: its whole state, a revision | Postgres | the app's elf, kept through a reinstall and across phones |
 | `delete-account` — removes the caller's finds, profile and auth user | Edge Function (`functions/delete-account/`) | the app's account screen, `/delete-account.html`, `/profile.html` |
 
 What the backend does **not** do, and should not do without a reason: it does
@@ -123,6 +124,37 @@ verifies the store's receipt for the coffees).
 As with the rest of the schema, these objects are created in the
 project's SQL editor and are not versioned here; an app that reaches a
 backend without them asks nobody and shows the ranking as unavailable.
+
+## The elf on the account
+
+The elf lives on the device and, for a signed-in player, on the account
+as well, so a reinstall or another phone brings back the elf, its acorns
+and its star dust (which may have been paid for).
+
+- `elves` (`user_id` primary key references `auth.users` with
+  `on delete cascade`, `state` jsonb, `changed_at`, `rev`, `updated_at`):
+  one row an account, the elf's whole state as the app keeps it (core's
+  `ElfState`), the moment the player last changed it and a revision every
+  write raises by one. "Own row" RLS for select, insert, update and
+  delete. The cascade is what makes `delete-account` take the elf with
+  the user.
+
+A write names the revision it was made over (`pushElf` in
+`packages/api/src/elf.ts`: an insert for an account that holds none, else
+an update `where rev = <the one read>`) and goes through only if the
+account still stands at it, so two phones never write over each other
+unseen; the one that came second reads the account again. Which elf
+stays, the device's or the account's, is the rules' decision (`syncElf` in
+`packages/core/src/elf.ts`); the app's side is
+`apps/mobile/src/features/elf/ElfSync.tsx`.
+
+The state is the client's word, like the support ledger: nothing checks
+the dust in it against the store. A purchase verified by an Edge Function
+(the store's receipt) is the next step if made-up wallets ever matter.
+
+The SQL waits, git-ignored, in `supabase/migrations/20261117_elves.sql`,
+to be run in the SQL editor; an app that reaches a backend without the
+table keeps the elf on the device and tries again later.
 
 ## Deleting an account
 

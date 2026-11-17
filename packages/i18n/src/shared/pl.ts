@@ -180,9 +180,9 @@ export const sharedPl = {
     save: 'Zapisz',
     deleteAccount: 'Usuń konto',
     deleteAccountLead:
-      'Usunięcie konta jest nieodwracalne: znikną profil, pseudonim, zdjęcie i odkrycia zapisane w koncie, a Twoje miejsce w rankingu zostanie zwolnione. Kronika zapisana na tym urządzeniu zostaje.',
+      'Usunięcie konta jest nieodwracalne: znikną profil, pseudonim, zdjęcie oraz odkrycia i elf zapisane w koncie, a Twoje miejsca w rankingach zostaną zwolnione. Kronika i elf zapisane na tym urządzeniu zostają.',
     deleteAccountConfirm: 'Usunąć konto na zawsze?',
-    deleteAccountBody: 'Tej operacji nie da się cofnąć. Konto, wpis w rankingu i odkrycia zapisane w koncie znikną. Odkrycia zapisane na tym urządzeniu zostaną.',
+    deleteAccountBody: 'Tej operacji nie da się cofnąć. Konto, wpisy w rankingach oraz odkrycia i elf zapisane w koncie znikną. Odkrycia i elf zapisane na tym urządzeniu zostaną.',
     deleteAccountCancel: 'Anuluj',
     deleteAccountDone: 'Konto zostało usunięte.',
     deleteAccountFailed: 'Nie udało się usunąć konta. Sprawdź połączenie i spróbuj ponownie.',

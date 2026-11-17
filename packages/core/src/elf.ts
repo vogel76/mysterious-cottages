@@ -348,6 +348,18 @@ export type ElfDaily = {
 
 export type ElfState = {
   version: typeof ELF_VERSION
+  /* The elf's own name for itself, made with the egg and kept for life:
+     the account tells by it whether the elf on a device is the one it
+     holds (syncElf). */
+  id: string
+  /* The elves this one took the place of: those started over (restartElf)
+     and those it was chosen over when two met on one account. A device
+     still holding one of them gives way to this one. */
+  lineage: string[]
+  /* When the player last changed anything (a care, a game, a purchase, a
+     swap); the drift, the day's settling and a mere visit do not count.
+     What is new on a device since it last met the account is told by it. */
+  changedAt: number
   /* Empty, and no element, until the hatch, when the player names the
      elf and picks its element; the egg needs neither. */
   name: string
@@ -789,10 +801,22 @@ function normalizeRequest(raw: unknown): ElfRequest | null {
 
 /* ---------- A new elf and a stored one ---------- */
 
+/* How many replaced elves an elf remembers. */
+const LINEAGE_KEPT = 20
+
+function newElfId(): string {
+  let id = ''
+  while (id.length < 16) id += Math.floor(Math.random() * 36).toString(36)
+  return id
+}
+
 /* A fresh egg in the nest: unnamed and of no element until it hatches. */
 export function newElf(now: number): ElfState {
   return {
     version: ELF_VERSION,
+    id: newElfId(),
+    lineage: [],
+    changedAt: 0,
     name: '',
     starter: null,
     hatched: false,
@@ -916,6 +940,10 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
   const gifts = isRecord(raw.gifts) ? raw.gifts : {}
   const state: ElfState = {
     version: ELF_VERSION,
+    /* An elf stored before it had a name for itself gets one now. */
+    id: typeof raw.id === 'string' && raw.id.length >= 6 && raw.id.length <= 40 ? raw.id : newElfId(),
+    lineage: stringList(raw.lineage).slice(-LINEAGE_KEPT),
+    changedAt: Math.max(0, number(raw.changedAt, 0)),
     name,
     starter,
     hatched,
@@ -2262,4 +2290,99 @@ export function elfReminders(state: ElfState, now: number, finds: readonly ElfFi
     else byDay.set(day, { ...held, quests: held.kind === 'day' || quests })
   }
   return [...byDay.values()].sort((a, b) => a.at - b.at).slice(0, REMINDERS_MAX)
+}
+
+
+/* ---------- The elf on the account ---------- */
+
+/* The elf lives on the device and, for a signed-in player, on the account
+   as well (one elf an account, the whole state as one record with a
+   revision the backend raises on every write), so it survives a
+   reinstall and follows the player to another phone. The device and the
+   account are brought together by syncElf, a pure decision over what each
+   holds; the app carries it out (apps/mobile ElfSync).
+
+   What makes a device's elf newer than the account's is the player's own
+   doing, never the clock: every action stamps changedAt (touchElf), while
+   the drift, the day's settling and a visit leave it alone, since any
+   device works those out for itself. So a phone that was merely opened
+   takes what another phone did, and only a phone the player did
+   something on has anything to send. */
+
+/* The state after something the player did, at a moment later than the
+   last such. */
+export function touchElf(state: ElfState, now: number): ElfState {
+  return { ...state, changedAt: Math.max(now, state.changedAt + 1) }
+}
+
+/* A new egg in place of the elf, by the player's choice: it remembers the
+   one it replaced, so the account and any other phone give way to it. */
+export function restartElf(old: ElfState | null, now: number): ElfState {
+  const fresh = newElf(now)
+  return touchElf(old ? { ...fresh, lineage: [...old.lineage, old.id].slice(-LINEAGE_KEPT) } : fresh, now)
+}
+
+/* What the account holds: the elf and the revision it was written at. */
+export type ElfRemote = { state: ElfState; rev: number }
+/* What this device and this account agreed on last: the account's
+   revision then, and the elf's changedAt then. Null before they ever met. */
+export type ElfSyncBase = { rev: number; changedAt: number } | null
+
+export type ElfSyncStep =
+  | { do: 'nothing' }
+  /* Write this state to the account over the revision named (0: the
+     account holds none yet); the device takes it too when it is not what
+     the device held (two elves made one). */
+  | { do: 'push'; state: ElfState; baseRev: number; arrived: boolean }
+  /* Take the account's elf. */
+  | { do: 'adopt'; state: ElfState; rev: number; arrived: boolean }
+
+/* How grown an elf is, to choose between two: hatched before an egg, then
+   by experience. */
+function grownMore(a: ElfState, b: ElfState): boolean {
+  if (a.hatched !== b.hatched) return a.hatched
+  return a.xp > b.xp
+}
+
+/* What to do when a device (its elf, or none) meets the account (its elf
+   with its revision, or none). `arrived` says the device is getting an
+   elf other than the one it held, for the app to say so.
+
+   The same elf on both sides: if the account has not moved since they
+   last met, the device sends what the player did since, if anything; if
+   it has moved and the player did nothing here, the device takes the
+   account's; if both changed, the more experienced stays (then the later
+   changed, then the account's), since the two cannot be woven together.
+
+   Different elves: one that remembers replacing the other stays. Two that
+   know nothing of each other (an elf raised signed out meeting an account
+   that has its own) become one: the more grown stays (the account's on a
+   tie) and takes the other's star dust, which may have been paid for, and
+   remembers it, so the phone the other came from gives way without
+   counting its dust again. */
+export function syncElf(local: ElfState | null, remote: ElfRemote | null, base: ElfSyncBase, now: number): ElfSyncStep {
+  if (!remote) return local ? { do: 'push', state: local, baseRev: 0, arrived: false } : { do: 'nothing' }
+  const theirs = remote.state
+  if (!local) return { do: 'adopt', state: theirs, rev: remote.rev, arrived: true }
+  if (local.id === theirs.id) {
+    const moved = !base || base.rev !== remote.rev
+    const dirty = local.changedAt !== (base ? base.changedAt : theirs.changedAt)
+    if (!moved) return dirty ? { do: 'push', state: local, baseRev: remote.rev, arrived: false } : { do: 'nothing' }
+    if (!dirty) return { do: 'adopt', state: theirs, rev: remote.rev, arrived: false }
+    const mine = local.xp !== theirs.xp ? local.xp > theirs.xp : local.changedAt > theirs.changedAt
+    return mine ? { do: 'push', state: local, baseRev: remote.rev, arrived: false } : { do: 'adopt', state: theirs, rev: remote.rev, arrived: false }
+  }
+  if (theirs.lineage.includes(local.id)) return { do: 'adopt', state: theirs, rev: remote.rev, arrived: true }
+  if (local.lineage.includes(theirs.id)) return { do: 'push', state: local, baseRev: remote.rev, arrived: false }
+  const mine = grownMore(local, theirs)
+  const [kept, given] = mine ? [local, theirs] : [theirs, local]
+  const one = touchElf(
+    {
+      ...kept,
+      wallet: { ...kept.wallet, dust: kept.wallet.dust + given.wallet.dust },
+      lineage: [...kept.lineage, ...given.lineage, given.id].filter((id, index, all) => id !== kept.id && all.indexOf(id) === index).slice(-LINEAGE_KEPT),
+    },
+    now,
+  )
+  return { do: 'push', state: one, baseRev: remote.rev, arrived: !mine }
 }

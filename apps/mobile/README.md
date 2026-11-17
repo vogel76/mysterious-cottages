@@ -552,7 +552,26 @@ through `src/lib/haptics.ts`.
   or wakes it by the clock; the state is saved after every action, every
   ten seconds while it only drifts, and when the app leaves the
   foreground. A form reached (by the hatch, the cottages found or time)
-  waits in `pendingEvolution` until the Elf tab has shown its card. What
+  waits in `pendingEvolution` until the Elf tab has shown its card. For a
+  signed-in player the elf is kept on the account too (`ElfSync`, mounted
+  under the providers; `fetchElf`/`pushElf` in `packages/api`, the table
+  in `supabase/README.md`, "The elf on the account"), so a reinstall or
+  another phone brings back the elf with its acorns and star dust.
+  Every action of the player stamps the state (`touchElf`: `changedAt`),
+  while the drift, the day's settling and a visit do not, since any
+  device works those out alone; so a phone that was merely opened takes
+  what another phone did, and only a phone something was done on has
+  anything to send. `ElfSync` reads the account's elf when the account or
+  the stored elf comes in, on every return to the foreground and
+  reconnect, a few seconds after a change and at once when the app leaves
+  the front, and carries out the rules' decision (`syncElf`): the same
+  elf on both sides goes whichever way is newer (both changed: the more
+  experienced stays); an elf started over replaces the one it remembers
+  (`restartElf`, `lineage`); two elves that know nothing of each other
+  become one, the more grown staying and taking the other's star dust. A
+  write names the account's revision and is decided anew when another
+  phone wrote first. Without an account the elf stays on the device
+  alone (the shop says so under the packs); a demo build never syncs. What
   the day's rules said about an action or a visit (a new day, a quest
   done and its pay, the full set, a streak milestone, a streak lost, a
   cottage found to cheer about) is published as `news`, one record the

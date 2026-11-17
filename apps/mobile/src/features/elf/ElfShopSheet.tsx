@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { canBrew, DUST, ENERGY_AD, ENERGY_MAX, GAME_ENERGY, hatchAt, levelOf, shopItems, SKIP_COST, type ElfShopItem, type ElfSkip } from '@chatynkowo/core'
-import { storeNoteKey, useCloseModal, useElf, useOnline, useSupport, useToast } from '../../providers'
+import { storeNoteKey, useCloseModal, useElf, useOnline, useSession, useSupport, useToast } from '../../providers'
 import { AcornsIcon, BrewIcon, Button, DustIcon, PressableScale, SheetRoute, Text, WatchAdIcon, colors, iconSize, radius, space } from '../../ui'
 import { packLabelKey } from '../support/tips'
 import { RewardedAdNote } from '../support/RewardedAdNote'
@@ -46,6 +46,7 @@ export function ElfShopSheet() {
   const online = useOnline()
   const close = useCloseModal()
   const support = useSupport()
+  const account = useSession()
   const { state, stage, finds, adsLeft, earnAdDust, skip, nextForm, buyItem, rest, brewUntil, refillPrice, buyBrew } = useElf()
   const toast = useToast()
   const [earned, setEarned] = useState(0)
@@ -193,6 +194,12 @@ export function ElfShopSheet() {
               {storeNote ? (
                 <Text variant="small" tone="faint" accessibilityLiveRegion="polite">
                   {t(storeNote)}
+                </Text>
+              ) : null}
+              {/* Bought dust is kept on the account; without one, on this phone alone. */}
+              {account.enabled && !account.session ? (
+                <Text variant="small" tone="faint">
+                  {t('mobile:elf.shopNoAccount')}
                 </Text>
               ) : null}
             </>
