@@ -631,7 +631,9 @@ TODO universal links: the plaque QR carries `https://www.chatynkowo.pl/?kod=NNNN
   `MOBILE_ICON_ROLES`, checked at compile time. `phosphor-react-native` is
   imported nowhere else, and only through its per-icon entries
   (`phosphor-react-native/src/icons/<Name>`): Metro does not tree-shake,
-  and the package root would put all 1500 icons in the bundle. Those
+  and the package root would put all 1500 icons in the bundle. The elf's
+  glyph is the one drawn in house (`ELF_GLYPH` in the theme, see the root
+  README), rendered in `icons.ts` with the same props. Those
   entries are sources, so the type check needs Expo's augmentations
   (`src/types/expo.d.ts` keeps the reference in every checkout; the
   generated `expo-env.d.ts` is ignored). No emoji or typographic glyph is
@@ -882,12 +884,11 @@ figures, so the row does not shift each minute.
 A wait is never a search: where it shows, its hurry stands beside it.
 The egg's countdown and its gold button, and the games when the energy
 is out, open `/elf-hurry` (`ElfHurrySheet.tsx`) for that one wait: what
-is left of it and the ways to end it now as big buttons, for the first
-egg a single free one (`freeHatch` in the state, `skipHatchFree` in the
-rules, the provider's `skip(kind, 'free')`: the first hatch never asks
-for anything, so a new player meets the elf in the first sitting),
-otherwise its dust and one rewarded ad; short of dust, the dust button
-itself opens the shop, where dust is bought.
+is left of it and the ways to end it now as big buttons: its dust and
+one rewarded ad (no hatch is free: an elf hatches once, so the egg waits
+its hours, sooner when warmed and rocked or when a cottage is found);
+short of dust, the dust button itself opens the shop, where dust is
+bought.
 
 Star dust is the premium currency, and the plus on it in the purse
 opens its shop
@@ -1144,7 +1145,7 @@ every care, pet, egg, sleep and swap:
 | Drift | each need eases towards the floor over hours (about two thirds of the way in 10 hours for fullness, 14 for joy, 30 for clean), at half pace asleep: a meal is welcome again some four hours after the last, a bath about once a day; a round of a game leaves clean −10 and fullness −6, a play clean −6 |
 | Mood | asleep while asleep; misses after 5 days without an interaction; wants when a need is under its mark (`NEED_WANT_BELOW`: fullness 70, joy 60, clean 60; the name block names the furthest under, the ring turns gold); beaming from an average of 75 with no want; otherwise content |
 | Sleep and energy | one bar of 100 for the games and play (a round 20, a play 10; the app speaks of rest, never of rounds: `restOf` full, lively, tiring, spent); at the player's word, at any hour, the button tucks the elf in and it sleeps until woken or rested (50 an hour), a nap lasting an hour at the least (`applyElapsed`, `SLEEP_MIN_HOURS`); awake it gets 5 an hour back; under 30 it yawns (`ENERGY_LOW`); before its sleep 40 acorns fill the bar, each further fill that day 20 more (`refillPrice`, `refillEnergy`), an ad or the peddler's cocoa give 40 back (`ENERGY_AD`, `COCOA_ENERGY`), and the star brew (`DUST.brew` 15 dust, or the peddler's 60 acorns) lets the elf play for 30 minutes without tiring, from the end of one still working, two hours ahead at most (`BREW_MS`, `drinkBrew`, `brewing`); a sleeping elf is woken by the brew and reminded of once rested (`wakeAt`) |
-| Egg | warm +18 and rock +13 warmth (a tap on the egg knocks on it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, less up to 2 hours at a full warmth (`EGG_WARMTH_HURRY_MS`), or at a cottage found while it waits, whichever comes first (the HUD counts the hours down; the hurry beside it is free for the first egg, `freeHatch`, `skipHatchFree`, else 20 dust or an ad), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
+| Egg | warm +18 and rock +13 warmth (a tap on the egg knocks on it; the warmth shows in the egg's glow); it is ready to hatch 6 hours after it appeared, less up to 2 hours at a full warmth (`EGG_WARMTH_HURRY_MS`), or at a cottage found while it waits, whichever comes first (the HUD counts the hours down; the hurry beside it costs 20 dust or an ad, never nothing), and then the player hatches it: the egg rocks on its own, the first tap cracks it, the second breaks it open in the room and the elf hops out with a hello, then the hatch sheet asks for its name; the day's quests stay, only an open egg quest gives way to a care one. The Elf tab wears a badge while the egg waits for its tap (or the elf for its name) and while the day's reward is unpicked, and an egg that gets ready while another screen is in front is told once in a toast with the way there |
 | Care | gated by how the elf is, never by a count (`careFor`, `performCare`): a meal while hungry (fullness under 70, `HUNGRY_BELOW`) +35, refused full; a treat from the pantry whenever offered, hungry or not (fullness +30, joy +15); a play whenever the energy allows (10 of it, none under the brew) joy +25, refused tired; a toy from the pantry at no energy, joy +40; a bath while dirty (clean under 60, `DIRTY_BELOW`) back to 100 and joy +5, refused clean; a refusal costs nothing and the elf says why; the care is never sold |
 | Pet (a tap on the elf) | joy +3, 1.4 s between taps |
 | Experience | a find 40 (finds from before the egg appeared pay nothing), a quest done 8, the full set 15, each day a streak goes on 5, a care 2, a letter read 10, the tuck-in 3 (once a day), a skill's practice 4, a game 5, the request 6 (`XP`); level n starts at 20·(n−1)·n (0, 40, 120, 240, 400...); a point per level past the first, a node of the tree per point; ranks: Skrzat to level 2, Leśnik 3–5, Strażnik 6–8, Mędrzec 9–11, Legenda from 12 |

@@ -19,8 +19,11 @@ accessibility label (content description), so a control is found by the
 words the dictionary gives it in the device's language. Things learned the
 hard way: never send the BACK key on a tab screen (the navigator jumps to
 the first tab), the dev client shows its first-launch notice after every
-force-stop ("Continue", then "Close"), and the first care button sometimes
-ignores a press shorter than about 80 ms."""
+force-stop ("Continue", then "Close"), the first care button sometimes
+ignores a press shorter than about 80 ms, and a screen that never comes to
+rest (the release build's elf room) gives uiautomator no hierarchy at all:
+dump, find and tap then stop with a message, and shot with tapxy do the
+work."""
 
 from __future__ import annotations
 
@@ -34,8 +37,14 @@ from adbkit import adb, app_package, pick_serial, shell
 
 
 def nodes(serial: str):
+    # The old dump goes first: when the screen never comes to rest (a scene
+    # that keeps animating), uiautomator writes nothing, and a dump left from
+    # another session would be read as this screen.
+    shell(serial, 'rm -f /sdcard/ui.xml')
     shell(serial, 'uiautomator dump /sdcard/ui.xml')
     xml = adb(serial, 'exec-out', 'cat', '/sdcard/ui.xml')
+    if not xml.lstrip().startswith('<'):
+        sys.exit('ui.py: the screen gave no hierarchy (it never came to rest); use shot and tapxy here')
     for node in ET.fromstring(xml).iter('node'):
         numbers = re.findall(r'\d+', node.get('bounds') or '')
         if len(numbers) == 4:

@@ -14,6 +14,11 @@
    - Never use emoji or typographic symbols (arrows, crosses, ticks) as
      icons, in markup or in comments — the same script rejects them.
    - Sizes come from `iconSize`, not from ad-hoc numbers.
+   - The one glyph Phosphor lacks, the elf, is drawn to its rules in
+     @chatynkowo/theme (ELF_GLYPH) and rendered below with the props of
+     the library's icons, so it takes size, weight and colour like the
+     rest (the library's own base is not among its entries, and the root
+     is out of bounds).
 
    When a shared role is added, add it to SHARED_ICON_ROLES in the theme and
    to both vocabularies; app-only roles go to MOBILE_ICON_ROLES, site-only
@@ -99,7 +104,6 @@ import { HandTapIcon } from 'phosphor-react-native/src/icons/HandTap'
 import { BasketIcon } from 'phosphor-react-native/src/icons/Basket'
 import { CloudLightningIcon } from 'phosphor-react-native/src/icons/CloudLightning'
 import { EyesIcon } from 'phosphor-react-native/src/icons/Eyes'
-import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle'
 import { FlaskIcon } from 'phosphor-react-native/src/icons/Flask'
 import { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront'
 import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife'
@@ -117,6 +121,10 @@ import { WifiSlashIcon } from 'phosphor-react-native/src/icons/WifiSlash'
 import { XIcon } from 'phosphor-react-native/src/icons/X'
 
 import type { Icon } from 'phosphor-react-native'
+import { createElement } from 'react'
+import type { StyleProp, ViewStyle } from 'react-native'
+import Svg, { Path } from 'react-native-svg'
+import { ELF_GLYPH } from '@chatynkowo/theme'
 import type { NativeStackHeaderItemButton } from 'expo-router'
 import type { MobileIconRole, SharedIconRole } from '@chatynkowo/theme'
 
@@ -166,7 +174,17 @@ export const NotebookIcon = BookOpenTextIcon
 export const StoryAudioIcon = SpeakerHighIcon
 export const LoreIcon = MoonStarsIcon
 export const CreedIcon = HandHeartIcon
-export const ElfIcon = SparkleIcon
+/* The elf's own glyph, drawn as the library draws its icons: the 256 grid
+   at the asked size, one colour, the form duotone shades under the ink. */
+export const ElfIcon: Icon = ({ color = '#000', size = 24, weight = 'regular', mirrored = false, duotoneColor, duotoneOpacity = 0.2, style, testID }) => {
+  const { d, shade } = ELF_GLYPH[weight]
+  return createElement(
+    Svg,
+    { width: size, height: size, viewBox: '0 0 256 256', fill: color, testID, style: [style as StyleProp<ViewStyle>, mirrored ? { transform: [{ scaleX: -1 }] } : null] },
+    shade ? createElement(Path, { d: shade, fill: duotoneColor ?? color, opacity: duotoneOpacity }) : null,
+    createElement(Path, { d }),
+  )
+}
 export const ForestIcon = TreeEvergreenIcon
 
 /* ---------- Domain: the account ---------- */

@@ -925,7 +925,6 @@ export function ElfTab() {
               mood={mood}
               wantedNeed={wanted}
               hatchAt={hatchTime}
-              freeHatch={state.freeHatch}
               hatchReady={hatchReady}
               wallet={state.wallet}
               streak={state.streak}

@@ -4,7 +4,10 @@
    - Phosphor (@phosphor-icons/react) is the only icon library, and this file
      is the only module allowed to import it. Everything else imports the
      semantic names below, so swapping the library or a glyph is a one-line
-     change here and never a search across the code base.
+     change here and never a search across the code base. The one glyph
+     Phosphor lacks, the elf, is drawn to its rules in @chatynkowo/theme
+     (ELF_GLYPH) and goes through the library's own IconBase below, so it
+     takes size, weight and colour like the rest.
    - Never use emoji or typographic symbols (arrows, crosses, ticks) as
      icons, in markup or in CSS `content`. scripts/check-conventions.mjs
      fails the build when one slips in.
@@ -41,6 +44,7 @@ import {
   GpsFix,
   HandHeart,
   HouseLine,
+  IconBase,
   InstagramLogo,
   Key,
   LockKeyOpen,
@@ -56,7 +60,6 @@ import {
   QrCode,
   ShieldCheck,
   SignOut,
-  Sparkle,
   SpeakerHigh,
   SpeakerSlash,
   TreeEvergreen,
@@ -65,7 +68,9 @@ import {
   X,
 } from '@phosphor-icons/react'
 
-import type { Icon } from '@phosphor-icons/react'
+import type { Icon, IconWeight } from '@phosphor-icons/react'
+import { createElement, forwardRef, Fragment, type ReactElement } from 'react'
+import { ELF_GLYPH } from '@chatynkowo/theme'
 import { iconSize, type SharedIconRole, type WebIconRole } from '@chatynkowo/theme'
 
 export type { Icon, IconProps, IconWeight } from '@phosphor-icons/react'
@@ -112,7 +117,16 @@ export const NotebookIcon = BookOpenText
 export const StoryAudioIcon = SpeakerHigh
 export const LoreIcon = MoonStars
 export const CreedIcon = HandHeart
-export const ElfIcon = Sparkle
+/* The elf's own glyph on Phosphor's base: the form duotone shades lies
+   under the ink at the library's fixed opacity. */
+const ELF_WEIGHTS = new Map<IconWeight, ReactElement>(
+  (Object.keys(ELF_GLYPH) as IconWeight[]).map((weight) => {
+    const { d, shade } = ELF_GLYPH[weight]
+    return [weight, createElement(Fragment, null, shade ? createElement('path', { d: shade, opacity: 0.2 }) : null, createElement('path', { d }))]
+  }),
+)
+export const ElfIcon: Icon = forwardRef((props, ref) => createElement(IconBase, { ref, ...props, weights: ELF_WEIGHTS }))
+ElfIcon.displayName = 'ElfIcon'
 export const ForestIcon = TreeEvergreen
 
 /* ---------- Domain: the account ---------- */

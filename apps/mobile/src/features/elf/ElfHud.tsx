@@ -48,8 +48,6 @@ export type ElfHudProps = {
   wantedNeed: ElfNeedId | null
   /* When the egg hatches on its own; null once hatched. */
   hatchAt: number | null
-  /* The first egg's wait is skipped for free. */
-  freeHatch: boolean
   /* The egg is ready to crack (its hour came, a cottage was found, the
      wait was bought): the countdown says "now" and the hurry goes, without
      waiting for the countdown's clock to tick. */
@@ -80,7 +78,7 @@ export type ElfHudProps = {
   lit?: HudSpot | null
 }
 
-export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, freeHatch, hatchReady, wallet, streak, level, xpFraction, archetype, growthReady, request, onTree, onPurse, onShop, onHurry, lit = null }: ElfHudProps) {
+export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, hatchReady, wallet, streak, level, xpFraction, archetype, growthReady, request, onTree, onPurse, onShop, onHurry, lit = null }: ElfHudProps) {
   const { t } = useTranslation()
   const egg = stage === 'egg' && hatchAt !== null
   const form = t(elfKey('stage', stage))
@@ -137,7 +135,7 @@ export function ElfHud({ name, stage, mood, wantedNeed, hatchAt, freeHatch, hatc
       {egg ? (
         <View style={styles.eggRow} pointerEvents="box-none">
           <EggChip hatchAt={hatchAt} ready={hatchReady} onPress={onHurry} />
-          <HurryButton hatchAt={hatchAt} ready={hatchReady} free={freeHatch} lit={lit === 'hurry'} onPress={onHurry} />
+          <HurryButton hatchAt={hatchAt} ready={hatchReady} lit={lit === 'hurry'} onPress={onHurry} />
         </View>
       ) : null}
     </View>
@@ -189,11 +187,11 @@ function EggChip({ hatchAt, ready, onPress }: { hatchAt: number; ready: boolean;
 
 /* The gold button beside the countdown: the skip of the wait, free for
    the first egg; gone once the egg is ready. */
-function HurryButton({ hatchAt, ready, free, lit, onPress }: { hatchAt: number; ready: boolean; free: boolean; lit: boolean; onPress: () => void }) {
+function HurryButton({ hatchAt, ready, lit, onPress }: { hatchAt: number; ready: boolean; lit: boolean; onPress: () => void }) {
   const { t } = useTranslation()
   const hatch = useHatchWhen(hatchAt, ready)
   if (!hatch || hatch.due) return null
-  const label = t(free ? 'mobile:elf.hurryFreeChip' : 'mobile:elf.hurryAction')
+  const label = t('mobile:elf.hurryAction')
   return (
     <View pointerEvents="box-none">
       {lit ? <TutorialHalo /> : null}

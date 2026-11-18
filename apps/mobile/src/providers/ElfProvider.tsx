@@ -43,7 +43,6 @@ import {
   buyItem as buyElfItem,
   buyTrick as buyElfTrick,
   buyWare as buyElfWare,
-  skipHatchFree as skipElfHatchFree,
   visitPeddler as visitElfPeddler,
   showTrick as showElfTrick,
   claimBadge as claimElfBadge,
@@ -195,7 +194,7 @@ export type ElfValue = {
   adsLeft: number
   earnAdDust: () => number
   addDust: (amount: number) => void
-  skip: (kind: ElfSkip, pay: 'dust' | 'ad' | 'free' | 'acorns') => boolean
+  skip: (kind: ElfSkip, pay: 'dust' | 'ad' | 'acorns') => boolean
   /* One more life in a lost round of a game, paid in dust (DUST.revive) or
      with an ad watched to the end; false when short or past the cap. */
   reviveGame: (pay: 'dust' | 'ad') => boolean
@@ -632,16 +631,10 @@ export function ElfProvider({ children }: { children: ReactNode }) {
   )
 
   const skip = useCallback(
-    (kind: ElfSkip, pay: 'dust' | 'ad' | 'free' | 'acorns'): boolean => {
+    (kind: ElfSkip, pay: 'dust' | 'ad' | 'acorns'): boolean => {
       const current = stateRef.current
       if (!current) return false
       const now = elfNow()
-      /* The first egg's wait is skipped for nothing (skipHatchFree). */
-      if (pay === 'free') {
-        const free = kind === 'hatch' ? skipElfHatchFree(current, now) : null
-        if (free) commit(free, true)
-        return free !== null
-      }
       /* The energy alone is bought with acorns, and never with dust. */
       if (pay === 'acorns') {
         const filled = kind === 'energy' ? refillElfEnergy(current, now) : null

@@ -12,10 +12,8 @@ import { durationText, restText, useClock } from './duration'
 /* The hurry of a wait (the route /elf-hurry?kind=...), opened right where
    the wait shows: the egg's hurry button and countdown, the games' line
    when the energy is out. One wait, what is left of it, and the ways to
-   end it now, as big buttons under each other: for the first egg one
-   free button (the first hatch never asks for anything, skipHatchFree),
-   otherwise its star dust (SKIP_COST) and one rewarded ad, which counts
-   towards the day's cap like every ad. Short of dust, the dust button
+   end it now, as big buttons under each other: its star dust (SKIP_COST)
+   and one rewarded ad, which counts towards the day's cap like every ad. Short of dust, the dust button
    itself leads to the shop, where dust is bought, and a line under the
    buttons says how much there is. The energy is not sold for dust: its
    acorns fill it (refillPrice, dearer with each fill of the day; short
@@ -51,7 +49,6 @@ export function ElfHurrySheet() {
   const acorns = state.wallet.acorns
   const energy = kind === 'energy'
   const cost = kind === 'energy' ? 0 : SKIP_COST[kind]
-  const free = kind === 'hatch' && state.freeHatch
   const at = kind === 'hatch' ? hatchAt(state) : null
   const left = at === null ? 0 : at - now
   /* Whether there is still a wait to end. */
@@ -68,9 +65,6 @@ export function ElfHurrySheet() {
   const Glyph = ICON[kind] ?? HurryIcon
   const adAllowed = ad.offered && online !== false && adsLeft > 0
 
-  const payFree = () => {
-    if (skip(kind, 'free')) close()
-  }
   /* Short of dust, the dust button opens the shop in place of this sheet;
      short of acorns, the energy's button rests. */
   const short = energy ? acorns < refillPrice : dust < cost
@@ -101,77 +95,66 @@ export function ElfHurrySheet() {
           <Text tone="soft" align="center" accessibilityLiveRegion="polite">
             {lead}
           </Text>
-          {free && open ? (
-            <Text weight="semibold" tone="accent" align="center">
-              {t('mobile:elf.hurryHatchFree')}
-            </Text>
-          ) : null}
         </View>
         {open ? (
-          free ? (
-            <Button variant="primary" block icon={<HurryIcon size={iconSize.md} weight="fill" color={colors.accentInk} />} onPress={payFree}>
-              {t('mobile:elf.hurryFreeAction')}
-            </Button>
-          ) : (
-            <View style={styles.pays}>
-              {energy ? (
-                <Button
-                  variant="primary"
-                  block
-                  disabled={short || adBusy}
-                  icon={<AcornsIcon size={iconSize.md} weight="fill" color={colors.accentInk} />}
-                  onPress={payAcorns}
-                >
-                  {t('mobile:elf.hurryEnergyAcorns', { count: refillPrice })}
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  block
-                  disabled={adBusy}
-                  accessibilityLabel={short ? t('mobile:elf.hurryDustShortAria', { what: title, count: cost }) : t('mobile:elf.shopPayDustAria', { what: title, count: cost })}
-                  icon={<DustIcon size={iconSize.md} weight="fill" color={colors.accentInk} />}
-                  onPress={payDust}
-                >
-                  {t('mobile:elf.shopPayDust', { count: cost })}
-                </Button>
-              )}
-              {ad.offered ? (
-                <Button
-                  block
-                  busy={adBusy}
-                  disabled={!adAllowed || adBusy}
-                  accessibilityLabel={t('mobile:elf.shopPayAdAria', { what: title })}
-                  icon={<WatchAdIcon size={iconSize.md} color={colors.accentStrong} />}
-                  onPress={ad.watch}
-                >
-                  {energy ? t('mobile:elf.hurryEnergyAd', { count: ENERGY_AD / GAME_ENERGY }) : t('mobile:elf.hurryAdAction')}
-                </Button>
-              ) : null}
-              {energy ? (
-                <Button block disabled={adBusy} icon={<BrewIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />} onPress={payBrew}>
-                  {t('mobile:elf.hurryEnergyBrew', { count: DUST.brew })}
-                </Button>
-              ) : null}
-              {energy ? (
-                <Text variant="small" tone="soft" align="center">
-                  {t('mobile:elf.hurryEnergyBrewNote')}
-                  {refillPrice > ENERGY_REFILL_ACORNS ? ` ${t('mobile:elf.hurryEnergyPriceNote')}` : ''}
-                </Text>
-              ) : null}
-              {short ? (
-                <Text variant="small" tone="soft" align="center">
-                  {energy ? t('mobile:elf.hurryEnergyShort', { count: acorns }) : t('mobile:elf.hurryShort', { count: dust })}
-                </Text>
-              ) : null}
-              <RewardedAdNote note={adNote} offered={ad.offered && adsLeft > 0} align="center" />
-              {failed ? (
-                <Text variant="small" tone="faint" align="center" accessibilityLiveRegion="polite">
-                  {t('mobile:elf.hurryEndedAlready')}
-                </Text>
-              ) : null}
-            </View>
-          )
+          <View style={styles.pays}>
+            {energy ? (
+              <Button
+                variant="primary"
+                block
+                disabled={short || adBusy}
+                icon={<AcornsIcon size={iconSize.md} weight="fill" color={colors.accentInk} />}
+                onPress={payAcorns}
+              >
+                {t('mobile:elf.hurryEnergyAcorns', { count: refillPrice })}
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                block
+                disabled={adBusy}
+                accessibilityLabel={short ? t('mobile:elf.hurryDustShortAria', { what: title, count: cost }) : t('mobile:elf.shopPayDustAria', { what: title, count: cost })}
+                icon={<DustIcon size={iconSize.md} weight="fill" color={colors.accentInk} />}
+                onPress={payDust}
+              >
+                {t('mobile:elf.shopPayDust', { count: cost })}
+              </Button>
+            )}
+            {ad.offered ? (
+              <Button
+                block
+                busy={adBusy}
+                disabled={!adAllowed || adBusy}
+                accessibilityLabel={t('mobile:elf.shopPayAdAria', { what: title })}
+                icon={<WatchAdIcon size={iconSize.md} color={colors.accentStrong} />}
+                onPress={ad.watch}
+              >
+                {energy ? t('mobile:elf.hurryEnergyAd', { count: ENERGY_AD / GAME_ENERGY }) : t('mobile:elf.hurryAdAction')}
+              </Button>
+            ) : null}
+            {energy ? (
+              <Button block disabled={adBusy} icon={<BrewIcon size={iconSize.md} weight="duotone" color={colors.accentStrong} />} onPress={payBrew}>
+                {t('mobile:elf.hurryEnergyBrew', { count: DUST.brew })}
+              </Button>
+            ) : null}
+            {energy ? (
+              <Text variant="small" tone="soft" align="center">
+                {t('mobile:elf.hurryEnergyBrewNote')}
+                {refillPrice > ENERGY_REFILL_ACORNS ? ` ${t('mobile:elf.hurryEnergyPriceNote')}` : ''}
+              </Text>
+            ) : null}
+            {short ? (
+              <Text variant="small" tone="soft" align="center">
+                {energy ? t('mobile:elf.hurryEnergyShort', { count: acorns }) : t('mobile:elf.hurryShort', { count: dust })}
+              </Text>
+            ) : null}
+            <RewardedAdNote note={adNote} offered={ad.offered && adsLeft > 0} align="center" />
+            {failed ? (
+              <Text variant="small" tone="faint" align="center" accessibilityLiveRegion="polite">
+                {t('mobile:elf.hurryEndedAlready')}
+              </Text>
+            ) : null}
+          </View>
         ) : (
           <Button block onPress={close}>
             {t('mobile:elf.gameBack')}

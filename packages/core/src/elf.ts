@@ -425,10 +425,6 @@ export type ElfState = {
   gifts: Record<ElfPantryCare, number>
   /* The hatch bought before its hour (the moment it was bought), or null. */
   hatchReadyAt: number | null
-  /* The egg's wait may still be skipped for free: true for a new egg
-     until its first skip (skipHatchFree), so the first hatch never asks
-     for dust or an ad. */
-  freeHatch: boolean
   /* The rewarded ads watched on a day (the day's cap, DUST.adCap): for
      dust or for a skip alike. */
   ads: { day: string; count: number }
@@ -847,7 +843,6 @@ export function newElf(now: number): ElfState {
     supportThanked: 0,
     gifts: { feed: 0, play: 0 },
     hatchReadyAt: null,
-    freeHatch: true,
     ads: { day: '', count: 0 },
     xp: 0,
     nodes: [],
@@ -981,8 +976,6 @@ export function normalizeElf(raw: unknown, now: number): ElfState | null {
        the peddler's old basket with them. */
     gifts: { feed: count(gifts.feed), play: count(gifts.play) },
     hatchReadyAt: typeof raw.hatchReadyAt === 'number' ? raw.hatchReadyAt : null,
-    /* An egg stored before the free skip existed gets it; a hatched elf has no use for it. */
-    freeHatch: typeof raw.freeHatch === 'boolean' ? raw.freeHatch : !hatched,
     ads: normalizeAds(raw.ads),
     xp: count(raw.xp),
     nodes: stringList(raw.nodes).filter(isNodeId),
@@ -1570,14 +1563,6 @@ export function hatchDue(state: ElfState, now: number, finds: readonly ElfFind[]
 export function skipHatch(state: ElfState, now: number): ElfState | null {
   const at = hatchAt(state)
   return at === null || at <= now ? null : { ...state, hatchReadyAt: now }
-}
-
-/* The egg's wait skipped for free, once per egg; null when the free skip
-   is spent or there is nothing to skip. */
-export function skipHatchFree(state: ElfState, now: number): ElfState | null {
-  if (!state.freeHatch) return null
-  const next = skipHatch(state, now)
-  return next ? { ...next, freeHatch: false } : null
 }
 
 /* The hatched elf named and given its element by the player; the app

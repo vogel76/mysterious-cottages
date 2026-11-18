@@ -189,7 +189,14 @@ page and feature component builds on it instead of re-implementing pieces:
 - `icons.ts` — the icon vocabulary. Phosphor is the only icon library and
   this is the only module that imports it; components use the semantic names
   (`CloseIcon`, `ChronicleIcon`, …) and the `iconSize` scale. Swapping a
-  glyph or the library is a change in one file.
+  glyph or the library is a change in one file. One glyph is the project's
+  own, the elf (`ElfIcon`), which Phosphor does not have: it is drawn to
+  Phosphor's rules by `packages/theme/art/elf-glyph.py` into
+  `packages/theme/src/elf-glyph.ts` (every weight, as filled outlines on
+  the 256 grid) and each vocabulary hands it to its Phosphor base, so it
+  behaves like the rest. Change the drawing in the script and run it
+  (`--preview FILE.html` gives a sheet to look at), never the generated
+  file.
 - `Button`, `LinkButton`, `IconButton` — the three button contracts
   (`primary`, `ghost`, `subtle`; icon-only controls require a label).
 - `Avatar` — a seeker's picture or their initials; `Notice` — the one
@@ -239,7 +246,8 @@ theme package: React Native primitives cannot be the site's React DOM ones,
 so what the two clients share is everything a primitive is made of — the
 palette, radii, spacing, type scale, map palette, icon sizes, the three
 button variants (`primary`, `ghost`, `subtle`, plus the ghost's parchment
-form on the map panel) and the icon vocabulary's role names. Both
+form on the map panel), the icon vocabulary's role names and the elf's
+own glyph. Both
 `icons.ts` modules are type-checked against `SHARED_ICON_ROLES` in the
 theme, so a role added on one side must be added on the other. Copy that
 exists only in the app lives in the typed `mobile` namespace of

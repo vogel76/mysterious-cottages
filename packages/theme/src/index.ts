@@ -5,4 +5,5 @@
    vocabulary's role names. */
 export * from './tokens'
 export * from './icons'
+export * from './elf-glyph'
 export { tokensCss } from './css'

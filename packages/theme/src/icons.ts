@@ -2,7 +2,9 @@
    their icons.ts, so a design decision (which glyph plays which role) is
    made once and a role missing on one side fails compilation. The glyphs
    themselves come from @phosphor-icons/react on the site and
-   phosphor-react-native in the app. */
+   phosphor-react-native in the app, all but the elf's: Phosphor has no
+   elf, so that one glyph is drawn to its rules here (elf-glyph.ts, from
+   art/elf-glyph.py) and each client hands it to its vocabulary. */
 
 export const SHARED_ICON_ROLES = [
   /* Interface */
