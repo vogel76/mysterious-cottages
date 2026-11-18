@@ -12,8 +12,8 @@ import { elfNow } from '../../lib/elf-clock'
    three wares and, last, the grain of star dust he always has, each a
    row with its picture, its name, what it does and its price in acorns,
    or a mark once bought today (the dust is never bought out: its price
-   goes up with each grain of the day, so there is always something
-   acorns are good for). The rules draw the wares by the
+   doubles with each grain of the day, so there is always something
+   acorns are good for and never much dust to be had for them). The rules draw the wares by the
    day and do what a ware does as it is bought (packages/core:
    peddlerWares, buyWare): a treat and a toy go to the pantry as gifts
    the care buttons hand over (a treat is eaten hungry or not, a toy is

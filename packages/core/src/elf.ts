@@ -234,9 +234,10 @@ export type ElfGameRecord = { best: number; played: number }
    two rounds of energy, the star brew lets the elf play without tiring
    for a while, and a trick is one the elf has not got, a quarter under
    its price in the tricks' catalogue. The dust is what acorns are always
-   good for: it may be bought again and again, each grain of a day dearer
-   than the last (dustWarePrice), so no purse grows with nothing to spend
-   it on, and the day's first grains are the ones worth playing for. */
+   good for: it may be bought again and again, each grain of a day twice
+   as dear as the last (dustWarePrice), so no purse grows with nothing to
+   spend it on, while the dust stays a premium: a day of play at the
+   games' cap buys about one grain, and a hoard buys few more. */
 export type ElfWareId = 'treat' | 'toy' | 'cocoa' | 'brew' | 'dust' | 'trick'
 export const ELF_WARES: readonly ElfWareId[] = ['treat', 'toy', 'cocoa', 'brew', 'dust', 'trick']
 /* The wares the day's three are drawn from: all but the dust, which is always there. */
@@ -2036,14 +2037,13 @@ export function boostEnergy(state: ElfState, amount: number): ElfState | null {
 const WARE_ACORNS: Record<Exclude<ElfWareId, 'trick' | 'dust'>, number> = { treat: 25, toy: 30, cocoa: 25, brew: 90 }
 /* The peddler's trick costs this part of its price in the catalogue, to the nearest five. */
 const TRICK_WARE_PART = 0.75
-/* The day's first grain of dust, and what each further grain of the day adds to the price. */
-export const DUST_WARE_ACORNS = 80
-const DUST_WARE_STEP = 40
+/* The day's first grain of dust; each further grain of the day costs twice the last. */
+export const DUST_WARE_ACORNS = 150
 
-/* What the peddler's next grain of dust costs: dearer with each one bought that day. */
+/* What the peddler's next grain of dust costs: 150, 300, 600 and on through a day. */
 export function dustWarePrice(state: ElfState, now: number): number {
   const today = state.peddler.day === dayKey(now) ? state.peddler.bought.filter((id) => id === 'dust').length : 0
-  return DUST_WARE_ACORNS + today * DUST_WARE_STEP
+  return DUST_WARE_ACORNS * 2 ** today
 }
 
 function wareAcorns(id: ElfWareId, trick: ElfTrickId, state: ElfState, now: number): number {

@@ -664,7 +664,7 @@ export const mobileEn: typeof mobilePl = {
     wareToy: 'A toy',
     wareToyDesc: 'Waits under the "Play" button. Playing with it does not tire the elf at all.',
     wareDust: 'A grain of dust',
-    wareDustDesc: 'One grain of star dust for the purse. Each further one that day costs more.',
+    wareDustDesc: 'One grain of star dust for the purse. Each further one that day costs twice as much.',
     wareCocoa: 'A cup of cocoa',
     wareCocoaDesc: 'Gives the elf energy for two games.',
     wareBrew: 'Star brew',

@@ -723,7 +723,7 @@ export const mobilePl = {
     wareToy: 'Zabawka',
     wareToyDesc: 'Czeka pod przyciskiem „Baw się”. Zabawa nią wcale nie męczy elfa.',
     wareDust: 'Pyłek',
-    wareDustDesc: 'Jeden gwiezdny pyłek do sakiewki. Każdy kolejny tego dnia jest droższy.',
+    wareDustDesc: 'Jeden gwiezdny pyłek do sakiewki. Każdy kolejny tego dnia kosztuje dwa razy więcej.',
     wareCocoa: 'Kubek kakao',
     wareCocoaDesc: 'Dodaje elfowi sił na dwie gry.',
     wareBrew: 'Gwiezdny napar',
