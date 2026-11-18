@@ -94,9 +94,9 @@ export function ElfPeddlerSheet() {
                 <Glyph size={iconSize.lg} weight="duotone" color={colors.accentStrong} />
               </View>
               <View style={styles.words}>
-                <Text weight="bold" numberOfLines={1}>
-                  {name}
-                </Text>
+                {/* No line limit: "Umiejętność: Oklaski" is wider than the
+                    words beside the button and wraps, where a limit cut it. */}
+                <Text weight="bold">{name}</Text>
                 <Text variant="small" tone="soft">
                   {t(wareKey(ware.id, 'desc'))}
                 </Text>
