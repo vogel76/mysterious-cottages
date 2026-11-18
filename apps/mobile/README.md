@@ -361,7 +361,8 @@ app.config.ts            the configuration that depends on the environment: the 
                          with Apple key the backend script reads from here)
 plugins/                 config plugins: with-scene-delegate.js (UIScene life cycle for the iOS 27 SDK),
                          with-locale-filters.js (only the app's languages in the Android resources),
-                         with-gradle-heap.js (the Gradle daemon's heap, which R8 needs for a release build)
+                         with-gradle-heap.js (the Gradle daemon's heap, which R8 needs for a release build),
+                         with-optional-portrait.js (the upright screen as a feature Google Play does not filter on)
 locales/                 native permission strings per language (iOS Info.plist)
 assets/                  app icon, adaptive icon layers, the splash emblem and the logo, generated from the brand logo in
                          packages/content/private/img
@@ -608,6 +609,7 @@ through `src/lib/haptics.ts`.
 | Plural forms | `@formatjs/intl-pluralrules` | Hermes has no `Intl.PluralRules`; the polyfill with Polish and English data lets i18next pick the Polish forms for two to four ("4 odkrycia", "2 Chatynki") instead of the many form |
 | Release size | `expo-build-properties` | R8 and resource shrinking in Android release builds (`enableMinifyInReleaseBuilds`, `enableShrinkResourcesInReleaseBuilds`): the Java/Kotlin code drops from 55 MB to about 21 MB before packaging; the native libraries ship their own keep rules, so no rules of ours |
 | Locale filter | `plugins/with-locale-filters.js` | config plugin that writes the Android Gradle plugin's `localeFilters` from `expo.locales` in app.json, so the libraries' strings in the other eighty languages stay out of the APK (Google Play does the same split from an app bundle) |
+| Upright screen | `plugins/with-optional-portrait.js` | config plugin that declares `android.hardware.screen.portrait` with `android:required="false"`: the app stays upright (`orientation: portrait`), but `screenOrientation` alone makes Android imply the feature as required, and Google Play then hides the app from devices that do not declare it (some tablets, desktops and headsets) and warns on every release; such a device shows the app in a letterbox |
 | Scene life cycle | `plugins/with-scene-delegate.js` | config plugin for the iOS 27 SDK, which asserts at launch unless the app adopts UIScene: the generated `AppDelegate` conforms to `ExpoReactNativeFactoryProvider` and stops starting React Native itself, a `SceneDelegate` subclasses Expo's `ExpoAppSceneDelegate` (it creates the window and starts React Native from the scene), and `Info.plist` gets the `UIApplicationSceneManifest`; idempotent, skipped from SDK 58 on (the template adopts scenes itself), refuses an expo older than 57.0.25 |
 
 Sign-in setup lives in `supabase/README.md` (the Google and Apple

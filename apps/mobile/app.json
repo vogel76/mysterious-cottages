@@ -74,6 +74,7 @@
       "./plugins/with-scene-delegate",
       "./plugins/with-locale-filters",
       "./plugins/with-gradle-heap",
+      "./plugins/with-optional-portrait",
       "@maplibre/maplibre-react-native",
       [
         "expo-camera",
