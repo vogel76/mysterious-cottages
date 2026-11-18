@@ -64,8 +64,13 @@ schema. Put the local project's URL and key into `apps/web/.env`.
 ## Where to add things for the app
 
 - **New per-user tables** (child profile, elf, inventory, visits with a
-  verification level): a schema change in the project + "own rows" RLS +
-  regenerated types.
+  verification level): a schema change in the project + explicit grants +
+  "own rows" RLS + regenerated types. The grants are not optional: since
+  2026-10-30 Supabase hands a new table in `public` to no API role on its
+  own, and a table without them answers every request with `42501`
+  (`grant select, insert, update, delete on public.<table> to
+  authenticated, service_role;`, and to `anon` only what a visitor may
+  do, usually nothing).
 - **Logic that cannot trust the client** (code verification, purchase
   entitlements, physical product codes): `supabase/functions/<name>/` as an
   Edge Function; the client calls it through `client.functions.invoke`.
@@ -99,8 +104,10 @@ ledger leave the device.
   `last_at`, `updated_at`; the key is `user_id, device_id`): one row per device the
   account gave from, written over by that device with its whole count, so
   two phones never overwrite each other and a count sent twice changes
-  nothing. "Own rows" RLS for select, insert, update and delete. The
-  cascade is what makes `delete-account` take the ledgers with the user.
+  nothing. Granted to `authenticated` and `service_role` only, with "own
+  rows" RLS for select, insert, update and delete, so a visitor reaches
+  the counts through the board alone. The cascade is what makes
+  `delete-account` take the ledgers with the user.
 - `supporters_board()` (security definer, callable by `anon` and
   `authenticated`): for accounts with `listed_as_supporter`, the public
   id, the nickname, the photo, the coffees and the ads summed over the
@@ -135,9 +142,9 @@ and its star dust (which may have been paid for).
   `on delete cascade`, `state` jsonb, `changed_at`, `rev`, `updated_at`):
   one row an account, the elf's whole state as the app keeps it (core's
   `ElfState`), the moment the player last changed it and a revision every
-  write raises by one. "Own row" RLS for select, insert, update and
-  delete. The cascade is what makes `delete-account` take the elf with
-  the user.
+  write raises by one. Granted to `authenticated` and `service_role`
+  only, with "own row" RLS for select, insert, update and delete. The
+  cascade is what makes `delete-account` take the elf with the user.
 
 A write names the revision it was made over (`pushElf` in
 `packages/api/src/elf.ts`: an insert for an account that holds none, else
