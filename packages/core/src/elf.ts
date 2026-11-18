@@ -206,12 +206,12 @@ export type ElfRank = 'spark' | 'forester' | 'warden' | 'sage' | 'legend'
 export type ElfTrickId = 'wave' | 'twirl' | 'bow' | 'cheer' | 'applause' | 'toast'
 export type ElfTrickSpec = { id: ElfTrickId; acorns: number; sessions: number }
 export const ELF_TRICKS: readonly ElfTrickSpec[] = [
-  { id: 'wave', acorns: 40, sessions: 2 },
-  { id: 'twirl', acorns: 60, sessions: 3 },
-  { id: 'bow', acorns: 60, sessions: 3 },
-  { id: 'cheer', acorns: 80, sessions: 3 },
-  { id: 'applause', acorns: 80, sessions: 4 },
-  { id: 'toast', acorns: 100, sessions: 4 },
+  { id: 'wave', acorns: 60, sessions: 2 },
+  { id: 'twirl', acorns: 120, sessions: 3 },
+  { id: 'bow', acorns: 120, sessions: 3 },
+  { id: 'cheer', acorns: 200, sessions: 3 },
+  { id: 'applause', acorns: 200, sessions: 4 },
+  { id: 'toast', acorns: 300, sessions: 4 },
 ]
 export type ElfTrick = { sessions: number; day: string | null }
 
@@ -228,14 +228,19 @@ export const GAME_POINTS_PER_ACORN: Record<ElfGameId, number> = { acorns: 2, mem
 export type ElfGameRecord = { best: number; played: number }
 
 /* The travelling peddler: three wares a day drawn from his basket, each
-   for acorns and each once a day; a treat goes to the pantry and is eaten
-   whenever it is offered, a toy goes there too and is played with at no
-   energy, a cocoa gives back two rounds of energy, the star brew lets the
-   elf play without tiring for a while, a grain of dust is a grain of
-   dust, and a trick is one the elf has not got, a little under its price
-   in the tricks' catalogue. */
+   for acorns and each once a day, and a grain of star dust he always
+   has; a treat goes to the pantry and is eaten whenever it is offered, a
+   toy goes there too and is played with at no energy, a cocoa gives back
+   two rounds of energy, the star brew lets the elf play without tiring
+   for a while, and a trick is one the elf has not got, a quarter under
+   its price in the tricks' catalogue. The dust is what acorns are always
+   good for: it may be bought again and again, each grain of a day dearer
+   than the last (dustWarePrice), so no purse grows with nothing to spend
+   it on, and the day's first grains are the ones worth playing for. */
 export type ElfWareId = 'treat' | 'toy' | 'cocoa' | 'brew' | 'dust' | 'trick'
 export const ELF_WARES: readonly ElfWareId[] = ['treat', 'toy', 'cocoa', 'brew', 'dust', 'trick']
+/* The wares the day's three are drawn from: all but the dust, which is always there. */
+const DRAWN_WARES: readonly ElfWareId[] = ELF_WARES.filter((id) => id !== 'dust')
 export const WARES_A_DAY = 3
 export type ElfWare = { id: ElfWareId; acorns: number; trick: ElfTrickId | null; bought: boolean }
 /* What was bought today, and the day the basket was last looked at (the
@@ -473,8 +478,8 @@ export const COCOA_ENERGY = 40
    and what each further fill of the day adds to the price, and what an ad
    gives back (two rounds), so an ad never rests the elf fully. Star dust
    buys the brew, never the bar. */
-export const ENERGY_REFILL_ACORNS = 40
-const ENERGY_REFILL_STEP = 20
+export const ENERGY_REFILL_ACORNS = 60
+const ENERGY_REFILL_STEP = 30
 export const ENERGY_AD = 2 * GAME_ENERGY
 /* The star brew: how long a draught lets the elf play without tiring,
    and how far ahead draughts bought one after another may reach. */
@@ -2028,9 +2033,23 @@ export function boostEnergy(state: ElfState, amount: number): ElfState | null {
 
 /* ---------- The peddler ---------- */
 
-const WARE_ACORNS: Record<Exclude<ElfWareId, 'trick'>, number> = { treat: 20, toy: 25, cocoa: 15, brew: 60, dust: 60 }
-/* The peddler's trick costs this much less than the catalogue. */
-const TRICK_WARE_OFF = 10
+const WARE_ACORNS: Record<Exclude<ElfWareId, 'trick' | 'dust'>, number> = { treat: 25, toy: 30, cocoa: 25, brew: 90 }
+/* The peddler's trick costs this part of its price in the catalogue, to the nearest five. */
+const TRICK_WARE_PART = 0.75
+/* The day's first grain of dust, and what each further grain of the day adds to the price. */
+export const DUST_WARE_ACORNS = 80
+const DUST_WARE_STEP = 40
+
+/* What the peddler's next grain of dust costs: dearer with each one bought that day. */
+export function dustWarePrice(state: ElfState, now: number): number {
+  const today = state.peddler.day === dayKey(now) ? state.peddler.bought.filter((id) => id === 'dust').length : 0
+  return DUST_WARE_ACORNS + today * DUST_WARE_STEP
+}
+
+function wareAcorns(id: ElfWareId, trick: ElfTrickId, state: ElfState, now: number): number {
+  if (id === 'trick') return Math.round((trickSpec(trick).acorns * TRICK_WARE_PART) / 5) * 5
+  return id === 'dust' ? dustWarePrice(state, now) : WARE_ACORNS[id]
+}
 
 function isWareId(value: string): value is ElfWareId {
   return (ELF_WARES as readonly string[]).includes(value)
@@ -2045,24 +2064,25 @@ function normalizePeddler(raw: unknown): ElfPeddler {
 /* The day's wares: three of the basket drawn by the day (the same on
    every device, different from the day before, and the same all day:
    the draw never reads what the elf owns, so a purchase cannot re-deal
-   the basket), with what was bought today; the trick drawn is one of
-   the six, and one the elf has already stands as bought. */
+   the basket), with what was bought today, and the grain of dust last,
+   never bought out; the trick drawn is one of the six, and one the elf
+   has already stands as bought. */
 export function peddlerWares(state: ElfState, now: number): ElfWare[] {
   const day = dayKey(now)
   const picked: ElfWareId[] = []
   let seed = hashOf(`${day}|${state.born}|peddler`)
   while (picked.length < WARES_A_DAY) {
-    const id = ELF_WARES[seed % ELF_WARES.length]!
+    const id = DRAWN_WARES[seed % DRAWN_WARES.length]!
     if (!picked.includes(id)) picked.push(id)
     seed = hashOf(`${seed}`)
   }
   const trick = ELF_TRICKS[hashOf(`${day}|${state.born}|trick`) % ELF_TRICKS.length]!.id
   const bought = state.peddler.day === day ? state.peddler.bought : []
-  return picked.map((id) => ({
+  return [...picked, 'dust' as const].map((id) => ({
     id,
-    acorns: id === 'trick' ? Math.max(10, trickSpec(trick).acorns - TRICK_WARE_OFF) : WARE_ACORNS[id as Exclude<ElfWareId, 'trick'>],
+    acorns: wareAcorns(id, trick, state, now),
     trick: id === 'trick' ? trick : null,
-    bought: bought.includes(id) || (id === 'trick' && Boolean(state.tricks[trick])),
+    bought: id !== 'dust' && (bought.includes(id) || (id === 'trick' && Boolean(state.tricks[trick]))),
   }))
 }
 
@@ -2077,8 +2097,9 @@ export function visitPeddler(state: ElfState, now: number): ElfState {
   return state.peddler.seenDay === day ? state : { ...state, peddler: { ...state.peddler, seenDay: day } }
 }
 
-/* A ware bought: null when it is not on offer today, bought already or
-   the acorns are short; the ware does what it does at once. */
+/* A ware bought: null when it is not on offer today, bought already (the
+   dust never is) or the acorns are short; the ware does what it does at
+   once. */
 export function buyWare(state: ElfState, id: ElfWareId, now: number): ElfState | null {
   const current = ensureDay(applyElapsed(state, now), now).state
   const ware = peddlerWares(current, now).find((offer) => offer.id === id)

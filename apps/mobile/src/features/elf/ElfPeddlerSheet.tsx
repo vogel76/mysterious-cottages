@@ -8,16 +8,19 @@ import { trickKey } from './tricks'
 import { elfNow } from '../../lib/elf-clock'
 
 /* The travelling peddler (the route /elf-peddler), from his button on
-   the side of the cottage: his greeting, the acorns at hand, and the day's three wares, each
-   a row with its picture, its name, what it does and its price in
-   acorns, or a mark once bought today. The rules draw the wares by the
+   the side of the cottage: his greeting, the acorns at hand, the day's
+   three wares and, last, the grain of star dust he always has, each a
+   row with its picture, its name, what it does and its price in acorns,
+   or a mark once bought today (the dust is never bought out: its price
+   goes up with each grain of the day, so there is always something
+   acorns are good for). The rules draw the wares by the
    day and do what a ware does as it is bought (packages/core:
    peddlerWares, buyWare): a treat and a toy go to the pantry as gifts
    the care buttons hand over (a treat is eaten hungry or not, a toy is
    played with at no energy; the toast says which button), a cocoa gives
    the elf energy for two games, the star brew lets it play half an hour
    without tiring (and wakes it), a grain of dust is one, and a skill is
-   one the elf has not got, under its usual price (the toast points at
+   one the elf has not got, a quarter under its usual price (the toast points at
    the skills, where it is practised). */
 
 /* The care button a gift waits under. */
