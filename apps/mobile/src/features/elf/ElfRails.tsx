@@ -12,8 +12,8 @@ import { TutorialHalo } from './TutorialHalo'
    something new behind it wears a gold dot. Before the hatch the elf's own
    things (the games, the skills, the peddler) stand dimmed under a lock:
    seen, so the player knows what is coming, and a tap says they open once
-   the elf has hatched (the tab says it). A tutorial step can light one
-   button with a breathing ring. The rails take no touch between their
+   the elf has hatched (the tab says it). A tutorial step lights the
+   buttons it speaks of with a pulsing ring. The rails take no touch between their
    buttons, so the room under them stays alive. On a narrow window (a
    phone in its zoomed display, 320 points) the columns, buttons and
    rings take their compact size (RAIL_SIZES), so the two rails cover
@@ -33,8 +33,8 @@ export type ElfRailsProps = {
   badgesToClaim: boolean
   peddlerFresh: boolean
   skillToTrain: boolean
-  /* The button a tutorial step lights. */
-  lit?: RailId | null
+  /* The buttons a tutorial step lights. */
+  lit?: readonly RailId[]
   onPress: (id: RailId) => void
   /* A locked button was tapped. */
   onLocked: (id: RailId) => void
@@ -51,7 +51,9 @@ const RAIL_SIZES: Record<'full' | 'compact', RailSizes> = {
   compact: { button: 44, ring: 50, column: 72 },
 }
 
-export function ElfRails({ top, egg, questsDone, questsTotal, rewardWaiting, badgesToClaim, peddlerFresh, skillToTrain, lit = null, onPress, onLocked }: ElfRailsProps) {
+const NONE_LIT: readonly RailId[] = []
+
+export function ElfRails({ top, egg, questsDone, questsTotal, rewardWaiting, badgesToClaim, peddlerFresh, skillToTrain, lit = NONE_LIT, onPress, onLocked }: ElfRailsProps) {
   const { t } = useTranslation()
   const size = RAIL_SIZES[useNarrow() ? 'compact' : 'full']
   const left: Rail[] = [{ id: 'badges', Glyph: BadgesIcon, label: t('mobile:elf.railBadges'), dot: badgesToClaim }]
@@ -65,14 +67,14 @@ export function ElfRails({ top, egg, questsDone, questsTotal, rewardWaiting, bad
   return (
     <>
       <View style={[styles.rail, styles.left, { top, width: size.column }]} pointerEvents="box-none">
-        <QuestsButton done={questsDone} total={questsTotal} rewardWaiting={rewardWaiting} lit={lit === 'quests'} size={size} onPress={() => onPress('quests')} />
+        <QuestsButton done={questsDone} total={questsTotal} rewardWaiting={rewardWaiting} lit={lit.includes('quests')} size={size} onPress={() => onPress('quests')} />
         {left.map((rail) => (
-          <RailButton key={rail.id} rail={rail} lit={lit === rail.id} size={size} onPress={() => press(rail)} />
+          <RailButton key={rail.id} rail={rail} lit={lit.includes(rail.id)} size={size} onPress={() => press(rail)} />
         ))}
       </View>
       <View style={[styles.rail, styles.right, { top, width: size.column }]} pointerEvents="box-none">
         {right.map((rail) => (
-          <RailButton key={rail.id} rail={rail} lit={lit === rail.id} size={size} onPress={() => press(rail)} />
+          <RailButton key={rail.id} rail={rail} lit={lit.includes(rail.id)} size={size} onPress={() => press(rail)} />
         ))}
       </View>
     </>

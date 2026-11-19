@@ -865,6 +865,7 @@ export const mobilePl = {
     tutorialTitle: 'Samouczek',
     tutorialStep: '{{step}} z {{total}}',
     tutorialNext: 'Dalej',
+    tutorialBack: 'Wstecz',
     tutorialDone: 'Gotowe',
     tutorialSkip: 'Pomiń',
     tutorialEgg1: 'To Twoje jajko. Stuknij w skorupkę, a ktoś w środku Ci odpowie.',

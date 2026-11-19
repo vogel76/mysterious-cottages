@@ -6,12 +6,14 @@ import { useTranslation } from 'react-i18next'
 import { BathIcon, FeedIcon, GiftIcon, LullabyIcon, PressableScale, ProgressRing, SleepIcon, TAB_BAR_OVERHANG, Text, ToyIcon, WakeIcon, WarmIcon, colors, enterUp, iconSize, leaveUp, mapPalette, radius, space, withAlpha, type Icon } from '../../ui'
 import { ELF_CARE_NEEDS, ENERGY_LOW, ENERGY_MAX, NEED_WANT_BELOW, type ElfCareAction, type ElfEggAction, type ElfNeedId, type ElfNeeds, type ElfPantryCare, type ElfStage } from '@chatynkowo/core'
 import { elfKey } from './labels'
-import { TutorialHalo } from './TutorialHalo'
+import { TutorialHalo, TutorialPulse } from './TutorialHalo'
 
 /* The care actions as round buttons on a band of the HUD's chrome that
    sits on the tab bar, split around the tab bar's raised discover key
-   (two buttons on each side of it, one on each for the egg; the button
-   a tutorial step asks for wears a breathing gold ring, TutorialHalo), so the key
+   (two buttons on each side of it, one on each for the egg; a button a
+   tutorial step speaks of wears a pulsing gold ring, TutorialHalo, and
+   when the step is about the rings themselves they pulse in their own
+   colours, TutorialPulse), so the key
    and the buttons never cover one another and nothing floats over the
    rug: for an egg the two ways to hatch it, for an elf feeding, playing,
    bathing and sleep or wake. The care buttons take the gold face of a
@@ -64,8 +66,10 @@ export type ElfActionBarProps = {
   onTendEgg: (id: ElfEggAction) => void
   onToggleSleep: () => void
   onFeedDrag?: FeedDragHandler
-  /* The button a tutorial step asks for, lit with a breathing ring. */
-  highlight?: ElfEggAction | ElfCareAction | null
+  /* The buttons a tutorial step speaks of, lit with a pulsing ring. */
+  highlight?: readonly (ElfEggAction | ElfCareAction)[]
+  /* The step speaks of the rings themselves: they pulse. */
+  ringsLit?: boolean
 }
 
 type Action = {
@@ -82,10 +86,13 @@ type Action = {
   /* The gifts in the pantry for the care, as marks under the button. */
   gifts?: number
   valueText?: string
-  /* Lit for the tutorial. */
+  /* Lit for the tutorial: the button, or the ring around it. */
   lit?: boolean
+  ringLit?: boolean
   onPress: () => void
 }
+
+const NONE_LIT: readonly (ElfEggAction | ElfCareAction)[] = []
 
 const BUTTON = 56
 /* The ring around a care button: its box and its thickness. */
@@ -112,7 +119,7 @@ const CARE_WORD: Record<ElfCareAction, [string, string]> = {
   bath: ['mobile:elf.careDirty', 'mobile:elf.careClean'],
 }
 
-export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, brewing, onCare, onTendEgg, onToggleSleep, onFeedDrag, highlight = null }: ElfActionBarProps) {
+export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, brewing, onCare, onTendEgg, onToggleSleep, onFeedDrag, highlight = NONE_LIT, ringsLit = false }: ElfActionBarProps) {
   const { t } = useTranslation()
   const bar = barSizes(useWindowDimensions().width)
   const care = (id: ElfCareAction, Glyph: Icon, label: string): Action => {
@@ -131,7 +138,8 @@ export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, bre
       need: { id: needId, value },
       gifts: id === 'bath' ? undefined : gift,
       valueText: `${t('mobile:elf.needAria', { need: t(elfKey('need', needId)), value: Math.round(value) })}.${word}${pantry}`,
-      lit: highlight === id,
+      lit: highlight.includes(id),
+      ringLit: ringsLit,
       onPress: () => onCare(id),
     }
   }
@@ -139,16 +147,16 @@ export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, bre
   const actions: Action[] =
     stage === 'egg'
       ? [
-          { key: 'warm', Glyph: WarmIcon, label: t('mobile:elf.actionWarm'), face: 'primary', lit: highlight === 'warm', onPress: () => onTendEgg('warm') },
-          { key: 'rock', Glyph: LullabyIcon, label: t('mobile:elf.actionRock'), face: 'primary', lit: highlight === 'rock', onPress: () => onTendEgg('rock') },
+          { key: 'warm', Glyph: WarmIcon, label: t('mobile:elf.actionWarm'), face: 'primary', lit: highlight.includes('warm'), onPress: () => onTendEgg('warm') },
+          { key: 'rock', Glyph: LullabyIcon, label: t('mobile:elf.actionRock'), face: 'primary', lit: highlight.includes('rock'), onPress: () => onTendEgg('rock') },
         ]
       : [
           care('feed', FeedIcon, t('mobile:elf.actionFeed')),
           care('play', ToyIcon, t('mobile:elf.actionPlay')),
           care('bath', BathIcon, t('mobile:elf.actionBath')),
           sleeping
-            ? { key: 'wake', Glyph: WakeIcon, label: t('mobile:elf.actionWake'), face: 'ghost', energy: brewing ? ENERGY_MAX : energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep }
-            : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', energy: brewing ? ENERGY_MAX : energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), onPress: onToggleSleep },
+            ? { key: 'wake', Glyph: WakeIcon, label: t('mobile:elf.actionWake'), face: 'ghost', energy: brewing ? ENERGY_MAX : energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), ringLit: ringsLit, onPress: onToggleSleep }
+            : { key: 'sleep', Glyph: SleepIcon, label: t('mobile:elf.actionSleep'), face: 'ghost', energy: brewing ? ENERGY_MAX : energy, valueText: t('mobile:elf.energyAria', { value: Math.round(energy) }), ringLit: ringsLit, onPress: onToggleSleep },
         ]
 
   /* The first half to the left of the key, the rest to its right. */
@@ -165,13 +173,13 @@ export function ElfActionBar({ stage, sleeping, needs, ready, gifts, energy, bre
 }
 
 function ActionButton({ action, bar }: { action: Action; bar: BarSizes }) {
-  const { Glyph, label, face, disabled, need, energy, gifts, valueText, lit, onPress } = action
+  const { Glyph, label, face, disabled, need, energy, gifts, valueText, lit, ringLit = false, onPress } = action
   const primary = face === 'primary'
   return (
     <View style={[styles.item, { width: bar.item }, disabled && styles.itemDisabled]}>
       <View style={[styles.well, { width: bar.ring, height: bar.ring }]}>
-        {need ? <NeedRing size={bar.ring} value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
-        {energy !== undefined ? <EnergyRing size={bar.ring} value={energy} /> : null}
+        {need ? <NeedRing size={bar.ring} value={need.value} want={NEED_WANT_BELOW[need.id]} lit={ringLit} /> : null}
+        {energy !== undefined ? <EnergyRing size={bar.ring} value={energy} lit={ringLit} /> : null}
         {lit ? <TutorialHalo /> : null}
         <PressableScale
           onPress={onPress}
@@ -198,21 +206,21 @@ function ActionButton({ action, bar }: { action: Action; bar: BarSizes }) {
 
 /* The need around the button: the arc is the need out of a hundred, in
    the colour of how it stands. The button describes the value, so the
-   ring is decoration. */
-function NeedRing({ size, value, want }: { size: number; value: number; want: number }) {
+   ring is decoration. It pulses while the tutorial speaks of the rings. */
+function NeedRing({ size, value, want, lit }: { size: number; value: number; want: number; lit: boolean }) {
   return (
-    <View style={styles.ring} pointerEvents="none">
+    <TutorialPulse on={lit} style={styles.ring}>
       <ProgressRing size={size} value={value} max={100} stroke={RING_STROKE} color={value >= want ? colors.success : colors.accent} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
-    </View>
+    </TutorialPulse>
   )
 }
 
 /* The energy around the sleep button: full at ENERGY_MAX, gold once low. */
-function EnergyRing({ size, value }: { size: number; value: number }) {
+function EnergyRing({ size, value, lit }: { size: number; value: number; lit: boolean }) {
   return (
-    <View style={styles.ring} pointerEvents="none">
+    <TutorialPulse on={lit} style={styles.ring}>
       <ProgressRing size={size} value={value} max={ENERGY_MAX} stroke={RING_STROKE} color={value < ENERGY_LOW ? colors.accent : colors.success} track={withAlpha(mapPalette.chromeInk, 0.2)} decorative />
-    </View>
+    </TutorialPulse>
   )
 }
 
@@ -273,7 +281,7 @@ function GiftMarks({ count = 0 }: { count?: number }) {
    name, and feeds on a screen reader's activate; its own press is left to
    the tap gesture so a finger feeds once. */
 function DraggableActionButton({ action, bar, onDrag }: { action: Action; bar: BarSizes; onDrag: FeedDragHandler }) {
-  const { Glyph, label, disabled, need, gifts, valueText, lit, onPress } = action
+  const { Glyph, label, disabled, need, gifts, valueText, lit, ringLit = false, onPress } = action
 
   const gesture = useMemo(() => {
     const pan = Gesture.Pan()
@@ -299,7 +307,7 @@ function DraggableActionButton({ action, bar, onDrag }: { action: Action; bar: B
   return (
     <View style={[styles.item, { width: bar.item }, disabled && styles.itemDisabled]}>
       <View style={[styles.well, { width: bar.ring, height: bar.ring }]}>
-        {need ? <NeedRing size={bar.ring} value={need.value} want={NEED_WANT_BELOW[need.id]} /> : null}
+        {need ? <NeedRing size={bar.ring} value={need.value} want={NEED_WANT_BELOW[need.id]} lit={ringLit} /> : null}
         {lit ? <TutorialHalo /> : null}
         <GestureDetector gesture={gesture}>
           <PressableScale

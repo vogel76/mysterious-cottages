@@ -802,6 +802,7 @@ export const mobileEn: typeof mobilePl = {
     tutorialTitle: 'Tutorial',
     tutorialStep: '{{step}} of {{total}}',
     tutorialNext: 'Next',
+    tutorialBack: 'Back',
     tutorialDone: 'Done',
     tutorialSkip: 'Skip',
     tutorialEgg1: 'This is your egg. Tap the shell and someone inside answers you.',

@@ -23,7 +23,7 @@ import { ElfSpeech } from './ElfSpeech'
 import { ElfCard } from './ElfCard'
 import { ElfTutorial } from './ElfTutorial'
 import { TutorialPointer } from './TutorialHalo'
-import { useElfTutorial } from './useElfTutorial'
+import { useElfTutorial, type TutorialSpot } from './useElfTutorial'
 import { TRICK_REACTION, trickKey } from './tricks'
 import { elfKey, requestKey } from './labels'
 import { elfNow } from '../../lib/elf-clock'
@@ -63,9 +63,11 @@ import { useReturnGreeting } from './useReturnGreeting'
    episode, and a return after half an hour away is greeted. A new player
    is shown the way by the tutorial (useElfTutorial, ElfTutorial): a few
    cards above the care band, once for the egg and once for the named
-   elf, some waiting for the move they ask for, which is lit meanwhile
-   (TutorialHalo: a ring on the button or the purse row, a pointer over
-   the figure). In the same place, once
+   elf, some waiting for the move they ask for, with a way back to the
+   card before; everything a card speaks of is lit meanwhile
+   (TutorialHalo: a pulsing ring on each button, the name block or the
+   purse row, the care band's own rings pulsing, a pointer over the
+   figure). In the same place, once
    no step shows, the elf asks once whether it may let the player know
    when something happens (the reminders, useElfReminders).
 
@@ -140,6 +142,12 @@ const GIFT_LINE: Partial<Record<CareKind, string>> = { treat: 'mobile:elf.giftFe
    opening or the last show, and a spread on top. */
 const SHOW_OFF_MIN_MS = 25_000
 const SHOW_OFF_SPREAD_MS = 35_000
+/* The tutorial's places by where the tab lights them: buttons of the
+   care band, buttons of the rails, blocks of the HUD. */
+const NO_TARGETS: readonly TutorialSpot[] = []
+const BAND_SPOTS = ['warm', 'rock', 'feed'] as const satisfies readonly TutorialSpot[]
+const RAIL_SPOTS = ['quests', 'badges', 'games', 'skills', 'peddler', 'decor'] as const satisfies readonly (TutorialSpot & RailId)[]
+const HUD_SPOTS = ['name', 'purse', 'hurry'] as const satisfies readonly (TutorialSpot & HudSpot)[]
 
 export function ElfTab() {
   const { t, i18n } = useTranslation()
@@ -853,15 +861,15 @@ export function ElfTab() {
      the tutorial's card over it) or the decorating catalogue, both on the
      tab bar. */
   const bottomInset = panel === 'none' ? tabBarHeight + bandHeight + (tutorial.step || askReminders || askGrow ? cardHeight + space.md : 0) : tabBarHeight + panelHeight
-  /* What the tutorial's step is about, lit where it is: the egg or the
+  /* What the tutorial's step speaks of, lit where it is: the egg or the
      elf in the room (a pointer over the head, out of the bubble's way),
-     a button of the care band or of the rails, the name block, the
-     purse or the hurry. */
-  const target = panel === 'none' ? (tutorial.step?.target ?? null) : null
-  const pointAtFigure = (target === 'egg' || target === 'pet') && speech === null
-  const bandLit = target === 'warm' || target === 'rock' || target === 'feed' ? target : null
-  const railLit: RailId | null = target === 'quests' || target === 'games' ? target : null
-  const hudLit: HudSpot | null = target === 'name' || target === 'purse' || target === 'hurry' ? target : null
+     buttons of the care band or of the rails, the care band's rings, the
+     name block, the purse or the hurry. */
+  const targets = panel === 'none' ? (tutorial.step?.targets ?? NO_TARGETS) : NO_TARGETS
+  const pointAtFigure = (targets.includes('egg') || targets.includes('pet')) && speech === null
+  const bandLit = BAND_SPOTS.filter((spot) => targets.includes(spot))
+  const railLit = RAIL_SPOTS.filter((spot) => targets.includes(spot))
+  const hudLit: HudSpot | null = HUD_SPOTS.find((spot) => targets.includes(spot)) ?? null
   /* The level and the way to the next, for the name block. */
   const level = levelOf(state.xp)
   const xpFraction = (state.xp - xpForLevel(level)) / (xpForLevel(level + 1) - xpForLevel(level))
@@ -982,7 +990,7 @@ export function ElfTab() {
       {(tutorial.step || askReminders || askGrow) && panel === 'none' ? (
         <View style={[styles.tutorial, { bottom: tabBarHeight + bandHeight + space.md }]} pointerEvents="box-none">
           {tutorial.step ? (
-            <ElfTutorial key={tutorial.step.index} step={tutorial.step} onNext={tutorial.next} onSkip={tutorial.skip} onLayout={onCardLayout} />
+            <ElfTutorial key={tutorial.step.index} step={tutorial.step} onNext={tutorial.next} onBack={tutorial.back} onSkip={tutorial.skip} onLayout={onCardLayout} />
           ) : askReminders ? (
             <ElfCard
               key="reminders"
@@ -1007,7 +1015,7 @@ export function ElfTab() {
 
       {panel === 'none' ? (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]} onLayout={onBandLayout} pointerEvents="box-none">
-          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} ready={ready} gifts={state.gifts} energy={state.energy} brewing={brewed} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} highlight={bandLit} />
+          <ElfActionBar stage={stage} sleeping={state.sleeping} needs={state.needs} ready={ready} gifts={state.gifts} energy={state.energy} brewing={brewed} onCare={onCare} onTendEgg={onTendEgg} onToggleSleep={onToggleSleep} onFeedDrag={onFeedDrag} highlight={bandLit} ringsLit={targets.includes('rings')} />
         </Animated.View>
       ) : (
         <Animated.View entering={fade()} exiting={leave()} style={[styles.band, { bottom: tabBarHeight }]}>
