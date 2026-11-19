@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Keyboard, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ELF_STARTERS, NAME_MAX_LENGTH, type ElfStarter } from '@chatynkowo/core'
 import { announce } from '../../lib/announce'
@@ -13,8 +13,11 @@ import { STARTER_ICONS, elfKey, starterDescriptionKey } from './labels'
    are a radio group; the name falls back to the dictionary's default
    when left blank. The field comes first and is the sheet's own, so the
    keyboard that rises for it extends the sheet and leaves the field in
-   view; the done key submits too, for a keyboard that hides the button. Naming marks the first form
-   as seen; a sheet pulled down without a name is presented again by the
+   view; the done key submits too, for a keyboard that hides the button.
+   Picking an element ends the typing: the keyboard goes down, so every
+   card and the button are in view (the sheet keeps a tap on a control
+   from closing the keyboard by itself). Naming marks the first form as
+   seen; a sheet pulled down without a name is presented again by the
    tab, since an elf without a name has nothing to answer to. */
 
 export function ElfHatchSheet() {
@@ -42,6 +45,12 @@ export function ElfHatchSheet() {
   useEffect(() => {
     announce(title)
   }, [title])
+
+  /* The name is typed first; a pick of the element puts the keyboard away. */
+  const pick = (id: ElfStarter) => {
+    Keyboard.dismiss()
+    setStarter(id)
+  }
 
   /* Naming marks whatever form the hatch landed on as seen too. */
   const submit = () => {
@@ -90,7 +99,7 @@ export function ElfHatchSheet() {
                 accessibilityRole="radio"
                 accessibilityState={{ selected, checked: selected }}
                 accessibilityLabel={`${t(elfKey('starter', id))}. ${t(starterDescriptionKey(id))}`}
-                onPress={() => setStarter(id)}
+                onPress={() => pick(id)}
                 style={[styles.card, selected && styles.cardSelected]}
               >
                 <View style={styles.glyph}>
