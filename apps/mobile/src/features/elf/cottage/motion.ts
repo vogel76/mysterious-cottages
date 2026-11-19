@@ -9,8 +9,7 @@ import { ROOM } from './room'
 
 /* The life of the elf figure as shared values: a set of control
    numbers (breath, bob, squash, tilt, blink, look, lookY, mouth, glow,
-   flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin,
-   browLift)
+   flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, browLift)
    that the sprite elf and the egg bind to their Skia transforms, and a small
    pool of particles (hearts, sparkles, bubbles, sleep puffs, crumbs, music
    notes, embers) that the reactions borrow. Everything moves on the UI thread through reanimated
@@ -96,8 +95,6 @@ export type PuppetMotion = {
   armR: SharedValue<number>
   /* 0..1, sleepy half lids. */
   lidDroop: SharedValue<number>
-  /* 0..1, a proud grin that picks the happy mouth whatever the mood. */
-  grin: SharedValue<number>
   /* 0..1, the brows lifted (surprise, admiration). */
   browLift: SharedValue<number>
 }
@@ -218,8 +215,8 @@ const REACTION_MS: Record<Exclude<ReactionKind, 'fidget'>, number> = {
   poke: 650,
   call: 1400,
   greet: 1800,
-  twirl: 2000,
-  admire: 1400,
+  twirl: 1100,
+  admire: 1500,
   refuse: 1250,
   sip: 2000,
   beckon: 1500,
@@ -343,7 +340,6 @@ export function useCottageMotion(options: Options): CottageMotion {
   const armL = useSharedValue(0)
   const armR = useSharedValue(0)
   const lidDroop = useSharedValue(0)
-  const grin = useSharedValue(0)
   const browLift = useSharedValue(0)
   const particles = useParticlePool()
 
@@ -355,7 +351,7 @@ export function useCottageMotion(options: Options): CottageMotion {
   const earVel = useSharedValue(0)
   const earTwitch = useSharedValue(0)
 
-  const motionRef = useRef<PuppetMotion>({ breath, bob, squash, tilt, blink, look, lookY, mouth, glow, flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, grin, browLift })
+  const motionRef = useRef<PuppetMotion>({ breath, bob, squash, tilt, blink, look, lookY, mouth, glow, flash, headTilt, earWiggle, hoodSwing, armL, armR, lidDroop, browLift })
   const optionsRef = useRef(options)
   optionsRef.current = options
   /* Until when a reaction owns the values, which one it is, and the timer
@@ -442,7 +438,6 @@ export function useCottageMotion(options: Options): CottageMotion {
       motion.armL.value = 0
       motion.armR.value = 0
       motion.lidDroop.value = droop
-      motion.grin.value = 0
       motion.browLift.value = 0
       earTwitch.value = 0
       return
@@ -455,7 +450,6 @@ export function useCottageMotion(options: Options): CottageMotion {
     motion.mouth.value = withTiming(0, { duration: 200 })
     motion.armL.value = withTiming(0, { duration: 350, easing: EASING.inOut })
     motion.armR.value = withTiming(0, { duration: 350, easing: EASING.inOut })
-    motion.grin.value = withTiming(0, { duration: 300 })
     motion.browLift.value = withTiming(0, { duration: 300 })
     motion.lidDroop.value = withTiming(droop, { duration: 500, easing: EASING.inOut })
     if (!keepGaze) motion.headTilt.value = withTiming(0, { duration: 400, easing: EASING.inOut })
@@ -765,7 +759,10 @@ export function useCottageMotion(options: Options): CottageMotion {
           crumbs.forEach((dx, index) => spawn({ kind: 'crumb', x: ox + dx, y: headY + 0.1 * height, dx: dx * 0.8, dy: 0.72 * height, delay: 260 + index * 250, duration: 620, fall: true, scaleFrom: 0.9, scaleTo: 0.7 }))
           break
         }
-        case 'play': {
+        /* A twirl (a hat put on, the pirouette skill) is the play clip's
+           spin too, so it moves as the play does. */
+        case 'play':
+        case 'twirl': {
           cancelAnimation(motion.bob)
           cancelAnimation(motion.tilt)
           cancelAnimation(motion.squash)
@@ -920,21 +917,9 @@ export function useCottageMotion(options: Options): CottageMotion {
           sparkleBurst(ox, headY - 0.3 * height, 6, 140)
           break
         }
-        case 'twirl': {
-          /* A tilt both ways with a hop, then a proud grin. */
-          cancelAnimation(motion.tilt)
-          cancelAnimation(motion.bob)
-          cancelAnimation(motion.squash)
-          cancelAnimation(motion.grin)
-          motion.squash.value = withSequence(withTiming(ANTICIPATION.squash, { duration: ANTICIPATION.ms, easing: EASING.out }), withSpring(1, SPRINGS.gentle))
-          motion.tilt.value = withDelay(ANTICIPATION.ms, withSequence(withTiming(0.2, { duration: 200, easing: EASING.inOut }), withTiming(-0.2, { duration: 200, easing: EASING.inOut }), withSpring(0, SPRINGS.settle)))
-          motion.bob.value = withDelay(ANTICIPATION.ms, withSequence(withTiming(-80, { duration: 220, easing: EASING.out }), withTiming(0, { duration: 220, easing: EASING.inOut })))
-          motion.grin.value = withDelay(400, withSequence(withTiming(1, { duration: 150 }), withTiming(1, { duration: 1250 }), withTiming(0, { duration: 200 })))
-          sparkleBurst(ox, bodyY, 8, 170)
-          break
-        }
         case 'admire': {
-          /* Brows up and a small clap: both arms up, twice. */
+          /* Brows up and a small clap, twice: the puppet's arms here, the
+             hands of the clap clip in the frames. */
           cancelAnimation(motion.browLift)
           cancelAnimation(motion.armL)
           cancelAnimation(motion.armR)

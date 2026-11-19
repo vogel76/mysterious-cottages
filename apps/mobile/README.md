@@ -1001,8 +1001,12 @@ show-off timer, 25 to 60 seconds apart), and a tap on "Pokaż" in the
 sheet shows it at once, which the rules hear of for the day's request.
 A practice or a show closes the sheet and hands the skill to the tab
 (`trickPlay` in the provider), which plays it as one of the elf's
-existing reactions (`tricks.ts` maps each to its clip: the call's wave,
-the twirl, the greeting's bow, the cheer, the admiring clap, the sip)
+reactions (`tricks.ts` names each skill's reaction, the scene's
+`REACTION_CLIP` the clip that acts it out: the wave is the wave clip,
+the twirl the play clip's spin in a hop, the bow the greet clip, the
+cheer the happy clip's hops with the arms up, the applause the clap
+clip with its claps heard, the toast the sip clip with the cup), so a
+skill's name is what the elf then does,
 with the elf's line in its bubble; a sleeping elf refuses both. The
 acorns' price and the sessions are in the rules' table.
 
@@ -1458,7 +1462,8 @@ when it is warmed and a lullaby when it is rocked, a crack for each crack of the
 for the hatch, a whoosh of magic for an evolution, a jingle for the day's
 quests and a streak's milestone, a page for a letter, a wordless "mm-mm"
 for a care it refuses (synthesised: no word in it, so it is a no in every
-language), and the fire's
+language), four soft claps for its applause (synthesised too, on the
+frames of the clap clip where the hands meet), and the fire's
 crackle as a quiet loop under the room; a pat is silent, it comes too
 often. The games have a pool of their own (`games/GameSounds.tsx`, on
 `src/lib/sound-pool.ts` like the elf's), held by the game's frame so a
@@ -1569,7 +1574,10 @@ atlases of 2026-11-02 (nine clips with bath, play and yawn, the
 sleepers) decode to 51, 81, 109 and 151 MB, the elder's a third under
 the measured one; with the four acted clips of 2026-11-03 (refuse, sip,
 beckon and greet, thirteen clips in all) they decode to 74, 116, 154 and
-205 MB on 13, 13, 14 and 20 sheets of the base, a clip's sheets still
+205 MB on 13, 13, 14 and 20 sheets of the base, and with the clap of
+2026-11-19 (fourteen clips; the elder's staff swings out with its hand
+and widens that clip's cells) to 79, 125, 165 and 219 MB on 14, 14, 15
+and 22 sheets, a clip's sheets still
 drawn only once it plays, and the series below predates them. Measured
 on a release build of 2026-11-03 (the atlases of 2026-11-02, the sounds,
 the elf's letters and the sleepers in; the acorn cap worn; a cold start

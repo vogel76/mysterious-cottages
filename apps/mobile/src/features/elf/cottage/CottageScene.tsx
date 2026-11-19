@@ -196,18 +196,21 @@ const HATCH_MS = { full: 1800, reduced: 700 } as const
 
 /* The one-shot clip a reaction plays over the mood's loop; a kind missing
    here (a poke, a fidget, the egg's rock) leaves the baked animation
-   alone while the motion still bobs and squashes. */
+   alone while the motion still bobs and squashes. Each kind takes the
+   clip that acts it out: a twirl is the play clip's spin in a hop, not
+   the happy clip's hops, and an admiring clap is the clap clip, not a
+   wave (a skill's name promises what the elf then does). */
 const REACTION_CLIP: Partial<Record<ReactionKind, string>> = {
   pet: 'pet',
   feed: 'feed',
   play: 'play',
   cheer: 'happy',
-  twirl: 'happy',
+  twirl: 'play',
   bath: 'bath',
   wake: 'wave',
   call: 'wave',
   greet: 'greet',
-  admire: 'wave',
+  admire: 'clap',
   stroke: 'pet',
   refuse: 'refuse',
   sip: 'sip',
@@ -231,6 +234,7 @@ const REACTION_SOUND: Partial<Record<ReactionKind, ElfSound>> = {
   refuse: 'refuse',
   sip: 'sip',
   beckon: 'beckon',
+  admire: 'clap',
 }
 /* A snore with every breath of sleep (motion's breathSleepMs). */
 const SNORE_EVERY_MS = 5200
