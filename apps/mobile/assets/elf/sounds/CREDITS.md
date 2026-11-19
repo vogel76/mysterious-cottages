@@ -50,3 +50,4 @@ Not recorded but synthesised, so nothing to credit:
 | `egg-knock.wav` | a tap on the egg | a soft wooden knock on the shell |
 | `egg-warm.wav` | warming the egg | a warm hush (noise under a gentle low-pass and a slow swell) with a few ember crackles |
 | `egg-lullaby.wav` | rocking the egg | a short lullaby on soft bells (sol-mi, sol-mi, la-sol) |
+| `clap.wav` | the elf's applause (the skill, a fair round of a game) | four soft claps of small hands, on the beats of the clap clip |

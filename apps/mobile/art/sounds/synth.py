@@ -18,7 +18,9 @@ assets/elf/sounds (the recorded ones are CC0 previews, see CREDITS.md):
   place of a recorded English "no");
 - the egg's three touches, each its own sound: a soft wooden knock for a
   tap on the shell, a warm hush with a few ember crackles for the warming,
-  and a short lullaby for the rocking.
+  and a short lullaby for the rocking;
+- the elf's applause: four soft claps of small hands, on the beats of the
+  clap clip (art/blender/elf.py), so the hands are heard as they meet.
 
 A bell tone is a sine with two quiet overtones under a fast attack and an
 exponential decay, so it rings like a small marimba bar rather than
@@ -278,6 +280,33 @@ def lullaby() -> list[float]:
     return normalised(mix)
 
 
+# The frames of the clap clip on which the hands meet, and its frame rate
+# (art/blender/elf.py, the clap clip's beats).
+CLAP_BEATS = (8, 14, 20, 26)
+CLAP_FPS = 24
+
+
+def claps() -> list[float]:
+    """The elf's applause: a soft clap at every beat of the clap clip, a
+    short burst of darkened noise over a low body, each a touch different
+    in pitch and strength so the row does not sound like a machine."""
+    rng = random.Random(23)
+    beats = [(frame - 1) / CLAP_FPS for frame in CLAP_BEATS]
+    mix = [0.0] * int(RATE * (beats[-1] + 0.22))
+    for index, at in enumerate(beats):
+        start = int(RATE * at)
+        pitch = 190 + 25 * rng.random()
+        gain = 1.0 if index % 2 == 0 else 0.85
+        low = 0.0
+        for i in range(int(RATE * 0.16)):
+            t = i / RATE
+            low += 0.45 * ((rng.random() * 2 - 1) - low)
+            snap = math.exp(-t * 70) * low
+            body = 0.35 * math.exp(-t * 45) * math.sin(2 * math.pi * pitch * t)
+            mix[start + i] += gain * min(1.0, t / 0.0015) * (snap + body)
+    return normalised(mix)
+
+
 def write(name: str, samples: list[float], volume: float) -> None:
     with wave.open(str(OUT / name), 'wb') as out:
         out.setnchannels(1)
@@ -311,4 +340,5 @@ if __name__ == '__main__':
     write('egg-knock.wav', knock(), volume=0.8)
     write('egg-warm.wav', hush(), volume=0.6)
     write('egg-lullaby.wav', lullaby(), volume=0.8)
-    print('written', ', '.join([*NOTES, *GAME_SOUNDS, 'refuse.wav', 'egg-knock.wav', 'egg-warm.wav', 'egg-lullaby.wav']), 'to', OUT)
+    write('clap.wav', claps(), volume=0.7)
+    print('written', ', '.join([*NOTES, *GAME_SOUNDS, 'refuse.wav', 'egg-knock.wav', 'egg-warm.wav', 'egg-lullaby.wav', 'clap.wav']), 'to', OUT)

@@ -1828,6 +1828,56 @@ def build_clips(rig):
     rig.squash(33, -0.03)
     rig.squash(37, 0.0)
     rig.finish()
+
+    # clap: 36 frames, applause: the hands rise before the chest, meet four
+    # times with a little bounce of the body and a nod of the head each
+    # time, the mouth open in a cheer, then come down. The hands meet on
+    # the form's own middle line, as far before the chest as its arms
+    # reach (reach would leave a short-armed form's hands apart).
+    rig.begin("clap", 36, loop=False)
+    rig.mood.update(ear=5.0)
+    shoulder = arm_points(1)[0]
+    b = form_look().get("body", 1.0)
+    span = 0.446 * F.arm * 0.97
+    drop = (0.11 if F.arm > 0.8 else 0.05) * F.arm
+    side = shoulder.x - 0.034 * b
+    forward = min(math.sqrt(max(0.0004, span * span - side * side - drop * drop)), F.chest_r + 0.11)
+    met = Vector((0.034 * b, shoulder.y - forward, shoulder.z - drop))
+    apart = met + Vector((0.2 * F.arm, 0.02, 0.012))
+    beats = (8, 14, 20, 26)
+    rig.hands(1, L["L"])
+    rig.hands(6, apart, ease=("BACK", "EASE_OUT"))
+    for i, f in enumerate(beats):
+        rig.hands(f, met, ease="EASE_IN")
+        rig.hands(f + 3, apart + Vector((0.0, 0.0, 0.01 if i % 2 == 0 else -0.005)), ease="EASE_OUT")
+        rig.squash(f, 0.045, ease="EASE_OUT")
+        rig.squash(f + 3, -0.02)
+        rig.look(f, camera, roll=5 if i % 2 == 0 else -5, ease="EASE_IN_OUT")
+    rig.hands(31, (L["L"].x + 0.02, L["L"].y - 0.06, L["L"].z + 0.14), ease="EASE_IN_OUT")
+    rig.hands(37, L["L"], ease="EASE_OUT")
+    rig.squash(1, 0.0)
+    rig.squash(5, 0.03, ease="EASE_OUT")
+    rig.squash(33, 0.015)
+    rig.squash(37, 0.0)
+    rig.look(1, camera)
+    rig.look(5, camera)
+    rig.look(32, camera, ease="EASE_IN_OUT")
+    rig.look(37, camera)
+    rig.shape("smile", 1, 0.25)
+    rig.shape("smile", 6, 1.0, ease="EASE_OUT")
+    rig.shape("smile", 31, 1.0)
+    rig.shape("smile", 37, 0.25)
+    rig.shape("open", 1, 0.0)
+    rig.shape("open", 8, 0.5, ease="EASE_OUT")
+    rig.shape("open", 12, 0.15)
+    rig.shape("open", 20, 0.5, ease="EASE_OUT")
+    rig.shape("open", 24, 0.15)
+    rig.shape("open", 30, 0.0)
+    rig.blink(1, 0.0)
+    rig.blink(7, 0.3, ease="EASE_OUT")
+    rig.blink(28, 0.3)
+    rig.blink(32, 0.0, ease="EASE_IN")
+    rig.finish()
     return rig.clips
 
 

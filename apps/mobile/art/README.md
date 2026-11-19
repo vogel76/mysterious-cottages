@@ -184,8 +184,8 @@ beside the head is raised beside every form's head) and `at_face` a point
 by the face (the mouth a hand feeds) to the form's head. A blink past
 three quarters shrinks away what stands out of the eye (iris, pupil,
 highlights, the open eye's lash, on the `eyeball` bones, stepped, never
-half shrunk), which would otherwise poke through the shut lid. The nine
-clips: idle (a breath, a weight shift, a glance aside, a blink; 48
+half shrunk), which would otherwise poke through the shut lid. The
+fourteen clips: idle (a breath, a weight shift, a glance aside, a blink; 48
 frames), happy (a crouch, two hops with the arms thrown up, a settle;
 36), sad (a slumped sway with a sigh; 24, loop), pet (a lean into the
 hand with a squint; 24), feed (the hands bring the food to the mouth,
@@ -198,8 +198,15 @@ no: three shakes of the head and two pats on the belly with a small
 frown; 30), sip (the cup rises to the lips, two sips with the head back,
 the cup down and a sigh with a smile; 48), beckon (a turn to the side,
 the arm out at shoulder height beckoning twice, a look at the player and
-where it points; 36) and greet (a bow: the hand to the belly, the chest
-forward with the eyes shut, then up with a smile; 36). The sip's cup
+where it points; 36), greet (a bow: the hand to the belly, the chest
+forward with the eyes shut, then up with a smile; 36) and clap
+(applause: the hands rise before the chest and meet four times, each
+with a little bounce of the body and a nod of the head, the mouth open
+in a cheer; 36; its hands meet on the form's own middle line, as far
+before the chest as the arms reach, since `reach` would leave a
+short-armed form's hands apart; the frames the hands meet on are the
+beats of the applause's sound, `CLAP_BEATS` in `art/sounds/synth.py`).
+The sip's cup
 (`Cup.R` and its handle, in the right hand, bound to it like the wand) is
 a prop of that clip alone: `CLIP_PROPS` names the props a clip shows,
 and the animation stage hides them in every other render, the stills,
