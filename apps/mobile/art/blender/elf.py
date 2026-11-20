@@ -84,12 +84,17 @@ PALETTE = {
     "nightcap": "#3e5a8c",
     "wand_crystal": "#3fb6f2",
     "cape": "#5b6b34",
+    "enamel_blue": "#1f7396",
+    "enamel_dot": "#f6f3e6",
+    "rust": "#b4632a",
+    "steel": "#7b746f",
+    "hole": "#2b211b",
 }
 
 # The hats of the wardrobe, the catalogue's ids (cottage/catalogue.ts,
 # WEARABLE_IDS.hat); 'none' is the bare hair, the rest are collections
 # Hat/<id> rendered as layers of their own over the body.
-HAT_IDS = ("none", "acornCap", "mushroomCap", "flowerCrown", "nightcap")
+HAT_IDS = ("none", "acornCap", "mushroomCap", "flowerCrown", "nightcap", "colander")
 # The room's lights while the elf stands in the room (room_scene), for the
 # daylit thumbnails.
 ROOM_LIGHTS = {}
@@ -252,6 +257,12 @@ def rounded_box(name, center, size, coll, mat, subsurf=2, outline=0.0, rotation=
     bmesh.ops.create_cube(bm, size=1.0)
     transform_bmesh(bm, center, size, rotation)
     return finish_mesh(name, bm, coll, mat, subsurf=subsurf, outline=outline)
+
+
+def turn_mesh(obj, pivot, rot):
+    """Rotate a mesh object's vertices about a pivot, in world coordinates."""
+    for v in obj.data.vertices:
+        v.co = pivot + rot @ (v.co - pivot)
 
 
 def leaf(name, base, direction, length, width, coll, mat, thickness=0.18):
@@ -447,6 +458,88 @@ def fuse(name, pieces, mat, voxel=0.01, smooth=6):
     return target
 
 
+def build_colander(objs, mats, hc, k):
+    """The colander helmet: an old enamel colander worn bowl down. The dome
+    in blue with white dots, its rolled rim just over the ears, the foot
+    ring on top like a small crown, a loop handle at each side tipped up,
+    the holes as dark dots in small stars between the white ones and in
+    the base; worn and found, so the rims are rusty, one side is chipped
+    to the bare steel and a few freckles of rust dot it. It leans to the
+    elf's right and a little back: the leaf in the hair then stays under
+    the dome instead of coming through its wall."""
+    coll = "Hat/colander"
+    made = []
+
+    def keep(name, obj):
+        objs[f"Colander{name}"] = obj
+        made.append(obj)
+        return obj
+
+    R = F.head_r + 0.10
+    SZ = 0.80
+    c = hc + Vector((0, 0.02, 0.21 * k))
+    cut = -0.02
+    keep("Dome", sphere("ColanderDome", c, R, coll, mats["enamel_blue"], scale=(1.0, 1.0, SZ), segments=48, rings=24,
+                        subsurf=1, outline=OUTLINE, keep=lambda p: p.z > cut))
+    rim_r = math.sqrt(R * R - cut * cut)
+    rim_z = cut * SZ
+    keep("Rim", torus("ColanderRim", c + Vector((0, 0, rim_z)), rim_r + 0.004, 0.028, coll, mats["rust"], subsurf=1,
+                      outline=OUTLINE))
+    # The foot, on top now: a short flared ring closed by the base.
+    top = c + Vector((0, 0, R * SZ))
+    keep("Foot", tube("ColanderFoot", [top + Vector((0, 0, -0.05)), top + Vector((0, 0, 0.03)), top + Vector((0, 0, 0.085))],
+                      [0.12, 0.13, 0.16], coll, mats["enamel_blue"], ref=(0, 1, 0), samples=8, segments=24, subsurf=1,
+                      outline=OUTLINE, cap_start=False))
+    keep("FootRim", torus("ColanderFootRim", top + Vector((0, 0, 0.088)), 0.16, 0.019, coll, mats["rust"], subsurf=1,
+                          outline=OUTLINE))
+    # The handles: a loop at each side just over the rim, tipped up.
+    for side, arc in ((1, (-math.pi / 2, math.pi / 2)), (-1, (math.pi / 2, 3 * math.pi / 2))):
+        at = c + Vector((side * (rim_r - 0.012), 0, rim_z + 0.05))
+        handle = torus(f"ColanderHandle{side}", at, (0.12, 0.09), 0.026, coll, mats["enamel_blue"], seg_major=24,
+                       subsurf=1, outline=OUTLINE, arc=arc)
+        turn_mesh(handle, at, Matrix.Rotation(math.radians(-26 * side), 3, "Y"))
+        keep(f"Handle{side}", handle)
+
+    def dot(name, az, el, size, mat, flat=0.22, squash=(1.0, 1.0), spin=0.0):
+        """A flat blot on the dome at an azimuth (0 the front) and an elevation."""
+        d = Vector((math.cos(math.radians(el)) * math.sin(math.radians(az)),
+                    -math.cos(math.radians(el)) * math.cos(math.radians(az)), math.sin(math.radians(el))))
+        p = c + Vector((d.x * R, d.y * R, d.z * R * SZ))
+        rot = Vector((d.x, d.y, d.z / SZ)).normalized().to_track_quat("Z", "Y").to_matrix()
+        if spin:
+            rot = rot @ Matrix.Rotation(math.radians(spin), 3, "Z")
+        return keep(name, sphere(f"Colander{name}", p, size, coll, mat, scale=(squash[0], squash[1], flat), segments=14,
+                                 rings=8, subsurf=1, rotation=rot))
+
+    # The white dots, and the holes in small stars between them near the rim.
+    for i, (az, el, size) in enumerate(((-50, 36, 0.074), (0, 50, 0.078), (50, 36, 0.074), (-98, 46, 0.068),
+                                        (98, 46, 0.068), (-150, 38, 0.072), (150, 38, 0.072), (180, 54, 0.068),
+                                        (-24, 13, 0.056), (28, 14, 0.056), (-128, 12, 0.056), (128, 12, 0.056))):
+        dot(f"Polka{i}", az, el, size, mats["enamel_dot"], flat=0.14)
+    n = 0
+    for az0 in (-76, 2, 76, -180):
+        for da, de in ((0, 0), (-10, 5), (10, 5), (-6, -7), (6, -7), (0, 11)):
+            dot(f"Hole{n}", az0 + da, 24 + de, 0.018, mats["hole"])
+            n += 1
+    for i in range(6):
+        a = 2 * math.pi * i / 6
+        keep(f"TopHole{i}", sphere(f"ColanderTopHole{i}", top + Vector((math.cos(a) * 0.075, math.sin(a) * 0.075, 0.086)),
+                                   0.02, coll, mats["hole"], scale=(1.0, 1.0, 0.2), segments=12, rings=6, subsurf=1))
+    # Chipped enamel: bare steel in a thin rusty edge, each chip two
+    # overlapping blots so its outline is uneven; a few freckles of rust.
+    for i, (az, el, w, h) in enumerate(((-40, 20, 0.046, 0.03), (64, 52, 0.036, 0.026))):
+        for j, (da, de, f, spin) in enumerate(((0, 0, 1.0, 20), (5.5, 3, 0.72, -35))):
+            dot(f"ChipRust{i}_{j}", az + da, el + de, 1.0, mats["rust"], flat=0.004,
+                squash=((w + 0.008) * f, (h + 0.008) * f), spin=spin)
+            dot(f"Chip{i}_{j}", az + da, el + de, 1.0, mats["steel"], flat=0.006, squash=(w * f, h * f), spin=spin)
+    for i, (az, el, size) in enumerate(((-68, 20, 0.011), (-58, 28, 0.008), (30, 38, 0.01), (-10, 16, 0.009),
+                                        (86, 32, 0.01))):
+        dot(f"Freckle{i}", az, el, size, mats["rust"], flat=0.25)
+    lean = Matrix.Rotation(math.radians(-5), 3, "Y") @ Matrix.Rotation(math.radians(-5), 3, "X")
+    for obj in made:
+        turn_mesh(obj, hc, lean)
+
+
 def build_model():
     """Build every mesh of the elf and return a dict of the objects by name."""
     mats = {
@@ -478,6 +571,11 @@ def build_model():
         "crown_yellow": material("CrownYellow", "crown_yellow", roughness=0.7, grain=0.0),
         "crown_heart": material("CrownHeart", "crown_heart", roughness=0.6, grain=0.0),
         "nightcap": material("Nightcap", "nightcap", roughness=0.85),
+        "enamel_blue": material("EnamelBlue", "enamel_blue", roughness=0.28, grain=0.0),
+        "enamel_dot": material("EnamelDot", "enamel_dot", roughness=0.32, grain=0.0),
+        "rust": material("Rust", "rust", roughness=0.85),
+        "steel": material("Steel", "steel", roughness=0.6),
+        "hole": material("Hole", "hole", roughness=0.9, grain=0.0),
         "cape": material("Cape", "cape", roughness=0.85),
         # the wand's tip: a seed of warm light, the elder's crystal of cool light
         "wand_seed": material("WandSeed", "crown_yellow", roughness=0.4, emission=PALETTE["crown_yellow"],
@@ -878,6 +976,7 @@ def build_model():
                                  mats["cream"], subsurf=1, outline=OUTLINE)
     objs["NightcapPompom"] = sphere("NightcapPompom", cap[-1] + Vector((0.01, 0, -0.04)), 0.06, "Hat/nightcap",
                                     mats["cream"], subsurf=1, outline=OUTLINE)
+    build_colander(objs, mats, hc, k)
     for hat in HAT_IDS[1:]:
         collection(f"Hat/{hat}").hide_render = True
 
