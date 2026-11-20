@@ -331,7 +331,10 @@
       "width": 147,
       "height": 153,
       "fileDay": "picture_painting_day.webp",
-      "fileThumb": "picture_painting_thumb.webp"
+      "fileThumb": "picture_painting_thumb.webp",
+      "fileFull": "picture_painting_full.webp",
+      "fullWidth": 1024,
+      "fullHeight": 1061
     },
     {
       "slot": "basket",

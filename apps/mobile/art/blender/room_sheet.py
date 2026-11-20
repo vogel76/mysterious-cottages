@@ -16,6 +16,8 @@ files first): the empty room for every wall and floor as
 plate_<wall>_<floor>.webp with its _day twin, every sprite cropped to its box
 as <slot>_<variant>.webp with its _day twin, the catalogue's pictures as
 <slot>_<variant>_thumb.webp, wall_<id>_thumb.webp and floor_<id>_thumb.webp,
+a picture that is a photograph of a real painting (art/pictures/<variant>.jpg)
+also whole as picture_<variant>_full.webp for the app's close look at it,
 and manifest.json with the plates, the boxes, the floor line, the rug centre,
 the baked fireplace's box and fire, the wall's and the floor's boxes and
 the sill's places for the finds and the point the egg rests on, all from
@@ -33,6 +35,10 @@ ALPHA_THRESHOLD = 12
 WEBP_QUALITY = 88
 # The catalogue pictures' longer side in the app's assets.
 THUMB_SIDE = 320
+# The photographs of the real paintings that hang in the room, by the
+# picture's variant id, and the longer side of one in the app's assets.
+PICTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pictures")
+FULL_SIDE = 1280
 
 
 def is_sprite(name):
@@ -197,6 +203,13 @@ def pack(out_dir, entries, camera, dest):
         if "fileThumb" in e:
             save_thumb(os.path.join(out_dir, e["fileThumb"]), os.path.join(dest, base + "_thumb.webp"), True)
             packed["fileThumb"] = base + "_thumb.webp"
+        photo = os.path.join(PICTURES, f"{e['variant']}.jpg")
+        if e["slot"] == "picture" and os.path.exists(photo):
+            whole = Image.open(photo).convert("RGB")
+            whole.thumbnail((FULL_SIDE, FULL_SIDE), Image.LANCZOS)
+            whole.save(os.path.join(dest, base + "_full.webp"), quality=WEBP_QUALITY)
+            packed["fileFull"] = base + "_full.webp"
+            packed["fullWidth"], packed["fullHeight"] = whole.size
         manifest["sprites"].append(packed)
     with open(os.path.join(dest, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)

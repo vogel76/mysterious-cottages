@@ -17,7 +17,7 @@ import { useCottageMotion, type Fidget, type ReactionKind } from './motion'
 import { Particles } from './Particles'
 import { EGG_HIT_BOX, HATCH_BEATS, RenderedEgg } from './RenderedEgg'
 import { ROOM, fitRoom, inBounds, slotAtIn, slotById, toRoom, type Slot } from './room'
-import { extraPictures, placedBounds, renderedVariantFor, spriteSlotsFor, type RoomExtras } from './roomAssets'
+import { extraPictures, fullPictureFor, placedBounds, renderedVariantFor, spriteSlotsFor, type RoomExtras } from './roomAssets'
 import { RoomSprites } from './RoomSprites'
 import { SleepingElf } from './SleepingElf'
 import { SlotHighlight } from './SlotHighlight'
@@ -53,8 +53,9 @@ import { SPRITE_ELF_ORIGIN, SpriteElf, figureUnits, spriteElfHeadLine, spriteElf
    tap on the head pokes it instead, when the tab listens for that), rocks
    the egg, or touches the room: the hearth flares, a shooting star
    crosses the window, and the elf glances (or leans) at whatever was
-   touched; a tap on the picture frame is also reported to the tab, which
-   opens the cottage whose photo it shows; the wall and the floor are not
+   touched; a tap on the picture is also reported to the tab, which
+   opens the cottage whose photo the frame shows, or the painting whole;
+   the wall and the floor are not
    things to touch. In the decorating mode the taps pick the catalogue's
    category instead and the elf is not petted; the room moves to bring
    the place being chosen for to the middle of its band, and a piece is
@@ -568,7 +569,7 @@ export const CottageScene = memo(
           return
         }
         if (editing) return
-        if (actionName === 'openStory') {
+        if (actionName === 'openStory' || actionName === 'openPicture') {
           onPictureTapRef.current?.()
           return
         }
@@ -592,16 +593,19 @@ export const CottageScene = memo(
     /* The frame's photo opens its cottage: a second action for a screen
        reader, which cannot tap a spot of the canvas. */
     const framePhoto = Boolean(photo) && decor.picture === PHOTO_ID
+    /* A painting opens whole, the same way. */
+    const painting = fullPictureFor(decor.picture) !== null
     /* The actions outside edit mode: the touch, the frame's cottage, the
        letter while one waits, the keepsake shelf. */
     const sceneActions = useMemo(
       () => [
         { name: 'activate' },
         ...(framePhoto ? [{ name: 'openStory', label: t('mobile:elf.frameAction') }] : []),
+        ...(painting ? [{ name: 'openPicture', label: t('mobile:elf.pictureAction') }] : []),
         ...(extras?.letter ? [{ name: 'openLetter', label: t('mobile:elf.awayLetterRead') }] : []),
         { name: 'openShelf', label: t('mobile:elf.shelfOpen') },
       ],
-      [framePhoto, extras?.letter, t],
+      [framePhoto, painting, extras?.letter, t],
     )
 
     const gesture = useMemo(() => {

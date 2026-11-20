@@ -14,7 +14,7 @@ import { useSupportLedger } from '../support/useSupportLedger'
 import { Button, DURATIONS, FeedIcon, ReduceMotion, SPRINGS, Screen, SkeletonCard, Text, cachedContentFile, colors, fade, iconSize, leave, mapPalette, radius, space, useTabBarHeight } from '../../ui'
 import { CottageScene, type CottageSceneHandle } from './cottage/CottageScene'
 import { PHOTO_ID, type SlotId } from './cottage/catalogue'
-import type { RoomExtras } from './cottage/roomAssets'
+import { fullPictureFor, type RoomExtras } from './cottage/roomAssets'
 import { ElfActionBar, type FeedDragHandler } from './ElfActionBar'
 import { ElfHud, type ElfPanel, type HudSpot } from './ElfHud'
 import { ElfRails, type RailId } from './ElfRails'
@@ -390,9 +390,13 @@ export function ElfTab() {
       current = false
     }
   }, [latestSlug, cottages])
+  /* A tap on the wall's picture: the frame's photo opens its cottage, a
+     painting opens whole (ElfPictureView); the other pictures only draw
+     the elf's glance. */
   const onPictureTap = useCallback(() => {
-    if (decor.picture !== PHOTO_ID || !latestSlug) return
-    router.push({ pathname: '/story/[slug]', params: { slug: latestSlug } })
+    if (decor.picture === PHOTO_ID) {
+      if (latestSlug) router.push({ pathname: '/story/[slug]', params: { slug: latestSlug } })
+    } else if (fullPictureFor(decor.picture)) router.push('/elf-picture')
   }, [decor.picture, latestSlug, router])
 
   /* What the days have brought into the room: the plant at its stage, the

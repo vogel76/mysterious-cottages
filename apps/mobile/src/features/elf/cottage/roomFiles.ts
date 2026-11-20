@@ -90,6 +90,7 @@ export const ROOM_FILES: Record<string, number> = {
   'picture_map_thumb.webp': require('../../../../assets/elf/room/picture_map_thumb.webp'),
   'picture_painting.webp': require('../../../../assets/elf/room/picture_painting.webp'),
   'picture_painting_day.webp': require('../../../../assets/elf/room/picture_painting_day.webp'),
+  'picture_painting_full.webp': require('../../../../assets/elf/room/picture_painting_full.webp'),
   'picture_painting_thumb.webp': require('../../../../assets/elf/room/picture_painting_thumb.webp'),
   'plant_stage0.webp': require('../../../../assets/elf/room/plant_stage0.webp'),
   'plant_stage0_day.webp': require('../../../../assets/elf/room/plant_stage0_day.webp'),

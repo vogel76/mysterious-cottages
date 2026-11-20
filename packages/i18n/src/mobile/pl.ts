@@ -1023,6 +1023,7 @@ export const mobilePl = {
     shelfOpenHint: 'Słoiki z Chatynek, skarby z parapetu i listy.',
     jarHint: 'Otwiera opowieść tej Chatynki.',
     frameAction: 'Otwórz Chatynkę z ramki',
+    pictureAction: 'Powiększ obraz',
     ledgerTitle: 'Skąd to się bierze',
     ledgerAcorns: 'Żołędzie',
     ledgerAcornsBody: 'Za zadania dnia, prośby elfa i gry, a radosny elf znajduje w grach więcej. Kupują siły na gry, umiejętności i towary od kramarza, a gwiezdny pyłek kramarz ma zawsze.',

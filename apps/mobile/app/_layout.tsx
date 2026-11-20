@@ -295,6 +295,17 @@ function RootStack() {
           gestureEnabled: false,
         }}
       />
+      {/* A close look at the painting on the elf's wall: a transparent
+          modal that fades in over the tab and leaves at a touch. */}
+      <Stack.Screen
+        name="elf-picture"
+        options={{
+          presentation: 'transparentModal',
+          animation: 'fade',
+          headerShown: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
     </Stack>
   )
 }

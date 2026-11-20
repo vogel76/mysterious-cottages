@@ -391,7 +391,10 @@ line, the rug ellipse, the fireplace's box and its fire, the wall's and
 the floor's boxes, the catalogue as rendered and the pixel positions of
 these landmarks. The committed assets in `assets/elf/room` are the plates
 of every pair, each sprite cropped to its box by night and as its `_day`
-twin, and the catalogue's pictures as `_thumb`, with `manifest.json`
+twin, and the catalogue's pictures as `_thumb` (a picture with a
+photograph in `art/pictures/<variant>.jpg` also whole as `_full`, at
+most 1280 pixels on its longer side, with `fileFull` and its size in the
+manifest: the app's close look at it), with `manifest.json`
 (version 3) carrying the plates by pair, the boxes and which piece is
 each place's default, the floor line, the rug centre, the fireplace with
 its fire, the boxes of the wall and the floor and the sill's places

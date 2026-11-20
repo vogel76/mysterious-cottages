@@ -46,6 +46,11 @@ export type RoomSpriteEntry = Box & {
   fileDay?: string
   /* The piece rendered close up and by day for the decorating catalogue. */
   fileThumb?: string
+  /* A picture that is a photograph of a real painting, whole, with its
+     size in pixels: what a tap on it in the room opens. */
+  fileFull?: string
+  fullWidth?: number
+  fullHeight?: number
 }
 
 /* A wall or a floor on offer, with its catalogue picture. */
@@ -119,6 +124,16 @@ for (const entry of ROOM_MANIFEST.sprites) {
    have none. */
 export function extraSpriteFor(slot: ExtraSlot, variant: string): RoomPicture | null {
   return EXTRAS_BY_SLOT.get(slot)?.find((picture) => picture.variant === variant) ?? null
+}
+
+/* The whole picture behind a variant of the wall's picture, for a close
+   look at it: null for the pictures that are only renders. */
+export type FullPicture = { module: number; width: number; height: number }
+export function fullPictureFor(variant: string): FullPicture | null {
+  const sprite = SPRITES_BY_SLOT.get('picture')?.find((entry) => entry.variant === variant)
+  const module = fileModule(sprite?.fileFull)
+  if (!sprite || module === null || !sprite.fullWidth || !sprite.fullHeight) return null
+  return { module, width: sprite.fullWidth, height: sprite.fullHeight }
 }
 
 /* The sill's places, as x offsets from the first; one place when the

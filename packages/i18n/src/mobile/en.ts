@@ -954,6 +954,7 @@ export const mobileEn: typeof mobilePl = {
     shelfOpenHint: 'Jars from the Cottages, windowsill treasures and letters.',
     jarHint: "Opens this Cottage's story.",
     frameAction: 'Open the Cottage in the frame',
+    pictureAction: 'Enlarge the painting',
     ledgerTitle: 'Where it comes from',
     ledgerAcorns: 'Acorns',
     ledgerAcornsBody: "For the day's quests, the elf's requests and the games, and a happy elf finds more in the games. They buy energy for the games, skills and the peddler's wares, and the peddler always has a grain of star dust.",
