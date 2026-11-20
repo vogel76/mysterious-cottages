@@ -17,7 +17,8 @@ import { elfKey } from './labels'
    elf to the middle and a tap puts the hat on), then one per place in the
    room with a choice (the walls and the floor first, then the pieces
    from the largest; the places with more than one
-   rendered variant, the frame only once a cottage has been found), and
+   rendered variant, the photo's card in the picture's place only once a
+   cottage has been found), and
    under it a row of large cards for the active category,
    three to the width (a fourth peeking when there are more): the piece's
    picture on a light card, its name under it, a check on the one in the
@@ -43,8 +44,8 @@ export type ElfDecorPanelProps = {
   hat: string
   /* The latest cottage's picture, for the frame's photo card. */
   photo: string | null
-  /* The tabs on offer, as the tab decides them (the hat once hatched, the
-     frame only with a photo), in the catalogue's order. */
+  /* The tabs on offer, as the tab decides them (the hat once hatched), in
+     the catalogue's order. */
   tabs: readonly CatalogueTab[]
   /* The cottages found, which unlock some of the pieces. */
   foundCount: number
@@ -58,8 +59,8 @@ export type ElfDecorPanelProps = {
 
 /* The places the catalogue can offer, in its own order: the surfaces,
    then the pieces from the largest, those with a choice of rendered
-   variants. The tab narrows it to what is on offer right now (the frame
-   only once there is a photo). */
+   variants. The panel leaves the photo's card out until there is a photo
+   to show in the frame. */
 const CATALOGUE_ORDER: readonly SlotId[] = ['wall', 'floor', 'rug', 'bed', 'window', 'picture', 'shelf', 'lantern', 'herbs', 'basket', 'fern', 'candle']
 export const DECOR_SLOTS: readonly SlotId[] = CATALOGUE_ORDER.filter((id) => RENDERED_VARIANTS[id].length > 1)
 

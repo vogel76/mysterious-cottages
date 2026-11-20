@@ -493,11 +493,14 @@ export function ElfTab() {
     const { height } = event.nativeEvent.layout
     setPanelHeight((current) => (current === height ? current : height))
   }, [])
-  /* The places the catalogue offers right now: the frame only once there
-     is a photo to put in it. The scene's decorating mode and the catalogue
-     go by the same list; the catalogue's tabs add the hat once the elf has
-     hatched, first, and the active tab never points outside them. */
-  const editableSlots = useMemo(() => DECOR_SLOTS.filter((slot) => slot !== 'picture' || photo), [photo])
+  /* The places the catalogue offers: every place with a choice, the
+     picture's among them from the start (a map, and whatever was bought,
+     can hang there before any cottage is found; only the photo's own card
+     waits for a photo, which the panel sees to). The scene's decorating
+     mode and the catalogue go by the same list; the catalogue's tabs add
+     the hat once the elf has hatched, first, and the active tab never
+     points outside them. */
+  const editableSlots = DECOR_SLOTS
   const catalogueTabs = useMemo<readonly CatalogueTab[]>(() => (stage === 'egg' ? editableSlots : ['hat', ...editableSlots]), [stage, editableSlots])
   const [decorTab, setDecorTab] = useState<CatalogueTab>(catalogueTabs[0] ?? 'rug')
   useEffect(() => {
