@@ -40,7 +40,7 @@ export const DECOR_IDS: Record<SlotId, readonly string[]> = {
   wall: ['plaster', 'boards', 'logs'],
   floor: ['planks', 'flagstones', 'terracotta'],
   window: ['arched', 'round', 'shuttered'],
-  picture: ['cottage', PHOTO_ID, 'map', 'antlers'],
+  picture: ['cottage', PHOTO_ID, 'map', 'antlers', 'painting'],
   herbs: ['herbs', 'garlic', 'dreamcatcher'],
   lantern: ['iron', 'paper', 'bell'],
   shelf: ['books', 'jars', 'seedlings'],

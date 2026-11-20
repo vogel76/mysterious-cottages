@@ -1130,6 +1130,7 @@ export const mobilePl = {
     itemPhoto: 'Zdjęcie ostatniej Chatynki',
     itemMap: 'Stara mapa',
     itemAntlers: 'Poroże',
+    itemPainting: 'Obraz Opiekunki Chatynek',
     itemHerbs: 'Suszone zioła',
     itemGarlic: 'Warkocz czosnku',
     itemDreamcatcher: 'Łapacz snów',

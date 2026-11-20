@@ -322,6 +322,18 @@
       "fileThumb": "picture_antlers_thumb.webp"
     },
     {
+      "slot": "picture",
+      "variant": "painting",
+      "default": false,
+      "file": "picture_painting.webp",
+      "x": 498,
+      "y": 212,
+      "width": 147,
+      "height": 153,
+      "fileDay": "picture_painting_day.webp",
+      "fileThumb": "picture_painting_thumb.webp"
+    },
+    {
       "slot": "basket",
       "variant": "acorns",
       "default": true,

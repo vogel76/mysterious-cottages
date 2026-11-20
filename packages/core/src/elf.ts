@@ -543,7 +543,8 @@ function needTauHours(state: ElfState, need: ElfNeedId): number {
    the decorating catalogue until this many cottages are found. Every
    place keeps one choice besides its default free from the start, so a
    new player can arrange the room at once; the rest come one or two at a
-   time up to the eighth cottage. The ids are the app's catalogue's; the
+   time up to the eighth cottage, and the painting, the dearest piece,
+   with the tenth. The ids are the app's catalogue's; the
    rules keep only the thresholds, and the shop (shopItems below) prices
    a locked piece from the same table. What a player placed before a lock
    existed is never taken away. */
@@ -562,6 +563,7 @@ export const DECOR_UNLOCKS: Record<string, number> = {
   'floor:terracotta': 5,
   'bed:nest': 8,
   'picture:antlers': 8,
+  'picture:painting': 10,
   'hat:flowerCrown': 2,
   'hat:mushroomCap': 4,
   'hat:nightcap': 6,

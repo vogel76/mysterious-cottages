@@ -1055,6 +1055,7 @@ export const mobileEn: typeof mobilePl = {
     itemPhoto: "The latest Cottage's photo",
     itemMap: 'Old map',
     itemAntlers: 'Antlers',
+    itemPainting: "The Cottage Keeper's painting",
     itemHerbs: 'Dried herbs',
     itemGarlic: 'Garlic braid',
     itemDreamcatcher: 'Dreamcatcher',

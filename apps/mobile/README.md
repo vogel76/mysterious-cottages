@@ -864,7 +864,8 @@ picked another picture, and the shelf in the room opens the keepsake
 shelf (below). Every place of the room keeps
 one choice besides its default free from the start, and the rest are
 unlocked by the finds, one or two at a time from the first cottage to
-the eighth (`DECOR_UNLOCKS` in the rules): a locked piece stays in the
+the eighth, and the painting, the dearest piece, with the tenth
+(`DECOR_UNLOCKS` in the rules): a locked piece stays in the
 decorating catalogue dimmed, with a lock and how many more cottages it
 takes, and a tap on it lets the elf say so; what a player placed before
 stays.
@@ -1319,7 +1320,9 @@ surfaces (the plate is rendered for every pair of them), and the pieces
 drawn over the plate (the rug, the bed, the window, the picture, the
 shelf, the lantern, the herbs under the beam, the basket, the corner
 plant and the stool by the fire), three variants each, all rendered
-(`cottage/roomAssets.ts`); the frame also offers the photo of the latest
+(`cottage/roomAssets.ts`); the picture's place has a fourth, a real
+painting in a gilded frame (a photograph of the canvas rendered into the
+room, `art/pictures`), and the frame also offers the photo of the latest
 cottage found once there is one. Of the wardrobe's five slots (hat,
 outfit, neck, hand, face), whose ids are in the same catalogue and in the
 stored outfit, the hat is rendered: each hat (an acorn cap, a toadstool,

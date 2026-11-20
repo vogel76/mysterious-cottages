@@ -51,6 +51,7 @@ art/blender/room_sheet.py the room's post-processing (system Python): sprite box
                          --pack and --registry the app's room assets and the module that names them
 art/blender/pack.py      the packer: frames to atlases and a manifest (system Python)
 art/blender/check.py     the atlas check: packs the frames again and compares with the committed atlas (system Python)
+art/pictures/            photographs of real paintings that hang in the room (CREDITS.md there says whose)
 art/out/                 renders, logs, .blend files (not committed)
 ```
 
@@ -308,11 +309,14 @@ character around its feet.
 
 `room.py` is the cottage interior: it models the walls, the floor, the
 beams and the fireplace with its fire, and the pieces of every place of
-the room, three variants each, named after the catalogue's ids
+the room, three variants each (the picture has a fourth), named after the catalogue's ids
 (`src/features/elf/cottage/catalogue.ts`): the rug (braided, a kilim, a
 cushion of moss), the bed (oak, a hammock, a nest), the window (arched,
 round, shuttered with a flower box), the picture (the cottage, a map,
-antlers), the shelf (books, jars, seedlings), the lantern (iron, paper,
+antlers, and a real painting in a gilded frame: `picture_material` puts
+`art/pictures/painting.jpg` on its canvas, lit like any matte surface
+with a share of its own colour kept by night), the shelf (books, jars,
+seedlings), the lantern (iron, paper,
 a brass bell), the herbs under the beam (dried herbs, garlic, a
 dreamcatcher), the basket by the hearth (acorns, firewood, pumpkins),
 the corner plant (a fern, a toadstool, a stump) and the stool by the

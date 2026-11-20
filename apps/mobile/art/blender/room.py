@@ -668,6 +668,27 @@ def gradient_emission_material(name, stops, strength=1.0, axis="Z", span=(0.0, 1
     return mat
 
 
+# The pictures that are photographs of real paintings, not built here.
+PICTURES = os.path.join(HERE, "..", "pictures")
+
+
+def picture_material(name, file, glow=0.0):
+    """A canvas showing a picture from art/pictures through the object's UV
+    map, in the room's look like every matte surface, so it dims with the
+    room by night; `glow` gives back a share of its own colour then, the
+    way a bright painting still reads in a dark room."""
+    mat = toon_material(name, "#ffffff", roughness=0.9, paint=False)
+    nt, nodes, links, bsdf = _nodes(mat)
+    tex = nodes.new("ShaderNodeTexImage")
+    tex.image = bpy.data.images.load(os.path.join(PICTURES, file), check_existing=True)
+    tex.extension = "EXTEND"
+    links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    if glow > 0:
+        links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+        bsdf.inputs["Emission Strength"].default_value = glow
+    return painted(mat)
+
+
 def glass_material(name, tint="#dfe9ff", transparency=0.86):
     """Cheap window glass: mostly transparent with a faint glossy sheen."""
     mat = bpy.data.materials.new(name)
@@ -876,6 +897,7 @@ def build_materials():
     MATS["moss"] = noisy_material("Moss", "#5c8a3e", "#2f5226", scale=30.0, strength=0.6, roughness=1.0)
     MATS["straw"] = noisy_material("Straw", "#b08a4a", "#6e5228", scale=40.0, strength=0.5, roughness=0.95)
     MATS["parchment"] = noisy_material("Parchment", "#e8d3a2", "#b9965b", scale=9.0, strength=0.45, roughness=0.95)
+    MATS["painting"] = picture_material("Painting", "painting.jpg", glow=0.25)
     MATS["ink"] = toon_material("Ink", "#3a2a1a", roughness=0.9)
     MATS["antler"] = toon_material("Antler", "#e4d6b8", roughness=0.7)
     MATS["garlic"] = toon_material("Garlic", "#f4e6cc", roughness=0.8)
@@ -1700,6 +1722,45 @@ def build_picture_antlers(coll):
         stick(f"picture.tine{side}b", coll, p2, p2 + Vector((side * 0.06, -0.01, 0.03)), 0.008, 0.003, bone, segments=8)
 
 
+def picture_canvas(name, coll, width, height, location, mat):
+    """A flat canvas facing the room, its UV map the whole picture."""
+    me = bpy.data.meshes.new(name)
+    hw, hh = width / 2, height / 2
+    me.from_pydata([(-hw, 0, -hh), (hw, 0, -hh), (hw, 0, hh), (-hw, 0, hh)], [], [(0, 1, 2, 3)])
+    uv = me.uv_layers.new(name="UVMap")
+    for loop, co in zip(uv.data, ((0, 0), (1, 0), (1, 1), (0, 1))):
+        loop.uv = co
+    return make_object(name, me, coll, location, mat=mat)
+
+
+def build_picture_painting(coll):
+    """A real painting (art/pictures/painting.jpg) in a gilded frame with a
+    dark slip, a boss at each corner and a small plate under the canvas: the
+    largest thing the picture's place takes. It hangs a little right of the
+    others, between the open shutter and the post by the fireplace, and as
+    high as the antlers reach; the canvas keeps the picture's proportions."""
+    x, z = 0.225, 1.79
+    mat = MATS["painting"]
+    pw, ph = mat.node_tree.nodes["Image Texture"].image.size
+    cw = 0.335
+    ch = cw * ph / pw
+    slip, bar = 0.012, 0.04
+    gold, dark = MATS["gold"], MATS["beam"]
+    picture_canvas("picture.canvas", coll, cw, ch, (x, WALL_Y - 0.02, z), mat)
+    for name, half_w, half_h, t, front, m, ink in (
+        ("slip", cw / 2 + slip, ch / 2 + slip, slip, 0.03, dark, 0.0),
+        ("frame", cw / 2 + slip + bar, ch / 2 + slip + bar, bar, 0.05, gold, 0.004),
+    ):
+        box_bounds(f"picture.{name}.l", coll, x - half_w, x - half_w + t, WALL_Y - front, WALL_Y, z - half_h, z + half_h, m, outline=ink)
+        box_bounds(f"picture.{name}.r", coll, x + half_w - t, x + half_w, WALL_Y - front, WALL_Y, z - half_h, z + half_h, m, outline=ink)
+        box_bounds(f"picture.{name}.b", coll, x - half_w, x + half_w, WALL_Y - front, WALL_Y, z - half_h, z - half_h + t, m, outline=ink)
+        box_bounds(f"picture.{name}.t", coll, x - half_w, x + half_w, WALL_Y - front, WALL_Y, z + half_h - t, z + half_h, m, outline=ink)
+    hw, hh = cw / 2 + slip + bar / 2, ch / 2 + slip + bar / 2
+    for i, (sx, sz) in enumerate(((-1, -1), (1, -1), (1, 1), (-1, 1))):
+        sphere(f"picture.boss{i}", coll, 0.026, (x + sx * hw, WALL_Y - 0.05, z + sz * hh), gold, outline=0.004, scale=(1.0, 0.5, 1.0), segments=16)
+    box("picture.plate", coll, (0.08, 0.008, 0.018), (x, WALL_Y - 0.052, z - hh), MATS["cream"])
+
+
 def build_herbs_garlic(coll):
     """Two braids of garlic bulbs hanging from the beam."""
     y = WALL_Y - 0.2
@@ -2171,7 +2232,7 @@ SLOTS = [
     ("window", "arched", True), ("window", "round", False), ("window", "shuttered", False),
     ("shelf", "books", True), ("shelf", "jars", False), ("shelf", "seedlings", False),
     ("lantern", "iron", True), ("lantern", "paper", False), ("lantern", "bell", False),
-    ("picture", "cottage", True), ("picture", "map", False), ("picture", "antlers", False),
+    ("picture", "cottage", True), ("picture", "map", False), ("picture", "antlers", False), ("picture", "painting", False),
     ("basket", "acorns", True), ("basket", "firewood", False), ("basket", "pumpkins", False),
     ("fern", "fern", True), ("fern", "mushroom", False), ("fern", "stump", False),
     ("candle", "candle", True), ("candle", "cauldron", False), ("candle", "toyChest", False),
