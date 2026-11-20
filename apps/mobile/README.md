@@ -1323,7 +1323,8 @@ plant and the stool by the fire), three variants each, all rendered
 cottage found once there is one. Of the wardrobe's five slots (hat,
 outfit, neck, hand, face), whose ids are in the same catalogue and in the
 stored outfit, the hat is rendered: each hat (an acorn cap, a toadstool,
-a crown of flowers, a nightcap, or none) is a layer of the elf's atlas,
+a crown of flowers, a nightcap, a helmet made of an old enamel colander,
+or none) is a layer of the elf's atlas,
 packed in a small grid of its own around the head and drawn over the
 body from the same frame clock (`sprites/useSpriteImages.ts`:
 `useSpriteLayer` decodes only the hat worn); the other wearables wait for

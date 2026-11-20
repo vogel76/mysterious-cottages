@@ -565,6 +565,7 @@ export const DECOR_UNLOCKS: Record<string, number> = {
   'hat:flowerCrown': 2,
   'hat:mushroomCap': 4,
   'hat:nightcap': 6,
+  'hat:colander': 7,
 }
 
 /* How many more cottages a piece needs before it can be placed; 0 when it

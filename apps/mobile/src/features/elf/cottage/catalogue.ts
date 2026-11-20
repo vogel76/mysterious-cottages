@@ -79,7 +79,7 @@ export function isSlotId(value: string): value is SlotId {
 /* The wardrobe: the first id of hat and outfit is the classic look, 'none'
    leaves a slot empty. */
 export const WEARABLE_IDS: Record<WearableSlot, readonly string[]> = {
-  hat: ['none', 'acornCap', 'mushroomCap', 'flowerCrown', 'nightcap'],
+  hat: ['none', 'acornCap', 'mushroomCap', 'flowerCrown', 'nightcap', 'colander'],
   outfit: ['tunic', 'vest', 'apron', 'cloak'],
   neck: ['none', 'scarf', 'amulet'],
   hand: ['none', 'lantern', 'acorn', 'book'],

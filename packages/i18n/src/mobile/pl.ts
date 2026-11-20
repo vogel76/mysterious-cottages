@@ -1104,6 +1104,7 @@ export const mobilePl = {
     itemMushroomCap: 'Kapelusz muchomora',
     itemFlowerCrown: 'Wianek z kwiatów',
     itemNightcap: 'Szlafmyca',
+    itemColander: 'Hełm z durszlaka',
     itemTunic: 'Tunika',
     itemVest: 'Kamizelka',
     itemApron: 'Fartuszek',

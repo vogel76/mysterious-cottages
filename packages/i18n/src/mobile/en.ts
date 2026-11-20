@@ -1029,6 +1029,7 @@ export const mobileEn: typeof mobilePl = {
     itemMushroomCap: 'Toadstool cap',
     itemFlowerCrown: 'Flower crown',
     itemNightcap: 'Nightcap',
+    itemColander: 'Colander helmet',
     itemTunic: 'Tunic',
     itemVest: 'Vest',
     itemApron: 'Apron',

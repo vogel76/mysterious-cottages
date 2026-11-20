@@ -522,6 +522,178 @@
         }
       ]
     },
+    "hat_colander": {
+      "sheets": [
+        {
+          "file": "hat_colander-1.webp",
+          "columns": 10,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 203,
+          "frameHeight": 123,
+          "offset": {
+            "x": 133.8,
+            "y": 15.0
+          }
+        },
+        {
+          "file": "hat_colander-2.webp",
+          "columns": 11,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 171,
+          "frameHeight": 98,
+          "offset": {
+            "x": 148.2,
+            "y": 17.4
+          }
+        },
+        {
+          "file": "hat_colander-3.webp",
+          "columns": 11,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 184,
+          "frameHeight": 109,
+          "offset": {
+            "x": 142.2,
+            "y": 21.6
+          }
+        },
+        {
+          "file": "hat_colander-4.webp",
+          "columns": 11,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 173,
+          "frameHeight": 122,
+          "offset": {
+            "x": 147.0,
+            "y": 17.4
+          }
+        },
+        {
+          "file": "hat_colander-5.webp",
+          "columns": 10,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 190,
+          "frameHeight": 179,
+          "offset": {
+            "x": 139.2,
+            "y": 19.8
+          }
+        },
+        {
+          "file": "hat_colander-6.webp",
+          "columns": 12,
+          "rows": 3,
+          "frames": 36,
+          "frameWidth": 170,
+          "frameHeight": 177,
+          "offset": {
+            "x": 148.2,
+            "y": -24.6
+          }
+        },
+        {
+          "file": "hat_colander-7.webp",
+          "columns": 11,
+          "rows": 5,
+          "frames": 48,
+          "frameWidth": 186,
+          "frameHeight": 98,
+          "offset": {
+            "x": 141.0,
+            "y": 22.2
+          }
+        },
+        {
+          "file": "hat_colander-8.webp",
+          "columns": 9,
+          "rows": 3,
+          "frames": 24,
+          "frameWidth": 213,
+          "frameHeight": 139,
+          "offset": {
+            "x": 148.2,
+            "y": 6.0
+          }
+        },
+        {
+          "file": "hat_colander-9.webp",
+          "columns": 10,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 194,
+          "frameHeight": 168,
+          "offset": {
+            "x": 138.0,
+            "y": -11.4
+          }
+        },
+        {
+          "file": "hat_colander-10.webp",
+          "columns": 11,
+          "rows": 3,
+          "frames": 30,
+          "frameWidth": 171,
+          "frameHeight": 95,
+          "offset": {
+            "x": 148.2,
+            "y": 26.4
+          }
+        },
+        {
+          "file": "hat_colander-11.webp",
+          "columns": 10,
+          "rows": 3,
+          "frames": 24,
+          "frameWidth": 203,
+          "frameHeight": 125,
+          "offset": {
+            "x": 132.6,
+            "y": 33.0
+          }
+        },
+        {
+          "file": "hat_colander-12.webp",
+          "columns": 11,
+          "rows": 5,
+          "frames": 48,
+          "frameWidth": 172,
+          "frameHeight": 108,
+          "offset": {
+            "x": 147.6,
+            "y": 15.6
+          }
+        },
+        {
+          "file": "hat_colander-13.webp",
+          "columns": 11,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 179,
+          "frameHeight": 98,
+          "offset": {
+            "x": 139.8,
+            "y": 25.8
+          }
+        },
+        {
+          "file": "hat_colander-14.webp",
+          "columns": 11,
+          "rows": 4,
+          "frames": 36,
+          "frameWidth": 174,
+          "frameHeight": 120,
+          "offset": {
+            "x": 148.2,
+            "y": 7.2
+          }
+        }
+      ]
+    },
     "hat_flowerCrown": {
       "sheets": [
         {
@@ -1041,6 +1213,7 @@
   },
   "thumbs": {
     "hat_acornCap": "hat_acornCap_thumb.webp",
+    "hat_colander": "hat_colander_thumb.webp",
     "hat_flowerCrown": "hat_flowerCrown_thumb.webp",
     "hat_mushroomCap": "hat_mushroomCap_thumb.webp",
     "hat_nightcap": "hat_nightcap_thumb.webp",
@@ -1062,6 +1235,10 @@
         "acornCap": {
           "file": "sleeper_hammock_hat_acornCap.webp",
           "fileDay": "sleeper_hammock_hat_acornCap_day.webp"
+        },
+        "colander": {
+          "file": "sleeper_hammock_hat_colander.webp",
+          "fileDay": "sleeper_hammock_hat_colander_day.webp"
         },
         "flowerCrown": {
           "file": "sleeper_hammock_hat_flowerCrown.webp",
@@ -1093,6 +1270,10 @@
           "file": "sleeper_nest_hat_acornCap.webp",
           "fileDay": "sleeper_nest_hat_acornCap_day.webp"
         },
+        "colander": {
+          "file": "sleeper_nest_hat_colander.webp",
+          "fileDay": "sleeper_nest_hat_colander_day.webp"
+        },
         "flowerCrown": {
           "file": "sleeper_nest_hat_flowerCrown.webp",
           "fileDay": "sleeper_nest_hat_flowerCrown_day.webp"
@@ -1122,6 +1303,10 @@
         "acornCap": {
           "file": "sleeper_oak_hat_acornCap.webp",
           "fileDay": "sleeper_oak_hat_acornCap_day.webp"
+        },
+        "colander": {
+          "file": "sleeper_oak_hat_colander.webp",
+          "fileDay": "sleeper_oak_hat_colander_day.webp"
         },
         "flowerCrown": {
           "file": "sleeper_oak_hat_flowerCrown.webp",
