@@ -4,7 +4,7 @@ import type { webPl } from './pl'
    key added on one side cannot be forgotten on the other. */
 export const webEn: typeof webPl = {
   meta: {
-    homeTitle: 'Chatynkowo | A fairy-tale outdoor game in the Kraków-Częstochowa Jura',
+    homeTitle: 'Chatynkowo | Elves connect places and generations',
     homeDescription:
       'A fairy-tale outdoor game in the Kraków-Częstochowa Jura. Seek out the hidden Cottages — homes of real Elves — collect seals and unlock their tales. The app is out on Google Play and the App Store.',
     rankingTitle: "Explorers' Leaderboard | Chatynkowo",

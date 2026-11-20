@@ -4,7 +4,7 @@
    into the site's "translation" namespace. */
 export const webPl = {
   meta: {
-    homeTitle: 'Chatynkowo | Baśniowa gra terenowa w Jurze Krakowsko-Częstochowskiej',
+    homeTitle: 'Chatynkowo | Elfy łączą miejsca i pokolenia',
     homeDescription:
       'Baśniowa gra terenowa w Jurze Krakowsko-Częstochowskiej. Odszukuj ukryte Chatynki — domy prawdziwych Elfów — zdobywaj pieczęcie i otwieraj ich opowieści. Aplikacja już w Google Play i App Store.',
     rankingTitle: 'Ranking Zdobywców | Chatynkowo',
